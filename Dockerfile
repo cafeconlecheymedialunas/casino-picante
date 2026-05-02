@@ -20,17 +20,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy project
+# Copy project files
 COPY . .
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Generate key
-RUN php artisan key:generate
+# Install dependencies - ignore platform reqs to handle missing extensions
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 # Expose port
 EXPOSE 8080
 
-# Start server
+# Start server directly - skip migrations in startup
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]

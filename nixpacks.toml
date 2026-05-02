@@ -1,0 +1,9 @@
+[build]
+php_version = "82"
+
+[start]
+cmd = "php artisan serve --host=0.0.0.0 --port=$PORT"
+
+[vars]
+APP_ENV = "production"
+LOG_CHANNEL = "stderr"
