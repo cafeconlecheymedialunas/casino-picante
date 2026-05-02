@@ -8,6 +8,6 @@ class Caja extends Component
 {
     public function render()
     {
-        return view('livewire.caja')->extends('layouts.dashboard');
+        return view('livewire.caja')->layout('layouts.dashboard');
     }
 }

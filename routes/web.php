@@ -12,7 +12,10 @@ use App\Livewire\Novedades;
 use App\Livewire\Overview;
 use App\Livewire\Promociones;
 use App\Livewire\Reportes;
+use App\Livewire\Roles;
+use App\Livewire\Sorteos;
 use App\Livewire\Tickets;
+use App\Livewire\UserBonos;
 use App\Livewire\Users\UsersIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +26,7 @@ Route::get('/', function () {
 Route::get('/dashboard', Overview::class)->name('dashboard');
 Route::get('/usuarios', UsersIndex::class)->name('users.index');
 Route::get('/agentes', Agentes::class)->name('agentes');
+Route::get('/roles', Roles::class)->name('roles');
 Route::get('/promociones', Promociones::class)->name('promociones');
 Route::get('/lineas', Lineas::class)->name('lineas');
 Route::get('/tickets', Tickets::class)->name('tickets');
@@ -34,3 +38,5 @@ Route::get('/juegos', Juegos::class)->name('juegos');
 Route::get('/banners', Banners::class)->name('banners');
 Route::get('/reportes', Reportes::class)->name('reportes');
 Route::get('/logs', Logs::class)->name('logs');
+Route::get('/sorteos', Sorteos::class)->name('sorteos');
+Route::get('/user-bonos', UserBonos::class)->name('user-bonos');

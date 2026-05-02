@@ -5,15 +5,73 @@
         </div>
     </div>
 
+    @if($showModal)
+    <div class="modal-overlay" wire:click="closeModal">
+        <div class="modal-content" wire:click.stop>
+            <div class="modal-header">
+                <h3>{{ $editingPost ? 'EDITAR CONTENIDO' : 'NUEVO CONTENIDO' }}</h3>
+                <button class="modal-close" wire:click="closeModal">✕</button>
+            </div>
+            <form class="modal-form" wire:submit.prevent="savePost">
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" placeholder="Título del contenido" wire:model="title">
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select wire:model="type" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                        <option value="novedad">Novedad</option>
+                        <option value="blog">Blog</option>
+                        <option value="aviso">Aviso</option>
+                        <option value="carrusel">Carrusel</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Resumen breve</label>
+                    <input type="text" placeholder="Breve descripción..." wire:model="excerpt">
+                </div>
+                <div class="form-group">
+                    <label>Contenido</label>
+                    <textarea placeholder="Contenido completo..." wire:model="content" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;min-height:120px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>URL de imagen</label>
+                    <input type="text" placeholder="https://..." wire:model="image">
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select wire:model="status" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                        <option value="draft">Borrador</option>
+                        <option value="published">Publicado</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn-primary">{{ $editingPost ? 'Guardar' : 'Crear' }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
+
+    @if(session()->has('message'))
+    <div style="position:fixed;top:20px;right:20px;background:var(--good);color:#000;padding:12px 20px;border-radius:8px;font-weight:700;z-index:2000;">
+        {{ session('message') }}
+    </div>
+    @endif
+
     <div class="content-grid">
         <div>
             <div class="tab-bar">
                 <div class="tabs">
-                    <button class="tab {{ $tab === 'novedad' ? 'active' : '' }}" wire:click="setTab('novedad')">Novedades ({{ $posts->where('type', 'novedad')->count() }})</button>
-                    <button class="tab {{ $tab === 'blog' ? 'active' : '' }}" wire:click="setTab('blog')">Blog ({{ $posts->where('type', 'blog')->count() }})</button>
-                    <button class="tab {{ $tab === 'carrusel' ? 'active' : '' }}" wire:click="setTab('carrusel')">Carrusel ({{ $posts->where('type', 'carrusel')->count() }})</button>
+                    <button class="tab {{ $tab === 'novedad' ? 'active' : '' }}" wire:click="setTab('novedad')">Novedades</button>
+                    <button class="tab {{ $tab === 'blog' ? 'active' : '' }}" wire:click="setTab('blog')">Blog</button>
+                    <button class="tab {{ $tab === 'carrusel' ? 'active' : '' }}" wire:click="setTab('carrusel')">Carrusel</button>
                 </div>
-                <button class="btn-primary" style="height: 32px; padding: 0 14px; font-size: 12px;">+ Nueva</button>
+                <button class="btn-primary" style="height: 32px; padding: 0 14px; font-size: 12px;" wire:click="openCreateModal">+ Nueva</button>
+            </div>
+            <div class="search-box" style="margin-bottom:12px;">
+                <input type="text" placeholder="Buscar..." wire:model="search" class="search-input" style="width:100%;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:12px;color:var(--muted);">
             </div>
 
             <div class="list">
@@ -31,8 +89,8 @@
                         @endif
                     </span>
                     <div class="list-actions">
-                        <button class="action-btn">✎</button>
-                        <button class="action-btn">···</button>
+                        <button class="action-btn" wire:click.stop="openEditModal({{ $post->id }})">✎</button>
+                        <button class="action-btn" wire:click.stop="toggleStatus({{ $post->id }})">{{ $post->status === 'published' ? '🔒' : '👁' }}</button>
                     </div>
                 </div>
                 @empty
@@ -161,5 +219,16 @@
         .editor-btn-primary { flex: 2; height: 38px; font-size: 12px; background: linear-gradient(180deg, var(--orange-2) 0%, var(--orange) 60%, var(--orange-deep) 100%); border: none; border-radius: 999px; color: #190702; font-weight: 800; cursor: pointer; }
 
         .empty-state { text-align: center; color: var(--muted); padding: 40px; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: linear-gradient(180deg, #1a0d0d 0%, #120909 100%); border: 1px solid var(--line); border-radius: 20px; width: 100%; max-width: 520px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+        .modal-header h3 { font-family: var(--font-display); font-size: 22px; margin: 0; }
+        .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+        .modal-form { padding: 24px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 10px; padding: 12px 16px; color: var(--white); font-size: 14px; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
     </style>
 </div>

@@ -74,6 +74,6 @@ class Ajustes extends Component
 
     public function render()
     {
-        return view('livewire.ajustes')->extends('layouts.dashboard');
+        return view('livewire.ajustes')->layout('layouts.dashboard');
     }
 }

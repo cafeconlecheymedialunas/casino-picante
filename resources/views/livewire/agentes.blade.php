@@ -1,12 +1,15 @@
-<div>
+<div class="page-container">
     <div class="page-header">
         <div class="header-content">
             <h1 class="page-title">AGENTES</h1>
             <p class="page-subtitle">Jerarquía padre → hijos · permisos granulares por sección</p>
         </div>
-        <button wire:click="openCreateModal" class="btn-primary">
-            <span>+</span> Crear agente
-        </button>
+        <div style="display:flex;gap:10px;align-items:center;">
+            <input type="text" placeholder="Buscar agentes..." wire:model="search" class="search-input">
+            <button wire:click="openCreateModal" class="btn-primary">
+                <span>+</span> Crear agente
+            </button>
+        </div>
     </div>
 
     <div class="content-grid">
@@ -41,16 +44,16 @@
                             </div>
                             <div class="parent-role">Líneas {{ implode(', ', $parent->lines ?? []) }} · {{ $parent->children->count() }} hijos</div>
                         </div>
-                        <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;">Gestionar</button>
+                        <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;" wire:click="selectAgent({{ $parent->id }})">Gestionar</button>
                     </div>
                 </div>
                 @if($parent->children->count() > 0)
                 <div class="children-wrapper">
                     <div class="children-line"></div>
                     @foreach($parent->children as $child)
-                    <div class="child-card" wire:click="selectAgent({{ $child->id }})">
-                        <div class="child-avatar">{{ strtoupper(substr($child->name, 0, 1)) }}</div>
-                        <div class="child-info">
+                    <div class="child-card">
+                        <div class="child-avatar" wire:click="selectAgent({{ $child->id }})" style="cursor:pointer">{{ strtoupper(substr($child->name, 0, 1)) }}</div>
+                        <div class="child-info" wire:click="selectAgent({{ $child->id }})" style="cursor:pointer">
                             <div class="child-name">{{ $child->name }}</div>
                             <div class="child-role">Hijo · {{ implode(', ', $child->lines ?? []) }}</div>
                         </div>
@@ -60,7 +63,7 @@
                             @endforeach
                         </div>
                         <div class="child-perms">{{ $child->permissions->count() }} permisos activos</div>
-                        <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;">Editar</button>
+                        <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;" wire:click="openEditModal({{ $child->id }})">Editar</button>
                     </div>
                     @endforeach
                 </div>
@@ -76,6 +79,7 @@
         <div class="perm-panel">
             @if($selectedAgent)
             <div class="perm-header">
+                <button wire:click="selectedAgent = null" class="perm-close" title="Cerrar">✕</button>
                 <div class="perm-avatar">{{ strtoupper(substr($selectedAgent->name, 0, 1)) }}</div>
                 <div>
                     <div class="perm-name">{{ $selectedAgent->name }}</div>
@@ -86,40 +90,99 @@
 
             <div class="perm-section-label">Líneas asignadas</div>
             <div class="line-buttons">
-                @foreach($selectedAgent->lines ?? [] as $line)
+                @forelse($selectedAgent->lines ?? [] as $line)
                 <button class="line-btn">{{ $line }}</button>
-                @endforeach
+                @empty
+                <span style="color:var(--muted);font-size:12px;">Sin líneas asignadas</span>
+                @endforelse
             </div>
 
-            <div class="perm-section-label">Permisos por sección</div>
-            <div class="perm-matrix">
-                <div class="matrix-header">
-                    <div style="text-align:left">Sección</div>
-                    <div title="Sin acceso">∅</div>
-                    <div title="Lectura">👁</div>
-                    <div title="Crear">+</div>
-                    <div title="Editar">✎</div>
-                    <div title="Eliminar">✕</div>
+            @if($selectedAgent->role_id)
+            <div class="perm-section-label">ROL ASIGNADO (Global)</div>
+            <div class="role-selector">
+                <div class="current-role">
+                    <span class="role-badge">{{ $selectedAgent->roleModel->name ?? 'Rol eliminado' }}</span>
+                    <button wire:click="removeRole({{ $selectedAgent->id }})" class="btn-remove-role" title="Quitar rol">✕</button>
                 </div>
+            </div>
+            @if($selectedAgent->roleModel && is_array($selectedAgent->roleModel->permissions))
+            <div class="role-permissions">
+                @foreach($selectedAgent->roleModel->permissions as $section => $level)
+                @if($level !== 'none')
+                <div class="perm-item">
+                    <span class="perm-section-name">{{ $section }}</span>
+                    <span class="perm-level">{{ $level }}</span>
+                </div>
+                @endif
+                @endforeach
+            </div>
+            @endif
+            @else
+
+            <div class="perm-section-label">PERMISOS PERSONALIZADOS</div>
+            <p style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+                El padre puede configurar exactamente qué puede hacer este hijo en cada sección
+            </p>
+
+            <div class="custom-perms">
                 @php
-                $sections = ['Blog', 'Novedades', 'Promociones', 'Carrusel', 'Tickets', 'Usuarios'];
-                $permissions = ['none', 'read', 'create', 'edit', 'delete'];
+                $sections = [
+                    'blog' => 'Blog',
+                    'novedades' => 'Novedades',
+                    'promociones' => 'Promociones',
+                    'carrusel' => 'Carrusel',
+                    'tickets' => 'Tickets',
+                    'usuarios' => 'Usuarios',
+                    'metricas' => 'Métricas',
+                    'contactos' => 'Enlaces de contacto',
+                ];
+                $levels = ['none' => '∅', 'read' => '👁', 'create' => '+', 'edit' => '✎', 'delete' => '✕'];
+                $levelLabels = ['none' => 'Sin acceso', 'read' => 'Solo lectura', 'create' => 'Crear', 'edit' => 'Editar', 'delete' => 'Eliminar'];
                 @endphp
-                @foreach($sections as $section)
-                <div class="matrix-row">
-                    <div>{{ $section }}</div>
-                    @foreach($permissions as $perm)
-                    <div class="matrix-cell">
-                        <div class="matrix-check {{ $perm === 'edit' ? 'selected' : '' }}">●</div>
+
+                @foreach($sections as $sectionKey => $sectionLabel)
+                <div class="perm-section-row">
+                    <div class="perm-section-title">{{ $sectionLabel }}</div>
+                    <div class="perm-levels">
+                        @foreach($levels as $levelKey => $levelIcon)
+                        <button 
+                            class="perm-level-btn {{ ($permSections[$sectionKey] ?? 'none') === $levelKey ? 'active' : '' }}"
+                            wire:click="togglePerm('{{ $sectionKey }}', '{{ $levelKey }}')"
+                            title="{{ $levelLabels[$levelKey] }}">
+                            {{ $levelIcon }}
+                        </button>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
                 @endforeach
             </div>
 
             <div class="perm-actions">
-                <button class="btn-ghost perm-cancel">Cancelar</button>
-                <button class="btn-primary perm-save">Guardar permisos</button>
+                <button class="btn-ghost perm-cancel" wire:click="selectedAgent = null">Cancelar</button>
+                <button class="btn-primary perm-save" wire:click="savePermissions">Guardar permisos</button>
+            </div>
+
+            <div style="margin-top:16px;padding:12px;background:rgba(255,106,26,0.1);border-radius:8px;">
+                <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:8px;">RESUMEN DE PERMISOS</div>
+                @php $activePerms = 0; @endphp
+                @foreach($permSections as $section => $level)
+                    @if($level !== 'none')
+                    @php $activePerms++; @endphp
+                    <div style="font-size:11px;color:var(--white);margin-bottom:4px;">
+                        <span style="color:var(--orange);">{{ $section }}:</span> {{ $level }}
+                    </div>
+                    @endif
+                @endforeach
+                @if($activePerms === 0)
+                <div style="font-size:11px;color:var(--muted);">Sin permisos activos</div>
+                @else
+                <div style="font-size:11px;color:var(--good);margin-top:8px;">{{ $activePerms }} permisos activos</div>
+                @endif
+            </div>
+            @endif
+
+            <div style="margin-top:20px;text-align:center;">
+                <button class="btn-ghost" style="color:#ff4757;border-color:#ff4757;" wire:click="deleteAgent({{ $selectedAgent->id }})">Eliminar agente</button>
             </div>
             @else
             <div class="perm-empty">
@@ -136,22 +199,63 @@
                 <h3>{{ $editingAgent ? 'EDITAR AGENTE' : 'NUEVO AGENTE' }}</h3>
                 <button class="modal-close" wire:click="closeModal">✕</button>
             </div>
-            <form class="modal-form">
+            <form class="modal-form" wire:submit.prevent="saveAgent">
                 <div class="form-group">
-                    <label>Nombre</label>
-                    <input type="text" placeholder="Nombre del agente">
+                    <label>Nombre *</label>
+                    <input type="text" placeholder="Nombre del agente" wire:model="name" required>
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" placeholder="correo@ejemplo.com">
+                    <label>Email *</label>
+                    <input type="email" placeholder="correo@ejemplo.com" wire:model="email" required>
                 </div>
                 <div class="form-group">
-                    <label>Contraseña</label>
-                    <input type="password" placeholder="••••••••">
+                    <label>Contraseña {{ $editingAgent ? '(dejar vacío para mantener)' : '*' }}</label>
+                    <input type="password" placeholder="••••••••" wire:model="password" {{ $editingAgent ? '' : 'required' }}>
                 </div>
                 <div class="form-group">
                     <label>Teléfono</label>
-                    <input type="text" placeholder="+54 9 11 9999 9999">
+                    <input type="text" placeholder="+54 9 11 9999 9999" wire:model="phone">
+                </div>
+                <div class="form-group">
+                    <label>Rol</label>
+                    <select wire:model="role" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                        <option value="parent"> Padre</option>
+                        <option value="child">Hijo</option>
+                    </select>
+                </div>
+                @if($role === 'child')
+                <div class="form-group">
+                    <label>Agente padre</label>
+                    <select wire:model="parent_id" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                        <option value="">Seleccionar padre...</option>
+                        @foreach($parents as $parent)
+                        <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+                <div class="form-group">
+                    <label>Rol (opcional)</label>
+                    <select wire:model="role_id" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                        <option value="">Sin rol asignado</option>
+                        @forelse($roles as $role)
+                        <option value="{{ $role->id }}">{{ $role->name }}</option>
+                        @empty
+                        <option value="" disabled>No hay roles creados</option>
+                        @endforelse
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Líneas (seleccionar varias)</label>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                        @foreach(['L1','L2','L3','L4','L5','L6'] as $line)
+                        <button type="button" 
+                            class="line-btn {{ in_array($line, $lines) ? 'selected' : '' }}"
+                            wire:click="toggleLine('{{ $line }}')">
+                            {{ $line }}
+                        </button>
+                        @endforeach
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>
@@ -162,6 +266,14 @@
     </div>
     @endif
 
+    @if(session()->has('message'))
+    <div style="position:fixed;top:20px;right:20px;background:var(--good);color:#000;padding:12px 20px;border-radius:8px;font-weight:700;z-index:2000;">
+        {{ session('message') }}
+    </div>
+    @endif
+
+    </div>
+
     <style>
         .page-header {
             display: flex;
@@ -169,6 +281,13 @@
             align-items: flex-start;
             margin-bottom: 24px;
             padding: 0 28px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--black);
+            margin: -24px -28px 24px -28px;
+            padding: 24px 28px 16px;
+            border-bottom: 1px solid var(--line);
         }
         .page-title {
             font-family: var(--font-display);
@@ -336,5 +455,36 @@
             padding: 12px 16px; color: var(--white); font-size: 14px;
         }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+        .search-input { width: 200px; padding: 10px 16px; border-radius: 999px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); font-size: 12px; color: var(--muted); }
+        .search-input:focus { outline: none; border-color: var(--orange); color: var(--white); }
+        .line-btn.selected { background: var(--orange); color: #190702; }
+        .line-btn:hover { background: rgba(255,106,26,0.3); }
+        .perm-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+        .perm-close:hover { color: var(--orange); }
+        .perm-header { position: relative; }
+        
+        .role-selector { margin-top: 12px; }
+        .current-role { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .role-badge { background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+        .btn-remove-role { width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); border: none; color: var(--muted); cursor: pointer; font-size: 10px; }
+        .btn-remove-role:hover { background: #ff4757; color: #fff; }
+        
+        .role-permissions { display: grid; gap: 6px; margin-top: 12px; }
+        .perm-item { display: flex; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.04); border-radius: 6px; font-size: 12px; }
+        .perm-section-name { color: var(--white); }
+        .perm-level { color: var(--orange); font-weight: 600; text-transform: capitalize; }
+        
+        .custom-perms { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+        .perm-section-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+        .perm-section-row:last-child { border-bottom: none; }
+        .perm-section-title { font-size: 12px; color: var(--white); }
+        .perm-levels { display: flex; gap: 4px; }
+        .perm-level-btn { width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); cursor: pointer; font-size: 12px; transition: all 0.2s; }
+        .perm-level-btn:hover { background: rgba(255,106,26,0.2); }
+        .perm-level-btn.active { background: var(--orange); color: #190702; border: none; }
+        
+        .perm-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .perm-actions .btn-ghost { flex: 1; }
+        .perm-actions .btn-primary { flex: 2; }
     </style>
 </div>

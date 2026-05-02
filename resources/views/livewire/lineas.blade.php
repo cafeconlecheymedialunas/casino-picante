@@ -4,8 +4,67 @@
             <h1 class="page-title">LÍNEAS & REDES</h1>
             <p class="page-subtitle">Cada línea opera con su propio juego de redes sociales y mensaje automático</p>
         </div>
-        <button class="btn-primary"><span>+</span> Nueva línea</button>
+        <button class="btn-primary" wire:click="openCreateModal"><span>+</span> Nueva línea</button>
     </div>
+
+    @if($showModal)
+    <div class="modal-overlay" wire:click="closeModal">
+        <div class="modal-content" wire:click.stop>
+            <div class="modal-header">
+                <h3>{{ $editingLine ? 'EDITAR LÍNEA' : 'NUEVA LÍNEA' }}</h3>
+                <button class="modal-close" wire:click="closeModal">✕</button>
+            </div>
+            <form class="modal-form" wire:submit.prevent="saveLine">
+                <div class="form-group">
+                    <label>Nombre de la línea</label>
+                    <input type="text" placeholder="L1, L2, Línea 1..." wire:model="name">
+                </div>
+                <div class="form-group">
+                    <label>Tipo principal</label>
+                    <select wire:model="type" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                        <option value="whatsapp">WhatsApp</option>
+                        <option value="telegram">Telegram</option>
+                        <option value="phone">Teléfono</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>WhatsApp</label>
+                        <input type="text" placeholder="+54 9 11 9999 9999" wire:model="whatsapp">
+                    </div>
+                    <div class="form-group">
+                        <label>Telegram</label>
+                        <input type="text" placeholder="@usuario" wire:model="telegram">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" placeholder="+54 9 11 9999 9999" wire:model="phone">
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select wire:model="status" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                        <option value="active">Activa</option>
+                        <option value="inactive">Inactiva</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    @if($editingLine)
+                    <button type="button" class="btn-ghost" style="color:#ff4757;border-color:#ff4757;" wire:click="deleteLine({{ $editingLine->id }})">Eliminar</button>
+                    @endif
+                    <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn-primary">{{ $editingLine ? 'Guardar' : 'Crear' }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
+
+    @if(session()->has('message'))
+    <div style="position:fixed;top:20px;right:20px;background:var(--good);color:#000;padding:12px 20px;border-radius:8px;font-weight:700;z-index:2000;">
+        {{ session('message') }}
+    </div>
+    @endif
 
     <div class="content">
         <p class="lines-desc">Cada línea opera con su propio juego de redes sociales y mensaje automático. Activá o desactivá líneas y enlaces individuales sin tocar el frontend.</p>
@@ -100,45 +159,6 @@
             @endforelse
         </div>
     </div>
-
-    @if($showModal && $editingLine)
-    <div class="modal-overlay" wire:click="closeModal">
-        <div class="modal-content" wire:click.stop>
-            <div class="modal-header">
-                <h3>EDITAR LÍNEA</h3>
-                <button class="modal-close" wire:click="closeModal">✕</button>
-            </div>
-            <form class="modal-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Nombre</label>
-                        <input type="text" value="{{ $editingLine->name }}">
-                    </div>
-                    <div class="form-group">
-                        <label>Icono</label>
-                        <input type="text" value="{{ $editingLine->icon }}">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>WhatsApp</label>
-                    <input type="text" value="{{ $editingLine->whatsapp }}">
-                </div>
-                <div class="form-group">
-                    <label>Mensaje automático WhatsApp</label>
-                    <textarea class="edit-input tall">{{ $editingLine->whatsapp_message }}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>Telegram</label>
-                    <input type="text" value="{{ $editingLine->telegram }}">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>
-                    <button type="submit" class="btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endif
 
     <style>
         .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding: 0 28px; }

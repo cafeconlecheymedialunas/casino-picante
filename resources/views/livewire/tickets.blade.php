@@ -7,10 +7,14 @@
 
     <div class="content-grid">
         <div class="ticket-list">
+            <div class="ticket-search">
+                <input type="text" placeholder="Buscar tickets..." wire:model="search" class="search-input">
+            </div>
             <div class="ticket-filters">
-                <button class="ticket-filter {{ $filter === 'open' ? 'active' : '' }}" wire:click="$set('filter', 'open')">Abiertos</button>
-                <button class="ticket-filter {{ $filter === 'progress' ? 'active' : '' }}" wire:click="$set('filter', 'progress')">En proceso</button>
-                <button class="ticket-filter {{ $filter === 'closed' ? 'active' : '' }}" wire:click="$set('filter', 'closed')">Cerrados</button>
+                <button class="ticket-filter {{ $filter === 'all' ? 'active' : '' }}" wire:click="$set('filter', 'all')">Todos</button>
+                <button class="ticket-filter {{ $filter === 'open' ? 'active' : '' }}" wire:click="$set('filter', 'open')">Abiertos ({{ $metrics['open'] }})</button>
+                <button class="ticket-filter {{ $filter === 'progress' ? 'active' : '' }}" wire:click="$set('filter', 'progress')">En proceso ({{ $metrics['progress'] }})</button>
+                <button class="ticket-filter {{ $filter === 'closed' ? 'active' : '' }}" wire:click="$set('filter', 'closed')">Cerrados ({{ $metrics['closed'] }})</button>
             </div>
 
             @forelse($tickets as $ticket)
@@ -131,5 +135,8 @@
         .send-btn { height: 32px; padding: 0 16px; font-size: 12px; }
 
         .empty-state { text-align: center; color: var(--muted); padding: 40px; }
+        .ticket-search { margin-bottom: 12px; }
+        .search-input { width: 100%; padding: 10px 16px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); font-size: 12px; color: var(--muted); }
+        .search-input:focus { outline: none; border-color: var(--orange); color: var(--white); }
     </style>
 </div>

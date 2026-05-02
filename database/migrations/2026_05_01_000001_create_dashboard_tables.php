@@ -37,7 +37,7 @@ return new class extends Migration
             $table->string('code')->nullable();
             $table->string('icon')->default('🎁');
             $table->timestamp('start_date');
-            $table->timestamp('end_date');
+            $table->timestamp('end_date')->nullable();
             $table->enum('status', ['draft', 'published', 'hidden'])->default('draft');
             $table->json('lines')->nullable();
             $table->timestamps();

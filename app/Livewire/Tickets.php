@@ -10,13 +10,20 @@ class Tickets extends Component
 {
     public $filter = 'open';
 
+    public $search = '';
+
     public $selectedTicket = null;
 
     public $newMessage = '';
 
     public function selectTicket($id)
     {
-        $this->selectedTicket = Ticket::with(['user', 'messages'])->find($id);
+        $this->selectedTicket = Ticket::with(['user', 'messages.agent'])->find($id);
+    }
+
+    public function closeDetail()
+    {
+        $this->selectedTicket = null;
     }
 
     public function sendMessage()
@@ -27,7 +34,7 @@ class Tickets extends Component
 
         TicketMessage::create([
             'ticket_id' => $this->selectedTicket->id,
-            'agent_id' => auth()->id(),
+            'agent_id' => 1,
             'message' => $this->newMessage,
         ]);
 
@@ -51,13 +58,32 @@ class Tickets extends Component
             $query->where('status', $this->filter);
         }
 
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->where('subject', 'like', '%'.$this->search.'%')
+                    ->orWhereHas('user', function ($uq) {
+                        $uq->where('name', 'like', '%'.$this->search.'%');
+                    });
+            });
+        }
+
         return $query->orderBy('created_at', 'desc')->get();
+    }
+
+    public function getMetrics()
+    {
+        return [
+            'open' => Ticket::where('status', 'open')->count(),
+            'progress' => Ticket::where('status', 'progress')->count(),
+            'closed' => Ticket::where('status', 'closed')->count(),
+        ];
     }
 
     public function render()
     {
         $tickets = $this->getTickets();
+        $metrics = $this->getMetrics();
 
-        return view('livewire.tickets', compact('tickets'))->extends('layouts.dashboard');
+        return view('livewire.tickets', compact('tickets', 'metrics'))->layout('layouts.dashboard');
     }
 }

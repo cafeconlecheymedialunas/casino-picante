@@ -1,105 +1,178 @@
-<div>
+<div class="page-container">
     <div class="page-header">
         <div class="header-content">
-            <h1 class="page-title">CAJA / PAGOS</h1>
-            <p class="page-subtitle">Gestión de depósitos, retiros y transacciones</p>
-        </div>
-    </div>
-
-    <div class="stats-grid" style="padding: 0 28px;">
-        <div class="stat-card">
-            <div class="stat-icon">💰</div>
-            <div class="stat-label">DEPÓSITOS HOY</div>
-            <div class="stat-value">$1.2M</div>
-            <div class="stat-change positive">▲ +15% vs ayer</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🏧</div>
-            <div class="stat-label">RETIROS HOY</div>
-            <div class="stat-value">$840K</div>
-            <div class="stat-change">▲ +8% vs ayer</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-label">TRANSACCIONES</div>
-            <div class="stat-value">1,247</div>
-            <div class="stat-change">Promedio diario</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-label">PENDIENTES</div>
-            <div class="stat-value">12</div>
-            <div class="stat-change neutral">Revisión manual</div>
-        </div>
-    </div>
-
-    <div class="content" style="padding: 28px;">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">TRANSACCIONES RECIENTES</h3>
-                <button class="btn-ghost">Exportar</button>
-            </div>
-            <div class="table-container">
-                <div class="table-header-row">
-                    <div>ID</div>
-                    <div>Usuario</div>
-                    <div>Tipo</div>
-                    <div>Monto</div>
-                    <div>Método</div>
-                    <div>Estado</div>
-                    <div>Fecha</div>
-                </div>
-                @for($i = 1; $i <= 5; $i++)
-                <div class="table-row">
-                    <div class="row-mono">#{{ 1000 + $i }}</div>
-                    <div class="row-user">
-                        <div class="row-avatar">{{ chr(64 + $i) }}</div>
-                        <span>Usuario {{ $i }}</span>
-                    </div>
-                    <div class="row-type {{ $i % 2 == 0 ? 'deposit' : 'withdrawal' }}">
-                        {{ $i % 2 == 0 ? 'Depósito' : 'Retiro' }}
-                    </div>
-                    <div class="row-amount">${{ number_format(rand(10000, 100000), 0, ',', '.') }}</div>
-                    <div class="row-method">Transferencia</div>
-                    <div class="row-status completed">✓ Completado</div>
-                    <div class="row-time">Hace {{ $i * 5 }}min</div>
-                </div>
-                @endfor
-            </div>
+            <h1 class="page-title">CAJA</h1>
+            <p class="page-subtitle">Gestión de pagos, retiros y transacciones</p>
         </div>
     </div>
 
     <style>
-        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding: 0 28px; }
-        .page-title { font-family: var(--font-display); font-size: 36px; color: var(--white); margin: 0; }
-        .page-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
-        @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .stats-grid { grid-template-columns: 1fr; } }
-        .stat-card { padding: 18px; background: linear-gradient(180deg, #170b0b 0%, #0f0707 100%); border: 1px solid var(--line); border-radius: var(--r-lg); }
-        .stat-icon { font-size: 24px; margin-bottom: 8px; }
-        .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
-        .stat-value { font-family: var(--font-display); font-size: 32px; margin-top: 8px; }
-        .stat-change { font-size: 11px; color: var(--good); margin-top: 6px; }
-        .stat-change.positive { color: var(--good); }
-        .stat-change.neutral { color: var(--muted); }
-        
-        .card { padding: 22px; background: linear-gradient(180deg, #170b0b 0%, #0f0707 100%); border: 1px solid var(--line); border-radius: var(--r-lg); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .card-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.02em; margin: 0; }
-        .table-container { overflow-x: auto; }
-        .table-header-row { display: grid; grid-template-columns: 60px 1.5fr 100px 120px 1fr 100px 100px; gap: 12px; font-size: 11px; color: var(--muted); padding: 12px 0; border-bottom: 1px solid var(--line); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-        .table-row { display: grid; grid-template-columns: 60px 1.5fr 100px 120px 1fr 100px 100px; gap: 12px; font-size: 13px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center; }
-        .row-mono { font-family: var(--font-mono); color: var(--muted); }
-        .row-user { display: flex; align-items: center; gap: 10px; }
-        .row-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; }
-        .row-type { font-size: 11px; font-weight: 700; }
-        .row-type.deposit { color: var(--good); }
-        .row-type.withdrawal { color: var(--orange); }
-        .row-amount { font-family: var(--font-mono); font-weight: 700; }
-        .row-method { color: var(--muted); font-size: 12px; }
-        .row-status { font-size: 11px; font-weight: 700; }
-        .row-status.completed { color: var(--good); }
-        .row-time { color: var(--muted); font-size: 12px; }
+        .stats-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card-dark { background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 14px; padding: 18px; }
+        .stat-card-dark.alert { border-color: var(--orange); }
+        .stat-lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; font-weight: 700; }
+        .stat-lbl.alert { color: var(--orange); }
+        .stat-val-lg { font-family: var(--font-display); font-size: 36px; margin-top: 6px; }
+        .stat-sub-text { font-size: 11px; color: var(--good); margin-top: 2px; }
+        .stat-sub-text.muted { color: var(--muted); }
+        .dark-card { background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 14px; padding: 22px; }
+        .dark-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .dark-card-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.02em; }
+        .tx-head { display: grid; grid-template-columns: 90px 1.5fr 1fr 1fr 55px 90px 1fr 120px; gap: 10px; font-size: 10px; color: var(--muted); padding: 8px 0; border-bottom: 1px solid var(--line); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+        .tx-row { display: grid; grid-template-columns: 90px 1.5fr 1fr 1fr 55px 90px 1fr 120px; gap: 10px; font-size: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center; }
+        .tx-row:last-child { border-bottom: none; }
+        .tx-id { font-family: var(--font-mono); color: var(--muted); font-size: 11px; }
+        .tx-amount { font-family: var(--font-mono); font-weight: 700; }
+        .risk-low { padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; background: rgba(37,196,107,0.12); color: var(--good); white-space: nowrap; }
+        .risk-medium { padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; background: rgba(255,179,71,0.15); color: var(--warn); white-space: nowrap; }
+        .risk-high { padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; background: rgba(255,71,87,0.15); color: #ff4757; white-space: nowrap; }
+        .tx-date { color: var(--muted); font-size: 11px; }
+        .tx-actions { display: flex; gap: 5px; align-items: center; }
+        .btn-approve { height: 28px; padding: 0 10px; font-size: 10px; font-weight: 700; background: var(--good); color: #000; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+        .btn-reject-tx { height: 28px; padding: 0 8px; font-size: 10px; font-weight: 700; background: transparent; color: #ff4757; border: 1px solid #ff4757; border-radius: 6px; cursor: pointer; }
+        .btn-view-tx { height: 28px; padding: 0 8px; font-size: 10px; background: rgba(255,255,255,0.04); color: #fff; border: 1px solid var(--line-2); border-radius: 6px; cursor: pointer; }
+        .kyc-ok { color: var(--good); font-weight: 700; }
+        .kyc-no { color: var(--warn); font-weight: 700; }
     </style>
+
+    @if (session()->has('message'))
+        <div style="background: rgba(37,196,107,0.12); border: 1px solid var(--good); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; color: var(--good); font-size: 13px; font-weight: 700;">
+            {{ session('message') }}
+        </div>
+    @endif
+
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <div>
+            <div style="font-size: 11px; color: var(--muted); letter-spacing: 0.12em; font-weight: 700;">OPERACIÓN</div>
+            <div style="font-family: var(--font-display); font-size: 32px; margin-top: 2px; letter-spacing: 0.02em;">Caja / Pagos</div>
+        </div>
+        <button class="btn-primary" style="height: 36px; padding: 0 16px; font-size: 12px;">↓ Exportar</button>
+    </div>
+
+    <div class="stats-grid-4">
+        <div class="stat-card-dark alert">
+            <div class="stat-lbl alert">PENDIENTES</div>
+            <div class="stat-val-lg">23</div>
+            <div class="stat-sub-text">Requieren aprobación</div>
+        </div>
+        <div class="stat-card-dark">
+            <div class="stat-lbl">APROBADOS HOY</div>
+            <div class="stat-val-lg">184</div>
+            <div class="stat-sub-text">$1.2M procesado</div>
+        </div>
+        <div class="stat-card-dark">
+            <div class="stat-lbl">VOLUMEN DEPÓSITOS</div>
+            <div class="stat-val-lg">$3.4M</div>
+            <div class="stat-sub-text muted">+12% vs ayer</div>
+        </div>
+        <div class="stat-card-dark">
+            <div class="stat-lbl">VOLUMEN RETIROS</div>
+            <div class="stat-val-lg">$1.8M</div>
+            <div class="stat-sub-text muted">Promedio 42min</div>
+        </div>
+    </div>
+
+    <div class="dark-card">
+        <div class="dark-card-header">
+            <div class="dark-card-title">RETIROS PENDIENTES DE APROBACIÓN</div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-ghost" style="height: 32px; padding: 0 12px; font-size: 11px; font-weight: 700;">Filtrar ▾</button>
+                <button class="btn-primary" style="height: 32px; padding: 0 14px; font-size: 11px;">Aprobar lote (12)</button>
+            </div>
+        </div>
+        <div class="tx-head">
+            <div>#TX-ID</div>
+            <div>Usuario</div>
+            <div>Método</div>
+            <div>Monto</div>
+            <div>KYC</div>
+            <div>Riesgo</div>
+            <div>Solicitado</div>
+            <div></div>
+        </div>
+        <div class="tx-row">
+            <div class="tx-id">#TX-4520</div>
+            <div><strong>María L.</strong> <span style="color:var(--muted);font-size:11px;">@maria.l</span></div>
+            <div style="color:var(--muted);">CBU BBVA</div>
+            <div class="tx-amount">$8.500</div>
+            <div class="kyc-ok">✓</div>
+            <div><span class="risk-low">● Bajo</span></div>
+            <div class="tx-date">hace 4min</div>
+            <div class="tx-actions">
+                <button class="btn-view-tx">Ver</button>
+                <button class="btn-approve">Aprobar</button>
+                <button class="btn-reject-tx">✗</button>
+            </div>
+        </div>
+        <div class="tx-row">
+            <div class="tx-id">#TX-4519</div>
+            <div><strong>Diego R.</strong> <span style="color:var(--muted);font-size:11px;">@diego77</span></div>
+            <div style="color:var(--muted);">USDT</div>
+            <div class="tx-amount">$15.200</div>
+            <div class="kyc-ok">✓</div>
+            <div><span class="risk-low">● Bajo</span></div>
+            <div class="tx-date">hace 12min</div>
+            <div class="tx-actions">
+                <button class="btn-view-tx">Ver</button>
+                <button class="btn-approve">Aprobar</button>
+                <button class="btn-reject-tx">✗</button>
+            </div>
+        </div>
+        <div class="tx-row">
+            <div class="tx-id">#TX-4518</div>
+            <div><strong>Pao F.</strong> <span style="color:var(--muted);font-size:11px;">@pao.f</span></div>
+            <div style="color:var(--muted);">MercadoPago</div>
+            <div class="tx-amount">$3.400</div>
+            <div class="kyc-ok">✓</div>
+            <div><span class="risk-low">● Bajo</span></div>
+            <div class="tx-date">hace 18min</div>
+            <div class="tx-actions">
+                <button class="btn-view-tx">Ver</button>
+                <button class="btn-approve">Aprobar</button>
+                <button class="btn-reject-tx">✗</button>
+            </div>
+        </div>
+        <div class="tx-row">
+            <div class="tx-id">#TX-4517</div>
+            <div><strong>Ramón S.</strong> <span style="color:var(--muted);font-size:11px;">@ramon.s</span></div>
+            <div style="color:var(--muted);">Transferencia</div>
+            <div class="tx-amount">$42.000</div>
+            <div class="kyc-no">!</div>
+            <div><span class="risk-high">● Alto</span></div>
+            <div class="tx-date">hace 34min</div>
+            <div class="tx-actions">
+                <button class="btn-view-tx">Ver</button>
+                <button class="btn-approve">Aprobar</button>
+                <button class="btn-reject-tx">✗</button>
+            </div>
+        </div>
+        <div class="tx-row">
+            <div class="tx-id">#TX-4516</div>
+            <div><strong>Luisa M.</strong> <span style="color:var(--muted);font-size:11px;">@luisa.m</span></div>
+            <div style="color:var(--muted);">Bitcoin</div>
+            <div class="tx-amount">$28.500</div>
+            <div class="kyc-ok">✓</div>
+            <div><span class="risk-medium">● Medio</span></div>
+            <div class="tx-date">hace 47min</div>
+            <div class="tx-actions">
+                <button class="btn-view-tx">Ver</button>
+                <button class="btn-approve">Aprobar</button>
+                <button class="btn-reject-tx">✗</button>
+            </div>
+        </div>
+        <div class="tx-row">
+            <div class="tx-id">#TX-4515</div>
+            <div><strong>Carlos V.</strong> <span style="color:var(--muted);font-size:11px;">@carlos.v</span></div>
+            <div style="color:var(--muted);">CBU Galicia</div>
+            <div class="tx-amount">$6.800</div>
+            <div class="kyc-ok">✓</div>
+            <div><span class="risk-low">● Bajo</span></div>
+            <div class="tx-date">hace 1h 2min</div>
+            <div class="tx-actions">
+                <button class="btn-view-tx">Ver</button>
+                <button class="btn-approve">Aprobar</button>
+                <button class="btn-reject-tx">✗</button>
+            </div>
+        </div>
+    </div>
 </div>

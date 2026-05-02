@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:019de437-887b-721b-b1fa-8d84ba9f7753.claudeusercontent.com)",
+      "Bash(php artisan *)",
+      "Bash(php -r \"require 'vendor/autoload.php';\")",
+      "Bash(php -l \"app/Livewire/Users/UsersIndex.php\")"
+    ]
+  }
+}

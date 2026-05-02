@@ -8,6 +8,8 @@ class Line extends Model
 {
     protected $fillable = [
         'name',
+        'type',
+        'phone',
         'icon',
         'description',
         'status',
@@ -18,15 +20,5 @@ class Line extends Model
         'whatsapp_channel',
         'facebook',
         'instagram',
-    ];
-}
-
-class Setting extends Model
-{
-    protected $table = 'settings';
-
-    protected $fillable = [
-        'key',
-        'value',
     ];
 }

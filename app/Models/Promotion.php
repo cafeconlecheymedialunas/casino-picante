@@ -11,6 +11,13 @@ class Promotion extends Model
         'description',
         'code',
         'icon',
+        'type',
+        'bonus_percent',
+        'bonus_amount',
+        'min_deposit',
+        'max_bonus',
+        'is_recurring',
+        'recurring_days',
         'start_date',
         'end_date',
         'status',
@@ -21,6 +28,12 @@ class Promotion extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'lines' => 'array',
+        'recurring_days' => 'array',
+        'is_recurring' => 'boolean',
+        'bonus_percent' => 'decimal:2',
+        'bonus_amount' => 'decimal:2',
+        'min_deposit' => 'decimal:2',
+        'max_bonus' => 'decimal:2',
     ];
 
     public function getStatusAttribute()

@@ -83,6 +83,59 @@ class DatabaseSeeder extends Seeder
             Ticket::create($ticket);
         }
 
+        // Create roles
+        Role::create([
+            'name' => 'Super Admin',
+            'description' => 'Acceso total al sistema',
+            'permissions' => [
+                'dashboard' => 'delete',
+                'usuarios' => 'delete',
+                'agentes' => 'delete',
+                'roles' => 'delete',
+                'promociones' => 'delete',
+                'lineas' => 'delete',
+                'tickets' => 'delete',
+                'novedades' => 'delete',
+                'ajustes' => 'delete',
+                'caja' => 'delete',
+                'bonos' => 'delete',
+                'juegos' => 'delete',
+                'banners' => 'delete',
+                'reportes' => 'delete',
+                'logs' => 'delete',
+            ],
+            'is_active' => true,
+        ]);
+
+        Role::create([
+            'name' => 'Gerente',
+            'description' => 'Gestión de agentes y reportes',
+            'permissions' => [
+                'dashboard' => 'read',
+                'usuarios' => 'edit',
+                'agentes' => 'edit',
+                'roles' => 'read',
+                'promociones' => 'edit',
+                'lineas' => 'read',
+                'tickets' => 'edit',
+                'novedades' => 'edit',
+                'reportes' => 'read',
+            ],
+            'is_active' => true,
+        ]);
+
+        Role::create([
+            'name' => 'Agente',
+            'description' => 'Soporte y atención al cliente',
+            'permissions' => [
+                'dashboard' => 'read',
+                'usuarios' => 'read',
+                'tickets' => 'edit',
+                'novedades' => 'read',
+            ],
+            'is_active' => true,
+        ]);
+
         // Create agents (parent)
         $parentAgent = Agent::create([
             'name' => 'Martin Rios',

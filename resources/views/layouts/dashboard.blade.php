@@ -95,6 +95,65 @@
         @media (max-width: 768px) {
             .sidebar { display: none; }
         }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--black-2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--orange-2); }
+        ::-webkit-scrollbar-corner { background: var(--black-2); }
+        
+        /* Firefox */
+        * { scrollbar-width: thin; scrollbar-color: var(--orange) var(--black-2); }
+        
+        /* Main content padding */
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0;
+        }
+        .page-container {
+            padding: 24px 28px;
+            min-height: 100%;
+        }
+        
+        /* Ensure all scrollable areas have proper styling */
+        .scrollable {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* ── Global select styles ── */
+        select {
+            background-color: var(--black-3);
+            color: var(--white);
+            border: 1px solid var(--line-2);
+            border-radius: var(--r-sm);
+            padding: 8px 32px 8px 12px;
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ff6a1a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        select:hover  { border-color: var(--orange); }
+        select:focus  { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,106,26,0.15); }
+
+        option {
+            background-color: #1a0d0d;
+            color: var(--white);
+            padding: 8px 12px;
+        }
+        option:checked  { background-color: rgba(255,106,26,0.25); color: var(--orange-2); }
+        option:disabled { color: var(--muted-2); }
+        option[value=""] { color: var(--muted-2); }
     </style>
 </head>
 <body>
@@ -109,52 +168,61 @@
             </div>
             
             <div class="sidebar-section">DASHBOARD</div>
-            <a href="{{ route('dashboard') }}" class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">◐</span> Overview
             </a>
-            <a href="{{ route('users.index') }}" class="sidebar-item {{ request()->routeIs('users.index') ? 'active' : '' }}">
+            <a href="{{ route('users.index') }}" wire:navigate class="sidebar-item {{ request()->routeIs('users.index') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">◍</span> Usuarios
             </a>
-            <a href="{{ route('agentes') }}" class="sidebar-item {{ request()->routeIs('agentes') ? 'active' : '' }}">
+            <a href="{{ route('agentes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('agentes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">⌘</span> Agentes
             </a>
-            
+            <a href="{{ route('roles') }}" wire:navigate class="sidebar-item {{ request()->routeIs('roles') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">🔐</span> Roles
+            </a>
+
             <div class="sidebar-section">CONTENIDO</div>
-            <a href="{{ route('promociones') }}" class="sidebar-item {{ request()->routeIs('promociones') ? 'active' : '' }}">
+            <a href="{{ route('promociones') }}" wire:navigate class="sidebar-item {{ request()->routeIs('promociones') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✦</span> Promociones
             </a>
-            <a href="{{ route('novedades') }}" class="sidebar-item {{ request()->routeIs('novedades') ? 'active' : '' }}">
+            <a href="{{ route('novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('novedades') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✎</span> Novedades
             </a>
-            <a href="{{ route('lineas') }}" class="sidebar-item {{ request()->routeIs('lineas') ? 'active' : '' }}">
+            <a href="{{ route('lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('lineas') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">☎</span> Líneas & Redes
             </a>
-            <a href="{{ route('tickets') }}" class="sidebar-item {{ request()->routeIs('tickets') ? 'active' : '' }}">
+            <a href="{{ route('tickets') }}" wire:navigate class="sidebar-item {{ request()->routeIs('tickets') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✉</span> Tickets
             </a>
-            <a href="{{ route('ajustes') }}" class="sidebar-item {{ request()->routeIs('ajustes') ? 'active' : '' }}">
+            <a href="{{ route('ajustes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('ajustes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">⚙</span> Ajustes
             </a>
-            
+
             <div class="sidebar-section">OPERACIÓN</div>
-            <a href="{{ route('caja') }}" class="sidebar-item {{ request()->routeIs('caja') ? 'active' : '' }}">
+            <a href="{{ route('caja') }}" wire:navigate class="sidebar-item {{ request()->routeIs('caja') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">💰</span> Caja / Pagos
             </a>
-            <a href="{{ route('bonos') }}" class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
+            <a href="{{ route('bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">🎁</span> Bonos & VIP
             </a>
-            <a href="{{ route('juegos') }}" class="sidebar-item {{ request()->routeIs('juegos') ? 'active' : '' }}">
+            <a href="{{ route('juegos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('juegos') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">🎰</span> Catálogo de juegos
             </a>
-            <a href="{{ route('banners') }}" class="sidebar-item {{ request()->routeIs('banners') ? 'active' : '' }}">
+            <a href="{{ route('banners') }}" wire:navigate class="sidebar-item {{ request()->routeIs('banners') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">📢</span> Banners & Notif.
             </a>
-            
+            <a href="{{ route('sorteos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('sorteos') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">🎯</span> Sorteos
+            </a>
+            <a href="{{ route('user-bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('user-bonos') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">🎫</span> Bonos Usuarios
+            </a>
+
             <div class="sidebar-section">REPORTES</div>
-            <a href="{{ route('reportes') }}" class="sidebar-item {{ request()->routeIs('reportes') ? 'active' : '' }}">
+            <a href="{{ route('reportes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('reportes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">📊</span> Reportes
             </a>
-            <a href="{{ route('logs') }}" class="sidebar-item {{ request()->routeIs('logs') ? 'active' : '' }}">
+            <a href="{{ route('logs') }}" wire:navigate class="sidebar-item {{ request()->routeIs('logs') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">📋</span> Logs de actividad
             </a>
             
@@ -169,7 +237,9 @@
         </aside>
         
         <main class="main">
-            {{ $slot }}
+            <div class="main-content">
+                {{ $slot }}
+            </div>
         </main>
     </div>
     

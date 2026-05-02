@@ -11,7 +11,7 @@ class AgentPermission extends Model
     protected $fillable = [
         'agent_id',
         'section',
-        'permission',
+        'level',
     ];
 
     public $timestamps = false;

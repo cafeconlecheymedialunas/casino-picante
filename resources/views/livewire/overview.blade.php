@@ -1,197 +1,421 @@
-<div>
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">OVERVIEW</h1>
-            <p class="page-subtitle">Resumen general · {{ now()->format('d M Y') }}</p>
+<div class="page-container">
+<style>
+    .ov-page-title { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .ov-page-sub   { font-size: 12px; color: var(--muted-2); margin-bottom: 20px; }
+
+    /* Alert bar */
+    .alert-bar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
+    .alert-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    }
+    .alert-row.danger  { background: rgba(255,71,87,0.1);  border: 1px solid rgba(255,71,87,0.3);  color: #ff4757; }
+    .alert-row.warning { background: rgba(255,179,71,0.08); border: 1px solid rgba(255,179,71,0.28); color: var(--warn); }
+    .alert-row.info    { background: rgba(255,106,26,0.07); border: 1px solid rgba(255,106,26,0.2); color: var(--orange-2); }
+    .alert-row a { color: inherit; font-weight: 800; text-decoration: underline; margin-left: auto; white-space: nowrap; }
+
+    /* Section header */
+    .mod-section {
+        display: flex; align-items: center; gap: 10px;
+        margin: 28px 0 10px;
+    }
+    .mod-section-label {
+        font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+        color: var(--orange); white-space: nowrap;
+    }
+    .mod-section-line {
+        flex: 1; height: 1px; background: var(--line);
+    }
+    .mod-section-link {
+        font-size: 11px; color: var(--muted-2); text-decoration: none; font-weight: 600;
+        white-space: nowrap;
+    }
+    .mod-section-link:hover { color: var(--orange); }
+
+    /* KPI grid */
+    .kpi-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .kpi-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+    .kpi {
+        background: linear-gradient(180deg, #170b0b, #0f0707);
+        border: 1px solid var(--line); border-radius: 14px;
+        padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;
+        position: relative; overflow: hidden;
+    }
+    .kpi.kpi-urgent { border-color: rgba(255,71,87,0.4); }
+    .kpi.kpi-good   { border-color: rgba(37,196,107,0.3); }
+    .kpi.kpi-warn   { border-color: rgba(255,179,71,0.3); }
+
+    /* module chip in top-right */
+    .kpi-mod {
+        position: absolute; top: 10px; right: 12px;
+        font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+        color: var(--muted-2); background: rgba(255,255,255,0.04);
+        padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line);
+        text-transform: uppercase;
+    }
+
+    .kpi-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+        color: var(--muted-2); text-transform: uppercase;
+        padding-right: 56px; /* avoid overlap with mod chip */
+    }
+    .kpi-value {
+        font-family: var(--font-display); font-size: 38px; line-height: 1;
+        color: var(--white);
+    }
+    .kpi-value.c-red    { color: #ff4757; }
+    .kpi-value.c-orange { color: var(--orange); }
+    .kpi-value.c-green  { color: var(--good); }
+    .kpi-value.c-warn   { color: var(--warn); }
+    .kpi-value.c-muted  { color: var(--muted-2); }
+
+    /* descriptive subline — full sentence */
+    .kpi-desc {
+        font-size: 11px; color: var(--muted-2); line-height: 1.4;
+        margin-top: 2px;
+    }
+    .kpi-desc .hi   { color: var(--white); font-weight: 700; }
+    .kpi-desc .up   { color: var(--good); font-weight: 700; }
+    .kpi-desc .down { color: #ff4757; font-weight: 700; }
+    .kpi-desc .warn { color: var(--warn); font-weight: 700; }
+
+    /* Tables row */
+    .tables-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 4px; }
+    .ov-card { background: linear-gradient(180deg, #170b0b, #0f0707); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .ov-card-head {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px 16px; border-bottom: 1px solid var(--line);
+    }
+    .ov-card-title { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; color: var(--muted); }
+    .ov-card-mod   { font-size: 9px; color: var(--muted-2); background: rgba(255,255,255,0.04); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); }
+    .ov-card-link  { font-size: 11px; color: var(--orange); text-decoration: none; font-weight: 700; }
+    .ov-card-link:hover { text-decoration: underline; }
+
+    .row-item {
+        display: grid; align-items: center; gap: 10px;
+        padding: 9px 16px; border-bottom: 1px solid var(--line); font-size: 12px;
+    }
+    .row-item:last-child { border-bottom: none; }
+    .row-users { grid-template-columns: 30px 1fr 72px; }
+    .row-ticket { grid-template-columns: 1fr 64px 66px; }
+
+    .r-avatar {
+        width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--orange), var(--amber));
+        display: flex; align-items: center; justify-content: center;
+        color: #190702; font-weight: 800; font-size: 10px;
+    }
+    .r-name  { font-weight: 600; font-size: 12px; }
+    .r-meta  { font-size: 10px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .r-time  { font-size: 10px; color: var(--muted-2); text-align: right; }
+
+    .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+    .badge-active   { background: rgba(37,196,107,0.12); color: var(--good); }
+    .badge-blocked  { background: rgba(255,71,87,0.12);  color: #ff4757; }
+    .badge-pending  { background: rgba(255,179,71,0.12); color: var(--warn); }
+    .badge-open     { background: rgba(255,106,26,0.12); color: var(--orange); }
+    .badge-stale    { background: rgba(255,71,87,0.12);  color: #ff4757; }
+
+    .t-subject { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-user    { font-size: 10px; color: var(--muted-2); }
+
+    .empty-state { padding: 22px 16px; font-size: 12px; color: var(--muted-2); text-align: center; }
+</style>
+
+<div class="ov-page-title">DASHBOARD</div>
+<div class="ov-page-sub">Panel de control · {{ now()->format('d \d\e F Y') }}</div>
+
+{{-- ALERTS --}}
+@if(count($alerts) > 0)
+<div class="alert-bar">
+    @foreach($alerts as $a)
+    <div class="alert-row {{ $a['type'] }}">
+        {{ $a['icon'] }} {{ $a['msg'] }}
+        <a href="{{ route($a['route']) }}" wire:navigate>{{ $a['link'] }}</a>
+    </div>
+    @endforeach
+</div>
+@endif
+
+{{-- ── USUARIOS ── --}}
+<div class="mod-section">
+    <span class="mod-section-label">USUARIOS</span>
+    <div class="mod-section-line"></div>
+    <a href="{{ route('users.index') }}" wire:navigate class="mod-section-link">Ir al módulo →</a>
+</div>
+<div class="kpi-grid-4">
+    <div class="kpi {{ $users['todayNew'] > 0 ? 'kpi-good' : '' }}">
+        <span class="kpi-mod">users</span>
+        <div class="kpi-label">Registros hoy</div>
+        <div class="kpi-value {{ $users['todayNew'] > 0 ? 'c-green' : 'c-muted' }}">{{ $users['todayNew'] }}</div>
+        <div class="kpi-desc">
+            @if($users['vsYesterday'] > 0)
+                <span class="up">▲ {{ $users['vsYesterday'] }}%</span> más que ayer
+                (<span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos usuarios ayer)
+            @elseif($users['vsYesterday'] < 0)
+                <span class="down">▼ {{ abs($users['vsYesterday']) }}%</span> menos que ayer
+                (<span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos usuarios ayer)
+            @else
+                Igual que ayer — <span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos usuarios
+            @endif
         </div>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-label">Usuarios totales</div>
-            <div class="stat-value">{{ number_format($metrics['totalUsers']) }}</div>
-            <div class="stat-change {{ $metrics['usersGrowth'] >= 0 ? 'positive' : 'negative' }}">
-                {{ $metrics['usersGrowth'] >= 0 ? '▲' : '▼' }} {{ abs($metrics['usersGrowth']) }}% vs yesterday
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">📅</div>
-            <div class="stat-label">Registros hoy</div>
-            <div class="stat-value">{{ $metrics['todayUsers'] }}</div>
-            <div class="stat-change">▲ +{{ $metrics['todayUsers'] - ($metrics['weekUsers'] / 7) }} vs avg</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🎁</div>
-            <div class="stat-label">Promos activas</div>
-            <div class="stat-value">{{ $metrics['activePromos'] }}</div>
-            <div class="stat-change neutral">{{ $metrics['totalPromos'] }} totales</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">🎫</div>
-            <div class="stat-label">Tickets abiertos</div>
-            <div class="stat-value">{{ $metrics['openTickets'] }}</div>
-            <div class="stat-change neutral">Tickets sin atender</div>
+    <div class="kpi">
+        <span class="kpi-mod">users</span>
+        <div class="kpi-label">Nuevos esta semana</div>
+        <div class="kpi-value c-orange">{{ $users['weekNew'] }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $users['weekNew'] }}</span> nuevos usuarios esta semana ·
+            <span class="hi">{{ $users['monthNew'] }}</span> este mes
+            @if($users['vsLastMonth'] > 0)
+                (<span class="up">▲ {{ $users['vsLastMonth'] }}%</span> vs mes anterior)
+            @elseif($users['vsLastMonth'] < 0)
+                (<span class="down">▼ {{ abs($users['vsLastMonth']) }}%</span> vs mes anterior)
+            @endif
         </div>
     </div>
 
-    <div class="grid-2">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">ÚLTIMOS REGISTROS</h3>
-                <a href="{{ route('users.index') }}" class="card-link">Ver todos →</a>
-            </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Línea</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($recentUsers as $user)
-                    <tr>
-                        <td>{{ $user->name }}</td>
-                        <td><span class="line-badge">L1</span></td>
-                        <td>
-                            @if($user->email_verified_at)
-                            <span class="status-badge active">VERIFICADO</span>
-                            @else
-                            <span class="status-badge pending">PENDIENTE</span>
-                            @endif
-                        </td>
-                        <td>{{ $user->created_at->diffForHumans() }}</td>
-                    </tr>
-                    @endforeach
-                    @if($recentUsers->isEmpty())
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: var(--muted);">Sin registros recientes</td>
-                    </tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
-
-        <div>
-            <div class="card" style="margin-bottom: 14px;">
-                <div class="card-header">
-                    <h3 class="card-title">MÉTRICAS</h3>
-                </div>
-                <div class="mini-stats">
-                    <div class="mini-stat">
-                        <div class="mini-stat-label">Depósitos hoy</div>
-                        <div class="mini-stat-value">${{ number_format($metrics['depositsToday']) }}</div>
-                    </div>
-                    <div class="mini-stat">
-                        <div class="mini-stat-label">Retiros hoy</div>
-                        <div class="mini-stat-value">${{ number_format($metrics['withdrawalsToday']) }}</div>
-                    </div>
-                    <div class="mini-stat">
-                        <div class="mini-stat-label">Jugadas</div>
-                        <div class="mini-stat-value">{{ number_format($metrics['playsToday']) }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">ACCIONES RÁPIDAS</h3>
-                </div>
-                <div class="quick-actions">
-                    <div class="quick-action">
-                        <span>Promo activa</span>
-                        <strong style="color: var(--good);">● {{ $metrics['activePromos'] }}</strong>
-                    </div>
-                    <div class="quick-action">
-                        <span>Líneas activas</span>
-                        <strong style="color: var(--good);">● 6</strong>
-                    </div>
-                    <div class="quick-action">
-                        <span>Usuarios online</span>
-                        <strong>{{ number_format($metrics['onlineUsers']) }}</strong>
-                    </div>
-                    <div class="quick-action">
-                        <span>Tickets sin atender</span>
-                        <strong style="color: var(--warn);">{{ $metrics['openTickets'] }}</strong>
-                    </div>
-                </div>
-            </div>
+    <div class="kpi">
+        <span class="kpi-mod">users</span>
+        <div class="kpi-label">Usuarios activos</div>
+        <div class="kpi-value c-green">{{ number_format($users['active']) }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ number_format($users['active']) }}</span> usuarios activos
+            de <span class="hi">{{ number_format($users['total']) }}</span> registrados en total
         </div>
     </div>
 
-    <style>
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-        }
-        .page-title {
-            font-family: var(--font-display);
-            font-size: 36px;
-            color: var(--white);
-            margin: 0;
-        }
-        .page-subtitle {
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 2px;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            padding: 0 28px 28px;
-        }
-        @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 640px) { .stats-grid { grid-template-columns: 1fr; } }
-        .stat-card {
-            padding: 18px;
-            background: linear-gradient(180deg, #170b0b 0%, #0f0707 100%);
-            border: 1px solid var(--line);
-            border-radius: var(--r-lg);
-        }
-        .stat-icon { font-size: 24px; margin-bottom: 8px; }
-        .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
-        .stat-value { font-family: var(--font-display); font-size: 38px; margin-top: 8px; }
-        .stat-change { font-size: 11px; color: var(--good); margin-top: 6px; }
-        .stat-change.positive { color: var(--good); }
-        .stat-change.negative { color: #ff4757; }
-        .stat-change.neutral { color: var(--muted); }
-        .grid-2 {
-            padding: 0 28px 28px;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 14px;
-        }
-        @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; } }
-        .card {
-            padding: 22px;
-            background: linear-gradient(180deg, #170b0b 0%, #0f0707 100%);
-            border: 1px solid var(--line);
-            border-radius: var(--r-lg);
-        }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .card-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 0.02em; margin: 0; }
-        .card-link { font-size: 11px; color: var(--orange); font-weight: 700; text-decoration: none; }
-        .card-link:hover { text-decoration: underline; }
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th { text-align: left; padding: 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
-        .data-table td { padding: 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
-        .data-table tr:hover td { background: rgba(255,255,255,0.02); }
-        .status-badge { padding: 4px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; }
-        .status-badge.active { background: rgba(37,196,107,0.15); color: var(--good); }
-        .status-badge.pending { background: rgba(255,179,71,0.15); color: var(--warn); }
-        .line-badge { padding: 2px 6px; border-radius: 4px; background: rgba(255,106,26,0.12); color: var(--orange); font-size: 10px; font-weight: 700; }
-        .mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .mini-stat { padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.03); }
-        .mini-stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; }
-        .mini-stat-value { font-family: var(--font-display); font-size: 24px; margin-top: 4px; }
-        .quick-actions { display: grid; gap: 8px; }
-        .quick-action { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); }
-        .quick-action span { color: var(--muted); font-size: 13px; }
-        .quick-action strong { font-size: 13px; }
-    </style>
+    <div class="kpi {{ $users['blocked'] > 0 ? 'kpi-urgent' : '' }}">
+        <span class="kpi-mod">users</span>
+        <div class="kpi-label">Usuarios bloqueados</div>
+        <div class="kpi-value {{ $users['blocked'] > 0 ? 'c-red' : 'c-muted' }}">{{ $users['blocked'] }}</div>
+        <div class="kpi-desc">
+            <span class="{{ $users['blocked'] > 0 ? 'down' : 'neu' }}">{{ $users['blocked'] }}</span> usuarios bloqueados ·
+            <span class="up">{{ number_format($users['active']) }}</span> activos de <span class="hi">{{ number_format($users['total']) }}</span> totales
+        </div>
+    </div>
+</div>
+
+{{-- ── TICKETS ── --}}
+<div class="mod-section">
+    <span class="mod-section-label">TICKETS DE SOPORTE</span>
+    <div class="mod-section-line"></div>
+    <a href="{{ route('tickets') }}" wire:navigate class="mod-section-link">Ir al módulo →</a>
+</div>
+<div class="kpi-grid-4">
+    <div class="kpi {{ $tickets['open'] > 0 ? 'kpi-urgent' : 'kpi-good' }}">
+        <span class="kpi-mod">tickets</span>
+        <div class="kpi-label">Tickets abiertos</div>
+        <div class="kpi-value {{ $tickets['open'] > 10 ? 'c-red' : ($tickets['open'] > 0 ? 'c-orange' : 'c-green') }}">{{ $tickets['open'] }}</div>
+        <div class="kpi-desc">
+            @if($tickets['stale'] > 0)
+                <span class="down">⚠ {{ $tickets['stale'] }} ticket{{ $tickets['stale'] > 1 ? 's' : '' }}</span> sin respuesta hace más de 2 horas
+            @else
+                Todos los tickets abiertos están siendo atendidos a tiempo
+            @endif
+        </div>
+    </div>
+
+    <div class="kpi">
+        <span class="kpi-mod">tickets</span>
+        <div class="kpi-label">En proceso ahora</div>
+        <div class="kpi-value c-orange">{{ $tickets['progress'] }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $tickets['progress'] }}</span> tickets en proceso ·
+            <span class="up">{{ $tickets['closedToday'] }}</span> tickets resueltos hoy
+        </div>
+    </div>
+
+    <div class="kpi {{ $tickets['openedToday'] > 5 ? 'kpi-warn' : '' }}">
+        <span class="kpi-mod">tickets</span>
+        <div class="kpi-label">Abiertos hoy</div>
+        <div class="kpi-value">{{ $tickets['openedToday'] }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $tickets['openedToday'] }}</span> tickets nuevos hoy ·
+            <span class="hi">{{ $tickets['weekTotal'] }}</span> nuevos esta semana
+        </div>
+    </div>
+
+    <div class="kpi {{ $tickets['resolutionRate'] >= 70 ? 'kpi-good' : '' }}">
+        <span class="kpi-mod">tickets</span>
+        <div class="kpi-label">Tasa de resolución</div>
+        <div class="kpi-value {{ $tickets['resolutionRate'] >= 70 ? 'c-green' : 'c-warn' }}">
+            {{ $tickets['resolutionRate'] }}<span style="font-size:22px;color:var(--muted-2);">%</span>
+        </div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $tickets['closed'] }}</span> tickets cerrados
+            de <span class="hi">{{ $tickets['total'] }}</span> totales registrados
+        </div>
+    </div>
+</div>
+
+{{-- ── BONOS & SORTEOS ── --}}
+<div class="mod-section">
+    <span class="mod-section-label">BONOS Y SORTEOS</span>
+    <div class="mod-section-line"></div>
+    <a href="{{ route('user-bonos') }}" wire:navigate class="mod-section-link">Ir a bonos →</a>
+</div>
+<div class="kpi-grid-4">
+    <div class="kpi {{ $bonuses['activeBonuses'] > 0 ? 'kpi-good' : '' }}">
+        <span class="kpi-mod">bonuses</span>
+        <div class="kpi-label">Bonos vigentes</div>
+        <div class="kpi-value {{ $bonuses['activeBonuses'] > 0 ? 'c-green' : 'c-muted' }}">{{ $bonuses['activeBonuses'] }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $bonuses['activeBonuses'] }}</span> bonos activos vigentes ·
+            <span class="hi">{{ $bonuses['pausedBonuses'] }}</span> pausados ·
+            <span class="hi">{{ $bonuses['totalBonuses'] }}</span> en total
+        </div>
+    </div>
+
+    <div class="kpi">
+        <span class="kpi-mod">bonus_assignments</span>
+        <div class="kpi-label">Asignaciones activas</div>
+        <div class="kpi-value c-orange">{{ $bonuses['activeAssign'] }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $bonuses['activeAssign'] }}</span> usuarios con bono activo ·
+            <span class="up">{{ $bonuses['usedAssign'] }}</span> usados ·
+            <span class="down">{{ $bonuses['expiredAssign'] }}</span> expirados
+        </div>
+    </div>
+
+    <div class="kpi {{ $bonuses['conversionRate'] >= 50 ? 'kpi-good' : 'kpi-warn' }}">
+        <span class="kpi-mod">bonus_assignments</span>
+        <div class="kpi-label">Conversión de bonos (mes)</div>
+        <div class="kpi-value {{ $bonuses['conversionRate'] >= 50 ? 'c-green' : 'c-warn' }}">
+            {{ $bonuses['conversionRate'] }}<span style="font-size:20px;color:var(--muted-2);">%</span>
+        </div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $bonuses['usedMonth'] }}</span> bonos canjeados este mes
+            (de los que vencieron o fueron usados)
+        </div>
+    </div>
+
+    <div class="kpi {{ $raffles['active'] > 0 ? 'kpi-good' : '' }}">
+        <span class="kpi-mod">raffles</span>
+        <div class="kpi-label">Sorteos</div>
+        <div class="kpi-value {{ $raffles['active'] > 0 ? 'c-green' : 'c-muted' }}">{{ $raffles['active'] + $raffles['upcoming'] }}</div>
+        <div class="kpi-desc">
+            <span class="{{ $raffles['active'] > 0 ? 'up' : 'hi' }}">{{ $raffles['active'] }}</span> sorteo{{ $raffles['active'] != 1 ? 's' : '' }} activo{{ $raffles['active'] != 1 ? 's' : '' }} ahora ·
+            <span class="hi">{{ $raffles['upcoming'] }}</span> próximos ·
+            <span class="hi">{{ $raffles['numbersActive'] }}</span> números asignados en sorteo activo
+        </div>
+    </div>
+</div>
+
+{{-- ── PROMOCIONES & CONTENIDO ── --}}
+<div class="mod-section">
+    <span class="mod-section-label">PROMOCIONES Y CONTENIDO</span>
+    <div class="mod-section-line"></div>
+    <a href="{{ route('promociones') }}" wire:navigate class="mod-section-link">Ir a promociones →</a>
+</div>
+<div class="kpi-grid-4">
+    <div class="kpi {{ $promos['active'] > 0 ? 'kpi-good' : '' }}">
+        <span class="kpi-mod">promotions</span>
+        <div class="kpi-label">Promociones activas</div>
+        <div class="kpi-value {{ $promos['active'] > 0 ? 'c-green' : 'c-muted' }}">{{ $promos['active'] }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $promos['active'] }}</span> promociones vigentes ahora ·
+            <span class="hi">{{ $promos['upcoming'] }}</span> próximas a activarse
+        </div>
+    </div>
+
+    <div class="kpi {{ $promos['expiring'] > 0 ? 'kpi-warn' : '' }}">
+        <span class="kpi-mod">promotions</span>
+        <div class="kpi-label">Por vencer (24h)</div>
+        <div class="kpi-value {{ $promos['expiring'] > 0 ? 'c-warn' : 'c-muted' }}">{{ $promos['expiring'] }}</div>
+        <div class="kpi-desc">
+            @if($promos['expiring'] > 0)
+                <span class="warn">{{ $promos['expiring'] }} promoción{{ $promos['expiring'] > 1 ? 'es' : '' }}</span> vence{{ $promos['expiring'] > 1 ? 'n' : '' }} en las próximas 24 horas
+            @else
+                Ninguna promoción vence en las próximas 24 horas
+            @endif
+        </div>
+    </div>
+
+    <div class="kpi">
+        <span class="kpi-mod">posts</span>
+        <div class="kpi-label">Publicaciones activas</div>
+        <div class="kpi-value c-orange">{{ $content['published'] }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $content['novedades'] }}</span> novedades ·
+            <span class="hi">{{ $content['carrusel'] }}</span> carrusel ·
+            <span class="hi">{{ $content['blog'] }}</span> blog publicados
+        </div>
+    </div>
+
+    <div class="kpi">
+        <span class="kpi-mod">agents</span>
+        <div class="kpi-label">Equipo de agentes</div>
+        <div class="kpi-value">{{ $agents['total'] }}</div>
+        <div class="kpi-desc">
+            <span class="up">{{ $agents['active'] }}</span> agentes activos ·
+            <span class="hi">{{ $agents['parents'] }}</span> principales ·
+            <span class="hi">{{ $agents['children'] }}</span> subordinados
+        </div>
+    </div>
+</div>
+
+{{-- ── TABLAS ── --}}
+<div class="mod-section">
+    <span class="mod-section-label">ACTIVIDAD RECIENTE</span>
+    <div class="mod-section-line"></div>
+</div>
+<div class="tables-row">
+    <div class="ov-card">
+        <div class="ov-card-head">
+            <span class="ov-card-title">ÚLTIMOS REGISTROS DE USUARIOS</span>
+            <span class="ov-card-mod">users</span>
+            <a href="{{ route('users.index') }}" wire:navigate class="ov-card-link">Ver todos →</a>
+        </div>
+        @forelse($recentUsers as $user)
+        <div class="row-item row-users">
+            <div class="r-avatar">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
+            <div>
+                <div class="r-name">{{ $user->name }}</div>
+                <div class="r-meta">{{ $user->email }}</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="r-time">{{ $user->created_at->diffForHumans(null, true) }}</div>
+                @if($user->status === 'active')
+                    <span class="badge badge-active">Activo</span>
+                @elseif($user->status === 'blocked')
+                    <span class="badge badge-blocked">Bloqueado</span>
+                @else
+                    <span class="badge badge-pending">Pendiente</span>
+                @endif
+            </div>
+        </div>
+        @empty
+        <div class="empty-state">Sin registros de usuarios aún</div>
+        @endforelse
+    </div>
+
+    <div class="ov-card">
+        <div class="ov-card-head">
+            <span class="ov-card-title">TICKETS ABIERTOS SIN RESPUESTA</span>
+            <span class="ov-card-mod">tickets</span>
+            <a href="{{ route('tickets') }}" wire:navigate class="ov-card-link">Ver todos →</a>
+        </div>
+        @forelse($urgentTickets as $ticket)
+        @php $ageHours = $ticket->created_at->diffInHours(now()); @endphp
+        <div class="row-item row-ticket">
+            <div>
+                <div class="t-subject">{{ $ticket->subject }}</div>
+                <div class="t-user">de {{ $ticket->user->name ?? 'Usuario desconocido' }}</div>
+            </div>
+            <span class="{{ $ageHours >= 2 ? 'badge badge-stale' : 'badge badge-open' }}">
+                {{ $ageHours >= 2 ? '⚠ +2h' : 'Abierto' }}
+            </span>
+            <div style="font-size:10px;color:var(--muted-2);text-align:right;">
+                hace {{ $ticket->created_at->diffForHumans(null, true) }}
+            </div>
+        </div>
+        @empty
+        <div class="empty-state">✅ Sin tickets abiertos pendientes</div>
+        @endforelse
+    </div>
+</div>
+
 </div>
