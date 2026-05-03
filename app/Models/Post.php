@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new LineScope());
+    }
+
     protected $fillable = [
         'title',
         'slug',
@@ -15,6 +21,7 @@ class Post extends Model
         'type',
         'status',
         'published_at',
+        'line_id',
     ];
 
     protected $casts = [

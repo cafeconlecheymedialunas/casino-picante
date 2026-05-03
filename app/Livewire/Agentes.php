@@ -33,8 +33,6 @@ class Agentes extends Component
 
     public $role_id = null;
 
-    public $lines = [];
-
     public $selectedRoleId = '';
 
     public $permSections = [];
@@ -65,7 +63,7 @@ class Agentes extends Component
 
     public function selectAgent($agentId)
     {
-        $this->selectedAgent = Agent::with(['permissions', 'roleModel'])->find($agentId);
+        $this->selectedAgent = Agent::with(['permissions', 'roleModel', 'activeLines'])->find($agentId);
 
         $this->permSections = [];
         $sections = ['blog', 'novedades', 'promociones', 'carrusel', 'tickets', 'usuarios', 'agentes', 'lineas', 'reportes'];
@@ -95,7 +93,6 @@ class Agentes extends Component
         $this->role = $agent->role;
         $this->parent_id = $agent->parent_id;
         $this->role_id = $agent->role_id;
-        $this->lines = $agent->lines ?? [];
         $this->password = '';
         $this->showModal = true;
     }
@@ -115,7 +112,6 @@ class Agentes extends Component
         $this->phone = '';
         $this->role = 'child';
         $this->parent_id = null;
-        $this->lines = [];
     }
 
     public function saveAgent()
@@ -144,7 +140,6 @@ class Agentes extends Component
             'role' => $this->role,
             'parent_id' => $this->role === 'child' ? $this->parent_id : null,
             'role_id' => $this->role_id,
-            'lines' => $this->lines,
         ];
 
         if ($this->password) {
@@ -203,15 +198,6 @@ class Agentes extends Component
         $this->selectedAgent = null;
     }
 
-    public function toggleLine($line)
-    {
-        if (in_array($line, $this->lines)) {
-            $this->lines = array_filter($this->lines, fn ($l) => $l !== $line);
-        } else {
-            $this->lines = array_merge($this->lines, [$line]);
-        }
-    }
-
     public function assignRole($agentId)
     {
         if (! $this->selectedRoleId) {
@@ -253,7 +239,7 @@ class Agentes extends Component
             $query = Agent::where('parent_id', $this->currentAgentId)
                 ->with(['children', 'permissions']);
         } else {
-            $query = Agent::query()->with(['children', 'permissions']);
+            $query = Agent::query()->with(['children.activeLines', 'permissions', 'activeLines']);
         }
 
         if ($this->search) {

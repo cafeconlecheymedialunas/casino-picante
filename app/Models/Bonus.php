@@ -2,14 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Bonus extends Model
 {
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new LineScope());
+    }
+
     protected $fillable = [
         'title', 'description', 'start_date', 'end_date',
         'type', 'user_id', 'status', 'created_by',
         'bonus_percent', 'bonus_amount', 'min_deposit', 'max_bonus',
+        'line_id',
     ];
 
     protected $casts = [

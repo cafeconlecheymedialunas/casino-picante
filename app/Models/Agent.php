@@ -18,12 +18,9 @@ class Agent extends Model
         'role',
         'role_id',
         'status',
-        'lines',
     ];
 
-    protected $casts = [
-        'lines' => 'array',
-    ];
+    protected $casts = [];
 
     public function parent()
     {
@@ -43,5 +40,38 @@ class Agent extends Model
     public function roleModel()
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function lineAgents()
+    {
+        return $this->hasMany(LineAgent::class);
+    }
+
+    public function lines()
+    {
+        return $this->belongsToMany(Line::class, 'line_agents')
+            ->withPivot(['role', 'is_active', 'parent_id'])
+            ->withTimestamps();
+    }
+
+    public function activeLines()
+    {
+        return $this->lines()->wherePivot('is_active', true);
+    }
+
+    public function linePermissionsFor(int $lineId): array
+    {
+        return LineAgentPermission::where('line_id', $lineId)
+            ->where('agent_id', $this->id)
+            ->pluck('permission')
+            ->toArray();
+    }
+
+    public function hasLinePermission(int $lineId, string $permission): bool
+    {
+        return LineAgentPermission::where('line_id', $lineId)
+            ->where('agent_id', $this->id)
+            ->where('permission', $permission)
+            ->exists();
     }
 }

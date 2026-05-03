@@ -6,11 +6,14 @@ use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\RafflePosition;
 use App\Models\User;
+use App\Traits\HasLinePermissions;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class Sorteos extends Component
 {
+    use HasLinePermissions;
+
     public $search = '';
     public $filterStatus = 'all';
 
@@ -143,6 +146,7 @@ class Sorteos extends Component
             $raffle = $this->editingRaffle;
             session()->flash('message', 'Sorteo actualizado');
         } else {
+            $data['line_id'] = session('active_line_id');
             $raffle = Raffle::create($data);
             session()->flash('message', 'Sorteo creado');
         }

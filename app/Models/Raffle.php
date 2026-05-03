@@ -2,13 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Raffle extends Model
 {
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new LineScope());
+    }
+
     protected $fillable = [
         'title', 'description', 'status', 'start_date', 'end_date',
-        'number_type', 'max_numbers', 'next_number',
+        'number_type', 'max_numbers', 'next_number', 'line_id',
     ];
 
     protected $casts = [

@@ -2,10 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Promotion extends Model
 {
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new LineScope());
+    }
+
     protected $fillable = [
         'title',
         'description',
@@ -21,13 +27,12 @@ class Promotion extends Model
         'start_date',
         'end_date',
         'status',
-        'lines',
+        'line_id',
     ];
 
     protected $casts = [
         'start_date' => 'datetime',
         'end_date' => 'datetime',
-        'lines' => 'array',
         'recurring_days' => 'array',
         'is_recurring' => 'boolean',
         'bonus_percent' => 'decimal:2',

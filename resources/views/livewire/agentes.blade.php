@@ -42,7 +42,7 @@
                                 {{ $parent->name }}
                                 <span class="parent-badge">PADRE</span>
                             </div>
-                            <div class="parent-role">Líneas {{ implode(', ', $parent->lines ?? []) }} · {{ $parent->children->count() }} hijos</div>
+                            <div class="parent-role">Líneas {{ $parent->activeLines->pluck('name')->implode(', ') ?: '—' }} · {{ $parent->children->count() }} hijos</div>
                         </div>
                         <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;" wire:click="selectAgent({{ $parent->id }})">Gestionar</button>
                     </div>
@@ -55,11 +55,11 @@
                         <div class="child-avatar" wire:click="selectAgent({{ $child->id }})" style="cursor:pointer">{{ strtoupper(substr($child->name, 0, 1)) }}</div>
                         <div class="child-info" wire:click="selectAgent({{ $child->id }})" style="cursor:pointer">
                             <div class="child-name">{{ $child->name }}</div>
-                            <div class="child-role">Hijo · {{ implode(', ', $child->lines ?? []) }}</div>
+                            <div class="child-role">Hijo · {{ $child->activeLines->pluck('name')->implode(', ') ?: '—' }}</div>
                         </div>
                         <div class="child-lines">
-                            @foreach($child->lines ?? [] as $line)
-                            <span class="child-line-badge">{{ $line }}</span>
+                            @foreach($child->activeLines as $line)
+                            <span class="child-line-badge">{{ $line->name }}</span>
                             @endforeach
                         </div>
                         <div class="child-perms">{{ $child->permissions->count() }} permisos activos</div>
@@ -83,15 +83,15 @@
                 <div class="perm-avatar">{{ strtoupper(substr($selectedAgent->name, 0, 1)) }}</div>
                 <div>
                     <div class="perm-name">{{ $selectedAgent->name }}</div>
-                    <div class="perm-role">Hijo de {{ $selectedAgent->parent->name ?? 'N/A' }} · Línea {{ implode(', ', $selectedAgent->lines ?? []) }}</div>
+                    <div class="perm-role">Hijo de {{ $selectedAgent->parent->name ?? 'N/A' }} · Línea {{ $selectedAgent->activeLines->pluck('name')->implode(', ') ?: '—' }}</div>
                 </div>
             </div>
             <p class="perm-desc">Definí qué puede hacer este agente en cada sección. Los cambios se aplican al toque.</p>
 
             <div class="perm-section-label">Líneas asignadas</div>
             <div class="line-buttons">
-                @forelse($selectedAgent->lines ?? [] as $line)
-                <button class="line-btn">{{ $line }}</button>
+                @forelse($selectedAgent->activeLines as $line)
+                <button class="line-btn">{{ $line->name }}</button>
                 @empty
                 <span style="color:var(--muted);font-size:12px;">Sin líneas asignadas</span>
                 @endforelse
@@ -246,16 +246,8 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Líneas (seleccionar varias)</label>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-                        @foreach(['L1','L2','L3','L4','L5','L6'] as $line)
-                        <button type="button" 
-                            class="line-btn {{ in_array($line, $lines) ? 'selected' : '' }}"
-                            wire:click="toggleLine('{{ $line }}')">
-                            {{ $line }}
-                        </button>
-                        @endforeach
-                    </div>
+                    <label>Líneas asignadas</label>
+                    <p style="font-size:12px;color:var(--muted);margin-top:6px;">La asignación de líneas se gestiona en <a href="{{ route('lineas') }}" style="color:var(--orange);">Líneas & Redes</a>.</p>
                 </div>
                 <div class="modal-actions">
                     <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>

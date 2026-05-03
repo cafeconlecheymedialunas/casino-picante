@@ -131,6 +131,7 @@ class Promociones extends Component
             $this->editingPromo->update($data);
             session()->flash('message', 'Promoción actualizada correctamente');
         } else {
+            $data['line_id'] = session('active_line_id');
             Promotion::create($data);
             session()->flash('message', 'Promoción creada correctamente');
         }

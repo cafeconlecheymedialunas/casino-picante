@@ -6,6 +6,7 @@ use App\Livewire\Banners;
 use App\Livewire\Bonos;
 use App\Livewire\Caja;
 use App\Livewire\Juegos;
+use App\Livewire\LineDetail;
 use App\Livewire\Lineas;
 use App\Livewire\Logs;
 use App\Livewire\Novedades;
@@ -23,20 +24,47 @@ Route::get('/', function () {
     return redirect('/dashboard');
 });
 
-Route::get('/dashboard', Overview::class)->name('dashboard');
-Route::get('/usuarios', UsersIndex::class)->name('users.index');
-Route::get('/agentes', Agentes::class)->name('agentes');
-Route::get('/roles', Roles::class)->name('roles');
-Route::get('/promociones', Promociones::class)->name('promociones');
-Route::get('/lineas', Lineas::class)->name('lineas');
-Route::get('/tickets', Tickets::class)->name('tickets');
-Route::get('/novedades', Novedades::class)->name('novedades');
-Route::get('/ajustes', Ajustes::class)->name('ajustes');
-Route::get('/caja', Caja::class)->name('caja');
-Route::get('/bonos', Bonos::class)->name('bonos');
-Route::get('/juegos', Juegos::class)->name('juegos');
-Route::get('/banners', Banners::class)->name('banners');
-Route::get('/reportes', Reportes::class)->name('reportes');
-Route::get('/logs', Logs::class)->name('logs');
-Route::get('/sorteos', Sorteos::class)->name('sorteos');
-Route::get('/user-bonos', UserBonos::class)->name('user-bonos');
+// Switch active line (stores in session, no full reload needed)
+Route::post('/session/line/{id}', function (int $id) {
+    session(['active_line_id' => $id]);
+    return back();
+})->name('session.line');
+
+// Dashboard – no line restriction (admin mode passes through)
+Route::middleware('line.authorize')->group(function () {
+    Route::get('/dashboard', Overview::class)->name('dashboard');
+    Route::get('/usuarios', UsersIndex::class)->name('users.index');
+    Route::get('/agentes', Agentes::class)->name('agentes');
+    Route::get('/roles', Roles::class)->name('roles');
+    Route::get('/ajustes', Ajustes::class)->name('ajustes');
+    Route::get('/reportes', Reportes::class)->name('reportes');
+    Route::get('/logs', Logs::class)->name('logs');
+
+    Route::get('/lineas', Lineas::class)->name('lineas');
+    Route::get('/lineas/{id}', LineDetail::class)->name('lineas.detail');
+
+    Route::middleware('line.authorize:promo.read')->group(function () {
+        Route::get('/promociones', Promociones::class)->name('promociones');
+    });
+
+    Route::middleware('line.authorize:novedad.read')->group(function () {
+        Route::get('/novedades', Novedades::class)->name('novedades');
+    });
+
+    Route::middleware('line.authorize:ticket.read')->group(function () {
+        Route::get('/tickets', Tickets::class)->name('tickets');
+    });
+
+    Route::middleware('line.authorize:bonus.read')->group(function () {
+        Route::get('/bonos', Bonos::class)->name('bonos');
+        Route::get('/user-bonos', UserBonos::class)->name('user-bonos');
+    });
+
+    Route::middleware('line.authorize:sorteo.read')->group(function () {
+        Route::get('/sorteos', Sorteos::class)->name('sorteos');
+    });
+
+    Route::get('/caja', Caja::class)->name('caja');
+    Route::get('/juegos', Juegos::class)->name('juegos');
+    Route::get('/banners', Banners::class)->name('banners');
+});

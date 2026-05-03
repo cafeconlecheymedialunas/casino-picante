@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'RED PICANTES Dashboard' }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -95,6 +96,23 @@
         @media (max-width: 768px) {
             .sidebar { display: none; }
         }
+
+        .sidebar-line-selector {
+            padding: 8px; margin-bottom: 8px;
+            background: rgba(255,106,26,0.06);
+            border: 1px solid rgba(255,106,26,0.2);
+            border-radius: 10px;
+        }
+        .sidebar-line-label {
+            font-size: 9px; font-weight: 800; letter-spacing: 0.16em;
+            color: var(--orange); margin-bottom: 5px; padding-left: 2px;
+        }
+        .sidebar-line-select {
+            width: 100%; background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line-2); border-radius: 6px;
+            padding: 6px 28px 6px 8px; font-size: 12px; font-weight: 700;
+            color: var(--white); cursor: pointer;
+        }
         
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -167,6 +185,37 @@
                 <span class="sidebar-logo-text">RED PICANTES</span>
             </div>
             
+            {{-- Active line selector (only shown when an agent is in session) --}}
+            @php
+                $sessionAgentId = session('active_agent_id');
+                $sessionLineId  = session('active_line_id');
+                $allLines = $sessionAgentId
+                    ? \App\Models\LineAgent::with('line')
+                        ->where('agent_id', $sessionAgentId)
+                        ->where('is_active', true)
+                        ->get()
+                        ->pluck('line')
+                    : \App\Models\Line::where('status', 'active')->get();
+            @endphp
+            @if($allLines->count() > 0)
+            <div class="sidebar-line-selector">
+                <div class="sidebar-line-label">LÍNEA ACTIVA</div>
+                <form method="POST" id="line-selector-form">
+                    @csrf
+                    <select class="sidebar-line-select" onchange="switchLine(this.value)">
+                        @foreach($allLines as $sl)
+                        <option value="{{ $sl->id }}" {{ $sessionLineId == $sl->id ? 'selected' : '' }}>
+                            {{ $sl->name }}
+                        </option>
+                        @endforeach
+                        @if(!$sessionAgentId)
+                        <option value="" {{ !$sessionLineId ? 'selected' : '' }}>Todas las líneas</option>
+                        @endif
+                    </select>
+                </form>
+            </div>
+            @endif
+
             <div class="sidebar-section">DASHBOARD</div>
             <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">◐</span> Overview
@@ -244,5 +293,18 @@
     </div>
     
     @livewireScripts
+    <script>
+        function switchLine(lineId) {
+            fetch('/session/line/' + lineId, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')
+                        ? document.querySelector('meta[name=csrf-token]').content
+                        : '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                },
+            }).then(() => window.location.reload());
+        }
+    </script>
 </body>
 </html>

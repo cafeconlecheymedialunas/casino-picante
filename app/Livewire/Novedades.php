@@ -102,6 +102,7 @@ class Novedades extends Component
             $this->editingPost->update($data);
             session()->flash('message', 'Contenido actualizado correctamente');
         } else {
+            $data['line_id'] = session('active_line_id');
             Post::create($data);
             session()->flash('message', 'Contenido creado correctamente');
         }

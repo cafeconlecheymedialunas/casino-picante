@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Line;
+use App\Models\LineAgent;
 use Livewire\Component;
 
 class Lineas extends Component
@@ -123,6 +124,13 @@ class Lineas extends Component
     {
         $lines = $this->getLines();
 
-        return view('livewire.lineas', compact('lines'))->layout('layouts.dashboard');
+        // Eager-load agent count per line to avoid N+1
+        $agentCounts = LineAgent::whereIn('line_id', $lines->pluck('id'))
+            ->where('is_active', true)
+            ->selectRaw('line_id, count(*) as total')
+            ->groupBy('line_id')
+            ->pluck('total', 'line_id');
+
+        return view('livewire.lineas', compact('lines', 'agentCounts'))->layout('layouts.dashboard');
     }
 }

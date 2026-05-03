@@ -118,6 +118,7 @@ class Bonos extends Component
             $this->editingBonus->update($data);
             session()->flash('message', 'Bono actualizado correctamente');
         } else {
+            $data['line_id'] = session('active_line_id');
             Bonus::create($data);
             session()->flash('message', 'Bono creado correctamente');
         }

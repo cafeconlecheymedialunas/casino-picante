@@ -110,12 +110,8 @@ class Roles extends Component
 
     public function deleteRole($roleId)
     {
-        $role = Role::find($roleId);
-        if ($role->agents()->count() > 0) {
-            session()->flash('error', 'No se puede eliminar un rol que tiene agentes asignados');
-
-            return;
-        }
+        $role = Role::findOrFail($roleId);
+        Agent::where('role_id', $roleId)->update(['role_id' => null]);
         $role->delete();
         session()->flash('message', 'Rol eliminado correctamente');
     }
