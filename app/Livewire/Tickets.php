@@ -14,6 +14,11 @@ class Tickets extends Component
 
     public $selectedTicket = null;
 
+    private function getCurrentAgentId(): ?int
+    {
+        return session('active_agent_id');
+    }
+
     public $newMessage = '';
 
     public function selectTicket($id)
@@ -34,11 +39,35 @@ class Tickets extends Component
 
         TicketMessage::create([
             'ticket_id' => $this->selectedTicket->id,
-            'agent_id' => 1,
+            'agent_id' => $this->getCurrentAgentId(),
             'message' => $this->newMessage,
         ]);
 
         $this->newMessage = '';
+        $this->selectedTicket = $this->selectedTicket->fresh(['messages']);
+    }
+
+    public function quickAction($type)
+    {
+        if (! $this->selectedTicket) {
+            return;
+        }
+
+        $messages = [
+            'resolved' => '✅ Ticket resuelto',
+            'waiting' => '⏳ Esperando respuesta del usuario',
+        ];
+
+        TicketMessage::create([
+            'ticket_id' => $this->selectedTicket->id,
+            'agent_id' => $this->getCurrentAgentId(),
+            'message' => $messages[$type] ?? $type,
+        ]);
+
+        if ($type === 'resolved') {
+            $this->selectedTicket->update(['status' => 'closed']);
+        }
+
         $this->selectedTicket = $this->selectedTicket->fresh(['messages']);
     }
 

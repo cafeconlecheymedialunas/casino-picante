@@ -43,6 +43,7 @@
                     <select wire:model="status" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
                         <option value="draft">Borrador</option>
                         <option value="published">Publicado</option>
+                        <option value="hidden">Oculto</option>
                     </select>
                 </div>
                 <div class="modal-actions">
@@ -62,12 +63,27 @@
 
     <div class="content-grid">
         <div>
-            <div class="tab-bar">
+<div class="tab-bar">
                 <div class="tabs">
                     <button class="tab {{ $tab === 'novedad' ? 'active' : '' }}" wire:click="setTab('novedad')">Novedades</button>
                     <button class="tab {{ $tab === 'blog' ? 'active' : '' }}" wire:click="setTab('blog')">Blog</button>
                     <button class="tab {{ $tab === 'carrusel' ? 'active' : '' }}" wire:click="setTab('carrusel')">Carrusel</button>
                 </div>
+                @if($canCreate)
+                <button class="btn-primary" style="height: 32px; padding: 0 14px; font-size: 12px;" wire:click="openCreateModal()">+ Nueva</button>
+                @endif
+            </div>
+            <div class="filter-row">
+                <div class="filter-box">
+                    <input type="text" placeholder="Buscar..." wire:model="search" class="search-input" style="width:100%;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:12px;color:var(--muted);">
+                </div>
+                <div class="status-filters">
+                    <button class="status-filter {{ $statusFilter === 'all' ? 'active' : '' }}" wire:click="setStatusFilter('all')">Todos</button>
+                    <button class="status-filter {{ $statusFilter === 'published' ? 'active' : '' }}" wire:click="setStatusFilter('published')">Publicados</button>
+                    <button class="status-filter {{ $statusFilter === 'draft' ? 'active' : '' }}" wire:click="setStatusFilter('draft')">Borradores</button>
+                    <button class="status-filter {{ $statusFilter === 'hidden' ? 'active' : '' }}" wire:click="setStatusFilter('hidden')">Ocultos</button>
+                </div>
+            </div>
                 <button class="btn-primary" style="height: 32px; padding: 0 14px; font-size: 12px;" wire:click="openCreateModal">+ Nueva</button>
             </div>
             <div class="search-box" style="margin-bottom:12px;">
@@ -177,6 +193,12 @@
         .tabs { display: flex; gap: 6px; }
         .tab { padding: 8px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--muted); border: 1px solid var(--line-2); }
         .tab.active { background: var(--orange); color: #190702; border: none; }
+        
+        .filter-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filter-box { flex: 1; min-width: 150px; }
+        .status-filters { display: flex; gap: 4px; flex-wrap: wrap; }
+        .status-filter { padding: 8px 12px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); color: var(--muted); transition: all 0.2s; }
+        .status-filter.active { background: var(--orange); color: #190702; border-color: var(--orange); }
 
         .list { display: grid; gap: 10px; }
         .list-item { padding: 12px; display: grid; grid-template-columns: 70px 1fr 90px 80px; gap: 12px; align-items: center; border-radius: 14px; cursor: pointer; transition: all 0.2s; }

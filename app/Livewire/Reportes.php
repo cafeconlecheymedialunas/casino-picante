@@ -109,14 +109,22 @@ class Reportes extends Component
     public function getAgentStats()
     {
         $total = Agent::count();
-        $parents = Agent::where('role', 'parent')->count();
-        $children = Agent::where('role', 'child')->count();
+        // Count agents who are encargados in at least one line
+        $encargados = Agent::whereHas('activeLines', function ($query) {
+            $query->where('role', 'encargado');
+        })->count();
+        // Count agents who are only miembros (no encargado roles)
+        $miembros = Agent::whereHas('activeLines', function ($query) {
+            $query->where('role', 'miembro');
+        })->whereDoesntHave('activeLines', function ($query) {
+            $query->where('role', 'encargado');
+        })->count();
         $active = Agent::where('status', 'active')->count();
 
         return [
             'total' => $total,
-            'parents' => $parents,
-            'children' => $children,
+            'encargados' => $encargados,
+            'miembros' => $miembros,
             'active' => $active,
         ];
     }

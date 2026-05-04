@@ -12,14 +12,15 @@ class LineAgentPermission extends Model
 
     // All permissions available in the system grouped by resource
     public static array $catalog = [
-        'promo'   => ['read', 'create', 'update', 'delete'],
-        'ticket'  => ['read', 'update', 'close'],
-        'line'    => ['view', 'edit.basic', 'edit.contacts', 'edit.branding'],
-        'agent'   => ['create', 'assign', 'update', 'permissions'],
-        'bonus'   => ['read', 'create', 'update'],
-        'sorteo'  => ['read', 'create', 'update', 'delete'],
-        'novedad' => ['read', 'create', 'update', 'delete'],
-        'user'    => ['read', 'update', 'block'],
+        'promo' => ['read', 'create', 'update', 'delete'],
+        'ticket' => ['read', 'update', 'close'],
+        'line' => ['view', 'edit.basic', 'edit.contacts', 'edit.branding'],
+        'agent' => ['create', 'assign', 'update', 'permissions'],
+        'bonus' => ['read', 'create', 'update'],
+        'sorteo' => ['read', 'create', 'update', 'delete'],
+        'news' => ['read', 'create', 'update', 'delete'],
+        'user' => ['read', 'update', 'block'],
+        'platform' => ['read', 'create', 'update', 'delete'],
     ];
 
     public static function allPermissions(): array
@@ -30,6 +31,7 @@ class LineAgentPermission extends Model
                 $all[] = "{$resource}.{$action}";
             }
         }
+
         return $all;
     }
 }

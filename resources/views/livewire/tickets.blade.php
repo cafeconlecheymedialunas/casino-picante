@@ -25,7 +25,7 @@
                 </div>
                 <div class="ticket-subject">{{ $ticket->subject }}</div>
                 <div class="ticket-item-footer">
-                    <span class="ticket-line">{{ $ticket->line_id ?? 'L1' }}</span>
+                    <span class="ticket-line">{{ $ticket->line_id ?? '' }}</span>
                     <span class="ticket-status {{ $ticket->status }}">
                         @if($ticket->status === 'open')● Abierto
                         @elseif($ticket->status === 'progress')● En proceso
@@ -46,7 +46,7 @@
             <div class="conv-header">
                 <div>
                     <div class="conv-title">{{ $selectedTicket->user->name ?? 'Usuario' }} · {{ $selectedTicket->subject }}</div>
-                    <div class="conv-meta">{{ $selectedTicket->line_id ?? 'L1' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->created_at->diffForHumans() }}</div>
+                    <div class="conv-meta">{{ $selectedTicket->line_id ?? '' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->priority }} · {{ $selectedTicket->created_at->diffForHumans() }}</div>
                 </div>
                 <div class="conv-actions">
                     <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;" wire:click="updateStatus('progress')">En proceso</button>
@@ -70,8 +70,8 @@
 
             <div class="conv-input">
                 <div class="quick-actions">
-                    <button class="btn-ghost quick-btn">👍 Resuelto</button>
-                    <button class="btn-ghost quick-btn">⏳ Esperando usuario</button>
+                    <button class="btn-ghost quick-btn" wire:click="quickAction('resolved')">👍 Resuelto</button>
+                    <button class="btn-ghost quick-btn" wire:click="quickAction('waiting')">⏳ Esperando usuario</button>
                 </div>
                 <div class="input-box">
                     <input type="text" class="input-text" placeholder="Escribí tu respuesta…" wire:model="newMessage" wire:keydown.enter="sendMessage">

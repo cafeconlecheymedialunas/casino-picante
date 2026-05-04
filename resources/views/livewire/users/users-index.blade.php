@@ -219,10 +219,10 @@
 {{-- PAGE HEADER --}}
 <div class="page-header">
     <div>
-        <h1 class="page-title">USUARIOS</h1>
+        <h1 class="page-title">CLIENTES</h1>
         <p class="page-subtitle">Gestión completa de usuarios registrados en la plataforma</p>
     </div>
-    <button wire:click="openCreateModal" class="btn-primary">+ Nuevo usuario</button>
+    <button wire:click="openCreateModal" class="btn-primary">+ Nuevo cliente</button>
 </div>
 
 {{-- STATS --}}
@@ -237,7 +237,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon">✅</div>
-        <div class="stat-label">Usuarios activos</div>
+        <div class="stat-label">Clientes activos</div>
         <div class="stat-value c-good">{{ number_format($metrics['active']) }}</div>
         <div class="stat-sub">{{ round($metrics['active'] / max($metrics['total'],1) * 100) }}% del total</div>
     </div>
@@ -266,7 +266,7 @@
 {{-- TABLE CARD --}}
 <div class="table-card">
     <div class="tc-header">
-        <span class="tc-title">USUARIOS REGISTRADOS</span>
+        <span class="tc-title">CLIENTES REGISTRADOS</span>
         <div class="tc-filters">
             <div class="search-wrap">
                 <span class="search-icon">🔍</span>

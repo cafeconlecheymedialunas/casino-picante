@@ -9,7 +9,7 @@ class Promotion extends Model
 {
     protected static function booted(): void
     {
-        static::addGlobalScope(new LineScope());
+        static::addGlobalScope(new LineScope);
     }
 
     protected $fillable = [
@@ -28,6 +28,7 @@ class Promotion extends Model
         'end_date',
         'status',
         'line_id',
+        'platform_id',
     ];
 
     protected $casts = [
@@ -41,9 +42,9 @@ class Promotion extends Model
         'max_bonus' => 'decimal:2',
     ];
 
-    public function getStatusAttribute()
+    public function getComputedStatusAttribute()
     {
-        if ($this->attributes['status'] === 'draft') {
+        if ($this->status === 'draft') {
             return 'draft';
         }
 
@@ -51,10 +52,15 @@ class Promotion extends Model
         if ($this->start_date > $now) {
             return 'upcoming';
         }
-        if ($this->end_date < $now) {
+        if ($this->end_date && $this->end_date < $now) {
             return 'ended';
         }
 
         return 'active';
+    }
+
+    public function platform()
+    {
+        return $this->belongsTo(Platform::class);
     }
 }

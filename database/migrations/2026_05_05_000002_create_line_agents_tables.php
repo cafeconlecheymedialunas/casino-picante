@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('line_id')->constrained()->cascadeOnDelete();
             $table->foreignId('agent_id')->constrained()->cascadeOnDelete();
-            $table->enum('role', ['manager', 'agent'])->default('agent');
+            $table->enum('role', ['encargado', 'miembro'])->default('miembro');
             $table->boolean('is_active')->default(true);
             $table->foreignId('parent_id')->nullable()->constrained('agents')->nullOnDelete();
             $table->timestamps();

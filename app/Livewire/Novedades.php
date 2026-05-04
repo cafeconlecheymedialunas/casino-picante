@@ -3,11 +3,16 @@
 namespace App\Livewire;
 
 use App\Models\Post;
+use App\Traits\HasLinePermissions;
 use Livewire\Component;
 
 class Novedades extends Component
 {
+    use HasLinePermissions;
+
     public $tab = 'novedad';
+
+    public $statusFilter = 'all';
 
     public $selectedPost = null;
 
@@ -33,9 +38,34 @@ class Novedades extends Component
         'title' => 'required|min:3',
         'content' => 'nullable',
         'excerpt' => 'nullable',
-        'status' => 'required|in:draft,published',
+        'status' => 'required|in:draft,published,hidden',
         'type' => 'required|in:novedad,blog,carrusel',
     ];
+
+    public function canCreate(): bool
+    {
+        return $this->hasLinePermission('news.create');
+    }
+
+    public function canUpdate(): bool
+    {
+        return $this->hasLinePermission('news.update');
+    }
+
+    public function canDelete(): bool
+    {
+        return $this->hasLinePermission('news.delete');
+    }
+
+    public function canRead(): bool
+    {
+        return $this->hasLinePermission('news.read');
+    }
+
+    public function setStatusFilter($status)
+    {
+        $this->statusFilter = $status;
+    }
 
     public function setTab($tab)
     {
@@ -51,6 +81,7 @@ class Novedades extends Component
 
     public function openCreateModal()
     {
+        $this->checkLinePermission('news.create');
         $this->resetForm();
         $this->type = $this->tab;
         $this->showModal = true;
@@ -58,6 +89,7 @@ class Novedades extends Component
 
     public function openEditModal($postId)
     {
+        $this->checkLinePermission('news.update');
         $post = Post::find($postId);
         $this->editingPost = $post;
         $this->title = $post->title;
@@ -112,6 +144,7 @@ class Novedades extends Component
 
     public function deletePost($postId)
     {
+        $this->checkLinePermission('news.delete');
         Post::find($postId)->delete();
 
         if ($this->selectedPost && $this->selectedPost->id === $postId) {
@@ -123,16 +156,23 @@ class Novedades extends Component
 
     public function toggleStatus($postId)
     {
+        $this->checkLinePermission('news.update');
         $post = Post::find($postId);
         $post->update(['status' => $post->status === 'published' ? 'draft' : 'published']);
     }
 
     public function getPosts()
     {
+        $this->checkLinePermission('news.read');
+
         $query = Post::query();
 
         if ($this->tab !== 'all') {
             $query->where('type', $this->tab);
+        }
+
+        if ($this->statusFilter !== 'all') {
+            $query->where('status', $this->statusFilter);
         }
 
         if ($this->search) {
@@ -146,6 +186,12 @@ class Novedades extends Component
     {
         $posts = $this->getPosts();
 
-        return view('livewire.novedades', compact('posts'))->layout('layouts.dashboard');
+        return view('livewire.novedades', [
+            'posts' => $posts,
+            'canCreate' => $this->canCreate(),
+            'canUpdate' => $this->canUpdate(),
+            'canDelete' => $this->canDelete(),
+            'canRead' => $this->canRead(),
+        ])->layout('layouts.dashboard');
     }
 }

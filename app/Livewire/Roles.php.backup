@@ -30,7 +30,7 @@ class Roles extends Component
         'novedades' => 'Novedades',
         'lineas' => 'Líneas',
         'tickets' => 'Tickets',
-        'caja' => 'Caja/Pagos',
+        'caja' => 'Caja',
         'bonos' => 'Bonos',
         'juegos' => 'Juegos',
         'banners' => 'Banners',
@@ -39,12 +39,12 @@ class Roles extends Component
         'ajustes' => 'Ajustes',
     ];
 
-    public $permissionLevels = [
-        'none' => 'Sin acceso',
-        'read' => 'Solo lectura',
-        'create' => 'Crear',
-        'edit' => 'Editar',
-        'delete' => 'Eliminar',
+    public $permissionLevels = ['none', 'read', 'create', 'edit', 'delete'];
+
+    protected $rules = [
+        'name' => 'required|min:2|unique:roles,name',
+        'description' => 'nullable|string',
+        'is_active' => 'boolean',
     ];
 
     public function openCreateModal()
@@ -79,16 +79,13 @@ class Roles extends Component
         $this->permissions = [];
     }
 
-    public function togglePermission($section, $level)
-    {
-        $this->permissions[$section] = $level;
-    }
-
     public function saveRole()
     {
-        $this->validate([
+        $rules = [
             'name' => 'required|min:2|unique:roles,name'.($this->editingRole ? ','.$this->editingRole->id : ''),
-        ]);
+        ];
+
+        $this->validate($rules);
 
         $data = [
             'name' => $this->name,
@@ -110,8 +107,7 @@ class Roles extends Component
 
     public function deleteRole($roleId)
     {
-        $role = Role::findOrFail($roleId);
-        Agent::where('role_id', $roleId)->update(['role_id' => null]);
+        $role = Role::find($roleId);
         $role->delete();
         session()->flash('message', 'Rol eliminado correctamente');
     }
@@ -122,12 +118,22 @@ class Roles extends Component
         $role->update(['is_active' => ! $role->is_active]);
     }
 
+    public function togglePerm($section, $level)
+    {
+        if ($level === 'none') {
+            unset($this->permissions[$section]);
+        } else {
+            $this->permissions[$section] = $level;
+        }
+    }
+
     public function getRoles()
     {
         $query = Role::query();
 
         if ($this->search) {
-            $query->where('name', 'like', '%'.$this->search.'%');
+            $query->where('name', 'like', '%'.$this->search.'%')
+                ->orWhere('description', 'like', '%'.$this->search.'%');
         }
 
         return $query->orderBy('name')->get();
@@ -138,7 +144,7 @@ class Roles extends Component
         return [
             'total' => Role::count(),
             'active' => Role::where('is_active', true)->count(),
-            'agents' => Agent::whereNotNull('role_id')->count(),
+            'agents_with_roles' => Agent::whereNotNull('role_id')->count(),
         ];
     }
 

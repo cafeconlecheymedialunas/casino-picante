@@ -214,23 +214,27 @@
                     </select>
                 </form>
             </div>
-            @endif
+            @endif>
+
+            <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master*') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">🎮</span> Gestión Plataformas
+            </a>
 
             <div class="sidebar-section">DASHBOARD</div>
             <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">◐</span> Overview
             </a>
-            <a href="{{ route('users.index') }}" wire:navigate class="sidebar-item {{ request()->routeIs('users.index') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">◍</span> Usuarios
+            <a href="{{ route('clientes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('clientes') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">◍</span> Clientes
             </a>
             <a href="{{ route('agentes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('agentes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">⌘</span> Agentes
             </a>
-            <a href="{{ route('roles') }}" wire:navigate class="sidebar-item {{ request()->routeIs('roles') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🔐</span> Roles
-            </a>
 
             <div class="sidebar-section">CONTENIDO</div>
+            <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">🎮</span> Plataformas
+            </a>
             <a href="{{ route('promociones') }}" wire:navigate class="sidebar-item {{ request()->routeIs('promociones') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✦</span> Promociones
             </a>
@@ -254,9 +258,7 @@
             <a href="{{ route('bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">🎁</span> Bonos & VIP
             </a>
-            <a href="{{ route('juegos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('juegos') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🎰</span> Catálogo de juegos
-            </a>
+            
             <a href="{{ route('banners') }}" wire:navigate class="sidebar-item {{ request()->routeIs('banners') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">📢</span> Banners & Notif.
             </a>

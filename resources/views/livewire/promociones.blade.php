@@ -14,82 +14,118 @@
                 <button class="modal-close" wire:click="closeModal">✕</button>
             </div>
             <form class="modal-form" wire:submit.prevent="savePromo">
-                <div class="form-group">
-                    <label>Título</label>
-                    <input type="text" placeholder="Título de la promoción" wire:model="title">
-                </div>
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <textarea placeholder="Descripción de la promoción" wire:model="description" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;min-height:80px;"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Tipo</label>
-                    <select wire:model="type" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
-                        <option value="bonus">Bono de depósito</option>
-                        <option value="deposit">Depósito</option>
-                        <option value="free_spin">Giros gratis</option>
-                        <option value="promo">Promoción general</option>
-                    </select>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>% Bono</label>
-                        <input type="number" placeholder="10" wire:model="bonus_percent">
+                <div style="display:grid;gap:14px;">
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">Título</label>
+                        <input type="text" placeholder="Título de la promoción" wire:model="title" style="width:100%;">
+                        @error('title') <span style="color:var(--bad);font-size:11px;">{{ $message }}</span> @enderror
                     </div>
-                    <div class="form-group">
-                        <label>Monto bono</label>
-                        <input type="number" placeholder="0" wire:model="bonus_amount">
+
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">Descripción</label>
+                        <textarea placeholder="Descripción de la promoción" wire:model="description" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;min-height:80px;"></textarea>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Depósito mínimo</label>
-                        <input type="number" placeholder="0" wire:model="min_deposit">
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">Código</label>
+                            <div style="display:flex;gap:6px;">
+                                <input type="text" placeholder="Opcional" wire:model="code" style="flex:1;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:10px 14px;color:var(--white);font-size:14px;">
+                                <button type="button" class="btn-ghost" wire:click="generateCode" style="padding:10px 14px;white-space:nowrap;font-size:12px;">Generar</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">Icono</label>
+                            <div style="display:flex;gap:4px;">
+                                @foreach(['🎁','🎉','🎊','💰','🎰','🔥','💎','⭐'] as $ic)
+                                <button type="button" class="line-btn {{ $icon === $ic ? 'selected' : '' }}" style="flex:1;height:42px;display:flex;align-items:center;justify-content:center;font-size:18px;border-radius:8px;"
+                                    wire:click="$set('icon', '{{ $ic }}')">{{ $ic }}</button>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Bono máximo</label>
-                        <input type="number" placeholder="0" wire:model="max_bonus">
+
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">Tipo de promoción</label>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <button type="button" class="line-btn {{ $type === 'bonus' ? 'selected' : '' }}" wire:click="$set('type', 'bonus')" style="padding:10px;border-radius:8px;font-size:13px;">💰 Bono depósito</button>
+                            <button type="button" class="line-btn {{ $type === 'free_spin' ? 'selected' : '' }}" wire:click="$set('type', 'free_spin')" style="padding:10px;border-radius:8px;font-size:13px;">🎰 Giros gratis</button>
+                            <button type="button" class="line-btn {{ $type === 'deposit' ? 'selected' : '' }}" wire:click="$set('type', 'deposit')" style="padding:10px;border-radius:8px;font-size:13px;">💳 Depósito</button>
+                            <button type="button" class="line-btn {{ $type === 'promo' ? 'selected' : '' }}" wire:click="$set('type', 'promo')" style="padding:10px;border-radius:8px;font-size:13px;">🎁 Promoción</button>
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Fecha inicio</label>
-                        <input type="date" wire:model="start_date">
+
+                    @if($type === 'bonus' || $type === 'deposit')
+                    <div style="background:rgba(255,106,26,0.06);border:1px solid rgba(255,106,26,0.2);border-radius:10px;padding:12px;">
+                        <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:10px;">CONFIGURACIÓN DE BONO</div>
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+                            <div>
+                                <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">% Bono</label>
+                                <input type="number" placeholder="10" wire:model="bonus_percent" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:8px;padding:8px 10px;color:var(--white);font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">Monto bono</label>
+                                <input type="number" placeholder="0" wire:model="bonus_amount" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:8px;padding:8px 10px;color:var(--white);font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">Dep. mínimo</label>
+                                <input type="number" placeholder="0" wire:model="min_deposit" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:8px;padding:8px 10px;color:var(--white);font-size:13px;">
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px;">Bono máx</label>
+                                <input type="number" placeholder="0" wire:model="max_bonus" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:8px;padding:8px 10px;color:var(--white);font-size:13px;">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Fecha fin</label>
-                        <input type="date" wire:model="end_date">
+                    @endif
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div>
+                            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">Fecha inicio</label>
+                            <input type="date" wire:model="start_date" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:10px 14px;color:var(--white);font-size:14px;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">Fecha fin</label>
+                            <input type="date" wire:model="end_date" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:10px 14px;color:var(--white);font-size:14px;">
+                        </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select wire:model="status" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
-                        <option value="draft">Borrador</option>
-                        <option value="published">Publicado</option>
-                    </select>
-                </div>
-                <div class="form-group" style="display:flex;align-items:center;gap:10px;">
-                    <input type="checkbox" wire:model="is_recurring" id="is_recurring" style="width:20px;height:20px;">
-                    <label for="is_recurring" style="margin:0;">Promoción recurrente</label>
-                </div>
-                @if($is_recurring)
-                <div class="form-group">
-                    <label>Días de la semana</label>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-                        @foreach(['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] as $index => $day)
-                        <button type="button" class="line-btn {{ in_array($index, $recurring_days) ? 'selected' : '' }}"
-                            wire:click="
-                                @if(in_array($index, $recurring_days))
-                                    $set('recurring_days', array_filter($recurring_days, fn($d) => $d !== {{ $index }}))
-                                @else
-                                    $set('recurring_days', array_merge($recurring_days, [{{ $index }}]))
-                                @endif
-                            ">{{ $day }}</button>
-                        @endforeach
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;">
+                        <div>
+                            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600;">Estado</label>
+                            <select wire:model="status" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:10px 14px;color:var(--white);font-size:14px;">
+                                <option value="draft">Borrador</option>
+                                <option value="published">Publicado</option>
+                                <option value="hidden">Oculto</option>
+                            </select>
+                        </div>
+                        <div style="padding-top:28px;">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted);">
+                                <input type="checkbox" wire:model="is_recurring" style="width:18px;height:18px;"> Recurrente
+                            </label>
+                        </div>
                     </div>
+
+                    @if($is_recurring)
+                    <div style="background:rgba(255,106,26,0.06);border:1px solid rgba(255,106,26,0.2);border-radius:10px;padding:12px;">
+                        <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:8px;">DÍAS DE LA SEMANA</div>
+                        <div style="display:flex;gap:4px;">
+                            @foreach(['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] as $index => $day)
+                            <button type="button" class="line-btn {{ in_array($index, $recurring_days) ? 'selected' : '' }}" style="flex:1;padding:8px;font-size:12px;border-radius:6px;"
+                                wire:click="
+                                    @if(in_array($index, $recurring_days))
+                                        $set('recurring_days', array_filter($recurring_days, fn($d) => $d !== {{ $index }}))
+                                    @else
+                                        $set('recurring_days', array_merge($recurring_days, [{{ $index }]))
+                                    @endif
+                                ">{{ $day }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                 </div>
-                @endif
-                <div class="modal-actions">
+
+                <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
                     <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>
                     <button type="submit" class="btn-primary">{{ $editingPromo ? 'Guardar' : 'Crear' }}</button>
                 </div>
@@ -122,10 +158,10 @@
                         <div class="promo-title">{{ $promo->title }}</div>
                         <div class="promo-code">{{ $promo->code }}</div>
                     </div>
-                    <div class="promo-status {{ $promo->status }}">
-                        @if($promo->status === 'active')● Activa
-                        @elseif($promo->status === 'upcoming')● Próxima
-                        @elseif($promo->status === 'ended')● Finalizada
+                    <div class="promo-status {{ $promo->computedStatus }}">
+                        @if($promo->computedStatus === 'active')● Activa
+                        @elseif($promo->computedStatus === 'upcoming')● Próxima
+                        @elseif($promo->computedStatus === 'ended')● Finalizada
                         @else● Borrador
                         @endif
                     </div>
@@ -141,10 +177,10 @@
                         Recurrente
                         @endif
                     </div>
-                    <div class="promo-actions">
-                        <button class="btn-ghost promo-btn">✎</button>
-                        <button class="btn-ghost promo-btn">···</button>
-                    </div>
+                <div class="promo-actions">
+                    <button class="btn-ghost promo-btn" wire:click.stop="openEditModal({{ $promo->id }})">✎</button>
+                    <button class="btn-ghost promo-btn" wire:click.stop="deletePromo({{ $promo->id }})">🗑</button>
+                </div>
                 </div>
                 @empty
                 <div class="empty-state">
@@ -156,48 +192,59 @@
 
         <div class="edit-panel">
             @if($selectedPromo)
-            <div class="edit-label">EDITANDO</div>
-            <h3 class="edit-title">{{ strtoupper($selectedPromo->title) }}</h3>
+            <div style="border-bottom:1px solid var(--line-warm);padding-bottom:12px;margin-bottom:14px;">
+                <div class="edit-label">EDITANDO</div>
+                <h3 class="edit-title">{{ strtoupper($selectedPromo->title) }}</h3>
+            </div>
 
-            <div class="edit-field">
-                <div class="edit-field-label">Título</div>
-                <input type="text" class="edit-input" value="{{ $selectedPromo->title }}">
-            </div>
-            <div class="edit-field">
-                <div class="edit-field-label">Descripción</div>
-                <textarea class="edit-input tall">{{ $selectedPromo->description }}</textarea>
-            </div>
-            <div class="edit-field">
-                <div class="edit-field-label">Código promocional</div>
-                <input type="text" class="edit-input" value="{{ $selectedPromo->code }}">
-            </div>
-            <div class="edit-field edit-row">
+            <div style="display:grid;gap:12px;">
                 <div>
-                    <div class="edit-field-label">Inicio</div>
-                    <input type="datetime-local" class="edit-input" value="{{ $selectedPromo->start_date?->format('Y-m-d H:i') }}">
+                    <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Título</label>
+                    <input type="text" class="edit-input" wire:model="editTitle" style="width:100%;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:12px;color:var(--white);">
                 </div>
                 <div>
-                    <div class="edit-field-label">Fin</div>
-                    <input type="datetime-local" class="edit-input" value="{{ $selectedPromo->end_date?->format('Y-m-d H:i') }}">
+                    <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Descripción</label>
+                    <textarea class="edit-input tall" wire:model="editDescription" style="width:100%;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:12px;color:var(--white);min-height:56px;"></textarea>
+                </div>
+                <div>
+                    <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Código</label>
+                    <div style="display:flex;gap:6px;">
+                        <input type="text" class="edit-input" wire:model="editCode" style="flex:1;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:12px;color:var(--white);">
+                        <button class="btn-ghost" wire:click="generateEditCode" style="padding:8px 12px;font-size:11px;white-space:nowrap;">Generar</button>
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Icono</label>
+                    <div style="display:flex;gap:4px;">
+                        @foreach(['🎁','🎉','🎊','💰','🎰','🔥','💎','⭐'] as $ic)
+                        <button type="button" class="line-btn {{ $editIcon === $ic ? 'selected' : '' }}" style="flex:1;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:6px;"
+                            wire:click="$set('editIcon', '{{ $ic }}')">{{ $ic }}</button>
+                        @endforeach
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    <div>
+                        <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Inicio</label>
+                        <input type="datetime-local" class="edit-input" wire:model="editStartDate" style="width:100%;padding:8px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:11px;color:var(--white);">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Fin</label>
+                        <input type="datetime-local" class="edit-input" wire:model="editEndDate" style="width:100%;padding:8px;border-radius:8px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:11px;color:var(--white);">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Estado</label>
+                    <div class="state-grid">
+                        <button class="state-btn {{ $editStatus === 'draft' ? 'active' : '' }}" wire:click="updateStatus('draft')">Borrador</button>
+                        <button class="state-btn {{ $editStatus === 'published' ? 'active' : '' }}" wire:click="updateStatus('published')">Publicado</button>
+                        <button class="state-btn {{ $editStatus === 'hidden' ? 'active' : '' }}" wire:click="updateStatus('hidden')">Oculto</button>
+                    </div>
                 </div>
             </div>
-            <div class="edit-field">
-                <div class="edit-field-label">Visible en líneas</div>
-                <div class="line-grid">
-                    @foreach(['L1','L2','L3','L4','L5','L6'] as $line)
-                    <button class="line-btn {{ in_array($line, $selectedPromo->lines ?? []) ? '' : 'inactive' }}">{{ $line }}</button>
-                    @endforeach
-                </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+                <button class="btn-primary" wire:click="saveEditPanel" style="flex:1;padding:10px;font-size:12px;font-weight:700;">Guardar</button>
+                <button class="btn-ghost" wire:click="$set('selectedPromo', null)" style="padding:10px 14px;">✕</button>
             </div>
-            <div class="edit-field">
-                <div class="edit-field-label">Estado</div>
-                <div class="state-grid">
-                    <button class="state-btn {{ $selectedPromo->status === 'draft' ? 'active' : '' }}">Borrador</button>
-                    <button class="state-btn {{ $selectedPromo->status === 'published' ? 'active' : '' }}">Publicado</button>
-                    <button class="state-btn {{ $selectedPromo->status === 'hidden' ? 'active' : '' }}">Oculto</button>
-                </div>
-            </div>
-            <button class="btn-primary edit-save">Guardar cambios</button>
             @else
             <div class="edit-empty">
                 <p>Selecciona una promoción para editarla</p>

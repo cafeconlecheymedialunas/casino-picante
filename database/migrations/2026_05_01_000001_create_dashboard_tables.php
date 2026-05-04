@@ -15,7 +15,6 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone')->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('agents')->nullOnDelete();
-            $table->enum('role', ['admin', 'parent', 'child'])->default('child');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->json('lines')->nullable();
             $table->rememberToken();

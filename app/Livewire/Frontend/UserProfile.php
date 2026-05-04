@@ -16,7 +16,9 @@ class UserProfile extends Component
 
     // Password change
     public $current_password = '';
+
     public $new_password = '';
+
     public $new_password_confirmation = '';
 
     public function setTab($tab)
@@ -132,7 +134,7 @@ class UserProfile extends Component
         $myNumbers = $this->getMyNumbers();
         $endedRaffle = $this->getEndedRaffleWithWinners();
 
-        $tickets = \App\Models\Ticket::with('messages')
+        $tickets = Ticket::with('messages')
             ->where('user_id', Auth::id())
             ->latest()
             ->take(20)

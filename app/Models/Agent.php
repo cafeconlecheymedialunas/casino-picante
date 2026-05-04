@@ -15,8 +15,6 @@ class Agent extends Model
         'password',
         'phone',
         'parent_id',
-        'role',
-        'role_id',
         'status',
     ];
 
@@ -35,11 +33,6 @@ class Agent extends Model
     public function permissions()
     {
         return $this->hasMany(AgentPermission::class, 'agent_id');
-    }
-
-    public function roleModel()
-    {
-        return $this->belongsTo(Role::class, 'role_id');
     }
 
     public function lineAgents()

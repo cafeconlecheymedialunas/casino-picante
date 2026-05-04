@@ -13,13 +13,14 @@ class Line extends Model
         'icon',
         'description',
         'status',
-        'whatsapp',
-        'whatsapp_message',
-        'telegram',
-        'telegram_message',
-        'whatsapp_channel',
-        'facebook',
-        'instagram',
+        'encargado_id',
+        'contact_links',
+        'permissions',
+    ];
+
+    protected $casts = [
+        'contact_links' => 'array',
+        'permissions' => 'array',
     ];
 
     public function lineAgents()
@@ -42,5 +43,22 @@ class Line extends Model
     public function managers()
     {
         return $this->agents()->wherePivot('role', 'manager')->wherePivot('is_active', true);
+    }
+
+    public function encargado()
+    {
+        return $this->belongsTo(Agent::class, 'encargado_id');
+    }
+
+    public function platforms()
+    {
+        return $this->belongsToMany(Platform::class, 'line_platform')
+            ->withPivot('custom_message', 'is_active')
+            ->withTimestamps();
+    }
+
+    public function activePlatforms()
+    {
+        return $this->platforms()->wherePivot('is_active', true);
     }
 }
