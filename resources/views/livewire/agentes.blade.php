@@ -92,7 +92,13 @@
         }
     </style>
 
-    <x-livewire.components.page-header title="AGENTES" subtitle="Alta, cargo, estado y asignacion operativa por linea" @if($canCreateAgents) buttonText="Crear agente" buttonAction="openCreateModal" @endif />
+    <x-livewire.components.page-header title="AGENTES" subtitle="Alta, cargo, estado y asignacion operativa por linea" />
+
+    @if($canCreateAgents)
+    <div class="page-action-strip">
+        <button type="button" class="btn-primary" wire:click="openCreateModal">+ Crear agente</button>
+    </div>
+    @endif
 
     <div class="agents-page">
         <div class="stats-row">

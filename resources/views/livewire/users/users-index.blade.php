@@ -1,5 +1,9 @@
 <div class="page-container" x-data="toastManager()" @toast.window="show($event.detail)">
-<x-livewire.components.page-header title="CLIENTES" subtitle="Gestion de clientes registrados, linea preferida y acceso" buttonText="+ Nuevo cliente" buttonAction="openCreateModal" />
+<x-livewire.components.page-header title="CLIENTES" subtitle="Gestion de clientes registrados, linea preferida y acceso" />
+
+<div class="page-action-strip">
+    <button type="button" class="btn-primary" wire:click="openCreateModal">+ Nuevo cliente</button>
+</div>
 
 <style>
     .stats-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }

@@ -16,7 +16,6 @@ class NotificationSettings extends Component
         'raffles' => ['label' => 'Sorteos', 'icon' => '🎲'],
         'tickets' => ['label' => 'Tickets', 'icon' => '🎫'],
         'lines' => ['label' => 'Líneas', 'icon' => '📶'],
-        'promotions' => ['label' => 'Promociones', 'icon' => '📢'],
         'posts' => ['label' => 'Novedades', 'icon' => '📰'],
     ];
 

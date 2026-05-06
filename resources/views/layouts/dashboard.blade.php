@@ -87,6 +87,7 @@
         }
         .btn-primary:hover { transform: translateY(-2px); }
         
+        .page-action-strip { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 28px 0; }
         .btn-ghost {
             background: rgba(255,255,255,0.04); color: #fff;
             border: 1px solid var(--line-2); border-radius: 999px;
@@ -311,9 +312,6 @@
                 <span class="sidebar-item-icon">🏠</span> Editar Home
             </a>
 
-            <a href="{{ route('promociones') }}" wire:navigate class="sidebar-item {{ request()->routeIs('promociones') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">✦</span> Promociones
-            </a>
 
             <a href="{{ route('novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('novedades') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✎</span> Novedades

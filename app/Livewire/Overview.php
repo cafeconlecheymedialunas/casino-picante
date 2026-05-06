@@ -40,14 +40,7 @@ class Overview extends Component
                 'route' => 'tickets', 'link' => 'Ver tickets →'];
         }
 
-        $expiring = Promotion::where('status', 'published')
-            ->whereBetween('end_date', [Carbon::now(), Carbon::now()->addHours(24)])
-            ->count();
-        if ($expiring > 0) {
-            $alerts[] = ['type' => 'info', 'icon' => '📢',
-                'msg' => "$expiring promoción".($expiring > 1 ? 'es' : '').' vence'.($expiring > 1 ? 'n' : '').' en las próximas 24h',
-                'route' => 'promociones', 'link' => 'Ver promociones →'];
-        }
+        
 
         return $alerts;
     }

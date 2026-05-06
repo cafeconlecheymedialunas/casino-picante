@@ -297,10 +297,7 @@
             <div class="line-perms-grid">
                 @php
                 $linePermissions = [
-                    'promo.read' => 'Ver promociones',
-                    'promo.create' => 'Crear promociones',
-                    'promo.edit' => 'Editar promociones',
-                    'promo.delete' => 'Eliminar promociones',
+            
                     'novedad.read' => 'Ver novedades',
                     'novedad.create' => 'Crear novedades',
                     'novedad.edit' => 'Editar novedades',
@@ -497,9 +494,6 @@
         <div class="perm-panel-grid">
             @php
             $agentPerms = [
-                'promo.read' => 'Ver promociones',
-                'promo.create' => 'Crear promociones',
-                'promo.edit' => 'Editar promociones',
                 'novedad.read' => 'Ver novedades',
                 'novedad.create' => 'Crear novedades',
                 'ticket.read' => 'Ver tickets',

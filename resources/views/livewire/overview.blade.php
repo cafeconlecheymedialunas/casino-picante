@@ -274,35 +274,11 @@
     </div>
 </div>
 
-{{-- ── PROMOCIONES & CONTENIDO ── --}}
-<div class="mod-section">
-    <span class="mod-section-label">PROMOCIONES Y CONTENIDO</span>
-    <div class="mod-section-line"></div>
-    <a href="{{ route('promociones') }}" wire:navigate class="mod-section-link">Ir a promociones →</a>
-</div>
-<div class="kpi-grid-4">
-    <div class="kpi {{ $promos['active'] > 0 ? 'kpi-good' : '' }}">
-        <span class="kpi-mod">promotions</span>
-        <div class="kpi-label">Promociones activas</div>
-        <div class="kpi-value {{ $promos['active'] > 0 ? 'c-green' : 'c-muted' }}">{{ $promos['active'] }}</div>
-        <div class="kpi-desc">
-            <span class="hi">{{ $promos['active'] }}</span> promociones vigentes ahora ·
-            <span class="hi">{{ $promos['upcoming'] }}</span> próximas a activarse
-        </div>
-    </div>
 
-    <div class="kpi {{ $promos['expiring'] > 0 ? 'kpi-warn' : '' }}">
-        <span class="kpi-mod">promotions</span>
-        <div class="kpi-label">Por vencer (24h)</div>
-        <div class="kpi-value {{ $promos['expiring'] > 0 ? 'c-warn' : 'c-muted' }}">{{ $promos['expiring'] }}</div>
-        <div class="kpi-desc">
-            @if($promos['expiring'] > 0)
-                <span class="warn">{{ $promos['expiring'] }} promoción{{ $promos['expiring'] > 1 ? 'es' : '' }}</span> vence{{ $promos['expiring'] > 1 ? 'n' : '' }} en las próximas 24 horas
-            @else
-                Ninguna promoción vence en las próximas 24 horas
-            @endif
-        </div>
-    </div>
+<div class="kpi-grid-4">
+    
+
+  
 
     <div class="kpi">
         <span class="kpi-mod">posts</span>
