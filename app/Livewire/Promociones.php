@@ -2,14 +2,16 @@
 
 namespace App\Livewire;
 
-use App\Models\Line;
 use App\Models\Platform;
 use App\Models\Promotion;
+use App\Traits\HasLinePermissions;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class Promociones extends Component
 {
+    use HasLinePermissions;
+
     public $filter = 'all';
 
     public $selectedPromo = null;
@@ -95,6 +97,8 @@ class Promociones extends Component
 
     public function openCreateModal()
     {
+        $this->checkLinePermission('promo.create');
+
         $this->resetForm();
         $this->start_date = Carbon::now()->format('Y-m-d');
         $this->end_date = Carbon::now()->addWeek()->format('Y-m-d');
@@ -161,25 +165,32 @@ class Promociones extends Component
 
     public function savePromo()
     {
+        if ($this->editingPromo) {
+            $this->checkLinePermission('promo.update');
+        } else {
+            $this->checkLinePermission('promo.create');
+        }
+
         $this->validate();
 
         $data = [
             'title' => $this->title,
             'description' => $this->description,
-            'code' => $this->code ?: null,
+            'code' => $this->code,
             'icon' => $this->icon,
             'type' => $this->type,
-            'bonus_percent' => $this->bonus_percent,
-            'bonus_amount' => $this->bonus_amount,
-            'min_deposit' => $this->min_deposit,
-            'max_bonus' => $this->max_bonus,
+            'status' => $this->status,
             'start_date' => Carbon::parse($this->start_date),
             'end_date' => Carbon::parse($this->end_date),
-            'status' => $this->status,
-            'is_recurring' => $this->is_recurring,
-            'recurring_days' => $this->is_recurring ? $this->recurring_days : null,
             'platform_id' => $this->platform_id ?: null,
         ];
+
+        if ($this->type === 'bonus' || $this->type === 'deposit') {
+            $data['bonus_percent'] = $this->bonus_percent;
+            $data['bono_amount'] = $this->bonus_amount;
+            $data['min_deposit'] = $this->min_deposit;
+            $data['max_bonus'] = $this->max_bonus;
+        }
 
         if ($this->editingPromo) {
             $this->editingPromo->update($data);
@@ -195,6 +206,8 @@ class Promociones extends Component
 
     public function saveEditPanel()
     {
+        $this->checkLinePermission('promo.update');
+
         if (! $this->selectedPromo) {
             return;
         }
@@ -215,6 +228,8 @@ class Promociones extends Component
 
     public function updateStatus($status)
     {
+        $this->checkLinePermission('promo.update');
+
         if ($this->selectedPromo) {
             $this->selectedPromo->update(['status' => $status]);
             $this->editStatus = $status;
@@ -236,6 +251,8 @@ class Promociones extends Component
 
     public function toggleStatus($promoId)
     {
+        $this->checkLinePermission('promo.update');
+
         $promo = Promotion::withoutGlobalScopes()->find($promoId);
         $promo->update(['status' => $promo->status === 'published' ? 'draft' : 'published']);
     }
@@ -253,7 +270,13 @@ class Promociones extends Component
 
     public function getPromotions()
     {
+        $this->checkLinePermission('promo.read');
+
         $query = Promotion::query();
+
+        if ($lineId = session('active_line_id')) {
+            $query->where('line_id', $lineId);
+        }
 
         if ($this->filter !== 'all') {
             $now = Carbon::now();

@@ -1,8 +1,7 @@
 <div class="page-container">
-<style>
-    .ov-page-title { font-family: var(--font-display); font-size: 28px; letter-spacing: 0.04em; margin-bottom: 4px; }
-    .ov-page-sub   { font-size: 12px; color: var(--muted-2); margin-bottom: 20px; }
+    <x-livewire.components.page-header title="OVERVIEW" subtitle="Resumen operativo y alertas importantes" />
 
+    <style>
     /* Alert bar */
     .alert-bar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
     .alert-row {
@@ -123,8 +122,7 @@
     .empty-state { padding: 22px 16px; font-size: 12px; color: var(--muted-2); text-align: center; }
 </style>
 
-<div class="ov-page-title">DASHBOARD</div>
-<div class="ov-page-sub">Panel de control · {{ now()->format('d \d\e F Y') }}</div>
+<x-livewire.components.page-header title="DASHBOARD" subtitle="Panel de control · {{ now()->format('d \d\e F Y') }}" />
 
 {{-- ALERTS --}}
 @if(count($alerts) > 0)
@@ -255,7 +253,7 @@
 <div class="mod-section">
     <span class="mod-section-label">BONOS Y SORTEOS</span>
     <div class="mod-section-line"></div>
-    <a href="{{ route('user-bonos') }}" wire:navigate class="mod-section-link">Ir a bonos →</a>
+    <a href="{{ route('bonos') }}" wire:navigate class="mod-section-link">Ir a bonos →</a>
 </div>
 <div class="kpi-grid-4">
     <div class="kpi {{ $bonuses['activeBonuses'] > 0 ? 'kpi-good' : '' }}">
@@ -357,6 +355,76 @@
     </div>
 </div>
 
+{{-- ── ESTADÍSTICAS GENERALES ── --}}
+<div class="mod-section">
+    <span class="mod-section-label">ESTADÍSTICAS GENERALES</span>
+    <div class="mod-section-line"></div>
+</div>
+<div class="kpi-grid-4">
+    <div class="kpi">
+        <span class="kpi-mod">usuarios</span>
+        <div class="kpi-label">Usuarios registrados</div>
+        <div class="kpi-value c-orange">{{ number_format($registeredUsersCount) }}</div>
+        <div class="kpi-desc">
+            Total de usuarios registrados en el sistema
+        </div>
+    </div>
+
+    <div class="kpi">
+        <span class="kpi-mod">agentes</span>
+        <div class="kpi-label">Agentes registrados</div>
+        <div class="kpi-value">{{ $agentsCount }}</div>
+        <div class="kpi-desc">
+            <span class="hi">{{ $agentsCountByLine }}</span> asignados a líneas
+        </div>
+    </div>
+
+    <div class="kpi">
+        <span class="kpi-mod">agentes</span>
+        <div class="kpi-label">Encargados de línea</div>
+        <div class="kpi-value c-orange">{{ $agentsCountEncargado }}</div>
+        <div class="kpi-desc">
+            Agentes con rol de encargado
+        </div>
+    </div>
+
+    <div class="kpi {{ $activeBonosCount > 0 ? 'kpi-good' : '' }}">
+        <span class="kpi-mod">bonos</span>
+        <div class="kpi-label">Bonos activos</div>
+        <div class="kpi-value {{ $activeBonosCount > 0 ? 'c-green' : 'c-muted' }}">{{ $activeBonosCount }}</div>
+        <div class="kpi-desc">
+            Bonos activos actualmente en el sistema
+        </div>
+    </div>
+
+    <div class="kpi">
+        <span class="kpi-mod">sorteos</span>
+        <div class="kpi-label">Sorteos de líneas</div>
+        <div class="kpi-value c-orange">{{ $rafflesByLineCount }}</div>
+        <div class="kpi-desc">
+            Total de sorteos registrados por líneas
+        </div>
+    </div>
+</div>
+
+{{-- ── LÍNEA CON MEJOR VENTA ── --}}
+@if($bestSellingLine)
+<div class="mod-section">
+    <span class="mod-section-label">LÍNEA CON MEJOR VENTA DEL MES</span>
+    <div class="mod-section-line"></div>
+</div>
+<div class="kpi-grid-3">
+    <div class="kpi kpi-good">
+        <span class="kpi-mod">ventas</span>
+        <div class="kpi-label">{{ $bestSellingLine['icon'] }} {{ $bestSellingLine['name'] }}</div>
+        <div class="kpi-value c-green">${{ number_format($bestSellingLine['best_sales'], 2) }}</div>
+        <div class="kpi-desc">
+            Línea con mayor venta del mes · Moneda local
+        </div>
+    </div>
+</div>
+@endif
+
 {{-- ── TABLAS ── --}}
 <div class="mod-section">
     <span class="mod-section-label">ACTIVIDAD RECIENTE</span>
@@ -365,11 +433,11 @@
 <div class="tables-row">
     <div class="ov-card">
         <div class="ov-card-head">
-            <span class="ov-card-title">ÚLTIMOS REGISTROS DE USUARIOS</span>
+            <span class="ov-card-title">ÚLTIMOS 10 REGISTROS DE USUARIOS</span>
             <span class="ov-card-mod">users</span>
             <a href="{{ route('users.index') }}" wire:navigate class="ov-card-link">Ver todos →</a>
         </div>
-        @forelse($recentUsers as $user)
+        @forelse($last10Users as $user)
         <div class="row-item row-users">
             <div class="r-avatar">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
             <div>

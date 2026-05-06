@@ -14,7 +14,8 @@ class Raffle extends Model
 
     protected $fillable = [
         'title', 'description', 'status', 'start_date', 'end_date',
-        'number_type', 'max_numbers', 'next_number', 'line_id',
+        'end_number', 'line_id', 'platform_id', 'start_number',
+        'winner_user_id', 'winner_number',
     ];
 
     protected $casts = [
@@ -22,9 +23,14 @@ class Raffle extends Model
         'end_date' => 'datetime',
     ];
 
-    public function positions()
+    public function platform()
     {
-        return $this->hasMany(RafflePosition::class)->orderBy('position');
+        return $this->belongsTo(Platform::class);
+    }
+
+    public function winner()
+    {
+        return $this->belongsTo(User::class, 'winner_user_id');
     }
 
     public function numbers()
@@ -32,36 +38,65 @@ class Raffle extends Model
         return $this->hasMany(RaffleNumber::class);
     }
 
+    /**
+     * Finds the first available number in the range [start, end]
+     */
+    public function getFirstAvailableNumber(): ?int
+    {
+        $occupied = $this->numbers()->pluck('number')->toArray();
+        $end = $this->end_number ?? ($this->start_number + 1000);
+
+        for ($i = $this->start_number; $i <= $end; $i++) {
+            if (!in_array($i, $occupied)) {
+                return $i;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Assigns X sequential numbers skipping occupied ones
+     */
     public function assignNumbers(int $userId, int $count): array
     {
         $assigned = [];
+        $occupied = $this->numbers()->pluck('number')->toArray();
+        $current = $this->start_number;
+        $end = $this->end_number ?? ($this->start_number + 1000);
 
-        for ($i = 0; $i < $count; $i++) {
-            $number = $this->next_number;
-
-            if ($this->number_type === '4digits' && $number > 9999) {
-                break;
+        while (count($assigned) < $count && $current <= $end) {
+            if (!in_array($current, $occupied)) {
+                RaffleNumber::create([
+                    'raffle_id' => $this->id,
+                    'user_id' => $userId,
+                    'number' => $current,
+                ]);
+                $assigned[] = $current;
             }
-
-            if ($this->max_numbers && $number > $this->max_numbers) {
-                break;
-            }
-
-            RaffleNumber::create([
-                'raffle_id' => $this->id,
-                'user_id' => $userId,
-                'number' => $number,
-            ]);
-
-            $assigned[] = $number;
-            $this->increment('next_number');
+            $current++;
         }
 
         return $assigned;
     }
 
-    public function hasWinners(): bool
+    public function hasWinner(): bool
     {
-        return $this->positions()->whereNotNull('winner_user_id')->exists();
+        return !empty($this->winner_user_id);
+    }
+
+    public function isExpired(): bool
+    {
+        return now()->gt($this->end_date);
+    }
+
+    public function isUpcoming(): bool
+    {
+        return now()->lt($this->start_date);
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->status === 'active' && now()->between($this->start_date, $this->end_date);
     }
 }

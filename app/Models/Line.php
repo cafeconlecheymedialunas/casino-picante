@@ -16,11 +16,25 @@ class Line extends Model
         'encargado_id',
         'contact_links',
         'permissions',
+        'best_sales',
+        'portada_url',
+        'perfil_url',
+        'mejor_mes',
+        'mejor_mes_total',
+        'mejor_plataforma',
+        'mejor_plataforma_total',
+        'ventas_mes_actual',
+        'ventas_mes_pasado',
+        'ventas_mes_antiguo',
+        'ganancia_encargado',
+        'porcentaje_encargado',
     ];
 
     protected $casts = [
         'contact_links' => 'array',
+        'platforms' => 'array',
         'permissions' => 'array',
+        'best_sales' => 'decimal:2',
     ];
 
     public function lineAgents()
@@ -42,7 +56,12 @@ class Line extends Model
 
     public function managers()
     {
-        return $this->agents()->wherePivot('role', 'manager')->wherePivot('is_active', true);
+        return $this->agents()->wherePivot('role', 'encargado')->wherePivot('is_active', true);
+    }
+
+    public function encargados()
+    {
+        return $this->agents()->wherePivot('role', 'encargado')->wherePivot('is_active', true);
     }
 
     public function encargado()
@@ -60,5 +79,10 @@ class Line extends Model
     public function activePlatforms()
     {
         return $this->platforms()->wherePivot('is_active', true);
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class);
     }
 }

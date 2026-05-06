@@ -1,293 +1,334 @@
-<div>
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">LÍNEAS & REDES</h1>
-            <p class="page-subtitle">Cada línea opera con su propio juego de redes sociales y mensaje automático</p>
+<div class="page-container">
+    <style>
+        .lines-page { display: flex; flex-direction: column; gap: 18px; }
+        .header-tools, .line-actions, .modal-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .search-input, .filter-select, .form-input { background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:7px; padding:9px 12px; color:var(--white); font-size:13px; font-family:var(--font-body); }
+        .search-input { width:280px; }
+        .search-input:focus, .filter-select:focus, .form-input:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,106,26,.12); }
+        .line-section { display:flex; flex-direction:column; gap:12px; }
+        .section-title { display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+        .line-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+        .line-card { overflow:hidden; border:1px solid var(--line); border-radius:8px; background:linear-gradient(180deg,#170b0b,#0f0707); }
+        .line-card.inactive { opacity:.72; }
+        .line-cover { height:150px; background:linear-gradient(135deg,rgba(255,106,26,.16),rgba(255,255,255,.04)); position:relative; overflow:hidden; }
+        .line-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+        .line-profile { position:absolute; left:16px; bottom:12px; width:64px; height:64px; border-radius:8px; border:2px solid rgba(255,255,255,.75); background:#210f0f; overflow:hidden; box-shadow:0 10px 22px rgba(0,0,0,.35); }
+        .line-profile img { width:100%; height:100%; object-fit:cover; }
+        .line-profile span { display:flex; width:100%; height:100%; align-items:center; justify-content:center; font-family:var(--font-display); font-size:28px; color:var(--orange); }
+        .line-body { padding:14px 16px 16px; }
+        .line-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:12px; }
+        .line-name { font-family:var(--font-display); font-size:25px; line-height:1; letter-spacing:.03em; }
+        .line-id { color:var(--muted-2); font-family:var(--font-mono); font-size:11px; margin-top:4px; }
+        .status-badge, .chip { display:inline-flex; align-items:center; width:fit-content; border-radius:999px; padding:4px 10px; font-size:10px; font-weight:800; white-space:nowrap; }
+        .status-active { color:var(--good); background:rgba(37,196,107,.12); }
+        .status-inactive { color:#ff4757; background:rgba(255,71,87,.12); }
+        .info-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px; }
+        .info-box { border:1px solid var(--line); border-radius:8px; padding:10px; background:rgba(255,255,255,.03); min-width:0; }
+        .info-label { color:var(--muted-2); font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-bottom:5px; }
+        .info-value { font-size:12px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .chip-row { display:flex; gap:6px; flex-wrap:wrap; min-height:24px; }
+        .chip { color:var(--white); background:rgba(255,255,255,.06); border:1px solid var(--line); }
+        .card-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:12px; border-top:1px solid var(--line); }
+        .btn-icon, .btn-soft { height:32px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.03); color:var(--white); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; }
+        .btn-icon { width:32px; color:var(--muted); }
+        .btn-soft { padding:0 10px; font-size:11px; font-weight:800; }
+        .btn-icon:hover, .btn-soft:hover { border-color:var(--orange); background:rgba(255,106,26,.15); color:var(--white); }
+        .btn-danger:hover { border-color:#ff4757; background:rgba(255,71,87,.15); }
+        .mini-icon { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+        .empty-state { border:1px dashed var(--line-2); border-radius:8px; padding:38px 20px; text-align:center; color:var(--muted-2); background:rgba(255,255,255,.02); }
+        .flash-message { border:1px solid rgba(37,196,107,.35); background:rgba(37,196,107,.12); color:var(--good); border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; }
+        .modal-overlay { position:fixed; inset:0; z-index:240; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.78); }
+        .modal-panel { width:min(920px,100%); max-height:92vh; overflow-y:auto; border:1px solid var(--line-2); border-radius:8px; background:linear-gradient(180deg,#1c0e0e,#120909); }
+        .modal-panel.narrow { width:min(680px,100%); }
+        .modal-head { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; border-bottom:1px solid var(--line); }
+        .modal-head h3 { margin:0; font-family:var(--font-display); font-size:24px; letter-spacing:.03em; }
+        .modal-close { width:32px; height:32px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer; }
+        .modal-form, .modal-body { padding:22px; }
+        .form-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+        .form-group { margin-bottom:14px; }
+        .form-label { display:block; margin-bottom:6px; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+        .form-input { width:100%; }
+        textarea.form-input { min-height:72px; resize:vertical; }
+        .form-error { margin-top:4px; color:#ff4757; font-size:11px; }
+        .repeat-list { display:flex; flex-direction:column; gap:8px; }
+        .repeat-row { display:grid; grid-template-columns:180px 1fr 36px; gap:8px; align-items:center; }
+        .preview-grid { display:grid; grid-template-columns:1.6fr .8fr; gap:12px; }
+        .image-preview { border:1px solid var(--line); border-radius:8px; min-height:120px; background:rgba(255,255,255,.03); overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--muted-2); }
+        .image-preview.profile { aspect-ratio:1; min-height:120px; }
+        .image-preview img { width:100%; height:100%; object-fit:cover; }
+        .stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+        .stat-box { border:1px solid var(--line); border-radius:8px; padding:14px; background:rgba(255,255,255,.03); }
+        .stat-value { font-family:var(--font-display); font-size:28px; line-height:1; }
+        .sales-table { border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+        .sales-row { display:grid; grid-template-columns:1fr 1fr 1fr 88px; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); align-items:center; font-size:12px; }
+        .sales-row:last-child { border-bottom:0; }
+        @media (max-width:1000px){ .line-grid,.form-grid,.preview-grid,.stat-grid{grid-template-columns:1fr;} .info-grid{grid-template-columns:1fr 1fr;} .repeat-row,.sales-row{grid-template-columns:1fr;} .search-input{width:100%;} }
+    </style>
+
+    <x-livewire.components.page-header title="LINEAS" subtitle="Gestion operativa, encargado, canales, plataformas y ventas" @if($this->hasLinePermission('line.create')) buttonText="Crear linea" buttonAction="openCreateModal" @endif />
+
+    <div class="lines-page">
+        <div style="margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" wire:model.live.debounce.300ms="search" class="search-input" placeholder="Buscar linea, encargado o plataforma">
+            <select wire:model.live="statusFilter" class="filter-select">
+                <option value="all">Todos los estados</option>
+                <option value="active">Activas</option>
+                <option value="inactive">Inactivas</option>
+            </select>
         </div>
-        <button class="btn-primary" wire:click="openCreateModal"><span>+</span> Nueva línea</button>
+
+        @if(session()->has('message'))
+            <div class="flash-message">{{ session('message') }}</div>
+        @endif
+
+        <div class="line-section">
+            <div class="section-title"><span>Lineas activas</span><span>{{ $activeLines->count() }}</span></div>
+            @if($activeLines->isEmpty())
+                <div class="empty-state">No hay lineas activas para mostrar.</div>
+            @else
+                <div class="line-grid">
+                    @foreach($activeLines as $line)
+                        @include('livewire.partials.line-card', ['line' => $line])
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <div class="line-section">
+            <div class="section-title"><span>Lineas inactivas</span><span>{{ $inactiveLines->count() }}</span></div>
+            @if($inactiveLines->isEmpty())
+                <div class="empty-state">No hay lineas inactivas.</div>
+            @else
+                <div class="line-grid">
+                    @foreach($inactiveLines as $line)
+                        @include('livewire.partials.line-card', ['line' => $line])
+                    @endforeach
+                </div>
+            @endif
+        </div>
     </div>
 
     @if($showModal)
-    <div class="modal-overlay" wire:click="closeModal">
-        <div class="modal-content modal-large" wire:click.stop>
-            <div class="modal-header">
-                <h3>{{ $editingLine ? 'EDITAR LÍNEA' : 'NUEVA LÍNEA' }}</h3>
-                <button class="modal-close" wire:click="closeModal">✕</button>
-            </div>
-            <form class="modal-form" wire:submit.prevent="saveLine">
-                <div class="form-section">
-                    <h4 class="form-section-title">DATOS BÁSICOS</h4>
-                    <div class="form-group">
-                        <label>Nombre de la línea</label>
-                        <input type="text" placeholder="Nombre de la línea..." wire:model="name">
-                    </div>
-                    <div class="form-row">
+        <div class="modal-overlay" wire:click.self="closeModal">
+            <div class="modal-panel">
+                <div class="modal-head">
+                    <h3>{{ $editingLineId ? 'EDITAR LINEA' : 'CREAR LINEA' }}</h3>
+                    <button class="modal-close" wire:click="closeModal">x</button>
+                </div>
+                <form class="modal-form" wire:submit.prevent="saveLine">
+                    <div class="form-grid">
                         <div class="form-group">
-                            <label>Tipo principal</label>
-                            <select wire:model="type" class="form-select">
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="telegram">Telegram</option>
-                                <option value="phone">Teléfono</option>
-                            </select>
+                            <label class="form-label">ID automatico</label>
+                            <input class="form-input" value="{{ $editingLineId ? '#'.$editingLineId : 'Se genera al guardar' }}" readonly>
                         </div>
                         <div class="form-group">
-                            <label>Estado</label>
-                            <select wire:model="status" class="form-select">
+                            <label class="form-label">Estado</label>
+                            <select wire:model="status" class="form-input">
                                 <option value="active">Activa</option>
                                 <option value="inactive">Inactiva</option>
                             </select>
                         </div>
                     </div>
-                    <div class="form-row">
+
+                    <div class="form-group">
+                        <label class="form-label">Nombre de la linea</label>
+                        <input type="text" wire:model="name" class="form-input" placeholder="Ej: Linea principal">
+                        @error('name') <div class="form-error">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="preview-grid">
                         <div class="form-group">
-                            <label>Icono (emoji)</label>
-                            <input type="text" placeholder="🔥" wire:model="icon">
+                            <x-image-uploader label="Portada 851px x 315px" model="portadaUpload" :upload="$portadaUpload" :value="$portada_url" remove-action="removeImage('portada')" variant="wide">
+                                @error('portadaUpload') <div class="form-error">{{ $message }}</div> @enderror
+                            </x-image-uploader>
                         </div>
                         <div class="form-group">
-                            <label>Encargado</label>
-                            <select wire:model="encargado_id" class="form-select">
-                                <option value="">Sin encargado</option>
-                                @foreach($availableAgents as $agent)
-                                <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                            <x-image-uploader label="Perfil 800px x 800px" model="perfilUpload" :upload="$perfilUpload" :value="$perfil_url" remove-action="removeImage('perfil')" variant="square">
+                                @error('perfilUpload') <div class="form-error">{{ $message }}</div> @enderror
+                            </x-image-uploader>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Encargado <span style="color:var(--orange)">*</span></label>
+                        @error('encargadoId') <div class="form-error">{{ $message }}</div> @enderror
+                        <div class="repeat-list" style="margin-bottom:8px">
+                            <div class="repeat-row" style="grid-template-columns:1fr 110px 36px">
+                                <select wire:model="encargadoId" class="form-input">
+                                    <option value="">Seleccionar encargado</option>
+                                    @foreach($availableEncargados as $agent)
+                                        <option value="{{ $agent->id }}">{{ trim($agent->name.' '.($agent->apellido ?? '')) }}</option>
+                                    @endforeach
+                                </select>
+                                <div style="display:flex;align-items:center;gap:4px">
+                                    <input type="number" step="0.5" min="0" max="100"
+                                           wire:model="encargadoPercent"
+                                           class="form-input" placeholder="0" style="width:70px;text-align:center">
+                                    <span style="color:var(--muted);font-size:13px;flex-shrink:0">%</span>
+                                </div>
+                                <span></span>
+                            </div>
+                        </div>
+                        @error('encargadoPercent') <div class="form-error">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Canales</label>
+                        <div class="repeat-list">
+                            @foreach($channels as $index => $channel)
+                                <div class="repeat-row" wire:key="channel-{{ $index }}">
+                                    <input type="text" wire:model="channels.{{ $index }}.name" class="form-input" placeholder="Nombre de canal">
+                                    <input type="text" wire:model="channels.{{ $index }}.url" class="form-input" placeholder="Enlace">
+                                    <button type="button" class="btn-icon btn-danger" wire:click="removeChannel({{ $index }})">x</button>
+                                </div>
+                            @endforeach
+                            <button type="button" class="btn-soft" wire:click="addChannel">Agregar canal</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Plataformas disponibles</label>
+                        <div class="repeat-list">
+                            @foreach($platformRows as $index => $platform)
+                                <div class="repeat-row" wire:key="platform-{{ $index }}">
+                                    <input type="text" wire:model="platformRows.{{ $index }}.name" class="form-input" placeholder="Nombre plataforma">
+                                    <input type="text" wire:model="platformRows.{{ $index }}.url" class="form-input" placeholder="Enlace">
+                                    <button type="button" class="btn-icon btn-danger" wire:click="removePlatformRow({{ $index }})">x</button>
+                                </div>
+                            @endforeach
+                            <button type="button" class="btn-soft" wire:click="addPlatformRow">Agregar plataforma</button>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:18px;">
+                        @if($editingLineId)
+                            <button type="button" class="btn-soft btn-danger" wire:click="deleteLine({{ $editingLineId }})" wire:confirm="Eliminar esta linea?">Eliminar</button>
+                        @else
+                            <span></span>
+                        @endif
+                        <div class="modal-actions">
+                            <button type="button" wire:click="closeModal" class="btn-soft">Cancelar</button>
+                            <button type="submit" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+
+    @if($showSalesModal && $salesLine)
+        <div class="modal-overlay" wire:click.self="closeSalesModal">
+            <div class="modal-panel narrow">
+                <div class="modal-head">
+                    <h3>EDITAR VENTAS</h3>
+                    <button class="modal-close" wire:click="closeSalesModal">x</button>
+                </div>
+                <form class="modal-form" wire:submit.prevent="saveSale">
+                    <div class="form-group">
+                        <label class="form-label">Plataforma</label>
+                        <select wire:model="salePlatformId" class="form-input">
+                            <option value="0">Elegir plataforma</option>
+                            @foreach(($salesLine->relationLoaded('platforms') ? $salesLine->getRelation('platforms') : $salesLine->platforms()->get()) as $platform)
+                                <option value="{{ $platform->id }}">{{ $platform->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('salePlatformId') <div class="form-error">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Mes de reporte</label>
+                            <select wire:model="saleMes" class="form-input">
+                                @foreach($months as $num => $label)
+                                    <option value="{{ $num }}">{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">Anio</label>
+                            <input type="number" wire:model="saleAnio" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha inicio</label>
+                            <input type="date" wire:model="saleFechaInicio" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha fin</label>
+                            <input type="date" wire:model="saleFechaFin" class="form-input">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Descripción</label>
-                        <textarea placeholder="Descripción de la línea..." wire:model="description" rows="2"></textarea>
+                        <label class="form-label">Monto fichas vendidas</label>
+                        <input type="number" step="0.01" min="0" wire:model="saleMontoFichas" class="form-input">
+                        @error('saleMontoFichas') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
-                </div>
-
-                <div class="form-section">
-                    <h4 class="form-section-title">CONTACTOS</h4>
-                    <div class="contact-repeater-mini">
-                        @foreach($editContactLinks as $index => $link)
-                        <div class="contact-row-mini" wire:key="cl-{{ $index }}">
-                            <select wire:model="editContactLinks.{{ $index }}.type" class="contact-type-mini">
-                                <option value="whatsapp">💬 WhatsApp</option>
-                                <option value="telegram">✈️ Telegram</option>
-                                <option value="instagram">📷 Instagram</option>
-                                <option value="facebook">📘 Facebook</option>
-                                <option value="phone">📞 Teléfono</option>
-                            </select>
-                            <input type="text" wire:model="editContactLinks.{{ $index }}.value" placeholder="Valor..." class="contact-value-mini">
-                            <button type="button" wire:click="removeContactLink({{ $index }})" class="contact-remove-mini">✕</button>
-                        </div>
-                        @endforeach
-                        <button type="button" wire:click="addContactLink" class="contact-add-mini">+ Agregar contacto</button>
+                    <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;">
+                        <button type="button" wire:click="closeSalesModal" class="btn-soft">Cancelar</button>
+                        <button type="submit" class="btn-primary">Guardar venta</button>
                     </div>
-                </div>
-
-                <div class="form-section">
-                    <h4 class="form-section-title">PLATAFORMAS</h4>
-                    <div class="platforms-mini">
-                        @foreach($availablePlatforms as $platform)
-                        @php $isSelected = collect($editPlatforms)->firstWhere('platform_id', $platform->id); @endphp
-                        <label class="platform-chip-mini {{ $isSelected ? 'active' : '' }}" wire:click="togglePlatform({{ $platform->id }})">
-                            <span class="platform-check-mini">{{ $isSelected ? '✓' : '' }}</span>
-                            @if($platform->logo_url)
-                            <img src="{{ $platform->logo_url }}" class="platform-logo-mini">
-                            @endif
-                            <span>{{ $platform->name }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    @if($editingLine)
-                    <button type="button" class="btn-delete" wire:click="deleteLine({{ $editingLine->id }})" wire:confirm="¿Eliminar esta línea?">Eliminar</button>
-                    @endif
-                    <div class="modal-actions-right">
-                        <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>
-                        <button type="submit" class="btn-primary">{{ $editingLine ? 'Guardar' : 'Crear' }}</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endif
-
-    @if(session()->has('message'))
-    <div class="flash-message">{{ session('message') }}</div>
-    @endif
-
-    <div class="content">
-        <p class="lines-desc">Cada línea opera con su propio juego de redes sociales y mensaje automático. Activá o desactivá líneas y enlaces individuales sin tocar el frontend.</p>
-        
-        <div class="lines-grid">
-            @forelse($lines as $index => $line)
-            <div class="line-card">
-                <div class="line-glow" style="background: radial-gradient(circle, #ff6a1a55, transparent 70%);"></div>
-                <div class="line-header">
-                    <div class="line-header-title">
-                        <span class="line-icon">{{ $line->icon }}</span>
-                        <div>
-                            <div class="line-name">{{ strtoupper($line->name) }}</div>
-                            <div class="line-sub">{{ $line->description }}</div>
-                        </div>
-                    </div>
-                    <label class="line-toggle">
-                        <div class="toggle-switch {{ $line->status === 'active' ? 'active' : '' }}" wire:click="toggleLine({{ $line->id }})">
-                            <div class="toggle-knob"></div>
-                        </div>
-                        {{ $line->status === 'active' ? 'Activa' : 'Inactiva' }}
-                    </label>
-                </div>
-                <div class="line-links">
-                    @if($line->whatsapp)
-                    <div class="line-link">
-                        <div class="link-icon">💬</div>
-                        <div class="link-info">
-                            <div class="link-label">WhatsApp</div>
-                            <div class="link-value">{{ $line->whatsapp }}</div>
-                        </div>
-                        @if($line->whatsapp_message)
-                        <span class="link-badge">+ msg auto</span>
-                        @endif
-                    </div>
-                    @endif
-                    @if($line->telegram)
-                    <div class="line-link">
-                        <div class="link-icon">✈️</div>
-                        <div class="link-info">
-                            <div class="link-label">Telegram</div>
-                            <div class="link-value">{{ $line->telegram }}</div>
-                        </div>
-                        @if($line->telegram_message)
-                        <span class="link-badge">+ msg auto</span>
-                        @endif
-                    </div>
-                    @endif
-                    @if($line->contact_links)
-                        @foreach($line->contact_links as $link)
-                        @if(!in_array($link['type'], ['whatsapp', 'telegram']))
-                        <div class="line-link">
-                            <div class="link-icon">
-                                @if($link['type'] === 'instagram')📷@elseif($link['type'] === 'facebook')📘@elseif($link['type'] === 'phone')📞@endif
+                </form>
+                <div class="modal-body">
+                    <div class="sales-table">
+                        @forelse($salesLine->sales()->with('platform')->orderByDesc('anio')->orderByDesc('mes')->get() as $sale)
+                            <div class="sales-row">
+                                <div>{{ $sale->platform?->name ?? '-' }}</div>
+                                <div>{{ $this->monthLabel($sale->mes, $sale->anio) }}</div>
+                                <div>${{ number_format((float) $sale->monto_fichas, 2) }}</div>
+                                <div class="line-actions">
+                                    <button class="btn-icon" wire:click="openSalesModal({{ $salesLine->id }}, {{ $sale->id }})">E</button>
+                                    <button class="btn-icon btn-danger" wire:click="deleteSale({{ $sale->id }})">x</button>
+                                </div>
                             </div>
-                            <div class="link-info">
-                                <div class="link-label">{{ ucfirst($link['type']) }}</div>
-                                <div class="link-value">{{ $link['value'] }}</div>
-                            </div>
-                            @if(isset($link['has_message']) && $link['has_message'])
-                            <span class="link-badge">+ msg auto</span>
-                            @endif
-                        </div>
-                        @endif
-                        @endforeach
-                    @endif
-                </div>
-                <div class="line-platforms">
-                    @foreach($line->platforms()->wherePivot('is_active', true)->limit(4)->get() as $platform)
-                    <span class="platform-chip">{{ $platform->name }}</span>
-                    @endforeach
-                    @if($line->platforms()->wherePivot('is_active', true)->count() > 4)
-                    <span class="platform-more">+{{ $line->platforms()->wherePivot('is_active', true)->count() - 4 }}</span>
-                    @endif
-                </div>
-                <div class="line-footer">
-                    <span>Agentes: {{ $agentCounts[$line->id] ?? 0 }}</span>
-                    <div class="line-actions">
-                        <button class="btn-action" wire:click="openEditModal({{ $line->id }})">✎ Editar</button>
-                        <a href="{{ route('lineas.detail', $line->id) }}" wire:navigate class="btn-action btn-action-primary">Ver detalle →</a>
+                        @empty
+                            <div class="empty-state">Todavia no hay ventas cargadas.</div>
+                        @endforelse
                     </div>
                 </div>
             </div>
-            @empty
-            <div class="empty-state">
-                <p>No hay líneas creadas</p>
-            </div>
-            @endforelse
         </div>
-    </div>
+    @endif
 
-    <style>
-        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding: 0 28px; }
-        .page-title { font-family: var(--font-display); font-size: 36px; color: var(--white); margin: 0; }
-        .page-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
-        .content { padding: 0 28px 28px; }
-        .lines-desc { font-size: 13px; color: var(--muted); margin: 0 0 18px; max-width: 540px; }
-        
-        .lines-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        @media (max-width: 1200px) { .lines-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 768px) { .lines-grid { grid-template-columns: 1fr; } }
+    @if($showDetailsModal && $detailLine)
+        @php($stats = $this->statsFor($detailLine))
+        <div class="modal-overlay" wire:click.self="closeDetailsModal">
+            <div class="modal-panel">
+                <div class="modal-head">
+                    <h3>VER MAS - {{ strtoupper($detailLine->name) }}</h3>
+                    <button class="modal-close" wire:click="closeDetailsModal">x</button>
+                </div>
+                <div class="modal-body">
+                    <div class="stat-grid">
+                        <div class="stat-box"><div class="info-label">Mejor mes</div><div class="stat-value">{{ $stats['bestMonth'] ? $this->monthLabel($stats['bestMonth']->mes, $stats['bestMonth']->anio) : '-' }}</div><div class="line-id">${{ number_format((float) ($stats['bestMonth']->total ?? 0), 2) }}</div></div>
+                        <div class="stat-box"><div class="info-label">Mejor plataforma del mes</div><div class="stat-value">{{ $stats['bestPlatform']?->platform?->name ?? '-' }}</div><div class="line-id">${{ number_format((float) ($stats['bestPlatform']->total ?? 0), 2) }}</div></div>
+                        <div class="stat-box"><div class="info-label">Ventas mes actual</div><div class="stat-value">${{ number_format((float) $stats['monthTotal'], 2) }}</div></div>
+                        <div class="stat-box"><div class="info-label">Encargado</div><div class="stat-value">{{ $detailLine->lineAgents->firstWhere('role', 'encargado')?->agent?->name ?? '-' }}</div></div>
+                    </div>
 
-        .line-card { background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 14px; padding: 18px; position: relative; overflow: hidden; }
-        .line-glow { position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; border-radius: 50%; }
-        .line-header { position: relative; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
-        .line-header-title { display: flex; align-items: center; gap: 8px; }
-        .line-icon { font-size: 16px; }
-        .line-name { font-family: var(--font-display); font-size: 22px; letter-spacing: 0.04em; }
-        .line-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
-        .line-toggle { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); cursor: pointer; }
-        .toggle-switch { width: 32px; height: 18px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; }
-        .toggle-switch.active { background: var(--orange); }
-        .toggle-knob { position: absolute; top: 2; right: 2; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
-        .toggle-switch.active .toggle-knob { transform: translateX(-14px); }
-
-        .line-links { display: grid; gap: 8px; margin-bottom: 12px; }
-        .line-link { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); }
-        .link-icon { width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .link-info { flex: 1; }
-        .link-label { font-size: 10px; color: var(--muted); }
-        .link-value { font-size: 12px; font-family: var(--font-mono); }
-        .link-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,106,26,0.12); color: var(--orange); font-weight: 700; }
-
-        .line-platforms { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; min-height: 24px; }
-        .platform-chip { background: rgba(255,106,26,0.1); color: var(--orange); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
-        .platform-more { background: rgba(255,255,255,0.1); color: var(--muted); padding: 4px 10px; border-radius: 6px; font-size: 11px; }
-
-        .line-footer { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
-        .line-actions { display: flex; gap: 8px; }
-        .btn-action { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; transition: all 0.2s; }
-        .btn-action:hover { border-color: var(--orange); color: var(--orange); }
-        .btn-action-primary { color: var(--orange); border-color: var(--orange); }
-
-        .empty-state { text-align: center; color: var(--muted); padding: 40px; grid-column: 1 / -1; }
-
-        /* Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: linear-gradient(180deg, #1a0d0d 0%, #120909 100%); border: 1px solid var(--line); border-radius: 20px; width: 100%; max-width: 480px; }
-        .modal-large { max-width: 640px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line); }
-        .modal-header h3 { font-family: var(--font-display); font-size: 22px; margin: 0; color: var(--white); }
-        .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
-        .modal-form { padding: 24px; max-height: 70vh; overflow-y: auto; }
-        
-        .form-section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
-        .form-section:last-of-type { border-bottom: none; }
-        .form-section-title { font-size: 12px; color: var(--orange); font-weight: 700; margin: 0 0 16px; letter-spacing: 0.05em; }
-        
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-        .form-group input, .form-group textarea, .form-select { width: 100%; background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 10px; padding: 12px 16px; color: var(--white); font-size: 14px; }
-        .form-group input:focus, .form-group textarea:focus, .form-select:focus { outline: none; border-color: var(--orange); }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-        .contact-repeater-mini { display: flex; flex-direction: column; gap: 8px; }
-        .contact-row-mini { display: flex; gap: 8px; align-items: center; }
-        .contact-type-mini { width: 140px; padding: 10px 12px; background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 8px; color: var(--white); font-size: 13px; }
-        .contact-value-mini { flex: 1; padding: 10px 14px; background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 8px; color: var(--white); font-size: 13px; }
-        .contact-remove-mini { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
-        .contact-add-mini { padding: 10px 16px; border-radius: 8px; border: 1px dashed var(--line); background: transparent; color: var(--orange); font-size: 12px; font-weight: 600; cursor: pointer; }
-
-        .platforms-mini { display: flex; flex-wrap: wrap; gap: 8px; }
-        .platform-chip-mini { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 12px; color: var(--muted); transition: all 0.2s; }
-        .platform-chip-mini.active { border-color: var(--orange); background: rgba(255,106,26,0.1); color: var(--orange); }
-        .platform-check-mini { width: 16px; font-size: 10px; }
-        .platform-logo-mini { width: 16px; height: 16px; border-radius: 4px; }
-
-        .modal-actions { display: flex; gap: 12px; justify-content: space-between; margin-top: 24px; }
-        .modal-actions-right { display: flex; gap: 12px; }
-        .btn-ghost { padding: 12px 20px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--white); font-size: 13px; font-weight: 600; cursor: pointer; }
-        .btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
-        .btn-primary { padding: 12px 24px; border-radius: 10px; border: none; background: var(--orange); color: #190702; font-size: 13px; font-weight: 700; cursor: pointer; }
-        .btn-primary:hover { background: var(--amber); }
-        .btn-delete { padding: 12px 20px; border-radius: 10px; border: 1px solid #ff4757; background: transparent; color: #ff4757; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .btn-delete:hover { background: #ff4757; color: white; }
-
-        .flash-message { position: fixed; top: 20px; right: 20px; background: var(--good); color: #000; padding: 12px 20px; border-radius: 8px; font-weight: 700; z-index: 2000; }
-    </style>
+                    <div class="form-grid">
+                        <div class="stat-box">
+                            <div class="info-label">Ultimos 3 meses registrados</div>
+                            @forelse($stats['lastMonths'] as $month)
+                                <div class="sales-row" style="grid-template-columns:1fr auto;">
+                                    <span>{{ $this->monthLabel($month->mes, $month->anio) }}</span>
+                                    <strong>${{ number_format((float) $month->total, 2) }}</strong>
+                                </div>
+                            @empty
+                                <div class="line-id">Sin ventas registradas</div>
+                            @endforelse
+                        </div>
+                        <div class="stat-box">
+                            <div class="info-label">Ganancia del encargado en el mes</div>
+                            @forelse($stats['earnings'] as $earning)
+                                <div class="sales-row" style="grid-template-columns:1fr auto;">
+                                    <span>{{ $earning['name'] }} ({{ $earning['porcentaje'] }}%)</span>
+                                    <strong>${{ number_format((float) $earning['ganancia'], 2) }}</strong>
+                                </div>
+                            @empty
+                                <div class="line-id">Sin encargado asignado</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

@@ -1,15 +1,8 @@
 <div class="page-container">
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">ROLES</h1>
-            <p class="page-subtitle">Gestión de roles y permisos del sistema</p>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-            <input type="text" placeholder="Buscar roles..." wire:model="search" class="search-input">
-            <button wire:click="openCreateModal" class="btn-primary">
-                <span>+</span> Crear rol
-            </button>
-        </div>
+    <x-livewire.components.page-header title="ROLES" subtitle="Gestión de roles y permisos del sistema" buttonText="+ Crear rol" buttonAction="openCreateModal" />
+
+    <div style="margin-bottom: 16px;">
+        <input type="text" placeholder="Buscar roles..." wire:model="search" class="search-input">
     </div>
 
     @if(session()->has('message'))
@@ -131,31 +124,6 @@
     @endif
 
     <style>
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-            padding: 0 28px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--black);
-            margin: -24px -28px 24px -28px;
-            padding: 24px 28px 16px;
-            border-bottom: 1px solid var(--line);
-        }
-        .page-title {
-            font-family: var(--font-display);
-            font-size: 36px;
-            color: var(--white);
-            margin: 0;
-        }
-        .page-subtitle {
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 2px;
-        }
         .content-grid {
             padding: 0 28px 28px;
         }

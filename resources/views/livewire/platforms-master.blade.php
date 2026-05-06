@@ -1,13 +1,5 @@
 <div>
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">GESTIÓN GLOBAL DE PLATAFORMAS</h1>
-            <p class="page-subtitle">Catálogo maestro · los cambios se propagan a todas las líneas</p>
-        </div>
-        <button wire:click="openCreateModal" class="btn-primary">
-            <span>+</span> Nueva plataforma
-        </button>
-    </div>
+    <x-livewire.components.page-header title="GESTIÓN GLOBAL DE PLATAFORMAS" subtitle="Catálogo maestro · los cambios se propagan a todas las líneas" buttonText="+ Nueva plataforma" buttonAction="openCreateModal" />
 
     @if(session()->has('message'))
     <div class="pm-flash">{{ session('message') }}</div>
@@ -98,9 +90,9 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>URL del Logo</label>
-                    <input type="url" wire:model="logo_url" placeholder="https://...">
-                    @error('logo_url') <span class="form-error">{{ $message }}</span> @enderror
+                    <x-image-uploader label="Logo" model="logoUpload" :upload="$logoUpload" :value="$logo_url" remove-action="removeLogo" variant="logo">
+                        @error('logoUpload') <span class="form-error">{{ $message }}</span> @enderror
+                    </x-image-uploader>
                 </div>
                 <div class="form-group">
                     <label>Sitio Web</label>
@@ -169,15 +161,6 @@
     @endif
 
     <style>
-        .page-header {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin: -24px -28px 0 -28px; padding: 24px 28px 16px;
-            border-bottom: 1px solid var(--line); position: sticky; top: 0;
-            z-index: 10; background: var(--black);
-        }
-        .page-title { font-family: var(--font-display); font-size: 36px; color: var(--white); margin: 0; }
-        .page-subtitle { color: var(--muted); font-size: 12px; margin-top: 2px; }
-
         .pm-flash {
             position: fixed; top: 20px; right: 20px; background: var(--good); color: #000;
             padding: 12px 20px; border-radius: 8px; font-weight: 700; z-index: 2000; font-size: 13px;

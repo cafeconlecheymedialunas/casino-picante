@@ -4,244 +4,310 @@ namespace App\Livewire;
 
 use App\Models\Bonus;
 use App\Models\BonusAssignment;
+use App\Models\Line;
 use App\Models\User;
+use App\Traits\HasLinePermissions;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class Bonos extends Component
 {
-    public $search = '';
+    use HasLinePermissions;
 
-    public $filter = 'all';
+    public string $search = '';
 
-    public $showModal = false;
+    public string $filter = 'all';
 
-    public $editingBonus = null;
+    public bool $showModal = false;
 
-    public $showAssignModal = false;
+    public bool $showAssignModal = false;
 
-    public $selectedBonus = null;
+    public ?int $editingBonusId = null;
 
-    public $selectedUser = null;
+    public ?int $selectedBonusId = null;
 
-    public $title = '';
+    public string $title = '';
 
-    public $description = '';
+    public string $code = '';
 
-    public $type = 'general';
+    public string $description = '';
 
-    public $bonus_percent = 0;
+    public string $startDate = '';
 
-    public $bonus_amount = 0;
+    public string $startTime = '00:00';
 
-    public $min_deposit = 0;
+    public string $endDate = '';
 
-    public $max_bonus = 0;
+    public string $endTime = '23:59';
 
-    public $start_date = '';
+    public string $status = 'active';
 
-    public $end_date = '';
+    public string $lineId = '';
 
-    public $status = 'active';
+    public bool $unlimitedQuantity = true;
 
-    protected $rules = [
-        'title' => 'required|min:3',
-        'type' => 'required|in:general,specific',
-        'start_date' => 'required',
-        'end_date' => 'required',
-    ];
+    public string $totalQuantity = '';
 
-    public function openCreateModal()
+    public bool $unlimitedPerUser = false;
+
+    public string $perUserLimit = '1';
+
+    public string $assignUsername = '';
+
+    public string $assignLineId = '';
+
+    protected function rules(): array
     {
+        return [
+            'title' => 'required|min:3|max:160',
+            'code' => 'nullable|min:3|max:80',
+            'description' => 'nullable|max:2000',
+            'startDate' => 'required|date',
+            'startTime' => 'required',
+            'endDate' => 'required|date',
+            'endTime' => 'required',
+            'status' => 'required|in:active,upcoming,expired,inactive',
+            'lineId' => 'required|integer|exists:lines,id',
+            'totalQuantity' => 'nullable|integer|min:0',
+            'perUserLimit' => 'nullable|integer|min:1',
+        ];
+    }
+
+    public function openCreateModal(): void
+    {
+        $this->checkLinePermission('bono.create');
         $this->resetForm();
-        $this->start_date = Carbon::now()->format('Y-m-d');
-        $this->end_date = Carbon::now()->addWeek()->format('Y-m-d');
+        $this->code = Bonus::generateCode();
+        $this->startDate = now()->format('Y-m-d');
+        $this->endDate = now()->addWeek()->format('Y-m-d');
+        $this->lineId = (string) (session('active_line_id') ?: $this->availableLines()->first()?->id);
         $this->showModal = true;
     }
 
-    public function openEditModal($bonusId)
+    public function openEditModal(int $bonusId): void
     {
-        $bonus = Bonus::find($bonusId);
-        $this->editingBonus = $bonus;
+        $this->checkLinePermission('bono.update');
+        $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
+        $this->editingBonusId = $bonus->id;
         $this->title = $bonus->title;
+        $this->code = $bonus->code ?? '';
         $this->description = $bonus->description ?? '';
-        $this->type = $bonus->type;
-        $this->bonus_percent = $bonus->bonus_percent ?? 0;
-        $this->bonus_amount = $bonus->bonus_amount ?? 0;
-        $this->min_deposit = $bonus->min_deposit ?? 0;
-        $this->max_bonus = $bonus->max_bonus ?? 0;
-        $this->start_date = $bonus->start_date?->format('Y-m-d') ?? '';
-        $this->end_date = $bonus->end_date?->format('Y-m-d') ?? '';
+        $this->startDate = $bonus->start_date?->format('Y-m-d') ?? '';
+        $this->startTime = $bonus->start_date?->format('H:i') ?? '00:00';
+        $this->endDate = $bonus->end_date?->format('Y-m-d') ?? '';
+        $this->endTime = $bonus->end_date?->format('H:i') ?? '23:59';
         $this->status = $bonus->status;
+        $this->lineId = (string) $bonus->line_id;
+        $this->unlimitedQuantity = $bonus->total_quantity === null;
+        $this->totalQuantity = $bonus->total_quantity === null ? '' : (string) $bonus->total_quantity;
+        $this->unlimitedPerUser = $bonus->per_user_limit === null;
+        $this->perUserLimit = $bonus->per_user_limit === null ? '' : (string) $bonus->per_user_limit;
         $this->showModal = true;
     }
 
-    public function closeModal()
+    public function closeModal(): void
     {
         $this->showModal = false;
-        $this->editingBonus = null;
+        $this->editingBonusId = null;
         $this->resetForm();
     }
 
-    public function resetForm()
+    public function saveBonus(): void
     {
-        $this->title = '';
-        $this->description = '';
-        $this->type = 'general';
-        $this->bonus_percent = 0;
-        $this->bonus_amount = 0;
-        $this->min_deposit = 0;
-        $this->max_bonus = 0;
-        $this->start_date = '';
-        $this->end_date = '';
-        $this->status = 'active';
-    }
+        $this->editingBonusId
+            ? $this->checkLinePermission('bono.update')
+            : $this->checkLinePermission('bono.create');
 
-    public function saveBonus()
-    {
         $this->validate();
+        $this->authorizeLineChoice((int) $this->lineId);
+
+        $start = Carbon::parse($this->startDate.' '.$this->startTime);
+        $end = Carbon::parse($this->endDate.' '.$this->endTime);
+
+        if ($end->lt($start)) {
+            $this->addError('endDate', 'La fecha de fin debe ser posterior al inicio.');
+            return;
+        }
 
         $data = [
-            'title' => $this->title,
-            'description' => $this->description,
-            'type' => $this->type,
-            'bonus_percent' => $this->bonus_percent,
-            'bonus_amount' => $this->bonus_amount,
-            'min_deposit' => $this->min_deposit,
-            'max_bonus' => $this->max_bonus,
-            'start_date' => Carbon::parse($this->start_date),
-            'end_date' => Carbon::parse($this->end_date),
+            'title' => trim($this->title),
+            'code' => trim($this->code) ?: Bonus::generateCode(),
+            'description' => trim($this->description) ?: null,
+            'type' => 'general',
+            'start_date' => $start,
+            'end_date' => $end,
             'status' => $this->status,
+            'line_id' => (int) $this->lineId,
+            'total_quantity' => $this->unlimitedQuantity ? null : (int) $this->totalQuantity,
+            'per_user_limit' => $this->unlimitedPerUser ? null : (int) ($this->perUserLimit ?: 1),
         ];
 
-        if ($this->editingBonus) {
-            $this->editingBonus->update($data);
-            session()->flash('message', 'Bono actualizado correctamente');
+        if ($this->editingBonusId) {
+            Bonus::withoutGlobalScopes()->findOrFail($this->editingBonusId)->update($data);
+            session()->flash('message', 'Bono actualizado correctamente.');
         } else {
-            $data['line_id'] = session('active_line_id');
+            $data['created_by'] = session('active_agent_id');
             Bonus::create($data);
-            session()->flash('message', 'Bono creado correctamente');
+            session()->flash('message', 'Bono creado correctamente.');
         }
 
         $this->closeModal();
     }
 
-    public function deleteBonus($bonusId)
+    public function openAssignModal(int $bonusId): void
     {
-        $bonus = Bonus::find($bonusId);
-        $bonus->assignments()->delete();
-        $bonus->delete();
-        session()->flash('message', 'Bono eliminado correctamente');
-    }
-
-    public function toggleStatus($bonusId)
-    {
-        $bonus = Bonus::find($bonusId);
-        $bonus->update(['status' => $bonus->status === 'active' ? 'inactive' : 'active']);
-    }
-
-    public function openAssignModal($bonusId)
-    {
-        $this->selectedBonus = Bonus::find($bonusId);
-        $this->selectedUser = '';
+        $this->checkLinePermission('bono.read');
+        $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
+        $this->authorizeLineChoice((int) $bonus->line_id);
+        $this->selectedBonusId = $bonus->id;
+        $this->assignLineId = (string) $bonus->line_id;
+        $this->assignUsername = '';
         $this->showAssignModal = true;
     }
 
-    public function closeAssignModal()
+    public function closeAssignModal(): void
     {
         $this->showAssignModal = false;
-        $this->selectedBonus = null;
-        $this->selectedUser = '';
+        $this->selectedBonusId = null;
+        $this->assignUsername = '';
+        $this->assignLineId = '';
     }
 
-    public function assignToUser()
+    public function assignToUser(): void
     {
-        if (! $this->selectedUser || ! $this->selectedBonus) {
+        $this->checkLinePermission('bono.read');
+        $this->validate([
+            'assignUsername' => 'required|string|min:2',
+            'assignLineId' => 'required|integer|exists:lines,id',
+        ]);
+        $this->authorizeLineChoice((int) $this->assignLineId);
+
+        $bonus = Bonus::withoutGlobalScopes()->findOrFail($this->selectedBonusId);
+        $user = User::where('username', $this->assignUsername)
+            ->orWhere('email', $this->assignUsername)
+            ->first();
+
+        if (! $user) {
+            $this->addError('assignUsername', 'No existe un usuario con ese username o email.');
             return;
         }
 
-        $user = User::find($this->selectedUser);
+        if ((int) $bonus->line_id !== (int) $this->assignLineId) {
+            $this->addError('assignLineId', 'Ese bono no pertenece a la linea elegida.');
+            return;
+        }
+
+        if (! $bonus->canUserClaim($user->id)) {
+            $this->addError('assignUsername', 'El usuario ya alcanzo el limite de uso para este bono.');
+            return;
+        }
 
         BonusAssignment::create([
-            'bonus_id' => $this->selectedBonus->id,
+            'bonus_id' => $bonus->id,
             'user_id' => $user->id,
-            'status' => 'available',
-            'assigned_at' => Carbon::now(),
+            'status' => 'active',
+            'assigned_at' => now(),
         ]);
 
-        session()->flash('message', 'Bono asignado a '.$user->name);
+        session()->flash('message', 'Bono otorgado a '.$user->username.'.');
         $this->closeAssignModal();
     }
 
-    public function markAsUsed($assignmentId)
+    public function markClaimed(int $assignmentId): void
     {
-        $assignment = BonusAssignment::find($assignmentId);
-        $assignment->update(['status' => 'used', 'used_at' => Carbon::now()]);
-        session()->flash('message', 'Bono marcado como usado');
+        $this->checkLinePermission('bono.read');
+        $assignment = BonusAssignment::with('bonus')->findOrFail($assignmentId);
+        $this->authorizeLineChoice((int) $assignment->bonus->line_id);
+        $assignment->update(['status' => 'used', 'used_at' => now()]);
+        session()->flash('message', 'Bono marcado como reclamado.');
     }
 
-    public function markAsExpired($assignmentId)
+    public function deleteBonus(int $bonusId): void
     {
-        $assignment = BonusAssignment::find($assignmentId);
-        $assignment->update(['status' => 'expired', 'expired_at' => Carbon::now()]);
-        session()->flash('message', 'Bono marcado como expirado');
-    }
-
-    public function removeAssignment($assignmentId)
-    {
-        BonusAssignment::find($assignmentId)->delete();
-        session()->flash('message', 'Bono eliminado del usuario');
-    }
-
-    public function getBonuses()
-    {
-        $query = Bonus::query();
-
-        if ($this->search) {
-            $query->where('title', 'like', '%'.$this->search.'%');
-        }
-
-        if ($this->filter !== 'all') {
-            $query->where('status', $this->filter);
-        }
-
-        return $query->orderBy('created_at', 'desc')->get();
-    }
-
-    public function getUsers()
-    {
-        return User::orderBy('name')->get();
-    }
-
-    public function getMetrics()
-    {
-        $now = Carbon::now();
-
-        return [
-            'total' => Bonus::count(),
-            'active' => Bonus::where('status', 'active')
-                ->where('start_date', '<=', $now)
-                ->where('end_date', '>=', $now)
-                ->count(),
-            'assigned' => BonusAssignment::count(),
-            'used' => BonusAssignment::where('status', 'used')->count(),
-        ];
-    }
-
-    public function getAssignments($bonusId)
-    {
-        return BonusAssignment::where('bonus_id', $bonusId)
-            ->with('user')
-            ->orderBy('assigned_at', 'desc')
-            ->get();
+        $this->checkLinePermission('bono.delete');
+        $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
+        $this->authorizeLineChoice((int) $bonus->line_id);
+        $bonus->assignments()->delete();
+        $bonus->delete();
+        session()->flash('message', 'Bono eliminado correctamente.');
     }
 
     public function render()
     {
-        $bonuses = $this->getBonuses();
-        $users = $this->getUsers();
-        $metrics = $this->getMetrics();
+        return view('livewire.bonos', [
+            'bonuses' => $this->bonuses(),
+            'metrics' => $this->metrics(),
+            'lines' => $this->availableLines(),
+            'selectedBonus' => $this->selectedBonusId ? Bonus::withoutGlobalScopes()->find($this->selectedBonusId) : null,
+            'canCreateBonus' => $this->hasLinePermission('bono.create'),
+        ])->layout('layouts.dashboard');
+    }
 
-        return view('livewire.bonos', compact('bonuses', 'users', 'metrics'))->layout('layouts.dashboard');
+    private function resetForm(): void
+    {
+        $this->title = '';
+        $this->code = '';
+        $this->description = '';
+        $this->startDate = '';
+        $this->startTime = '00:00';
+        $this->endDate = '';
+        $this->endTime = '23:59';
+        $this->status = 'active';
+        $this->lineId = '';
+        $this->unlimitedQuantity = true;
+        $this->totalQuantity = '';
+        $this->unlimitedPerUser = false;
+        $this->perUserLimit = '1';
+        $this->resetValidation();
+    }
+
+    private function bonuses(): Collection
+    {
+        $query = Bonus::withoutGlobalScopes()
+            ->with(['line', 'assignments.user'])
+            ->whereIn('line_id', $this->availableLines()->pluck('id'))
+            ->when($this->search, function ($query) {
+                $search = '%'.$this->search.'%';
+                $query->where(fn ($inner) => $inner
+                    ->where('title', 'like', $search)
+                    ->orWhere('code', 'like', $search)
+                    ->orWhereHas('line', fn ($line) => $line->where('name', 'like', $search)));
+            })
+            ->when($this->filter !== 'all', fn ($query) => $query->where('status', $this->filter));
+
+        return $query->orderByDesc('created_at')->get();
+    }
+
+    private function metrics(): array
+    {
+        $bonuses = $this->bonuses();
+
+        return [
+            'total' => $bonuses->count(),
+            'active' => $bonuses->where('status', 'active')->count(),
+            'upcoming' => $bonuses->where('status', 'upcoming')->count(),
+            'expired' => $bonuses->where('status', 'expired')->count(),
+            'claimed' => $bonuses->sum(fn (Bonus $bonus) => $bonus->assignments->whereIn('status', ['used', 'claimed'])->count()),
+        ];
+    }
+
+    private function availableLines(): Collection
+    {
+        if ($this->isAdminMode()) {
+            return Line::orderBy('name')->get();
+        }
+
+        return Line::whereHas('lineAgents', fn ($query) => $query
+            ->where('agent_id', session('active_agent_id'))
+            ->where('is_active', true)
+        )->orderBy('name')->get();
+    }
+
+    private function authorizeLineChoice(int $lineId): void
+    {
+        if (! $this->availableLines()->pluck('id')->contains($lineId)) {
+            abort(403, 'No podes operar bonos fuera de tus lineas.');
+        }
     }
 }

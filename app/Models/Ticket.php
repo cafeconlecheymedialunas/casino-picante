@@ -25,28 +25,13 @@ class Ticket extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function line()
+    {
+        return $this->belongsTo(Line::class);
+    }
+
     public function messages()
     {
         return $this->hasMany(TicketMessage::class);
-    }
-}
-
-class TicketMessage extends Model
-{
-    protected $fillable = [
-        'ticket_id',
-        'user_id',
-        'agent_id',
-        'message',
-    ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function agent()
-    {
-        return $this->belongsTo(Agent::class);
     }
 }

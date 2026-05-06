@@ -1,10 +1,5 @@
 <div class="page-container">
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">BANNERS</h1>
-            <p class="page-subtitle">Gestión de banners publicitarios</p>
-        </div>
-    </div>
+    <x-livewire.components.page-header title="BANNERS" subtitle="Gestión de banners publicitarios" />
 
     <style>
         .banners-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }

@@ -3,12 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\Post;
+use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Novedades extends Component
 {
     use HasLinePermissions;
+    use WithFileUploads;
 
     public $tab = 'novedad';
 
@@ -33,6 +36,8 @@ class Novedades extends Component
     public $type = 'novedad';
 
     public $image = '';
+
+    public $imageUpload = null;
 
     protected $rules = [
         'title' => 'required|min:3',
@@ -98,6 +103,7 @@ class Novedades extends Component
         $this->status = $post->status;
         $this->type = $post->type;
         $this->image = $post->image ?? '';
+        $this->imageUpload = null;
         $this->showModal = true;
     }
 
@@ -115,11 +121,21 @@ class Novedades extends Component
         $this->excerpt = '';
         $this->status = 'draft';
         $this->image = '';
+        $this->imageUpload = null;
     }
 
     public function savePost()
     {
-        $this->validate();
+        $this->validate([
+            ...$this->rules,
+            'imageUpload' => 'nullable|image|max:4096',
+        ]);
+
+        $imagePath = $this->image;
+
+        if ($this->imageUpload) {
+            $imagePath = ImageStorage::store($this->imageUpload, 'contenidos', $this->image ?: null);
+        }
 
         $data = [
             'title' => $this->title,
@@ -127,7 +143,7 @@ class Novedades extends Component
             'excerpt' => $this->excerpt,
             'status' => $this->status,
             'type' => $this->type,
-            'image' => $this->image,
+            'image' => $imagePath ?: null,
         ];
 
         if ($this->editingPost) {
@@ -142,10 +158,23 @@ class Novedades extends Component
         $this->closeModal();
     }
 
+    public function removeImage(): void
+    {
+        if ($this->editingPost && $this->image) {
+            ImageStorage::delete($this->image);
+            $this->editingPost->update(['image' => null]);
+        }
+
+        $this->imageUpload = null;
+        $this->image = '';
+    }
+
     public function deletePost($postId)
     {
         $this->checkLinePermission('news.delete');
-        Post::find($postId)->delete();
+        $post = Post::find($postId);
+        ImageStorage::delete($post?->image);
+        $post?->delete();
 
         if ($this->selectedPost && $this->selectedPost->id === $postId) {
             $this->selectedPost = null;

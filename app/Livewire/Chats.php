@@ -4,10 +4,10 @@ namespace App\Livewire;
 
 use Livewire\Component;
 
-class Caja extends Component
+class Chats extends Component
 {
     public function render()
     {
-        return view('livewire.caja')->layout('layouts.dashboard');
+        return view('livewire.chats')->layout('layouts.dashboard');
     }
 }

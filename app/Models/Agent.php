@@ -10,11 +10,15 @@ class Agent extends Model
     use HasFactory;
 
     protected $fillable = [
+        'username',
         'name',
+        'apellido',
         'email',
         'password',
         'phone',
+        'avatar',
         'parent_id',
+        'cargo',
         'status',
     ];
 
@@ -41,6 +45,13 @@ class Agent extends Model
     }
 
     public function lines()
+    {
+        return $this->belongsToMany(Line::class, 'line_agents')
+            ->withPivot(['role', 'is_active', 'parent_id'])
+            ->withTimestamps();
+    }
+
+    public function assignedLines()
     {
         return $this->belongsToMany(Line::class, 'line_agents')
             ->withPivot(['role', 'is_active', 'parent_id'])

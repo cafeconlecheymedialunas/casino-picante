@@ -4,7 +4,12 @@
       "WebFetch(domain:019de437-887b-721b-b1fa-8d84ba9f7753.claudeusercontent.com)",
       "Bash(php artisan *)",
       "Bash(php -r \"require 'vendor/autoload.php';\")",
-      "Bash(php -l \"app/Livewire/Users/UsersIndex.php\")"
+      "Bash(php -l \"app/Livewire/Users/UsersIndex.php\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\dex360\\\\Downloads\\\\cASINO \\(1\\)\\\\casino-laravel\\\\resources\\\\views\\\\perfil\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\dex360\\\\Downloads\\\\cASINO \\(1\\)\\\\casino-laravel\\\\resources\\\\views\\\\livewire\\\\partials\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\dex360\\Downloads\\cASINO (1)\\casino-laravel\\resources\\views\\perfil"
     ]
   }
 }

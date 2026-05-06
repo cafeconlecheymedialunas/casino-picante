@@ -1,10 +1,10 @@
 <?php
 
+use App\Http\Controllers\PerfilController;
 use App\Livewire\Agentes;
-use App\Livewire\Ajustes;
 use App\Livewire\Banners;
 use App\Livewire\Bonos;
-use App\Livewire\Caja;
+use App\Livewire\Chats;
 use App\Livewire\Lineas;
 use App\Livewire\LineDetail;
 use App\Livewire\Logs;
@@ -15,13 +15,22 @@ use App\Livewire\Promociones;
 use App\Livewire\Reportes;
 use App\Livewire\Sorteos;
 use App\Livewire\Tickets;
-use App\Livewire\UserBonos;
 use App\Livewire\Users\UsersIndex;
+use App\Livewire\Ventas;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/dashboard');
 });
+
+Route::post('/logout', function () {
+    Auth::logout();
+    session()->flush();
+    session()->regenerateToken();
+
+    return redirect('/');
+})->name('logout');
 
 // Switch active line (stores in session, no full reload needed)
 Route::post('/session/line/{id}', function (int $id) {
@@ -36,10 +45,11 @@ Route::middleware('line.authorize')->group(function () {
     Route::get('/clientes', UsersIndex::class)->name('clientes');
     Route::get('/usuarios', UsersIndex::class)->name('users.index');
     Route::get('/agentes', Agentes::class)->name('agentes');
+    Route::get('/chats', Chats::class)->name('chats');
     Route::get('/platforms', PlatformsMaster::class)->name('platforms.master');
-    Route::get('/ajustes', Ajustes::class)->name('ajustes');
     Route::get('/reportes', Reportes::class)->name('reportes');
     Route::get('/logs', Logs::class)->name('logs');
+    Route::get('/ventas', Ventas::class)->name('ventas');
 
     Route::get('/lineas', Lineas::class)->name('lineas');
     Route::get('/lineas/{id}', LineDetail::class)->name('lineas.detail');
@@ -58,14 +68,16 @@ Route::middleware('line.authorize')->group(function () {
 
     Route::middleware('line.authorize:bonus.read')->group(function () {
         Route::get('/bonos', Bonos::class)->name('bonos');
-        Route::get('/user-bonos', UserBonos::class)->name('user-bonos');
     });
 
     Route::middleware('line.authorize:sorteo.read')->group(function () {
         Route::get('/sorteos', Sorteos::class)->name('sorteos');
     });
 
-    Route::get('/caja', Caja::class)->name('caja');
-
     Route::get('/banners', Banners::class)->name('banners');
+
+    // Perfil routes
+    Route::get('/perfil', [PerfilController::class, 'index'])->name('perfil');
+    Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
+    Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
 });

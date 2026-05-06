@@ -1,9 +1,5 @@
 <div>
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">TICKETS</h1>
-        </div>
-    </div>
+    <x-livewire.components.page-header title="TICKETS" />
 
     <div class="content-grid">
         <div class="ticket-list">
@@ -25,7 +21,7 @@
                 </div>
                 <div class="ticket-subject">{{ $ticket->subject }}</div>
                 <div class="ticket-item-footer">
-                    <span class="ticket-line">{{ $ticket->line_id ?? '' }}</span>
+                    <span class="ticket-line">{{ $ticket->line->name ?? 'Sin línea' }}</span>
                     <span class="ticket-status {{ $ticket->status }}">
                         @if($ticket->status === 'open')● Abierto
                         @elseif($ticket->status === 'progress')● En proceso
@@ -46,7 +42,7 @@
             <div class="conv-header">
                 <div>
                     <div class="conv-title">{{ $selectedTicket->user->name ?? 'Usuario' }} · {{ $selectedTicket->subject }}</div>
-                    <div class="conv-meta">{{ $selectedTicket->line_id ?? '' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->priority }} · {{ $selectedTicket->created_at->diffForHumans() }}</div>
+                    <div class="conv-meta">{{ $selectedTicket->line->name ?? 'Sin línea' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->priority }} · {{ $selectedTicket->created_at->diffForHumans() }}</div>
                 </div>
                 <div class="conv-actions">
                     <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;" wire:click="updateStatus('progress')">En proceso</button>
@@ -54,14 +50,26 @@
                 </div>
             </div>
 
-            <div class="conv-messages">
+            <div class="conv-messages" id="ticketMessages">
                 @foreach($selectedTicket->messages as $message)
-                <div class="message {{ $message->agent_id ? 'agent' : '' }}">
-                    <div class="message-avatar {{ $message->agent_id ? 'agent' : '' }}">
-                        {{ strtoupper(substr($message->user->name ?? 'A', 0, 1)) }}
+                @php
+                    $isAgent = (bool)$message->agent_id;
+                    $sender = $isAgent ? $message->agent : $message->user;
+                    $senderName = $sender ? $sender->name : ($isAgent ? 'Agente' : 'Usuario');
+                    $avatarSeed = $sender ? $sender->avatar : ($isAgent ? 'Agente' : 'Usuario');
+                    // For DiceBear seeds from our library, we might need to map them if they are just the value
+                    $seed = str_replace('avatar_', '', $avatarSeed ?? ($isAgent ? 'Agente' : 'Usuario'));
+                @endphp
+                <div class="message {{ $isAgent ? 'agent' : '' }}">
+                    <div class="message-avatar {{ $isAgent ? 'agent' : '' }}">
+                        <img src="https://api.dicebear.com/9.x/adventurer/svg?seed={{ urlencode($seed) }}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4" 
+                             alt="{{ $senderName }}"
+                             style="width: 100%; height: 100%; border-radius: 50%;">
                     </div>
                     <div class="message-bubble">
-                        <div class="message-meta">{{ $message->created_at->format('H:i') }}</div>
+                        <div class="message-meta">
+                            {{ $senderName }} · {{ $message->created_at->format('H:i') }}
+                        </div>
                         <div class="message-text">{{ $message->message }}</div>
                     </div>
                 </div>
@@ -75,8 +83,12 @@
                 </div>
                 <div class="input-box">
                     <input type="text" class="input-text" placeholder="Escribí tu respuesta…" wire:model="newMessage" wire:keydown.enter="sendMessage">
-                    <button class="btn-primary send-btn" wire:click="sendMessage">Enviar →</button>
+                    <button class="btn-primary send-btn" wire:click="sendMessage" wire:loading.attr="disabled">
+                        <span wire:loading.remove>Enviar →</span>
+                        <span wire:loading>...</span>
+                    </button>
                 </div>
+                @error('newMessage') <span style="color: var(--orange); font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span> @enderror
             </div>
             @else
             <div class="conv-empty">
@@ -86,9 +98,26 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('livewire:init', () => {
+            const scrollToBottom = () => {
+                const container = document.getElementById('ticketMessages');
+                if (container) {
+                    container.scrollTop = container.scrollHeight;
+                }
+            };
+
+            Livewire.on('ticketSelected', () => {
+                setTimeout(scrollToBottom, 50);
+            });
+
+            Livewire.on('messageSent', () => {
+                setTimeout(scrollToBottom, 50);
+            });
+        });
+    </script>
+
     <style>
-        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding: 0 28px; }
-        .page-title { font-family: var(--font-display); font-size: 36px; color: var(--white); margin: 0; }
         .content-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 0; height: calc(100vh - 180px); padding: 0 28px 28px; }
         @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } }
 

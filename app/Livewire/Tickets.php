@@ -4,10 +4,13 @@ namespace App\Livewire;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Traits\HasLinePermissions;
 use Livewire\Component;
 
 class Tickets extends Component
 {
+    use HasLinePermissions;
+
     public $filter = 'open';
 
     public $search = '';
@@ -23,7 +26,8 @@ class Tickets extends Component
 
     public function selectTicket($id)
     {
-        $this->selectedTicket = Ticket::with(['user', 'messages.agent'])->find($id);
+        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($id);
+        $this->dispatch('ticketSelected');
     }
 
     public function closeDetail()
@@ -33,7 +37,13 @@ class Tickets extends Component
 
     public function sendMessage()
     {
-        if (! $this->newMessage || ! $this->selectedTicket) {
+        $this->checkLinePermission('ticket.update');
+
+        $this->validate([
+            'newMessage' => 'required|string|min:1',
+        ]);
+
+        if (! $this->selectedTicket) {
             return;
         }
 
@@ -44,11 +54,14 @@ class Tickets extends Component
         ]);
 
         $this->newMessage = '';
-        $this->selectedTicket = $this->selectedTicket->fresh(['messages']);
+        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+        $this->dispatch('messageSent');
     }
 
     public function quickAction($type)
     {
+        $this->checkLinePermission('ticket.update');
+
         if (! $this->selectedTicket) {
             return;
         }
@@ -68,20 +81,23 @@ class Tickets extends Component
             $this->selectedTicket->update(['status' => 'closed']);
         }
 
-        $this->selectedTicket = $this->selectedTicket->fresh(['messages']);
+        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+        $this->dispatch('messageSent');
     }
 
     public function updateStatus($status)
     {
         if ($this->selectedTicket) {
             $this->selectedTicket->update(['status' => $status]);
-            $this->selectedTicket = $this->selectedTicket->fresh();
+            $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
         }
     }
 
     public function getTickets()
     {
-        $query = Ticket::with('user');
+        $this->checkLinePermission('ticket.read');
+
+        $query = Ticket::with(['user', 'line']);
 
         if ($this->filter !== 'all') {
             $query->where('status', $this->filter);

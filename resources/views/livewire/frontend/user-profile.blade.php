@@ -46,11 +46,12 @@
         </div>
     @endif
 
-    <div class="profile-header">
+    <x-livewire.components.page-header title="MI PERFIL" subtitle="{{ $user->email }}" />
+
+    <div class="profile-header" style="margin-bottom: 20px;">
         <div class="profile-avatar-lg">{{ strtoupper(substr($user->name, 0, 2)) }}</div>
         <div>
             <div style="font-family:var(--font-display);font-size:26px;letter-spacing:0.02em;">{{ $user->name }}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">{{ $user->email }}</div>
         </div>
     </div>
 

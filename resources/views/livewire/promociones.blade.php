@@ -1,10 +1,5 @@
 <div class="page-container">
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">PROMOCIONES</h1>
-        </div>
-        <button class="btn-primary" wire:click="openCreateModal"><span>+</span> Nueva promo</button>
-    </div>
+    <x-livewire.components.page-header title="PROMOCIONES" buttonText="+ Nueva promo" buttonAction="openCreateModal" />
 
     @if($showModal)
     <div class="modal-overlay" wire:click="closeModal">
@@ -254,8 +249,6 @@
     </div>
 
     <style>
-        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding: 0 28px; }
-        .page-title { font-family: var(--font-display); font-size: 36px; color: var(--white); margin: 0; }
         .content-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; padding: 0 28px 28px; }
         @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } }
 

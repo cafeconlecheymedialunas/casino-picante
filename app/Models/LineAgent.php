@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class LineAgent extends Model
 {
-    protected $fillable = ['line_id', 'agent_id', 'role', 'is_active', 'parent_id'];
+    protected $fillable = ['line_id', 'agent_id', 'role', 'is_active', 'parent_id', 'porcentaje_ganancia'];
 
     protected $casts = ['is_active' => 'boolean'];
 

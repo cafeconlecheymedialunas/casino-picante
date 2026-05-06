@@ -7,13 +7,17 @@ use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
 use App\Models\Platform;
+use App\Models\Sale;
+use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class LineDetail extends Component
 {
     use HasLinePermissions;
+    use WithFileUploads;
 
     public int $lineId;
 
@@ -66,14 +70,255 @@ class LineDetail extends Component
     // Line permissions
     public array $linePermissionsList = [];
 
+    // Inline editing mode
+    public bool $isEditing = false;
+
+    public $portadaUpload = null;
+
+    public $perfilUpload = null;
+
+    public function toggleInlineEdit(): void
+    {
+        $this->isEditing = ! $this->isEditing;
+        if (! $this->isEditing) {
+            // Just cancelled, reload original data
+            $this->initInlineFields();
+        }
+    }
+
+    public function saveAll(): void
+    {
+        $this->validate([
+            'line.name' => 'required|string|max:255',
+            'line.encargado_id' => 'nullable|integer|exists:agents,id',
+            'line.porcentaje_encargado' => 'nullable|numeric|min:0|max:100',
+            'line.ventas_mes_actual' => 'nullable|numeric|min:0',
+            'line.ventas_mes_pasado' => 'nullable|numeric|min:0',
+            'line.ventas_mes_antiguo' => 'nullable|numeric|min:0',
+            'line.ganancia_encargado' => 'nullable|numeric|min:0',
+            'line.mejor_mes_total' => 'nullable|numeric|min:0',
+            'line.mejor_plataforma_total' => 'nullable|numeric|min:0',
+            'portadaUpload' => 'nullable|image|max:4096',
+            'perfilUpload' => 'nullable|image|max:4096',
+        ]);
+
+        if ($this->portadaUpload) {
+            $this->line->portada_url = ImageStorage::store($this->portadaUpload, 'lineas/portadas', $this->line->portada_url);
+        }
+
+        if ($this->perfilUpload) {
+            $this->line->perfil_url = ImageStorage::store($this->perfilUpload, 'lineas/perfiles', $this->line->perfil_url);
+        }
+
+        $this->line->save();
+        $this->portadaUpload = null;
+        $this->perfilUpload = null;
+        $this->isEditing = false;
+        session()->flash('message', 'Todos los cambios guardados.');
+    }
+
+    public function removeImageField(string $field): void
+    {
+        if ($field === 'portada') {
+            ImageStorage::delete($this->line->portada_url);
+            $this->portadaUpload = null;
+            $this->line->portada_url = null;
+        }
+
+        if ($field === 'perfil') {
+            ImageStorage::delete($this->line->perfil_url);
+            $this->perfilUpload = null;
+            $this->line->perfil_url = null;
+        }
+    }
+
+    // Sales editing
+    public bool $showSalesModal = false;
+
+    public ?int $editingSaleId = null;
+
+    public int $salePlatformId = 0;
+
+    public int $saleMes = 0;
+
+    public int $saleAnio = 0;
+
+    public string $saleFechaInicio = '';
+
+    public string $saleFechaFin = '';
+
+    public string $saleMontoFichas = '';
+
+    public string $saleGananciaEncargado = '';
+
+    // Assign percentage to encargado
+    public bool $showPercentageModal = false;
+
+    public ?int $percentageAgentId = null;
+
+    public string $percentageValue = '';
+
+    // Image uploads
+    public string $portadaUrl = '';
+
+    // Edit toggles por sección
+    public bool $editingInfo = false;
+
+    public bool $editingContacts = false;
+
+    public bool $editingEncargado = false;
+
+    public bool $editingImages = false;
+
+    // Campos editables en línea
+    public string $inlineName = '';
+
+    public string $inlineType = 'whatsapp';
+
+    public string $inlineStatus = 'active';
+
+    public string $inlineIcon = '';
+
+    public string $inlineDescription = '';
+
+    public string $inlinePortada = '';
+
+    public string $inlinePerfil = '';
+
+    public ?int $inlineEncargadoId = null;
+
+    public array $inlineContacts = [];
+
     public function mount(int $id): void
     {
         $this->lineId = $id;
         $this->line = Line::findOrFail($id);
         $this->linePermissionsList = $this->line->permissions ?? [];
+        $this->initInlineFields();
     }
 
-    // ── Edit Line ──────────────────────────────────────────────────────────
+    public function initInlineFields(): void
+    {
+        $this->inlineName = $this->line->name ?? '';
+        $this->inlineType = $this->line->type ?? 'whatsapp';
+        $this->inlineStatus = $this->line->status ?? 'active';
+        $this->inlineIcon = $this->line->icon ?? '';
+        $this->inlineDescription = $this->line->description ?? '';
+        $this->inlinePortada = $this->line->portada_url ?? '';
+        $this->inlinePerfil = $this->line->perfil_url ?? '';
+        $this->inlineEncargadoId = $this->line->encargado_id;
+        $this->inlineContacts = $this->line->contact_links ?? [];
+        if (empty($this->inlineContacts)) {
+            $this->inlineContacts = [['type' => 'whatsapp', 'value' => '', 'label' => 'WhatsApp']];
+        }
+    }
+
+    // ── Toggle Edición por Sección ─────────────────────────────────────────
+
+    public function toggleEditInfo(): void
+    {
+        if ($this->editingInfo) {
+            $this->saveInfo();
+        } else {
+            $this->inlineName = $this->line->name ?? '';
+            $this->inlineType = $this->line->type ?? 'whatsapp';
+            $this->inlineStatus = $this->line->status ?? 'active';
+            $this->inlineIcon = $this->line->icon ?? '';
+            $this->inlineDescription = $this->line->description ?? '';
+        }
+        $this->editingInfo = ! $this->editingInfo;
+    }
+
+    public function saveInfo(): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+        $this->line->update([
+            'name' => $this->inlineName,
+            'type' => $this->inlineType,
+            'status' => $this->inlineStatus,
+            'icon' => $this->inlineIcon,
+            'description' => $this->inlineDescription,
+            'portada_url' => $this->inlinePortada ?: null,
+            'perfil_url' => $this->inlinePerfil ?: null,
+        ]);
+        $this->line->refresh();
+        session()->flash('message', 'Información actualizada.');
+    }
+
+    public function toggleEditContacts(): void
+    {
+        if ($this->editingContacts) {
+            $this->saveContacts();
+        } else {
+            $this->inlineContacts = $this->line->contact_links ?? [];
+            if (empty($this->inlineContacts)) {
+                $this->inlineContacts = [['type' => 'whatsapp', 'value' => '', 'label' => 'WhatsApp']];
+            }
+        }
+        $this->editingContacts = ! $this->editingContacts;
+    }
+
+    public function saveContacts(): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+        $contacts = array_filter($this->inlineContacts, fn ($c) => ! empty($c['value']));
+        $this->line->update(['contact_links' => array_values($contacts)]);
+        $this->line->refresh();
+        session()->flash('message', 'Contactos actualizados.');
+    }
+
+    public function addInlineContact(): void
+    {
+        $this->inlineContacts[] = ['type' => 'whatsapp', 'value' => '', 'label' => 'Nuevo'];
+    }
+
+    public function removeInlineContact(int $index): void
+    {
+        unset($this->inlineContacts[$index]);
+        $this->inlineContacts = array_values($this->inlineContacts);
+    }
+
+    public function toggleEditEncargado(): void
+    {
+        if ($this->editingEncargado) {
+            $this->saveEncargado();
+        } else {
+            $this->inlineEncargadoId = $this->line->encargado_id;
+        }
+        $this->editingEncargado = ! $this->editingEncargado;
+    }
+
+    public function saveEncargado(): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+        $this->line->update(['encargado_id' => $this->inlineEncargadoId ?: null]);
+        $this->line->refresh();
+        session()->flash('message', 'Encargado actualizado.');
+    }
+
+    public function toggleEditImages(): void
+    {
+        if ($this->editingImages) {
+            $this->saveImages();
+        } else {
+            $this->inlinePortada = $this->line->portada_url ?? '';
+            $this->inlinePerfil = $this->line->perfil_url ?? '';
+        }
+        $this->editingImages = ! $this->editingImages;
+    }
+
+    public function saveImages(): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+        $this->line->update([
+            'portada_url' => $this->inlinePortada ?: null,
+            'perfil_url' => $this->inlinePerfil ?: null,
+        ]);
+        $this->line->refresh();
+        session()->flash('message', 'Imágenes actualizadas.');
+    }
+
+    // ── Edit Line (Modal legacy) ───────────────────────────────────────────
 
     public function openEditModal(): void
     {
@@ -437,6 +682,276 @@ class LineDetail extends Component
         $this->editingPermAgentId = null;
     }
 
+    // ── Sales Management ─────────────────────────────────────────────────────
+
+    public function openSalesModal(?int $saleId = null): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+
+        if ($saleId) {
+            $sale = Sale::find($saleId);
+            $this->editingSaleId = $sale->id;
+            $this->salePlatformId = $sale->platform_id;
+            $this->saleMes = $sale->mes;
+            $this->saleAnio = $sale->anio;
+            $this->saleFechaInicio = $sale->fecha_inicio->format('Y-m-d');
+            $this->saleFechaFin = $sale->fecha_fin->format('Y-m-d');
+            $this->saleMontoFichas = $sale->monto_fichas;
+            $this->saleGananciaEncargado = $sale->ganancia_superagente;
+        } else {
+            $this->resetSalesForm();
+        }
+        $this->showSalesModal = true;
+    }
+
+    public function resetSalesForm(): void
+    {
+        $this->editingSaleId = null;
+        $this->salePlatformId = 0;
+        $this->saleMes = now()->month;
+        $this->saleAnio = now()->year;
+        $this->saleFechaInicio = now()->startOfMonth()->format('Y-m-d');
+        $this->saleFechaFin = now()->endOfMonth()->format('Y-m-d');
+        $this->saleMontoFichas = '';
+        $this->saleGananciaEncargado = '';
+    }
+
+    public function closeSalesModal(): void
+    {
+        $this->showSalesModal = false;
+        $this->resetSalesForm();
+    }
+
+    public function saveSale(): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+
+        $this->validate([
+            'salePlatformId' => 'required|integer|min:1',
+            'saleMes' => 'required|integer|min:1|max:12',
+            'saleAnio' => 'required|integer|min:2020',
+            'saleFechaInicio' => 'required|date',
+            'saleFechaFin' => 'required|date|after_or_equal:saleFechaInicio',
+            'saleMontoFichas' => 'required|numeric|min:0',
+        ]);
+
+        $data = [
+            'line_id' => $this->lineId,
+            'platform_id' => $this->salePlatformId,
+            'mes' => $this->saleMes,
+            'anio' => $this->saleAnio,
+            'fecha_inicio' => $this->saleFechaInicio,
+            'fecha_fin' => $this->saleFechaFin,
+            'monto_fichas' => $this->saleMontoFichas ?: 0,
+            'ganancia_superagente' => $this->saleGananciaEncargado ?: 0,
+        ];
+
+        if ($this->editingSaleId) {
+            Sale::find($this->editingSaleId)->update($data);
+            session()->flash('message', 'Venta actualizada.');
+        } else {
+            Sale::updateOrCreate(
+                [
+                    'line_id' => $this->lineId,
+                    'platform_id' => $this->salePlatformId,
+                    'mes' => $this->saleMes,
+                    'anio' => $this->saleAnio,
+                ],
+                $data
+            );
+            session()->flash('message', 'Venta registrada.');
+        }
+
+        $this->closeSalesModal();
+    }
+
+    public function deleteSale(int $saleId): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+        Sale::find($saleId)->delete();
+        session()->flash('message', 'Venta eliminada.');
+    }
+
+    public function getSalesProperty()
+    {
+        return Sale::where('line_id', $this->lineId)
+            ->orderBy('anio', 'desc')
+            ->orderBy('mes', 'desc')
+            ->get();
+    }
+
+    public function getTotalSalesThisMonth(): float
+    {
+        return Sale::where('line_id', $this->lineId)
+            ->where('mes', now()->month)
+            ->where('anio', now()->year)
+            ->sum('monto_fichas');
+    }
+
+    public function getTotalSalesLast3Months(): array
+    {
+        $months = [];
+        for ($i = 0; $i < 3; $i++) {
+            $date = now()->subMonths($i);
+            $months[] = [
+                'mes' => $date->month,
+                'anio' => $date->year,
+                'nombre' => $date->monthName,
+                'total' => Sale::where('line_id', $this->lineId)
+                    ->where('mes', $date->month)
+                    ->where('anio', $date->year)
+                    ->sum('monto_fichas'),
+            ];
+        }
+
+        return $months;
+    }
+
+    public function getBestMonth(): ?array
+    {
+        $best = Sale::where('line_id', $this->lineId)
+            ->selectRaw('mes, anio, SUM(monto_fichas) as total')
+            ->groupBy('mes', 'anio')
+            ->orderByDesc('total')
+            ->first();
+
+        if (! $best) {
+            return null;
+        }
+
+        $monthName = Carbon::createFromDate($best->anio, $best->mes, 1)->monthName;
+
+        return [
+            'mes' => $best->mes,
+            'anio' => $best->anio,
+            'nombre' => $monthName,
+            'total' => $best->total,
+        ];
+    }
+
+    public function getBestPlatformThisMonth(): ?array
+    {
+        $best = Sale::where('line_id', $this->lineId)
+            ->where('mes', now()->month)
+            ->where('anio', now()->year)
+            ->orderByDesc('monto_fichas')
+            ->with('platform')
+            ->first();
+
+        if (! $best) {
+            return null;
+        }
+
+        return [
+            'platform' => $best->platform->name,
+            'total' => $best->monto_fichas,
+        ];
+    }
+
+    public function getEncargadoEarningsThisMonth(): array
+    {
+        $lineAgents = LineAgent::where('line_id', $this->lineId)
+            ->where('role', 'encargado')
+            ->where('is_active', true)
+            ->get();
+
+        $totalSales = $this->getTotalSalesThisMonth();
+        $earnings = [];
+
+        foreach ($lineAgents as $la) {
+            $porcentaje = $la->porcentaje_ganancia ?? 0;
+            $ganancia = $totalSales * ($porcentaje / 100);
+            $earnings[] = [
+                'agent' => $la->agent,
+                'porcentaje' => $porcentaje,
+                'ganancia' => $ganancia,
+            ];
+        }
+
+        return $earnings;
+    }
+
+    // ── Encargado Percentage ───────────────────────────────────────────────
+
+    public function openPercentageModal(int $agentId): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+
+        $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
+        if ($la) {
+            $this->percentageAgentId = $agentId;
+            $this->percentageValue = $la->porcentaje_ganancia ?? '0';
+            $this->showPercentageModal = true;
+        }
+    }
+
+    public function closePercentageModal(): void
+    {
+        $this->showPercentageModal = false;
+        $this->percentageAgentId = null;
+        $this->percentageValue = '';
+    }
+
+    public function savePercentage(): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+
+        if ($this->percentageAgentId) {
+            LineAgent::where('line_id', $this->lineId)
+                ->where('agent_id', $this->percentageAgentId)
+                ->update(['porcentaje_ganancia' => (float) $this->percentageValue]);
+
+            session()->flash('message', 'Porcentaje de ganancia actualizado.');
+        }
+
+        $this->closePercentageModal();
+    }
+
+    // ── Image URLs ───────────────────────────────────────────────────────────
+
+    public function openImageModal(string $type): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+
+        if ($type === 'portada') {
+            $this->portadaUrl = $this->line->portada_url ?? '';
+        } else {
+            $this->perfilUrl = $this->line->perfil_url ?? '';
+        }
+
+        $this->dispatch('openImageUploadModal', ['type' => $type]);
+    }
+
+    public function saveImageUrl(string $type, string $url): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+
+        if ($type === 'portada') {
+            $this->line->update(['portada_url' => $url]);
+        } else {
+            $this->line->update(['perfil_url' => $url]);
+        }
+
+        $this->line->refresh();
+        session()->flash('message', 'Imagen actualizada.');
+    }
+
+    // ── Delete Image ────────────────────────────────────────
+
+    public function deleteImage(string $type): void
+    {
+        $this->checkLinePermission('line.edit.basic');
+
+        if ($type === 'portada') {
+            $this->line->update(['portada_url' => null]);
+        } elseif ($type === 'perfil') {
+            $this->line->update(['perfil_url' => null]);
+        }
+
+        $this->line->refresh();
+        session()->flash('message', 'Imagen eliminada.');
+    }
+
     // ── Encargado selection ────────────────────────────────────────
 
     public function getAvailableAgentsProperty(): Collection
@@ -488,7 +1003,10 @@ class LineDetail extends Component
         $currentEncargado = $this->currentEncargado;
         $availablePlatforms = $this->availablePlatforms;
 
-        return view('livewire.line-detail', compact('availableAgents', 'currentEncargado', 'availablePlatforms'))
-            ->layout('layouts.dashboard');
+        return view('livewire.line-detail', compact(
+            'availableAgents',
+            'currentEncargado',
+            'availablePlatforms'
+        ))->layout('layouts.dashboard');
     }
 }

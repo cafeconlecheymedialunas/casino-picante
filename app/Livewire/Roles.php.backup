@@ -30,7 +30,6 @@ class Roles extends Component
         'novedades' => 'Novedades',
         'lineas' => 'Líneas',
         'tickets' => 'Tickets',
-        'caja' => 'Caja',
         'bonos' => 'Bonos',
         'juegos' => 'Juegos',
         'banners' => 'Banners',

@@ -1,9 +1,5 @@
 <div>
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">NOVEDADES</h1>
-        </div>
-    </div>
+    <x-livewire.components.page-header title="NOVEDADES" />
 
     @if($showModal)
     <div class="modal-overlay" wire:click="closeModal">
@@ -35,8 +31,9 @@
                     <textarea placeholder="Contenido completo..." wire:model="content" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;min-height:120px;"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>URL de imagen</label>
-                    <input type="text" placeholder="https://..." wire:model="image">
+                    <x-image-uploader label="Imagen destacada" model="imageUpload" :upload="$imageUpload" :value="$image" remove-action="removeImage" variant="wide">
+                        @error('imageUpload') <span class="form-error">{{ $message }}</span> @enderror
+                    </x-image-uploader>
                 </div>
                 <div class="form-group">
                     <label>Estado</label>
@@ -125,7 +122,9 @@
             <div class="field">
                 <div class="field-label">Imagen destacada</div>
                 <div class="field-image">
-                    <button class="field-image-btn">Cambiar imagen</button>
+                    @if($selectedPost->image)
+                        <img src="{{ $selectedPost->image }}" alt="{{ $selectedPost->title }}" style="width:100%;height:100%;object-fit:cover;">
+                    @endif
                 </div>
             </div>
 
@@ -184,8 +183,6 @@
     </div>
 
     <style>
-        .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding: 0 28px; }
-        .page-title { font-family: var(--font-display); font-size: 36px; color: var(--white); margin: 0; }
         .content-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; padding: 0 28px 28px; }
         @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } }
 

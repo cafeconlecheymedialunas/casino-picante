@@ -19,7 +19,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'username',
         'name',
+        'apellido',
+        'avatar',
+        'line_id',
         'email',
         'password',
         'phone',
@@ -48,5 +52,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function preferredLine()
+    {
+        return $this->belongsTo(Line::class, 'line_id');
+    }
+
+    public function lines()
+    {
+        return $this->belongsToMany(Line::class, 'line_clients')
+            ->withPivot('is_active')
+            ->withTimestamps();
     }
 }

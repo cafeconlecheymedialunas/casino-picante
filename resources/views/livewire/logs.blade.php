@@ -1,10 +1,5 @@
 <div class="page-container">
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">LOGS</h1>
-            <p class="page-subtitle">Registro de actividad del sistema</p>
-        </div>
-    </div>
+    <x-livewire.components.page-header title="LOGS" subtitle="Registro de actividad del sistema" />
 
     <style>
         .logs-card { background: linear-gradient(180deg, #170b0b 0%, #0f0707 100%); border: 1px solid var(--line); border-radius: 20px; padding: 22px; box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 40px rgba(0,0,0,0.5); }

@@ -36,6 +36,7 @@
             --r-xl: 28px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        [x-cloak] { display: none !important; }
         html, body { background: var(--black); color: var(--white); font-family: var(--font-body); height: 100%; }
         
         .dash-shell { display: flex; height: 100vh; }
@@ -172,6 +173,57 @@
         option:checked  { background-color: rgba(255,106,26,0.25); color: var(--orange-2); }
         option:disabled { color: var(--muted-2); }
         option[value=""] { color: var(--muted-2); }
+
+        .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 14px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; }
+        .page-title { margin:0; font-family:var(--font-display); font-size:34px; letter-spacing:.03em; line-height:.95; }
+        .page-subtitle { margin:5px 0 0; color:var(--muted-2); font-size:12px; }
+        .page-header-right { display:flex; align-items:center; gap:10px; margin-left:auto; }
+        .header-icon-btn { position:relative; width:38px; height:38px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.035); color:var(--white); cursor:pointer; font-weight:900; }
+        .header-icon-btn b { position:absolute; top:-6px; right:-5px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--orange); color:#190702; font-size:10px; display:flex; align-items:center; justify-content:center; }
+        .profile-menu, .notification-menu { position:relative; }
+        .profile-trigger { height:38px; display:flex; align-items:center; gap:9px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.035); color:var(--white); padding:4px 9px 4px 4px; cursor:pointer; }
+        .header-icon-btn:hover, .profile-trigger:hover { border-color:var(--orange); background:rgba(255,106,26,.1); }
+        .profile-trigger img { width:30px; height:30px; border-radius:7px; background:rgba(255,255,255,.08); }
+        .profile-trigger strong { display:block; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+        .profile-trigger small { display:block; color:var(--muted-2); font-size:10px; margin-top:1px; text-align:left; }
+        .header-dropdown { position:absolute; top:46px; right:0; min-width:230px; border:1px solid var(--line-2); border-radius:8px; background:#140909; box-shadow:0 18px 45px rgba(0,0,0,.45); z-index:120; overflow:hidden; }
+        .profile-dropdown a, .profile-dropdown button { display:block; width:100%; padding:12px 14px; color:var(--white); background:transparent; border:0; text-align:left; text-decoration:none; font:inherit; font-size:13px; cursor:pointer; }
+        .profile-dropdown a:hover, .profile-dropdown button:hover { background:rgba(255,106,26,.12); }
+        .notifications-dropdown { width:340px; max-width:calc(100vw - 32px); }
+        .dropdown-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line); }
+        .dropdown-head strong { font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+        .dropdown-head button { border:0; background:transparent; color:var(--orange); font-size:11px; cursor:pointer; font-weight:800; }
+        .notification-item { display:grid; grid-template-columns:9px 1fr; gap:10px; padding:11px 14px; color:var(--white); text-decoration:none; border-bottom:1px solid var(--line); }
+        .notification-item.unread { background:rgba(255,106,26,.08); }
+        .notification-dot { width:8px; height:8px; border-radius:999px; margin-top:4px; background:var(--orange); }
+        .notification-dot.type-danger { background:#ff4757; }
+        .notification-dot.type-success { background:var(--good); }
+        .notification-dot.type-warning { background:var(--warn); }
+        .notification-item strong, .notification-item small, .notification-item em { display:block; }
+        .notification-item strong { font-size:12px; }
+        .notification-item small { color:var(--muted); font-size:11px; line-height:1.35; margin-top:2px; }
+        .notification-item em { color:var(--muted-2); font-size:10px; margin-top:5px; font-style:normal; }
+        .dropdown-empty { padding:22px 14px; color:var(--muted-2); text-align:center; font-size:12px; }
+        .page-action-strip { display:flex; justify-content:flex-end; gap:10px; padding:12px 28px 0; }
+
+        .image-uploader { display: flex; flex-direction: column; gap: 8px; }
+        .image-uploader-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .image-uploader-label { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+        .image-uploader-hint { color: var(--muted-2); font-size: 10px; font-weight: 700; }
+        .image-uploader-drop { position:relative; display:flex; align-items:center; justify-content:center; min-height:136px; border:1px dashed var(--line-2); border-radius:8px; background:rgba(255,255,255,.03); overflow:hidden; cursor:pointer; }
+        .image-uploader-wide .image-uploader-drop { aspect-ratio: 851 / 315; min-height: 120px; }
+        .image-uploader-square .image-uploader-drop { aspect-ratio: 1; min-height: 140px; }
+        .image-uploader-logo .image-uploader-drop { width:112px; height:112px; min-height:112px; }
+        .image-uploader-drop:hover { border-color: var(--orange); background:rgba(255,106,26,.08); }
+        .image-uploader-drop img { width:100%; height:100%; object-fit:cover; display:block; }
+        .image-uploader-logo .image-uploader-drop img { object-fit:contain; padding:8px; }
+        .image-uploader-empty { color:var(--muted-2); font-size:12px; font-weight:800; }
+        .image-uploader-drop input, .image-uploader-button input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+        .image-uploader-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .image-uploader-button { position:relative; height:32px; padding:0 12px; border:1px solid var(--line-2); border-radius:7px; background:rgba(255,255,255,.04); color:var(--white); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; }
+        .image-uploader-button:hover { border-color:var(--orange); background:rgba(255,106,26,.14); }
+        .image-uploader-button.danger { color:#ff6b7a; }
+        .image-uploader-loading { color:var(--orange); font-size:11px; font-weight:800; }
     </style>
 </head>
 <body>
@@ -221,75 +273,82 @@
             </a>
 
             <div class="sidebar-section">DASHBOARD</div>
+
             <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">◐</span> Overview
             </a>
+
+            <div class="sidebar-section">GESTIÓN</div>
+
             <a href="{{ route('clientes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('clientes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">◍</span> Clientes
             </a>
+
             <a href="{{ route('agentes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('agentes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">⌘</span> Agentes
             </a>
 
+            <a href="{{ route('lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('lineas') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">☎</span> Líneas
+            </a>
+
             <div class="sidebar-section">CONTENIDO</div>
-            <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master') ? 'active' : '' }}">
+
+            <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">🎮</span> Plataformas
             </a>
+
             <a href="{{ route('promociones') }}" wire:navigate class="sidebar-item {{ request()->routeIs('promociones') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✦</span> Promociones
             </a>
+
             <a href="{{ route('novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('novedades') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✎</span> Novedades
             </a>
-            <a href="{{ route('lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('lineas') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">☎</span> Líneas & Redes
-            </a>
-            <a href="{{ route('tickets') }}" wire:navigate class="sidebar-item {{ request()->routeIs('tickets') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">✉</span> Tickets
-            </a>
-            <a href="{{ route('ajustes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('ajustes') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">⚙</span> Ajustes
-            </a>
 
-            <div class="sidebar-section">OPERACIÓN</div>
-            <a href="{{ route('caja') }}" wire:navigate class="sidebar-item {{ request()->routeIs('caja') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">💰</span> Caja / Pagos
-            </a>
-            <a href="{{ route('bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🎁</span> Bonos & VIP
-            </a>
-            
             <a href="{{ route('banners') }}" wire:navigate class="sidebar-item {{ request()->routeIs('banners') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">📢</span> Banners & Notif.
             </a>
+
+            <div class="sidebar-section">OPERACIÓN</div>
+
+            <a href="{{ route('bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">🎁</span> Bonos
+            </a>
+
             <a href="{{ route('sorteos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('sorteos') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">🎯</span> Sorteos
             </a>
-            <a href="{{ route('user-bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('user-bonos') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🎫</span> Bonos Usuarios
+
+            <a href="{{ route('tickets') }}" wire:navigate class="sidebar-item {{ request()->routeIs('tickets') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">✉</span> Tickets
             </a>
 
             <div class="sidebar-section">REPORTES</div>
+
             <a href="{{ route('reportes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('reportes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">📊</span> Reportes
             </a>
+
             <a href="{{ route('logs') }}" wire:navigate class="sidebar-item {{ request()->routeIs('logs') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">📋</span> Logs de actividad
             </a>
-            
+
+            <div class="sidebar-section">SISTEMA</div>
+
+            <a href="{{ route('perfil') }}" wire:navigate class="sidebar-item {{ request()->routeIs('perfil') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">👤</span> Mi Perfil
+            </a>
             <div class="sidebar-spacer"></div>
-            <div class="sidebar-user">
-                <div class="sidebar-avatar">SC</div>
-                <div>
-                    <div class="sidebar-user-name">Sofía C.</div>
-                    <div class="sidebar-user-role">Admin general</div>
-                </div>
-            </div>
         </aside>
         
         <main class="main">
             <div class="main-content">
-                {{ $slot }}
+                @if(isset($slot))
+                    {{ $slot }}
+                @else
+                    @yield('content')
+                @endif
             </div>
         </main>
     </div>

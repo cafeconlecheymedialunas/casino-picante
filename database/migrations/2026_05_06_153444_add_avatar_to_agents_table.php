@@ -11,18 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('raffles', function (Blueprint $table) {
-            $table->string('line_id')->nullable()->after('id');
+        Schema::table('agents', function (Blueprint $table) {
+            $table->string('avatar')->nullable()->default('avatar_nova')->after('apellido');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('raffles', function (Blueprint $table) {
-            //
+        Schema::table('agents', function (Blueprint $table) {
+            $table->dropColumn('avatar');
         });
     }
 };

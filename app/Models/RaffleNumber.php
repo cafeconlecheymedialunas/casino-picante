@@ -20,10 +20,6 @@ class RaffleNumber extends Model
 
     public function getFormattedNumberAttribute(): string
     {
-        if ($this->raffle?->number_type === '4digits') {
-            return str_pad($this->number, 4, '0', STR_PAD_LEFT);
-        }
-
         return (string) $this->number;
     }
 }

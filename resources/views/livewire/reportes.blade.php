@@ -1,10 +1,5 @@
 <div class="page-container">
-    <div class="page-header">
-        <div class="header-content">
-            <h1 class="page-title">REPORTES</h1>
-            <p class="page-subtitle">Estadísticas y análisis del negocio</p>
-        </div>
-    </div>
+    <x-livewire.components.page-header title="REPORTES" subtitle="Estadísticas y análisis del negocio" />
 
     <div class="section-title">USUARIOS</div>
     <div class="stats-grid-4">
@@ -185,23 +180,6 @@
     </div>
 
     <style>
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-            padding: 0 28px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: var(--black);
-            margin: -24px -28px 24px -28px;
-            padding: 24px 28px 16px;
-            border-bottom: 1px solid var(--line);
-        }
-        .page-title { font-family: var(--font-display); font-size: 36px; color: var(--white); margin: 0; }
-        .page-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
-
         .section-title { font-size: 11px; color: var(--orange); font-weight: 700; letter-spacing: 0.12em; margin: 20px 0 12px 28px; }
 
         .stats-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 28px; margin-bottom: 12px; }
@@ -230,8 +208,7 @@
         }
         @media (max-width: 768px) {
             .stats-grid-4 { grid-template-columns: 1fr; }
-            .page-header, .section-title, .stats-grid-4, .table-card { padding-left: 16px; padding-right: 16px; }
-            .page-header { margin: -24px -16px 24px -16px; padding: 16px; }
+            .section-title, .stats-grid-4, .table-card { padding-left: 16px; padding-right: 16px; }
             .table-card { overflow-x: auto; }
         }
     </style>

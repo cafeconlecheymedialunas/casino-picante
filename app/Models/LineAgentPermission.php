@@ -14,9 +14,9 @@ class LineAgentPermission extends Model
     public static array $catalog = [
         'promo' => ['read', 'create', 'update', 'delete'],
         'ticket' => ['read', 'update', 'close'],
-        'line' => ['view', 'edit.basic', 'edit.contacts', 'edit.branding'],
+        'line' => ['read', 'view', 'create', 'edit.basic', 'edit.contacts', 'edit.branding'],
         'agent' => ['create', 'assign', 'update', 'permissions'],
-        'bonus' => ['read', 'create', 'update'],
+        'bono' => ['read', 'create', 'update', 'delete'],
         'sorteo' => ['read', 'create', 'update', 'delete'],
         'news' => ['read', 'create', 'update', 'delete'],
         'user' => ['read', 'update', 'block'],
