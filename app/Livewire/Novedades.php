@@ -149,10 +149,26 @@ class Novedades extends Component
         if ($this->editingPost) {
             $this->editingPost->update($data);
             session()->flash('message', 'Contenido actualizado correctamente');
+
+            NotificationService::info(
+                title: 'Contenido actualizado',
+                message: "El contenido {$this->editingPost->title} fue actualizado.",
+                agentId: null,
+                link: '/novedades',
+                module: 'posts'
+            );
         } else {
             $data['line_id'] = session('active_line_id');
-            Post::create($data);
+            $post = Post::create($data);
             session()->flash('message', 'Contenido creado correctamente');
+
+            NotificationService::success(
+                title: 'Nuevo contenido creado',
+                message: "El contenido {$post->title} fue creado exitosamente.",
+                agentId: null,
+                link: '/novedades',
+                module: 'posts'
+            );
         }
 
         $this->closeModal();
@@ -174,6 +190,7 @@ class Novedades extends Component
         $this->checkLinePermission('news.delete');
         $post = Post::find($postId);
         ImageStorage::delete($post?->image);
+        $postTitle = $post?->title;
         $post?->delete();
 
         if ($this->selectedPost && $this->selectedPost->id === $postId) {
@@ -181,13 +198,30 @@ class Novedades extends Component
         }
 
         session()->flash('message', 'Contenido eliminado correctamente');
+
+        NotificationService::danger(
+            title: 'Contenido eliminado',
+            message: "El contenido {$postTitle} fue eliminado del sistema.",
+            agentId: null,
+            link: '/novedades',
+            module: 'posts'
+        );
     }
 
     public function toggleStatus($postId)
     {
         $this->checkLinePermission('news.update');
         $post = Post::find($postId);
-        $post->update(['status' => $post->status === 'published' ? 'draft' : 'published']);
+        $newStatus = $post->status === 'published' ? 'draft' : 'published';
+        $post->update(['status' => $newStatus]);
+
+        NotificationService::warning(
+            title: 'Estado de contenido cambiado',
+            message: "El contenido {$post->title} fue ".($newStatus === 'published' ? 'publicado' : 'puesto en borrador').'.',
+            agentId: null,
+            link: '/novedades',
+            module: 'posts'
+        );
     }
 
     public function getPosts()

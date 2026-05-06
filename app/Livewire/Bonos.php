@@ -127,6 +127,7 @@ class Bonos extends Component
 
         if ($end->lt($start)) {
             $this->addError('endDate', 'La fecha de fin debe ser posterior al inicio.');
+
             return;
         }
 
@@ -144,12 +145,29 @@ class Bonos extends Component
         ];
 
         if ($this->editingBonusId) {
-            Bonus::withoutGlobalScopes()->findOrFail($this->editingBonusId)->update($data);
+            $bonus = Bonus::withoutGlobalScopes()->findOrFail($this->editingBonusId);
+            $bonus->update($data);
             session()->flash('message', 'Bono actualizado correctamente.');
+
+            NotificationService::info(
+                title: 'Bono actualizado',
+                message: "El bono {$bonus->title} fue actualizado.",
+                agentId: null,
+                link: '/bonos',
+                module: 'bonuses'
+            );
         } else {
             $data['created_by'] = session('active_agent_id');
-            Bonus::create($data);
+            $bonus = Bonus::create($data);
             session()->flash('message', 'Bono creado correctamente.');
+
+            NotificationService::success(
+                title: 'Nuevo bono creado',
+                message: "El bono {$bonus->title} fue creado exitosamente.",
+                agentId: null,
+                link: '/bonos',
+                module: 'bonuses'
+            );
         }
 
         $this->closeModal();
@@ -190,16 +208,19 @@ class Bonos extends Component
 
         if (! $user) {
             $this->addError('assignUsername', 'No existe un usuario con ese username o email.');
+
             return;
         }
 
         if ((int) $bonus->line_id !== (int) $this->assignLineId) {
             $this->addError('assignLineId', 'Ese bono no pertenece a la linea elegida.');
+
             return;
         }
 
         if (! $bonus->canUserClaim($user->id)) {
             $this->addError('assignUsername', 'El usuario ya alcanzo el limite de uso para este bono.');
+
             return;
         }
 
@@ -211,6 +232,15 @@ class Bonos extends Component
         ]);
 
         session()->flash('message', 'Bono otorgado a '.$user->username.'.');
+
+        NotificationService::success(
+            title: 'Bono asignado',
+            message: "El bono {$bonus->title} fue asignado a {$user->username}.",
+            agentId: null,
+            link: '/bonos',
+            module: 'bonuses'
+        );
+
         $this->closeAssignModal();
     }
 
@@ -221,6 +251,14 @@ class Bonos extends Component
         $this->authorizeLineChoice((int) $assignment->bonus->line_id);
         $assignment->update(['status' => 'used', 'used_at' => now()]);
         session()->flash('message', 'Bono marcado como reclamado.');
+
+        NotificationService::info(
+            title: 'Bono reclamado',
+            message: "El bono {$assignment->bonus->title} fue marcado como reclamado.",
+            agentId: null,
+            link: '/bonos',
+            module: 'bonuses'
+        );
     }
 
     public function deleteBonus(int $bonusId): void
@@ -228,9 +266,18 @@ class Bonos extends Component
         $this->checkLinePermission('bono.delete');
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
         $this->authorizeLineChoice((int) $bonus->line_id);
+        $bonusTitle = $bonus->title;
         $bonus->assignments()->delete();
         $bonus->delete();
         session()->flash('message', 'Bono eliminado correctamente.');
+
+        NotificationService::danger(
+            title: 'Bono eliminado',
+            message: "El bono {$bonusTitle} fue eliminado del sistema.",
+            agentId: null,
+            link: '/bonos',
+            module: 'bonuses'
+        );
     }
 
     public function render()

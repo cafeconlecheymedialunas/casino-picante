@@ -14,6 +14,7 @@ use App\Livewire\Overview;
 use App\Livewire\PlatformsMaster;
 use App\Livewire\Promociones;
 use App\Livewire\Reportes;
+use App\Livewire\Settings;
 use App\Livewire\Sorteos;
 use App\Livewire\Tickets;
 use App\Livewire\Users\UsersIndex;
@@ -77,6 +78,9 @@ Route::middleware('line.authorize')->group(function () {
     });
 
     Route::get('/banners', Banners::class)->name('banners');
+
+    // Settings
+    Route::get('/settings', Settings::class)->name('settings');
 
     // Perfil routes
     Route::get('/perfil', [PerfilController::class, 'index'])->name('perfil');

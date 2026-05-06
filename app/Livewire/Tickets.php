@@ -55,6 +55,15 @@ class Tickets extends Component
 
         $this->newMessage = '';
         $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+
+        NotificationService::info(
+            title: 'Nuevo mensaje en ticket',
+            message: "Se envió un mensaje en el ticket: {$this->selectedTicket->subject}",
+            agentId: null,
+            link: '/tickets',
+            module: 'tickets'
+        );
+
         $this->dispatch('messageSent');
     }
 
@@ -79,6 +88,14 @@ class Tickets extends Component
 
         if ($type === 'resolved') {
             $this->selectedTicket->update(['status' => 'closed']);
+
+            NotificationService::success(
+                title: 'Ticket resuelto',
+                message: "El ticket {$this->selectedTicket->subject} fue marcado como resuelto.",
+                agentId: null,
+                link: '/tickets',
+                module: 'tickets'
+            );
         }
 
         $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
@@ -90,6 +107,14 @@ class Tickets extends Component
         if ($this->selectedTicket) {
             $this->selectedTicket->update(['status' => $status]);
             $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+
+            NotificationService::warning(
+                title: 'Estado de ticket cambiado',
+                message: "El ticket {$this->selectedTicket->subject} cambió a: {$status}",
+                agentId: null,
+                link: '/tickets',
+                module: 'tickets'
+            );
         }
     }
 

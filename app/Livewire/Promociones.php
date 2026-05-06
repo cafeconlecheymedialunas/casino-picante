@@ -195,10 +195,26 @@ class Promociones extends Component
         if ($this->editingPromo) {
             $this->editingPromo->update($data);
             session()->flash('message', 'Promoción actualizada correctamente');
+
+            NotificationService::info(
+                title: 'Promoción actualizada',
+                message: "La promoción {$this->editingPromo->title} fue actualizada.",
+                agentId: null,
+                link: '/promociones',
+                module: 'promotions'
+            );
         } else {
             $data['line_id'] = session('active_line_id');
-            Promotion::create($data);
+            $promo = Promotion::create($data);
             session()->flash('message', 'Promoción creada correctamente');
+
+            NotificationService::success(
+                title: 'Nueva promoción creada',
+                message: "La promoción {$promo->title} fue creada exitosamente.",
+                agentId: null,
+                link: '/promociones',
+                module: 'promotions'
+            );
         }
 
         $this->closeModal();
@@ -240,6 +256,7 @@ class Promociones extends Component
     public function deletePromo($promoId)
     {
         $promo = Promotion::withoutGlobalScopes()->find($promoId);
+        $promoTitle = $promo->title;
         $promo->delete();
 
         if ($this->selectedPromo && $this->selectedPromo->id === $promoId) {
@@ -247,6 +264,14 @@ class Promociones extends Component
         }
 
         session()->flash('message', 'Promoción eliminada correctamente');
+
+        NotificationService::danger(
+            title: 'Promoción eliminada',
+            message: "La promoción {$promoTitle} fue eliminada del sistema.",
+            agentId: null,
+            link: '/promociones',
+            module: 'promotions'
+        );
     }
 
     public function toggleStatus($promoId)
@@ -254,7 +279,16 @@ class Promociones extends Component
         $this->checkLinePermission('promo.update');
 
         $promo = Promotion::withoutGlobalScopes()->find($promoId);
-        $promo->update(['status' => $promo->status === 'published' ? 'draft' : 'published']);
+        $newStatus = $promo->status === 'published' ? 'draft' : 'published';
+        $promo->update(['status' => $newStatus]);
+
+        NotificationService::warning(
+            title: 'Estado de promoción cambiado',
+            message: "La promoción {$promo->title} fue ".($newStatus === 'published' ? 'publicada' : 'puesta en borrador').'.',
+            agentId: null,
+            link: '/promociones',
+            module: 'promotions'
+        );
     }
 
     public function getPlatforms()

@@ -197,8 +197,10 @@
         .profile-dropdown a, .profile-dropdown button { display:block; width:100%; padding:12px 14px; color:var(--white); background:transparent; border:0; text-align:left; text-decoration:none; font:inherit; font-size:13px; cursor:pointer; }
         .profile-dropdown a:hover, .profile-dropdown button:hover { background:rgba(255,106,26,.12); }
         .notifications-dropdown { width:340px; max-width:calc(100vw - 32px); }
-        .dropdown-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line); }
+        .dropdown-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line); gap:8px; }
         .dropdown-head strong { font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+        .settings-link { font-size:11px; color:var(--orange); text-decoration:none; font-weight:700; }
+        .settings-link:hover { opacity:0.8; }
         .dropdown-head button { border:0; background:transparent; color:var(--orange); font-size:11px; cursor:pointer; font-weight:800; }
         .dropdown-head button:hover { opacity:0.8; }
         .dropdown-body { max-height:320px; overflow-y:auto; }
@@ -336,6 +338,10 @@
             </a>
 
             <div class="sidebar-section">SISTEMA</div>
+
+            <a href="{{ route('settings') }}" wire:navigate class="sidebar-item {{ request()->routeIs('settings*') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">⚙️</span> Configuración
+            </a>
 
             <a href="{{ route('perfil') }}" wire:navigate class="sidebar-item {{ request()->routeIs('perfil') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">👤</span> Mi Perfil

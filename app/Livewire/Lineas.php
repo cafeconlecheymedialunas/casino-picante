@@ -10,10 +10,10 @@ use App\Models\Sale;
 use App\Services\SalesStats;
 use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
+use Illuminate\Str;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
-use Livewire\WithFileUploads;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Lineas extends Component
 {
@@ -148,7 +148,28 @@ class Lineas extends Component
         $this->syncEncargado($line, $encargadoId, $percent);
         $this->syncPlatforms($line);
 
-        session()->flash('message', $this->editingLineId ? 'Linea actualizada correctamente.' : 'Linea creada correctamente.');
+        $isEdit = (bool) $this->editingLineId;
+
+        session()->flash('message', $isEdit ? 'Linea actualizada correctamente.' : 'Linea creada correctamente.');
+
+        if ($isEdit) {
+            NotificationService::info(
+                title: 'Línea actualizada',
+                message: "La línea {$line->name} fue actualizada.",
+                agentId: null,
+                link: '/lineas',
+                module: 'lines'
+            );
+        } else {
+            NotificationService::success(
+                title: 'Nueva línea creada',
+                message: "La línea {$line->name} fue creada exitosamente.",
+                agentId: null,
+                link: '/lineas',
+                module: 'lines'
+            );
+        }
+
         $this->closeModal();
     }
 
@@ -156,8 +177,17 @@ class Lineas extends Component
     {
         $line = Line::findOrFail($lineId);
         $this->authorizeLineEdit($line);
+        $lineName = $line->name;
         $line->delete();
         session()->flash('message', 'Linea eliminada correctamente.');
+
+        NotificationService::danger(
+            title: 'Línea eliminada',
+            message: "La línea {$lineName} fue eliminada del sistema.",
+            agentId: null,
+            link: '/lineas',
+            module: 'lines'
+        );
     }
 
     public function toggleLine(int $lineId): void
@@ -166,6 +196,14 @@ class Lineas extends Component
         $this->authorizeLineEdit($line);
         $status = $line->status === 'active' ? 'inactive' : 'active';
         $line->update(['status' => $status]);
+
+        NotificationService::warning(
+            title: 'Estado de línea cambiado',
+            message: "La línea {$line->name} fue ".($status === 'active' ? 'activada' : 'desactivada').'.',
+            agentId: null,
+            link: '/lineas',
+            module: 'lines'
+        );
     }
 
     public function addChannel(): void
@@ -256,6 +294,7 @@ class Lineas extends Component
 
         if (! $line->platforms()->where('platforms.id', $this->salePlatformId)->exists()) {
             $this->addError('salePlatformId', 'La plataforma no pertenece a esta linea.');
+
             return;
         }
 
@@ -287,6 +326,15 @@ class Lineas extends Component
         }
 
         session()->flash('message', 'Venta registrada correctamente.');
+
+        NotificationService::success(
+            title: 'Venta registrada',
+            message: "Se registró una venta para la línea {$line->name}.",
+            agentId: null,
+            link: '/lineas',
+            module: 'lines'
+        );
+
         $this->closeSalesModal();
     }
 
@@ -294,8 +342,17 @@ class Lineas extends Component
     {
         $sale = Sale::with('line')->findOrFail($saleId);
         $this->authorizeLineEdit($sale->line);
+        $lineName = $sale->line->name;
         $sale->delete();
         session()->flash('message', 'Venta eliminada correctamente.');
+
+        NotificationService::danger(
+            title: 'Venta eliminada',
+            message: "Se eliminó una venta de la línea {$lineName}.",
+            agentId: null,
+            link: '/lineas',
+            module: 'lines'
+        );
     }
 
     public function openDetailsModal(int $lineId): void

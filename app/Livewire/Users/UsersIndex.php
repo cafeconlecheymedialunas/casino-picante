@@ -172,10 +172,26 @@ class UsersIndex extends Component
 
             $user->update($data);
             $this->dispatch('toast', message: 'Cliente actualizado correctamente.', type: 'success');
+
+            NotificationService::info(
+                title: 'Cliente actualizado',
+                message: "El cliente {$user->name} fue actualizado.",
+                agentId: null,
+                link: '/clientes',
+                module: 'users'
+            );
         } else {
             $data['password'] = Hash::make($this->password);
             $user = User::create($data);
             $this->dispatch('toast', message: 'Cliente creado correctamente.', type: 'success');
+
+            NotificationService::success(
+                title: 'Nuevo cliente registrado',
+                message: "El cliente {$user->name} fue creado exitosamente.",
+                agentId: null,
+                link: '/clientes',
+                module: 'users'
+            );
         }
 
         $this->syncClientLines($user->id, $status);
@@ -185,8 +201,18 @@ class UsersIndex extends Component
     public function deleteUser(int $userId): void
     {
         DB::table('line_clients')->where('user_id', $userId)->delete();
-        User::findOrFail($userId)->delete();
+        $user = User::findOrFail($userId);
+        $userName = $user->name;
+        $user->delete();
         $this->dispatch('toast', message: 'Cliente eliminado.', type: 'danger');
+
+        NotificationService::danger(
+            title: 'Cliente eliminado',
+            message: "El cliente {$userName} fue eliminado del sistema.",
+            agentId: null,
+            link: '/clientes',
+            module: 'users'
+        );
     }
 
     public function setStatus(int $userId, string $status): void
@@ -200,6 +226,15 @@ class UsersIndex extends Component
 
         $label = $status === 'active' ? 'activado' : 'pausado';
         $this->dispatch('toast', message: "Cliente {$label}.", type: $status === 'active' ? 'success' : 'danger');
+
+        $user = User::findOrFail($userId);
+        NotificationService::warning(
+            title: 'Estado de cliente cambiado',
+            message: "El cliente {$user->name} fue {$label}.",
+            agentId: null,
+            link: '/clientes',
+            module: 'users'
+        );
 
         if ($this->detailUserId === $userId) {
             $this->detailUserId = $userId;

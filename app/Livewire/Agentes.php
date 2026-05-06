@@ -151,10 +151,26 @@ class Agentes extends Component
             $this->authorizeAgentScope($agent);
             $agent->update($data);
             session()->flash('message', 'Agente actualizado correctamente.');
+
+            NotificationService::info(
+                title: 'Agente actualizado',
+                message: "El agente {$agent->name} fue actualizado.",
+                agentId: null,
+                link: '/agentes',
+                module: 'agents'
+            );
         } else {
             $data['password'] = Hash::make($this->password);
             $agent = Agent::create($data);
             session()->flash('message', 'Agente creado correctamente.');
+
+            NotificationService::success(
+                title: 'Nuevo agente creado',
+                message: "El agente {$agent->name} fue creado exitosamente.",
+                agentId: null,
+                link: '/agentes',
+                module: 'agents'
+            );
         }
 
         $this->syncLineAssignment($agent);
@@ -174,6 +190,14 @@ class Agentes extends Component
         LineAgent::where('agent_id', $agentId)->update(['is_active' => $newStatus === 'active']);
         session()->flash('message', $newStatus === 'active' ? 'Agente activado.' : 'Agente pausado.');
 
+        NotificationService::warning(
+            title: 'Estado de agente cambiado',
+            message: "El agente {$agent->name} fue ".($newStatus === 'active' ? 'activado' : 'pausado').'.',
+            agentId: null,
+            link: '/agentes',
+            module: 'agents'
+        );
+
         if ($this->detailAgentId === $agentId) {
             $this->detailAgentId = $agentId;
         }
@@ -185,9 +209,18 @@ class Agentes extends Component
 
         $agent = Agent::findOrFail($agentId);
         $this->authorizeAgentScope($agent);
+        $agentName = $agent->name;
         $agent->delete();
 
         session()->flash('message', 'Agente eliminado correctamente.');
+
+        NotificationService::danger(
+            title: 'Agente eliminado',
+            message: "El agente {$agentName} fue eliminado del sistema.",
+            agentId: null,
+            link: '/agentes',
+            module: 'agents'
+        );
     }
 
     public function getCanCreateAgentsProperty(): bool
@@ -336,6 +369,7 @@ class Agentes extends Component
 
         if (empty($lineIds)) {
             $query->whereRaw('1 = 0');
+
             return;
         }
 

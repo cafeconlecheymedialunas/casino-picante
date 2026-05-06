@@ -20,6 +20,7 @@
             <div class="header-dropdown notifications-dropdown" x-show="open" x-cloak x-transition>
                 <div class="dropdown-head">
                     <strong>Notificaciones</strong>
+                    <a href="{{ route('settings') }}" wire:navigate class="settings-link">Configurar</a>
                     @if($unreadCount > 0)
                         <button type="button" wire:click="markAllRead">Marcar todas leídas</button>
                     @endif
