@@ -4,7 +4,7 @@ namespace App\Livewire\Users;
 
 use App\Models\Line;
 use App\Models\User;
-use App\Services\NotificationService;
+use App\Traits\SendsNotifications;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +16,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.dashboard')]
 class UsersIndex extends Component
 {
-    use WithPagination;
+    use WithPagination, SendsNotifications;
 
     public string $search = '';
 
@@ -102,16 +102,6 @@ class UsersIndex extends Component
         $this->resetPage();
     }
 
-    protected $listeners = ['header-action' => 'handleHeaderAction'];
-
-    public function handleHeaderAction($data): void
-    {
-        $action = $data['action'] ?? '';
-        if (method_exists($this, $action)) {
-            $this->$action();
-        }
-    }
-
     public function openCreateModal(): void
     {
         $this->resetForm();
@@ -184,25 +174,15 @@ class UsersIndex extends Component
             $user->update($data);
             $this->dispatch('toast', message: 'Cliente actualizado correctamente.', type: 'success');
 
-            NotificationService::info(
-                title: 'Cliente actualizado',
-                message: "El cliente {$user->name} fue actualizado.",
-                agentId: null,
-                link: '/clientes',
-                module: 'users'
-            );
+            $this->notify('Cliente actualizado', "El cliente {$user->name} fue actualizado.", 'users', '/clientes', 'info');
+            $this->dispatch('notification-created');
         } else {
             $data['password'] = Hash::make($this->password);
             $user = User::create($data);
             $this->dispatch('toast', message: 'Cliente creado correctamente.', type: 'success');
 
-            NotificationService::success(
-                title: 'Nuevo cliente registrado',
-                message: "El cliente {$user->name} fue creado exitosamente.",
-                agentId: null,
-                link: '/clientes',
-                module: 'users'
-            );
+            $this->notify('Nuevo cliente registrado', "El cliente {$user->name} fue creado exitosamente.", 'users', '/clientes', 'success');
+            $this->dispatch('notification-created');
         }
 
         $this->syncClientLines($user->id, $status);
@@ -217,13 +197,8 @@ class UsersIndex extends Component
         $user->delete();
         $this->dispatch('toast', message: 'Cliente eliminado.', type: 'danger');
 
-        NotificationService::danger(
-            title: 'Cliente eliminado',
-            message: "El cliente {$userName} fue eliminado del sistema.",
-            agentId: null,
-            link: '/clientes',
-            module: 'users'
-        );
+        $this->notify('Cliente eliminado', "El cliente {$userName} fue eliminado del sistema.", 'users', '/clientes', 'danger');
+        $this->dispatch('notification-created');
     }
 
     public function setStatus(int $userId, string $status): void
@@ -239,13 +214,8 @@ class UsersIndex extends Component
         $this->dispatch('toast', message: "Cliente {$label}.", type: $status === 'active' ? 'success' : 'danger');
 
         $user = User::findOrFail($userId);
-        NotificationService::warning(
-            title: 'Estado de cliente cambiado',
-            message: "El cliente {$user->name} fue {$label}.",
-            agentId: null,
-            link: '/clientes',
-            module: 'users'
-        );
+        $this->notify('Estado de cliente cambiado', "El cliente {$user->name} fue " . ($status === 'active' ? 'activado' : 'pausado') . ".", 'users', '/clientes', 'warning');
+        $this->dispatch('notification-created');
 
         if ($this->detailUserId === $userId) {
             $this->detailUserId = $userId;

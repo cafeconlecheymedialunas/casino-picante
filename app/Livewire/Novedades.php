@@ -3,16 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\Post;
-use App\Services\NotificationService;
 use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class Novedades extends Component
 {
-    use HasLinePermissions;
-    use WithFileUploads;
+    use HasLinePermissions, WithFileUploads, SendsNotifications;
 
     public $tab = 'novedad';
 
@@ -151,25 +150,13 @@ class Novedades extends Component
             $this->editingPost->update($data);
             session()->flash('message', 'Contenido actualizado correctamente');
 
-            NotificationService::info(
-                title: 'Contenido actualizado',
-                message: "El contenido {$this->editingPost->title} fue actualizado.",
-                agentId: null,
-                link: '/novedades',
-                module: 'posts'
-            );
+            $this->notify('Contenido actualizado', "El contenido {$this->editingPost->title} fue actualizado.", 'posts', '/novedades', 'info');
         } else {
             $data['line_id'] = session('active_line_id');
             $post = Post::create($data);
             session()->flash('message', 'Contenido creado correctamente');
 
-            NotificationService::success(
-                title: 'Nuevo contenido creado',
-                message: "El contenido {$post->title} fue creado exitosamente.",
-                agentId: null,
-                link: '/novedades',
-                module: 'posts'
-            );
+            $this->notify('Nuevo contenido creado', "El contenido {$post->title} fue creado exitosamente.", 'posts', '/novedades', 'success');
         }
 
         $this->closeModal();
@@ -200,13 +187,7 @@ class Novedades extends Component
 
         session()->flash('message', 'Contenido eliminado correctamente');
 
-        NotificationService::danger(
-            title: 'Contenido eliminado',
-            message: "El contenido {$postTitle} fue eliminado del sistema.",
-            agentId: null,
-            link: '/novedades',
-            module: 'posts'
-        );
+            $this->notify('Contenido eliminado', "El contenido {$postTitle} fue eliminado del sistema.", 'posts', '/novedades', 'danger');
     }
 
     public function toggleStatus($postId)
@@ -216,13 +197,7 @@ class Novedades extends Component
         $newStatus = $post->status === 'published' ? 'draft' : 'published';
         $post->update(['status' => $newStatus]);
 
-        NotificationService::warning(
-            title: 'Estado de contenido cambiado',
-            message: "El contenido {$post->title} fue ".($newStatus === 'published' ? 'publicado' : 'puesto en borrador').'.',
-            agentId: null,
-            link: '/novedades',
-            module: 'posts'
-        );
+            $this->notify('Estado de contenido cambiado', "El contenido {$post->title} fue " . ($newStatus === 'published' ? 'publicado' : 'puesto en borrador') . ".", 'posts', '/novedades', 'warning');
     }
 
     public function getPosts()

@@ -7,12 +7,13 @@ use App\Models\LineAgent;
 use App\Models\Sale;
 use App\Services\SalesStats;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class Ventas extends Component
 {
-    use HasLinePermissions;
+    use HasLinePermissions, SendsNotifications;
 
     public string $search = '';
 
@@ -125,6 +126,15 @@ class Ventas extends Component
         $this->monthFilter = $this->saleMes;
         $this->yearFilter = $this->saleAnio;
         session()->flash('message', 'Venta guardada. Las estadisticas ya fueron recalculadas.');
+
+        $this->notify(
+            $this->editingSaleId ? 'Venta actualizada' : 'Venta cargada',
+            'Se '.($this->editingSaleId ? 'actualizo' : 'cargo').' una venta para la linea '.$line->name.'.',
+            'sales',
+            '/ventas',
+            'success'
+        );
+
         $this->closeModal();
     }
 
@@ -132,8 +142,17 @@ class Ventas extends Component
     {
         $sale = Sale::with('line')->findOrFail($saleId);
         $this->authorizeLineEdit($sale->line);
+        $lineName = $sale->line?->name ?? 'Sin linea';
         $sale->delete();
         session()->flash('message', 'Venta eliminada. Las estadisticas se actualizaron.');
+
+        $this->notify(
+            'Venta eliminada',
+            'Se elimino una venta de la linea '.$lineName.'.',
+            'sales',
+            '/ventas',
+            'danger'
+        );
     }
 
     public function updatedSaleLineId(): void

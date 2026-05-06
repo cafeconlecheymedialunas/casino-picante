@@ -5,8 +5,8 @@ namespace App\Livewire;
 use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
-use App\Services\NotificationService;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -14,8 +14,7 @@ use Livewire\WithPagination;
 
 class Agentes extends Component
 {
-    use HasLinePermissions;
-    use WithPagination;
+    use HasLinePermissions, SendsNotifications, WithPagination;
 
     public string $search = '';
 
@@ -153,28 +152,17 @@ class Agentes extends Component
             $agent->update($data);
             session()->flash('message', 'Agente actualizado correctamente.');
 
-            NotificationService::info(
-                title: 'Agente actualizado',
-                message: "El agente {$agent->name} fue actualizado.",
-                agentId: null,
-                link: '/agentes',
-                module: 'agents'
-            );
+            $this->notify('Agente actualizado', "El agente {$agent->name} fue actualizado.", 'agents', '/agentes', 'info');
         } else {
             $data['password'] = Hash::make($this->password);
             $agent = Agent::create($data);
             session()->flash('message', 'Agente creado correctamente.');
 
-            NotificationService::success(
-                title: 'Nuevo agente creado',
-                message: "El agente {$agent->name} fue creado exitosamente.",
-                agentId: null,
-                link: '/agentes',
-                module: 'agents'
-            );
+            $this->notify('Nuevo agente creado', "El agente {$agent->name} fue creado exitosamente.", 'agents', '/agentes', 'success');
         }
 
         $this->syncLineAssignment($agent);
+        $this->notifyAffectedAgent($agent);
         $this->closeModal();
     }
 
@@ -191,12 +179,13 @@ class Agentes extends Component
         LineAgent::where('agent_id', $agentId)->update(['is_active' => $newStatus === 'active']);
         session()->flash('message', $newStatus === 'active' ? 'Agente activado.' : 'Agente pausado.');
 
-        NotificationService::warning(
-            title: 'Estado de agente cambiado',
-            message: "El agente {$agent->name} fue ".($newStatus === 'active' ? 'activado' : 'pausado').'.',
-            agentId: null,
-            link: '/agentes',
-            module: 'agents'
+        $this->notify('Estado de agente cambiado', "El agente {$agent->name} fue ".($newStatus === 'active' ? 'activado' : 'pausado').'.', 'agents', '/agentes', 'warning');
+
+        $this->notifyAffectedAgent(
+            $agent,
+            'Tu acceso fue '.($newStatus === 'active' ? 'activado' : 'pausado'),
+            'Tu usuario de agente fue '.($newStatus === 'active' ? 'activado' : 'pausado').'.',
+            'warning'
         );
 
         if ($this->detailAgentId === $agentId) {
@@ -215,13 +204,7 @@ class Agentes extends Component
 
         session()->flash('message', 'Agente eliminado correctamente.');
 
-        NotificationService::danger(
-            title: 'Agente eliminado',
-            message: "El agente {$agentName} fue eliminado del sistema.",
-            agentId: null,
-            link: '/agentes',
-            module: 'agents'
-        );
+        $this->notify('Agente eliminado', "El agente {$agentName} fue eliminado del sistema.", 'agents', '/agentes', 'danger');
     }
 
     public function getCanCreateAgentsProperty(): bool
@@ -343,6 +326,24 @@ class Agentes extends Component
                 ]
             );
         }
+    }
+
+    private function notifyAffectedAgent(Agent $agent, ?string $title = null, ?string $message = null, string $type = 'info'): void
+    {
+        $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
+
+        if ((int) $agent->id === $currentAgentId) {
+            return;
+        }
+
+        $this->notifyAgent(
+            (int) $agent->id,
+            $title ?: 'Tu usuario fue actualizado',
+            $message ?: 'Se actualizaron datos o lineas asignadas de tu usuario.',
+            'agents',
+            '/perfil',
+            $type
+        );
     }
 
     private function availableLineIds(): array

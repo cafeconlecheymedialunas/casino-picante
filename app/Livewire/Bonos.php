@@ -6,15 +6,15 @@ use App\Models\Bonus;
 use App\Models\BonusAssignment;
 use App\Models\Line;
 use App\Models\User;
-use App\Services\NotificationService;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class Bonos extends Component
 {
-    use HasLinePermissions;
+    use HasLinePermissions, SendsNotifications;
 
     public string $search = '';
 
@@ -150,25 +150,14 @@ class Bonos extends Component
             $bonus->update($data);
             session()->flash('message', 'Bono actualizado correctamente.');
 
-            NotificationService::info(
-                title: 'Bono actualizado',
-                message: "El bono {$bonus->title} fue actualizado.",
-                agentId: null,
-                link: '/bonos',
-                module: 'bonuses'
-            );
+            $this->notify('Bono actualizado', "El bono {$bonus->title} fue actualizado.", 'bonuses', '/bonos', 'info');
         } else {
             $data['created_by'] = session('active_agent_id');
             $bonus = Bonus::create($data);
             session()->flash('message', 'Bono creado correctamente.');
 
-            NotificationService::success(
-                title: 'Nuevo bono creado',
-                message: "El bono {$bonus->title} fue creado exitosamente.",
-                agentId: null,
-                link: '/bonos',
-                module: 'bonuses'
-            );
+$this->notify('Bono creado', "El bono {$bonus->title} fue creado exitosamente.", 'bonuses', '/bonos', 'success');
+            $this->dispatch('notification-created');
         }
 
         $this->closeModal();
@@ -234,13 +223,7 @@ class Bonos extends Component
 
         session()->flash('message', 'Bono otorgado a '.$user->username.'.');
 
-        NotificationService::success(
-            title: 'Bono asignado',
-            message: "El bono {$bonus->title} fue asignado a {$user->username}.",
-            agentId: null,
-            link: '/bonos',
-            module: 'bonuses'
-        );
+        $this->notify('Bono asignado', "El bono {$bonus->title} fue asignado a {$user->username}.", 'bonuses', '/bonos', 'success');
 
         $this->closeAssignModal();
     }
@@ -253,13 +236,7 @@ class Bonos extends Component
         $assignment->update(['status' => 'used', 'used_at' => now()]);
         session()->flash('message', 'Bono marcado como reclamado.');
 
-        NotificationService::info(
-            title: 'Bono reclamado',
-            message: "El bono {$assignment->bonus->title} fue marcado como reclamado.",
-            agentId: null,
-            link: '/bonos',
-            module: 'bonuses'
-        );
+        $this->notify('Bono reclamado', "El bono {$assignment->bonus->title} fue marcado como reclamado.", 'bonuses', '/bonos', 'info');
     }
 
     public function deleteBonus(int $bonusId): void
@@ -272,13 +249,7 @@ class Bonos extends Component
         $bonus->delete();
         session()->flash('message', 'Bono eliminado correctamente.');
 
-        NotificationService::danger(
-            title: 'Bono eliminado',
-            message: "El bono {$bonusTitle} fue eliminado del sistema.",
-            agentId: null,
-            link: '/bonos',
-            module: 'bonuses'
-        );
+        $this->notify('Bono eliminado', "El bono {$bonusTitle} fue eliminado del sistema.", 'bonuses', '/bonos', 'danger');
     }
 
     public function render()

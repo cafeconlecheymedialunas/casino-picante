@@ -1,7 +1,7 @@
 <div class="notification-settings-content">
     <div class="content-header">
         <h2>Notificaciones</h2>
-        <p>Elegí qué notificaciones recibe el administrador.</p>
+        <p>Elegi que notificaciones queres recibir en tu cuenta.</p>
     </div>
 
     <div class="settings-grid">
@@ -66,7 +66,16 @@
     gap: 12px;
 }
 .setting-icon {
-    font-size: 20px;
+    min-width: 28px;
+    height: 28px;
+    border: 1px solid var(--line-2, rgba(255,255,255,.16));
+    border-radius: 7px;
+    color: var(--orange, #ff6a1a);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 900;
 }
 .setting-label {
     font-size: 15px;

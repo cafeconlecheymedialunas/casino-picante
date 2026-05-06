@@ -213,8 +213,9 @@
         .notification-dot.type-danger { background:#ff4757; }
         .notification-dot.type-success { background:var(--good); }
         .notification-dot.type-warning { background:var(--warn); }
-        .notification-content strong, .notification-content small, .notification-content em { display:block; }
-        .notification-content strong { font-size:12px; }
+        .notification-content strong, .notification-content a, .notification-content small, .notification-content em { display:block; }
+        .notification-content strong, .notification-content a { font-size:12px; color:var(--white); text-decoration:none; font-weight:800; }
+        .notification-content a:hover { color:var(--orange); }
         .notification-content small { color:var(--muted); font-size:11px; line-height:1.35; margin-top:2px; }
         .notification-content em { color:var(--muted-2); font-size:10px; margin-top:5px; font-style:normal; }
         .dropdown-empty { padding:22px 14px; color:var(--muted-2); text-align:center; font-size:12px; }
@@ -341,9 +342,6 @@
                 <span class="sidebar-item-icon">⚙️</span> Configuración
             </a>
 
-            <a href="{{ route('perfil') }}" wire:navigate class="sidebar-item {{ request()->routeIs('perfil') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">👤</span> Mi Perfil
-            </a>
             <div class="sidebar-spacer"></div>
         </aside>
         

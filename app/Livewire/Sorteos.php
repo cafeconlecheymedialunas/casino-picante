@@ -6,14 +6,14 @@ use App\Models\Line;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\User;
-use App\Services\NotificationService;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Carbon\Carbon;
 use Livewire\Component;
 
 class Sorteos extends Component
 {
-    use HasLinePermissions;
+    use HasLinePermissions, SendsNotifications;
 
     public $search = '';
 
@@ -137,26 +137,14 @@ class Sorteos extends Component
             $this->editingRaffle->update($data);
             session()->flash('message', 'Sorteo actualizado');
 
-            NotificationService::info(
-                title: 'Sorteo actualizado',
-                message: "El sorteo {$this->editingRaffle->title} fue actualizado.",
-                agentId: null,
-                link: '/sorteos',
-                module: 'raffles'
-            );
+            $this->notify('Sorteo actualizado', "El sorteo {$this->editingRaffle->title} fue actualizado.", 'raffles', '/sorteos', 'info');
         } else {
             $this->checkLinePermission('sorteo.create');
             $data['line_id'] = session('active_line_id');
             $raffle = Raffle::create($data);
             session()->flash('message', 'Sorteo creado');
 
-            NotificationService::success(
-                title: 'Nuevo sorteo creado',
-                message: "El sorteo {$raffle->title} fue creado exitosamente.",
-                agentId: null,
-                link: '/sorteos',
-                module: 'raffles'
-            );
+            $this->notify('Nuevo sorteo creado', "El sorteo {$raffle->title} fue creado exitosamente.", 'raffles', '/sorteos', 'success');
         }
 
         $this->closeModal();
@@ -176,13 +164,7 @@ class Sorteos extends Component
 
         session()->flash('message', 'Sorteo eliminado');
 
-        NotificationService::danger(
-            title: 'Sorteo eliminado',
-            message: "El sorteo {$raffleTitle} fue eliminado del sistema.",
-            agentId: null,
-            link: '/sorteos',
-            module: 'raffles'
-        );
+        $this->notify('Sorteo eliminado', "El sorteo {$raffleTitle} fue eliminado del sistema.", 'raffles', '/sorteos', 'danger');
     }
 
     public function selectRaffle($id)
@@ -273,13 +255,7 @@ class Sorteos extends Component
             session()->flash('message', "{$assignedCount} número(s) asignados correctamente");
 
             $user = User::find($this->assignUserId);
-            NotificationService::success(
-                title: 'Números asignados',
-                message: "{$assignedCount} número(s) asignados al cliente {$user->name}.",
-                agentId: null,
-                link: '/sorteos',
-                module: 'raffles'
-            );
+            $this->notify('Números asignados', "{$assignedCount} número(s) asignados al cliente {$user->name}.", 'raffles', '/sorteos', 'success');
 
             $this->manualNumbers = '';
         }
@@ -329,13 +305,7 @@ class Sorteos extends Component
         session()->flash('message', "Número {$number} asignado correctamente");
 
         $user = User::find($this->assignUserId);
-        NotificationService::info(
-            title: 'Número asignado',
-            message: "Número {$number} asignado al cliente {$user->name}.",
-            agentId: null,
-            link: '/sorteos',
-            module: 'raffles'
-        );
+        $this->notify('Número asignado', "Número {$number} asignado al cliente {$user->name}.", 'raffles', '/sorteos', 'info');
     }
 
     public function removeNumber($numberId)
@@ -374,15 +344,10 @@ class Sorteos extends Component
         $raffle = Raffle::find($this->selectedRaffleId);
         $winner = $this->winner_user_id ? User::find($this->winner_user_id) : null;
 
-        NotificationService::success(
-            title: '🎉 Ganador registrado',
-            message: $winner
-                ? "{$winner->name} ganó el sorteo {$raffle->title} con el número {$this->winner_number}."
-                : "Se registró un ganador para el sorteo {$raffle->title}.",
-            agentId: null,
-            link: '/sorteos',
-            module: 'raffles'
-        );
+        $this->notify('🎉 Ganador registrado', $winner
+            ? "{$winner->name} ganó el sorteo {$raffle->title} con el número {$this->winner_number}."
+            : "Se registró un ganador para el sorteo {$raffle->title}.",
+            'raffles', '/sorteos', 'success');
     }
 
     public function toggleStatus($id)
@@ -395,13 +360,7 @@ class Sorteos extends Component
         session()->flash('message', 'Estado actualizado');
 
         $raffle = Raffle::find($id);
-        NotificationService::warning(
-            title: 'Estado de sorteo cambiado',
-            message: "El sorteo {$raffle->title} fue ".($raffle->status === 'active' ? 'activado' : 'pausado').'.',
-            agentId: null,
-            link: '/sorteos',
-            module: 'raffles'
-        );
+        $this->notify('Estado de sorteo cambiado', "El sorteo {$raffle->title} fue ".($raffle->status === 'active' ? 'activado' : 'pausado').'.', 'raffles', '/sorteos', 'warning');
     }
 
     public function getRaffles()

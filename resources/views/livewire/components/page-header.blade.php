@@ -17,20 +17,26 @@
                     <b>{{ $unreadCount > 9 ? '9+' : $unreadCount }}</b>
                 @endif
             </button>
+
             <div class="header-dropdown notifications-dropdown" x-show="open" x-cloak x-transition>
                 <div class="dropdown-head">
                     <strong>Notificaciones</strong>
                     <a href="{{ route('settings') }}" wire:navigate class="settings-link">Configurar</a>
                     @if($unreadCount > 0)
-                        <button type="button" wire:click="markAllRead">Marcar todas leídas</button>
+                        <button type="button" wire:click="markAllRead">Marcar todas leidas</button>
                     @endif
                 </div>
+
                 <div class="dropdown-body">
                     @forelse($notifications as $notification)
                         <div class="notification-item {{ $notification->read_at ? '' : 'unread' }}" wire:click="markRead({{ $notification->id }})">
                             <span class="notification-dot type-{{ $notification->type }}"></span>
                             <span class="notification-content">
-                                <strong>{{ $notification->title }}</strong>
+                                @if($notification->link)
+                                    <a href="{{ $notification->link }}" wire:navigate>{{ $notification->title }}</a>
+                                @else
+                                    <strong>{{ $notification->title }}</strong>
+                                @endif
                                 <small>{{ $notification->message }}</small>
                                 <em>{{ $notification->created_at->diffForHumans() }}</em>
                             </span>
@@ -53,17 +59,14 @@
                     <path d="m6 9 6 6 6-6"/>
                 </svg>
             </button>
+
             <div class="header-dropdown profile-dropdown" x-show="open" x-cloak x-transition>
                 <a href="{{ route('perfil') }}" wire:navigate>Mi perfil</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit">Cerrar sesión</button>
+                    <button type="submit">Cerrar sesion</button>
                 </form>
             </div>
         </div>
-
-        @if($buttonText)
-            <button type="button" className="btn-primary" wire:click="$dispatch('header-action', { action: '{{ $buttonAction }}' })">{{ $buttonText }}</button>
-        @endif
     </div>
 </div>

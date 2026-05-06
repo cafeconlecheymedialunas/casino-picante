@@ -4,13 +4,13 @@ namespace App\Livewire;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
-use App\Services\NotificationService;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Livewire\Component;
 
 class Tickets extends Component
 {
-    use HasLinePermissions;
+    use HasLinePermissions, SendsNotifications;
 
     public $filter = 'open';
 
@@ -57,13 +57,7 @@ class Tickets extends Component
         $this->newMessage = '';
         $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
 
-        NotificationService::info(
-            title: 'Nuevo mensaje en ticket',
-            message: "Se envió un mensaje en el ticket: {$this->selectedTicket->subject}",
-            agentId: null,
-            link: '/tickets',
-            module: 'tickets'
-        );
+        $this->notify('Nuevo mensaje en ticket', "Se envió un mensaje en el ticket: {$this->selectedTicket->subject}", 'tickets', '/tickets', 'info');
 
         $this->dispatch('messageSent');
     }
@@ -90,13 +84,7 @@ class Tickets extends Component
         if ($type === 'resolved') {
             $this->selectedTicket->update(['status' => 'closed']);
 
-            NotificationService::success(
-                title: 'Ticket resuelto',
-                message: "El ticket {$this->selectedTicket->subject} fue marcado como resuelto.",
-                agentId: null,
-                link: '/tickets',
-                module: 'tickets'
-            );
+            $this->notify('Ticket resuelto', "El ticket {$this->selectedTicket->subject} fue marcado como resuelto.", 'tickets', '/tickets', 'success');
         }
 
         $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
@@ -109,13 +97,7 @@ class Tickets extends Component
             $this->selectedTicket->update(['status' => $status]);
             $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
 
-            NotificationService::warning(
-                title: 'Estado de ticket cambiado',
-                message: "El ticket {$this->selectedTicket->subject} cambió a: {$status}",
-                agentId: null,
-                link: '/tickets',
-                module: 'tickets'
-            );
+            $this->notify('Estado de ticket cambiado', "El ticket {$this->selectedTicket->subject} cambió a: {$status}", 'tickets', '/tickets', 'warning');
         }
     }
 

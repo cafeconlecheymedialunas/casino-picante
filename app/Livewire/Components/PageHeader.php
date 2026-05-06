@@ -9,13 +9,11 @@ use Livewire\Component;
 
 class PageHeader extends Component
 {
+    protected $listeners = ['notification-created' => '$refresh'];
+
     public string $title = '';
 
     public string $subtitle = '';
-
-    public string $buttonText = '';
-
-    public string $buttonAction = '';
 
     public function markRead(int $notificationId): void
     {
@@ -64,9 +62,7 @@ class PageHeader extends Component
         $agentId = session('active_agent_id');
 
         return DashboardNotification::query()
-            ->when($agentId, fn ($query) => $query->where(function ($inner) use ($agentId) {
-                $inner->whereNull('agent_id')->orWhere('agent_id', $agentId);
-            }))
+            ->when($agentId, fn ($query) => $query->where('agent_id', $agentId))
             ->when(! $agentId, fn ($query) => $query->whereNull('agent_id'));
     }
 
