@@ -63,7 +63,7 @@
         </div>
 
         @if($buttonText)
-            <button type="button" class="btn-primary" wire:click="{{ $buttonAction }}">{{ $buttonText }}</button>
+            <button type="button" className="btn-primary" wire:click="$dispatch('header-action', { action: '{{ $buttonAction }}' })">{{ $buttonText }}</button>
         @endif
     </div>
 </div>

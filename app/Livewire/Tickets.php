@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Services\NotificationService;
 use App\Traits\HasLinePermissions;
 use Livewire\Component;
 

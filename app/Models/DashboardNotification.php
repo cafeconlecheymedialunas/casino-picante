@@ -12,6 +12,7 @@ class DashboardNotification extends Model
         'message',
         'type',
         'link',
+        'module',
         'read_at',
     ];
 

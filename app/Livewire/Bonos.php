@@ -6,6 +6,7 @@ use App\Models\Bonus;
 use App\Models\BonusAssignment;
 use App\Models\Line;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Traits\HasLinePermissions;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;

@@ -4,6 +4,7 @@ namespace App\Livewire\Users;
 
 use App\Models\Line;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -99,6 +100,16 @@ class UsersIndex extends Component
     public function updatingFilterStatus(): void
     {
         $this->resetPage();
+    }
+
+    protected $listeners = ['header-action' => 'handleHeaderAction'];
+
+    public function handleHeaderAction($data): void
+    {
+        $action = $data['action'] ?? '';
+        if (method_exists($this, $action)) {
+            $this->$action();
+        }
     }
 
     public function openCreateModal(): void
