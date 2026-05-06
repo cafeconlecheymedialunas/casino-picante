@@ -19,13 +19,6 @@
         </div>
     @endif
 
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
-        <div>
-            <div style="font-size: 11px; color: var(--muted); letter-spacing: 0.12em; font-weight: 700;">REPORTES</div>
-            <div style="font-family: var(--font-display); font-size: 32px; margin-top: 2px; letter-spacing: 0.02em;">Logs de Actividad</div>
-        </div>
-    </div>
-
     <div class="logs-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
             <h3 style="font-family:var(--font-display);font-size:20px;margin:0;letter-spacing:0.02em;">REGISTRO DE EVENTOS</h3>

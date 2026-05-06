@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Traits\HasLinePermissions;
 use App\Models\Platform;
 use App\Support\ImageStorage;
 use Livewire\Component;
@@ -9,7 +10,7 @@ use Livewire\WithFileUploads;
 
 class PlatformsMaster extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, HasLinePermissions;
 
     public $showModal = false;
 

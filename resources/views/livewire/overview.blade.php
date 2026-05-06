@@ -1,8 +1,7 @@
 <div class="page-container">
-    <x-livewire.components.page-header title="OVERVIEW" subtitle="Resumen operativo y alertas importantes" />
+    <x-livewire.components.page-header title="DASHBOARD" subtitle="Panel de control · {{ now()->format('d \d\e F Y') }}" />
 
     <style>
-    /* Alert bar */
     .alert-bar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
     .alert-row {
         display: flex; align-items: center; gap: 10px;
@@ -12,8 +11,6 @@
     .alert-row.warning { background: rgba(255,179,71,0.08); border: 1px solid rgba(255,179,71,0.28); color: var(--warn); }
     .alert-row.info    { background: rgba(255,106,26,0.07); border: 1px solid rgba(255,106,26,0.2); color: var(--orange-2); }
     .alert-row a { color: inherit; font-weight: 800; text-decoration: underline; margin-left: auto; white-space: nowrap; }
-
-    /* Section header */
     .mod-section {
         display: flex; align-items: center; gap: 10px;
         margin: 28px 0 10px;
@@ -22,19 +19,14 @@
         font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
         color: var(--orange); white-space: nowrap;
     }
-    .mod-section-line {
-        flex: 1; height: 1px; background: var(--line);
-    }
+    .mod-section-line { flex: 1; height: 1px; background: var(--line); }
     .mod-section-link {
         font-size: 11px; color: var(--muted-2); text-decoration: none; font-weight: 600;
         white-space: nowrap;
     }
     .mod-section-link:hover { color: var(--orange); }
-
-    /* KPI grid */
     .kpi-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .kpi-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
     .kpi {
         background: linear-gradient(180deg, #170b0b, #0f0707);
         border: 1px solid var(--line); border-radius: 14px;
@@ -44,8 +36,6 @@
     .kpi.kpi-urgent { border-color: rgba(255,71,87,0.4); }
     .kpi.kpi-good   { border-color: rgba(37,196,107,0.3); }
     .kpi.kpi-warn   { border-color: rgba(255,179,71,0.3); }
-
-    /* module chip in top-right */
     .kpi-mod {
         position: absolute; top: 10px; right: 12px;
         font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
@@ -53,33 +43,22 @@
         padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line);
         text-transform: uppercase;
     }
-
     .kpi-label {
         font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
         color: var(--muted-2); text-transform: uppercase;
-        padding-right: 56px; /* avoid overlap with mod chip */
+        padding-right: 56px;
     }
-    .kpi-value {
-        font-family: var(--font-display); font-size: 38px; line-height: 1;
-        color: var(--white);
-    }
+    .kpi-value { font-family: var(--font-display); font-size: 38px; line-height: 1; color: var(--white); }
     .kpi-value.c-red    { color: #ff4757; }
     .kpi-value.c-orange { color: var(--orange); }
     .kpi-value.c-green  { color: var(--good); }
     .kpi-value.c-warn   { color: var(--warn); }
     .kpi-value.c-muted  { color: var(--muted-2); }
-
-    /* descriptive subline — full sentence */
-    .kpi-desc {
-        font-size: 11px; color: var(--muted-2); line-height: 1.4;
-        margin-top: 2px;
-    }
+    .kpi-desc { font-size: 11px; color: var(--muted-2); line-height: 1.4; margin-top: 2px; }
     .kpi-desc .hi   { color: var(--white); font-weight: 700; }
     .kpi-desc .up   { color: var(--good); font-weight: 700; }
     .kpi-desc .down { color: #ff4757; font-weight: 700; }
     .kpi-desc .warn { color: var(--warn); font-weight: 700; }
-
-    /* Tables row */
     .tables-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 4px; }
     .ov-card { background: linear-gradient(180deg, #170b0b, #0f0707); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
     .ov-card-head {
@@ -87,10 +66,9 @@
         padding: 12px 16px; border-bottom: 1px solid var(--line);
     }
     .ov-card-title { font-size: 10px; font-weight: 800; letter-spacing: 0.14em; color: var(--muted); }
-    .ov-card-mod   { font-size: 9px; color: var(--muted-2); background: rgba(255,255,255,0.04); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); }
-    .ov-card-link  { font-size: 11px; color: var(--orange); text-decoration: none; font-weight: 700; }
+    .ov-card-mod { font-size: 9px; color: var(--muted-2); background: rgba(255,255,255,0.04); padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); }
+    .ov-card-link { font-size: 11px; color: var(--orange); text-decoration: none; font-weight: 700; }
     .ov-card-link:hover { text-decoration: underline; }
-
     .row-item {
         display: grid; align-items: center; gap: 10px;
         padding: 9px 16px; border-bottom: 1px solid var(--line); font-size: 12px;
@@ -98,31 +76,25 @@
     .row-item:last-child { border-bottom: none; }
     .row-users { grid-template-columns: 30px 1fr 72px; }
     .row-ticket { grid-template-columns: 1fr 64px 66px; }
-
     .r-avatar {
         width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
         background: linear-gradient(135deg, var(--orange), var(--amber));
         display: flex; align-items: center; justify-content: center;
         color: #190702; font-weight: 800; font-size: 10px;
     }
-    .r-name  { font-weight: 600; font-size: 12px; }
-    .r-meta  { font-size: 10px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .r-time  { font-size: 10px; color: var(--muted-2); text-align: right; }
-
+    .r-name { font-weight: 600; font-size: 12px; }
+    .r-meta { font-size: 10px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .r-time { font-size: 10px; color: var(--muted-2); text-align: right; }
     .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-    .badge-active   { background: rgba(37,196,107,0.12); color: var(--good); }
-    .badge-blocked  { background: rgba(255,71,87,0.12);  color: #ff4757; }
-    .badge-pending  { background: rgba(255,179,71,0.12); color: var(--warn); }
-    .badge-open     { background: rgba(255,106,26,0.12); color: var(--orange); }
-    .badge-stale    { background: rgba(255,71,87,0.12);  color: #ff4757; }
-
+    .badge-active  { background: rgba(37,196,107,0.12); color: var(--good); }
+    .badge-blocked { background: rgba(255,71,87,0.12);  color: #ff4757; }
+    .badge-pending { background: rgba(255,179,71,0.12); color: var(--warn); }
+    .badge-open    { background: rgba(255,106,26,0.12); color: var(--orange); }
+    .badge-stale   { background: rgba(255,71,87,0.12);  color: #ff4757; }
     .t-subject { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .t-user    { font-size: 10px; color: var(--muted-2); }
-
+    .t-user { font-size: 10px; color: var(--muted-2); }
     .empty-state { padding: 22px 16px; font-size: 12px; color: var(--muted-2); text-align: center; }
 </style>
-
-<x-livewire.components.page-header title="DASHBOARD" subtitle="Panel de control · {{ now()->format('d \d\e F Y') }}" />
 
 {{-- ALERTS --}}
 @if(count($alerts) > 0)

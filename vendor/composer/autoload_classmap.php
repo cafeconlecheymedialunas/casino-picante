@@ -27,7 +27,6 @@ return array(
     'App\\Livewire\\Overview' => $baseDir . '/app/Livewire/Overview.php',
     'App\\Livewire\\PlatformsMaster' => $baseDir . '/app/Livewire/PlatformsMaster.php',
     'App\\Livewire\\Promociones' => $baseDir . '/app/Livewire/Promociones.php',
-    'App\\Livewire\\Reportes' => $baseDir . '/app/Livewire/Reportes.php',
     'App\\Livewire\\Sorteos' => $baseDir . '/app/Livewire/Sorteos.php',
     'App\\Livewire\\Tickets' => $baseDir . '/app/Livewire/Tickets.php',
     'App\\Livewire\\Users\\UsersIndex' => $baseDir . '/app/Livewire/Users/UsersIndex.php',

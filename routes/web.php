@@ -5,6 +5,7 @@ use App\Livewire\Agentes;
 use App\Livewire\Banners;
 use App\Livewire\Bonos;
 use App\Livewire\Chats;
+use App\Livewire\EditorHome;
 use App\Livewire\Lineas;
 use App\Livewire\LineDetail;
 use App\Livewire\Logs;
@@ -62,12 +63,13 @@ Route::middleware('line.authorize')->group(function () {
         Route::get('/novedades', Novedades::class)->name('novedades');
     });
 
-    Route::middleware('line.authorize:ticket.read')->group(function () {
-        Route::get('/tickets', Tickets::class)->name('tickets');
-    });
-
     Route::middleware('line.authorize:bonus.read')->group(function () {
         Route::get('/bonos', Bonos::class)->name('bonos');
+        Route::get('/editor-home', EditorHome::class)->name('editor-home');
+    });
+
+    Route::middleware('line.authorize:ticket.read')->group(function () {
+        Route::get('/tickets', Tickets::class)->name('tickets');
     });
 
     Route::middleware('line.authorize:sorteo.read')->group(function () {

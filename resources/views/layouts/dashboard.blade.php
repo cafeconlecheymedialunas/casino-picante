@@ -99,20 +99,25 @@
         }
 
         .sidebar-line-selector {
-            padding: 8px; margin-bottom: 8px;
+            padding: 10px; margin: 4px 0 12px;
             background: rgba(255,106,26,0.06);
-            border: 1px solid rgba(255,106,26,0.2);
-            border-radius: 10px;
+            border: 1px solid rgba(255,106,26,0.15);
+            border-radius: 12px;
         }
         .sidebar-line-label {
             font-size: 9px; font-weight: 800; letter-spacing: 0.16em;
-            color: var(--orange); margin-bottom: 5px; padding-left: 2px;
+            color: var(--orange); opacity: 0.8; margin-bottom: 6px; padding-left: 2px;
         }
         .sidebar-line-select {
-            width: 100%; background: rgba(255,255,255,0.04);
-            border: 1px solid var(--line-2); border-radius: 6px;
-            padding: 6px 28px 6px 8px; font-size: 12px; font-weight: 700;
+            width: 100%; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--line-2); border-radius: 8px;
+            padding: 8px 30px 8px 10px; font-size: 13px; font-weight: 700;
             color: var(--white); cursor: pointer;
+            background-position: right 8px center;
+        }
+        .sidebar-line-select:hover {
+            border-color: var(--orange);
+            background-color: rgba(255,255,255,0.08);
         }
         
         /* Custom Scrollbar */
@@ -174,11 +179,12 @@
         option:disabled { color: var(--muted-2); }
         option[value=""] { color: var(--muted-2); }
 
-        .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 14px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; }
+        .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 14px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; flex-wrap:wrap; }
+        .page-header-left { flex:1; min-width:0; }
         .page-title { margin:0; font-family:var(--font-display); font-size:34px; letter-spacing:.03em; line-height:.95; }
         .page-subtitle { margin:5px 0 0; color:var(--muted-2); font-size:12px; }
-        .page-header-right { display:flex; align-items:center; gap:10px; margin-left:auto; }
-        .header-icon-btn { position:relative; width:38px; height:38px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.035); color:var(--white); cursor:pointer; font-weight:900; }
+        .page-header-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .header-icon-btn { position:relative; width:38px; height:38px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.035); color:var(--white); cursor:pointer; font-weight:900; display:flex; align-items:center; justify-content:center; }
         .header-icon-btn b { position:absolute; top:-6px; right:-5px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--orange); color:#190702; font-size:10px; display:flex; align-items:center; justify-content:center; }
         .profile-menu, .notification-menu { position:relative; }
         .profile-trigger { height:38px; display:flex; align-items:center; gap:9px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.035); color:var(--white); padding:4px 9px 4px 4px; cursor:pointer; }
@@ -187,22 +193,27 @@
         .profile-trigger strong { display:block; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
         .profile-trigger small { display:block; color:var(--muted-2); font-size:10px; margin-top:1px; text-align:left; }
         .header-dropdown { position:absolute; top:46px; right:0; min-width:230px; border:1px solid var(--line-2); border-radius:8px; background:#140909; box-shadow:0 18px 45px rgba(0,0,0,.45); z-index:120; overflow:hidden; }
+        .profile-dropdown { min-width:200px; }
         .profile-dropdown a, .profile-dropdown button { display:block; width:100%; padding:12px 14px; color:var(--white); background:transparent; border:0; text-align:left; text-decoration:none; font:inherit; font-size:13px; cursor:pointer; }
         .profile-dropdown a:hover, .profile-dropdown button:hover { background:rgba(255,106,26,.12); }
         .notifications-dropdown { width:340px; max-width:calc(100vw - 32px); }
         .dropdown-head { display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line); }
         .dropdown-head strong { font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
         .dropdown-head button { border:0; background:transparent; color:var(--orange); font-size:11px; cursor:pointer; font-weight:800; }
-        .notification-item { display:grid; grid-template-columns:9px 1fr; gap:10px; padding:11px 14px; color:var(--white); text-decoration:none; border-bottom:1px solid var(--line); }
+        .dropdown-head button:hover { opacity:0.8; }
+        .dropdown-body { max-height:320px; overflow-y:auto; }
+        .notification-item { display:grid; grid-template-columns:9px 1fr; gap:10px; padding:11px 14px; color:var(--white); border-bottom:1px solid var(--line); cursor:pointer; transition:background .12s; }
+        .notification-item:hover { background:rgba(255,255,255,.03); }
         .notification-item.unread { background:rgba(255,106,26,.08); }
-        .notification-dot { width:8px; height:8px; border-radius:999px; margin-top:4px; background:var(--orange); }
+        .notification-item.unread:hover { background:rgba(255,106,26,.14); }
+        .notification-dot { width:8px; height:8px; border-radius:999px; margin-top:5px; background:var(--orange); flex-shrink:0; }
         .notification-dot.type-danger { background:#ff4757; }
         .notification-dot.type-success { background:var(--good); }
         .notification-dot.type-warning { background:var(--warn); }
-        .notification-item strong, .notification-item small, .notification-item em { display:block; }
-        .notification-item strong { font-size:12px; }
-        .notification-item small { color:var(--muted); font-size:11px; line-height:1.35; margin-top:2px; }
-        .notification-item em { color:var(--muted-2); font-size:10px; margin-top:5px; font-style:normal; }
+        .notification-content strong, .notification-content small, .notification-content em { display:block; }
+        .notification-content strong { font-size:12px; }
+        .notification-content small { color:var(--muted); font-size:11px; line-height:1.35; margin-top:2px; }
+        .notification-content em { color:var(--muted-2); font-size:10px; margin-top:5px; font-style:normal; }
         .dropdown-empty { padding:22px 14px; color:var(--muted-2); text-align:center; font-size:12px; }
         .page-action-strip { display:flex; justify-content:flex-end; gap:10px; padding:12px 28px 0; }
 
@@ -266,11 +277,7 @@
                     </select>
                 </form>
             </div>
-            @endif>
-
-            <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master*') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🎮</span> Gestión Plataformas
-            </a>
+            @endif
 
             <div class="sidebar-section">DASHBOARD</div>
 
@@ -292,10 +299,14 @@
                 <span class="sidebar-item-icon">☎</span> Líneas
             </a>
 
-            <div class="sidebar-section">CONTENIDO</div>
-
             <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">🎮</span> Plataformas
+            </a>
+
+            <div class="sidebar-section">CONTENIDO</div>
+
+            <a href="{{ route('editor-home') }}" wire:navigate class="sidebar-item {{ request()->routeIs('editor-home') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">🏠</span> Editar Home
             </a>
 
             <a href="{{ route('promociones') }}" wire:navigate class="sidebar-item {{ request()->routeIs('promociones') ? 'active' : '' }}">
@@ -322,16 +333,6 @@
 
             <a href="{{ route('tickets') }}" wire:navigate class="sidebar-item {{ request()->routeIs('tickets') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✉</span> Tickets
-            </a>
-
-            <div class="sidebar-section">REPORTES</div>
-
-            <a href="{{ route('reportes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('reportes') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">📊</span> Reportes
-            </a>
-
-            <a href="{{ route('logs') }}" wire:navigate class="sidebar-item {{ request()->routeIs('logs') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">📋</span> Logs de actividad
             </a>
 
             <div class="sidebar-section">SISTEMA</div>

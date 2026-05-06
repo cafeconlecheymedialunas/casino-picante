@@ -558,7 +558,6 @@ class ComposerStaticInit53b5d56b3b7e3cbac1713e68c8850f6c
         'App\\Livewire\\Overview' => __DIR__ . '/../..' . '/app/Livewire/Overview.php',
         'App\\Livewire\\PlatformsMaster' => __DIR__ . '/../..' . '/app/Livewire/PlatformsMaster.php',
         'App\\Livewire\\Promociones' => __DIR__ . '/../..' . '/app/Livewire/Promociones.php',
-        'App\\Livewire\\Reportes' => __DIR__ . '/../..' . '/app/Livewire/Reportes.php',
         'App\\Livewire\\Sorteos' => __DIR__ . '/../..' . '/app/Livewire/Sorteos.php',
         'App\\Livewire\\Tickets' => __DIR__ . '/../..' . '/app/Livewire/Tickets.php',
         'App\\Livewire\\Users\\UsersIndex' => __DIR__ . '/../..' . '/app/Livewire/Users/UsersIndex.php',
