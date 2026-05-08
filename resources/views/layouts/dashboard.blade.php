@@ -79,14 +79,32 @@
         
         .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         
-        .btn-primary {
-            background: linear-gradient(180deg, var(--orange-2) 0%, var(--orange) 60%, var(--orange-deep) 100%);
-            color: #190702; border: none; border-radius: 999px;
-            font-weight: 800; padding: 10px 20px; cursor: pointer;
-            box-shadow: 0 12px 36px rgba(255,106,26,0.45), 0 0 0 1px rgba(255,170,80,0.22) inset;
+        .btn-primary, .new-client-btn, .btn-add {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            height: 38px;
+            padding: 0 18px;
+            border-radius: 9px;
+            border: 1px solid rgba(255,106,26,0.55);
+            background: linear-gradient(135deg, rgba(255,106,26,0.18), rgba(255,106,26,0.06));
+            color: var(--orange);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
             transition: all 0.2s;
+            font-family: var(--font-body);
+            white-space: nowrap;
+            flex-shrink: 0;
+            text-decoration: none;
         }
-        .btn-primary:hover { transform: translateY(-2px); }
+        .btn-primary:hover, .new-client-btn:hover, .btn-add:hover {
+            background: linear-gradient(135deg, rgba(255,106,26,0.28), rgba(255,106,26,0.14));
+            border-color: var(--orange);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(255,106,26,0.22);
+        }
+        .btn-primary svg, .new-client-btn svg, .btn-add svg { stroke: var(--orange); flex-shrink: 0; }
         
         .page-action-strip { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 28px 0; }
         .btn-ghost {
@@ -141,7 +159,7 @@
             padding: 0;
         }
         .page-container {
-            padding: 24px 28px;
+            padding: 0;
             min-height: 100%;
         }
         
@@ -181,7 +199,7 @@
         option:disabled { color: var(--muted-2); }
         option[value=""] { color: var(--muted-2); }
 
-        .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 14px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; flex-wrap:wrap; }
+        .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 14px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; flex-wrap:wrap;margin-bottom: 25px;}
         .page-header-left { flex:1; min-width:0; }
         .page-title { margin:0; font-family:var(--font-display); font-size:34px; letter-spacing:.03em; line-height:.95; }
         .page-subtitle { margin:5px 0 0; color:var(--muted-2); font-size:12px; }
@@ -222,26 +240,29 @@
         .notification-content small { color:var(--muted); font-size:11px; line-height:1.35; margin-top:2px; }
         .notification-content em { color:var(--muted-2); font-size:10px; margin-top:5px; font-style:normal; }
         .dropdown-empty { padding:22px 14px; color:var(--muted-2); text-align:center; font-size:12px; }
-        .page-action-strip { display:flex; justify-content:flex-end; gap:10px; padding:12px 28px 0; }
-
-        .image-uploader { display: flex; flex-direction: column; gap: 8px; }
-        .image-uploader-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-        .image-uploader-label { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-        .image-uploader-hint { color: var(--muted-2); font-size: 10px; font-weight: 700; }
-        .image-uploader-drop { position:relative; display:flex; align-items:center; justify-content:center; min-height:136px; border:1px dashed var(--line-2); border-radius:8px; background:rgba(255,255,255,.03); overflow:hidden; cursor:pointer; }
-        .image-uploader-wide .image-uploader-drop { aspect-ratio: 851 / 315; min-height: 120px; }
-        .image-uploader-square .image-uploader-drop { aspect-ratio: 1; min-height: 140px; }
-        .image-uploader-logo .image-uploader-drop { width:112px; height:112px; min-height:112px; }
-        .image-uploader-drop:hover { border-color: var(--orange); background:rgba(255,106,26,.08); }
-        .image-uploader-drop img { width:100%; height:100%; object-fit:cover; display:block; }
-        .image-uploader-logo .image-uploader-drop img { object-fit:contain; padding:8px; }
-        .image-uploader-empty { color:var(--muted-2); font-size:12px; font-weight:800; }
-        .image-uploader-drop input, .image-uploader-button input { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
-        .image-uploader-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .image-uploader-button { position:relative; height:32px; padding:0 12px; border:1px solid var(--line-2); border-radius:7px; background:rgba(255,255,255,.04); color:var(--white); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; }
-        .image-uploader-button:hover { border-color:var(--orange); background:rgba(255,106,26,.14); }
-        .image-uploader-button.danger { color:#ff6b7a; }
         .image-uploader-loading { color:var(--orange); font-size:11px; font-weight:800; }
+
+        .module-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .module-header-left { display: flex; align-items: baseline; gap: 12px; }
+        .module-header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .module-title { font-family: var(--font-display); font-size: 22px; letter-spacing: .03em; }
+        .module-count { font-size: 11px; color: var(--muted-2); white-space: nowrap; }
+        .search-input { min-width: 200px; }
+
+        .module-top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 12px 28px 8px;
+            margin-bottom: 4px;
+        }
     </style>
 </head>
 <body>
@@ -395,11 +416,12 @@
         
         <main class="main">
             <div class="main-content">
-                @if(isset($slot))
-                    {{ $slot }}
-                @else
-                    @yield('content')
+                @hasSection('header')
+                    @yield('header')
                 @endif
+                <div class="wrap-content" style="padding:0 2%;">
+                {{ $slot }}
+                </div>
             </div>
         </main>
     </div>

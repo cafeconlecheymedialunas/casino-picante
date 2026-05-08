@@ -1,5 +1,7 @@
 <div class="page-container">
+@section('header')
     <x-livewire.components.page-header title="SORTEOS" subtitle="Gestion de sorteos, premios, numeros y participantes" />
+@endsection
 
     <style>
         .raffles-page { display:flex; flex-direction:column; gap:18px; }
@@ -85,8 +87,11 @@
     @endif
 
     @if($this->hasLinePermission(\App\Support\Permissions::SORTEO_CREATE))
-        <div class="page-action-strip">
-            <button type="button" class="btn-primary" wire:click="openCreate">+ Crear sorteo</button>
+        <div class="module-top-bar">
+            <button type="button" class="btn-primary" wire:click="openCreate">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                Crear sorteo
+            </button>
         </div>
     @endif
 

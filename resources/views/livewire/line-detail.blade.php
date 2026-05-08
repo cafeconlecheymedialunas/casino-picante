@@ -1,11 +1,20 @@
+<div>
 <form wire:submit.prevent="saveAll" class="ld-form">
     <div style="margin-bottom: 16px;">
         <a href="{{ route('lineas') }}" wire:navigate class="ld-back" style="font-size: 12px; color: var(--muted); text-decoration: none;">← Líneas & Redes</a>
     </div>
 
-    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuración de línea" @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT) && !$isEditing) buttonText="✎ Editar línea" buttonAction="toggleInlineEdit" @endif />
+@section('header')
+    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuración de línea" />
+@endsection
 
-    @if($isEditing)
+@if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT) && !$isEditing)
+    <div class="module-top-bar">
+        <button type="button" class="btn-primary" wire:click="toggleInlineEdit">✎ Editar línea</button>
+    </div>
+@endif
+
+@if($isEditing)
     <div style="margin-bottom: 16px; display: flex; gap: 10px;">
         <button type="button" class="btn-cancel" wire:click="toggleInlineEdit" style="background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer;">✕ Cancelar</button>
         <button type="submit" class="btn-save" style="background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; border: none; padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">💾 Guardar cambios</button>
@@ -691,5 +700,9 @@
         .sales-kpis { grid-template-columns: repeat(2, 1fr); }
         .months-grid { grid-template-columns: 1fr; }
         .stats-edit-grid { grid-template-columns: 1fr; }
-    }
-</style>
+}
+    </style>
+</div>
+</form>
+</div>
+</form>

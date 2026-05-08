@@ -31,7 +31,7 @@
         .table-count { color: var(--muted-2); font-size: 11px; }
         .table-scroll { overflow-x: auto; }
         .t-head, .t-row {
-            display: grid; grid-template-columns: 64px 1fr 1.2fr 128px 1.2fr 122px 150px 170px;
+            display: grid; grid-template-columns: 64px 1fr 1.2fr 128px 1.2fr 122px 170px;
             gap: 12px; align-items: center; min-width: 1080px; padding: 11px 18px;
         }
         .t-head { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
@@ -92,15 +92,18 @@
         }
     </style>
 
+@section('header')
     <x-livewire.components.page-header title="AGENTES" subtitle="Alta, cargo, estado y asignacion operativa por linea" />
+@endsection
 
-    @if($canCreateAgents)
-    <div class="page-action-strip">
-        <button type="button" class="btn-primary" wire:click="openCreateModal">+ Crear agente</button>
-    </div>
-    @endif
+<div class="module-top-bar">
+    <button type="button" class="btn-primary" wire:click="openCreateModal">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Crear agente
+    </button>
+</div>
 
-    <div class="agents-page">
+<div class="agents-page">
         <div class="stats-row">
             <div class="stat-card"><div class="stat-label">Total agentes</div><div class="stat-value">{{ $metrics['total'] }}</div></div>
             <div class="stat-card"><div class="stat-label">Activos</div><div class="stat-value c-good">{{ $metrics['active'] }}</div></div>
@@ -142,7 +145,6 @@
                         <div>Username</div>
                         <div>Nombre</div>
                         <div>Cargo</div>
-                        <div>Linea asignada</div>
                         <div>Estado</div>
                         <div>Enviar mensaje</div>
                         <div>Acciones</div>
@@ -158,13 +160,6 @@
                                 <span class="role-badge {{ $agent->cargo === 'super_agente' ? 'role-super' : 'role-agent' }}">
                                     {{ $agent->cargo === 'super_agente' ? 'Encargado' : 'Agente' }}
                                 </span>
-                            </div>
-                            <div class="truncate">
-                                @forelse($agent->assignedLines as $line)
-                                    <span class="line-badge">{{ $line->name }}</span>
-                                @empty
-                                    <span class="muted">Sin linea</span>
-                                @endforelse
                             </div>
                             <div>
                                 <span class="status-badge {{ $isActive ? 'status-active' : 'status-inactive' }}">

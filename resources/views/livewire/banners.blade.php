@@ -1,5 +1,7 @@
 <div class="page-container">
+@section('header')
     <x-livewire.components.page-header title="BANNERS" subtitle="Gestión de banners publicitarios" />
+@endsection
 
     <style>
         .banners-layout { display: grid; grid-template-columns: 1fr 300px; gap: 20px; }

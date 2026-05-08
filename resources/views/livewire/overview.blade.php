@@ -1,5 +1,7 @@
 <div class="page-container">
+@section('header')
     <x-livewire.components.page-header title="DASHBOARD" subtitle="Panel de control · {{ now()->format('d \d\e F Y') }}" />
+@endsection
 
     <style>
     .alert-bar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
@@ -432,6 +434,4 @@
         <div class="empty-state">✅ Sin tickets abiertos pendientes</div>
         @endforelse
     </div>
-</div>
-
 </div>

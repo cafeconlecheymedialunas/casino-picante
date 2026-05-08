@@ -1,5 +1,7 @@
 <div>
+@section('header')
     <x-livewire.components.page-header title="NOVEDADES" />
+@endsection
 
     @if($showModal)
     <div class="modal-overlay" wire:click="closeModal">
@@ -50,11 +52,20 @@
             </form>
         </div>
     </div>
-    @endif>
+    @endif
 
     @if(session()->has('message'))
     <div style="position:fixed;top:20px;right:20px;background:var(--good);color:#000;padding:12px 20px;border-radius:8px;font-weight:700;z-index:2000;">
         {{ session('message') }}
+    </div>
+    @endif
+
+    @if($this->canCreate())
+    <div class="module-top-bar">
+        <button type="button" class="btn-primary" wire:click="openCreateModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Nueva novedad
+        </button>
     </div>
     @endif
 
@@ -66,9 +77,6 @@
                     <button class="tab {{ $tab === 'blog' ? 'active' : '' }}" wire:click="setTab('blog')">Blog</button>
                     <button class="tab {{ $tab === 'carrusel' ? 'active' : '' }}" wire:click="setTab('carrusel')">Carrusel</button>
                 </div>
-                @if($canCreate)
-                <button class="btn-primary" style="height: 32px; padding: 0 14px; font-size: 12px;" wire:click="openCreateModal()">+ Nueva</button>
-                @endif
             </div>
             <div class="filter-row">
                 <div class="filter-box">

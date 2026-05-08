@@ -53,11 +53,16 @@
         @media (max-width:900px) { .stats-grid,.form-grid{grid-template-columns:1fr;} .search-input{width:100%;} .assignment-row{grid-template-columns:1fr;} }
     </style>
 
+@section('header')
     <x-livewire.components.page-header title="BONOS" subtitle="Creacion, disponibilidad y otorgamiento de bonos por linea" />
+@endsection
 
     @if($canCreateBonus)
-    <div class="page-action-strip">
-        <button type="button" class="btn-primary" wire:click="openCreateModal">+ Crear bono</button>
+    <div class="module-top-bar">
+        <button type="button" class="btn-primary" wire:click="openCreateModal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Crear bono
+        </button>
     </div>
     @endif
 

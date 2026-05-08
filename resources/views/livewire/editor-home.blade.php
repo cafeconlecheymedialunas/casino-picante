@@ -23,7 +23,9 @@
         .flash-success { border:1px solid rgba(37,196,107,.35); background:rgba(37,196,107,.12); color:var(--good); border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; margin-bottom:16px; }
     </style>
 
+    @section('header')
     <x-livewire.components.page-header title="EDITAR HOME" subtitle="Configura las secciones visibles en la pagina principal" />
+@endsection
 
     @if(session()->has('message_error'))
         <div class="flash-error">{{ session('message_error') }}</div>

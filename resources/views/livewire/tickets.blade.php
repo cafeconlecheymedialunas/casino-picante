@@ -1,5 +1,7 @@
 <div>
+@section('header')
     <x-livewire.components.page-header title="TICKETS" />
+@endsection
 
     <div class="content-grid">
         <div class="ticket-list">

@@ -1,12 +1,25 @@
 <div class="page-container" x-data="toastManager()" @toast.window="show($event.detail)">
-<x-livewire.components.page-header title="CLIENTES" subtitle="Gestion de clientes registrados, linea preferida y acceso" />
-
-<div class="page-action-strip">
-    <button type="button" class="btn-primary" wire:click="openCreateModal">+ Nuevo cliente</button>
-</div>
+@section('header')
+<x-livewire.components.page-header title="CLIENTES" subtitle="Gestion de clientes registrados y acceso" />
+@endsection
 
 <style>
-    .stats-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stats-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+
+    .table-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .table-header-left { display: flex; align-items: baseline; gap: 12px; }
+    .table-header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .tc-title { font-family: var(--font-display); font-size: 22px; letter-spacing: .03em; }
+    .tc-count { font-size: 11px; color: var(--muted-2); white-space: nowrap; }
+    .search-input { min-width: 200px; }
+
     .stat-card {
         background: linear-gradient(180deg, #170b0b, #0f0707);
         border: 1px solid var(--line);
@@ -194,6 +207,13 @@
     }
 </style>
 
+<div class="module-top-bar">
+    <button type="button" class="new-client-btn" wire:click="openCreateModal">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Nuevo cliente
+    </button>
+</div>
+
 <div class="stats-row">
     <div class="stat-card">
         <div class="stat-label">Total registrados</div>
@@ -225,20 +245,22 @@
     </div>
 </div>
 
-<div class="table-card">
-    <div class="tc-header">
+<div class="table-header-row">
+    <div class="table-header-left">
         <span class="tc-title">CLIENTES REGISTRADOS</span>
-        <div class="tc-filters">
-            <input type="text" wire:model.live.debounce.300ms="search" placeholder="Buscar ID, username, nombre, email o telefono" class="search-input">
-            <select wire:model.live="filterStatus" class="filter-select">
-                <option value="">Todos los estados</option>
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
-            </select>
-            <span class="tc-count">{{ $users->total() }} cliente{{ $users->total() !== 1 ? 's' : '' }}</span>
-        </div>
+        <span class="tc-count">{{ $users->total() }} cliente{{ $users->total() !== 1 ? 's' : '' }}</span>
     </div>
+    <div class="table-header-right">
+        <input type="text" wire:model.live.debounce.300ms="search" placeholder="Buscar..." class="search-input">
+        <select wire:model.live="filterStatus" class="filter-select">
+            <option value="">Todos</option>
+            <option value="active">Activo</option>
+            <option value="inactive">Inactivo</option>
+        </select>
+    </div>
+</div>
 
+<div class="table-card">
     @if($users->isEmpty())
         <div class="empty-state">No se encontraron clientes con esos filtros.</div>
     @else
@@ -459,8 +481,6 @@
     <template x-for="t in toasts" :key="t.id">
         <div class="toast-item" :class="'toast-' + t.type" x-text="t.message"></div>
     </template>
-</div>
-
 </div>
 
 <script>
