@@ -48,11 +48,11 @@
 
     .t-head, .t-row {
         display: grid;
-        grid-template-columns: 64px 1fr 1.1fr 1.1fr 1.6fr 1.2fr 126px 112px 150px;
+        grid-template-columns: 64px 1fr 1.1fr 1.1fr 1.6fr 1.2fr 126px 80px;
         gap: 12px;
         align-items: center;
         padding: 11px 20px;
-        min-width: 1180px;
+        min-width: 1000px;
     }
     .table-scroll { overflow-x: auto; }
     .t-head { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--muted-2); text-transform: uppercase; border-bottom: 1px solid var(--line); }
@@ -130,6 +130,35 @@
     .toast-success { background: var(--good); color: #002b14; }
     .toast-danger { background: #ff4757; color: #fff; }
 
+    .line-selected { border-color: var(--orange) !important; background: rgba(255,106,26,.12) !important; color: var(--orange); }
+
+    .toggle-btn {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        transition: background .2s;
+        padding: 0;
+        display: block;
+    }
+    .toggle-on { background: linear-gradient(135deg, #25c46b, #1fa854); box-shadow: 0 0 8px rgba(37,196,107,.35); }
+    .toggle-off { background: rgba(255,255,255,.1); border: 1px solid var(--line-2); }
+    .toggle-knob {
+        position: absolute;
+        top: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(0,0,0,.3);
+        transition: left .2s;
+    }
+    .toggle-on .toggle-knob { left: 23px; }
+    .toggle-off .toggle-knob { left: 3px; }
+    .toggle-btn:hover { opacity: .85; }
+
     @media (max-width: 860px) {
         .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .form-row-2, .detail-grid { grid-template-columns: 1fr; }
@@ -195,8 +224,7 @@
                 <div>Email</div>
                 <div>Linea preferida</div>
                 <div>Enviar mensaje</div>
-                <div>Estado</div>
-                <div>Pausar</div>
+                <div>Activo</div>
             </div>
 
             @foreach($users as $user)
@@ -219,20 +247,17 @@
                         />
                     </div>
                     <div>
-                        <span class="s-badge {{ $isActive ? 's-active' : 's-inactive' }}">
-                            {{ $isActive ? 'Activo' : 'Inactivo' }}
-                        </span>
+                        <button
+                            type="button"
+                            wire:click="setStatus({{ $user->id }}, '{{ $isActive ? 'inactive' : 'active' }}')"
+                            class="toggle-btn {{ $isActive ? 'toggle-on' : 'toggle-off' }}"
+                            title="{{ $isActive ? 'Pausar acceso' : 'Activar acceso' }}"
+                            wire:loading.attr="disabled"
+                        >
+                            <span class="toggle-knob"></span>
+                        </button>
                     </div>
                     <div class="action-row">
-                        @if($isActive)
-                            <button wire:click="setStatus({{ $user->id }}, 'inactive')" class="btn-icon danger" title="Pausar y restringir acceso">
-                                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6v16h4V4ZM18 4h-4v16h4V4Z"/></svg>
-                            </button>
-                        @else
-                            <button wire:click="setStatus({{ $user->id }}, 'active')" class="btn-icon activate" title="Activar acceso">
-                                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
-                            </button>
-                        @endif
                         <button wire:click="openDetailModal({{ $user->id }})" class="btn-icon" title="Ver detalle">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
                         </button>
@@ -309,6 +334,40 @@
                         </select>
                         @error('preferredLineId') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Linea preferida</label>
+                    <select wire:model="preferredLineId" class="form-input @error('preferredLineId') is-error @enderror">
+                        <option value="">Sin linea</option>
+                        @foreach($lines as $line)
+                            <option value="{{ $line->id }}">{{ $line->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('preferredLineId') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Lineas asignadas</label>
+                    <div class="multi-select-wrap" style="border:1px solid var(--line-2);border-radius:7px;background:rgba(255,255,255,.04);padding:8px;min-height:44px">
+                        @if(empty($selectedLines))
+                            <span style="color:var(--muted-2);font-size:12px">Ninguna linea asignada</span>
+                        @endif
+                        <div style="display:flex;flex-wrap:wrap;gap:6px">
+                            @foreach($lines as $line)
+                                <label style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.03);cursor:pointer;font-size:12px;transition:all .15s"
+                                    class="{{ in_array($line->id, $selectedLines) ? 'line-selected' : '' }}">
+                                    <input type="checkbox"
+                                        value="{{ $line->id }}"
+                                        wire:model="selectedLines"
+                                        style="accent-color:var(--orange)">
+                                    {{ $line->name }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="form-hint">Seleccioná una o más líneas para asignarle acceso al cliente.</div>
+                    @error('selectedLines') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="form-row-2">
