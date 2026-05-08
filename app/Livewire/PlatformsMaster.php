@@ -34,13 +34,14 @@ class PlatformsMaster extends Component
 
     public function openCreateModal()
     {
+        $this->ensureAdmin();
         $this->resetForm();
         $this->showModal = true;
     }
 
     public function openEditModal($platformId)
     {
-        $this->checkLinePermission('platform.update');
+        $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
         $this->editingPlatform = $platform;
@@ -87,11 +88,7 @@ class PlatformsMaster extends Component
 
     public function savePlatform()
     {
-        if ($this->editingPlatform) {
-            $this->checkLinePermission('platform.update');
-        } else {
-            $this->checkLinePermission('platform.create');
-        }
+        $this->ensureAdmin();
 
         $rules = [
             'name' => 'required|min:2',
@@ -131,7 +128,7 @@ class PlatformsMaster extends Component
 
     public function toggleActive($platformId)
     {
-        $this->checkLinePermission('platform.update');
+        $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
         $platform->update(['is_active' => ! $platform->is_active]);
@@ -139,7 +136,7 @@ class PlatformsMaster extends Component
 
     public function deletePlatform($platformId)
     {
-        $this->checkLinePermission('platform.delete');
+        $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
         ImageStorage::delete($platform?->logo_url);
@@ -152,6 +149,8 @@ class PlatformsMaster extends Component
 
     public function removeLogo(): void
     {
+        $this->ensureAdmin();
+
         if ($this->editingPlatform && $this->logo_url) {
             ImageStorage::delete($this->logo_url);
             $this->editingPlatform->update(['logo_url' => null]);
@@ -164,7 +163,15 @@ class PlatformsMaster extends Component
     public function render()
     {
         $platforms = Platform::orderBy('name')->get();
+        $canManagePlatforms = $this->isAdminMode();
 
-        return view('livewire.platforms-master', compact('platforms'))->layout('layouts.dashboard');
+        return view('livewire.platforms-master', compact('platforms', 'canManagePlatforms'))->layout('layouts.dashboard');
+    }
+
+    private function ensureAdmin(): void
+    {
+        if (! $this->isAdminMode()) {
+            abort(403, 'Solo el administrador general puede gestionar plataformas.');
+        }
     }
 }
