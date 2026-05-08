@@ -29,7 +29,14 @@ class Tickets extends Component
     public function selectTicket($id)
     {
         $this->checkLinePermission(Permissions::TICKET_READ);
-        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->findOrFail($id);
+        $ticket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->findOrFail($id);
+
+        $visibleLineIds = $this->visibleLineIds();
+        if ($visibleLineIds !== null && ! in_array($ticket->line_id, $visibleLineIds)) {
+            abort(403, 'No tienes acceso a este ticket.');
+        }
+
+        $this->selectedTicket = $ticket;
         $this->dispatch('ticketSelected');
     }
 
@@ -50,6 +57,11 @@ class Tickets extends Component
             return;
         }
 
+        $visibleLineIds = $this->visibleLineIds();
+        if ($visibleLineIds !== null && ! in_array($this->selectedTicket->line_id, $visibleLineIds)) {
+            abort(403, 'No tienes acceso a este ticket.');
+        }
+
         TicketMessage::create([
             'ticket_id' => $this->selectedTicket->id,
             'agent_id' => $this->getCurrentAgentId(),
@@ -66,10 +78,17 @@ class Tickets extends Component
 
     public function quickAction($type)
     {
-        $this->checkLinePermission(Permissions::TICKET_UPDATE);
+        $this->checkLinePermission(
+            $type === 'resolved' ? Permissions::TICKET_CLOSE : Permissions::TICKET_UPDATE
+        );
 
         if (! $this->selectedTicket) {
             return;
+        }
+
+        $visibleLineIds = $this->visibleLineIds();
+        if ($visibleLineIds !== null && ! in_array($this->selectedTicket->line_id, $visibleLineIds)) {
+            abort(403, 'No tienes acceso a este ticket.');
         }
 
         $messages = [
@@ -95,9 +114,16 @@ class Tickets extends Component
 
     public function updateStatus($status)
     {
-        $this->checkLinePermission(Permissions::TICKET_UPDATE);
+        $this->checkLinePermission(
+            $status === 'closed' ? Permissions::TICKET_CLOSE : Permissions::TICKET_UPDATE
+        );
 
         if ($this->selectedTicket) {
+            $visibleLineIds = $this->visibleLineIds();
+            if ($visibleLineIds !== null && ! in_array($this->selectedTicket->line_id, $visibleLineIds)) {
+                abort(403, 'No tienes acceso a este ticket.');
+            }
+
             $this->selectedTicket->update(['status' => $status]);
             $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
 

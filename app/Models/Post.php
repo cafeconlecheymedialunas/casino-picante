@@ -9,7 +9,7 @@ class Post extends Model
 {
     protected static function booted(): void
     {
-        static::addGlobalScope(new LineScope());
+        static::addGlobalScope(new LineScope);
     }
 
     protected $fillable = [
@@ -39,4 +39,14 @@ class Post extends Model
     const STATUS_PUBLISHED = 'published';
 
     const STATUS_HIDDEN = 'hidden';
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class)->where('is_approved', true);
+    }
+
+    public function pendingComments()
+    {
+        return $this->hasMany(Comment::class)->where('is_approved', false);
+    }
 }
