@@ -2,15 +2,19 @@
 
 namespace App\Livewire;
 
-use App\Traits\HasLinePermissions;
 use App\Models\Platform;
 use App\Support\ImageStorage;
+use App\Traits\HasLinePermissions;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class PlatformsMaster extends Component
 {
-    use WithFileUploads, HasLinePermissions;
+    use HasLinePermissions, WithFileUploads;
+
+    protected array $dispatchesEvents = [
+        'page-header-action' => 'handlePageHeaderAction',
+    ];
 
     public $showModal = false;
 
@@ -37,6 +41,13 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
         $this->resetForm();
         $this->showModal = true;
+    }
+
+    public function handlePageHeaderAction(string $action): void
+    {
+        if ($action === 'openCreateModal') {
+            $this->openCreateModal();
+        }
     }
 
     public function openEditModal($platformId)

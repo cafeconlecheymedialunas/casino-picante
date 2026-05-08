@@ -18,6 +18,10 @@ class Ventas extends Component
 {
     use HasLinePermissions, SendsNotifications;
 
+    protected array $dispatchesEvents = [
+        'page-header-action' => 'handlePageHeaderAction',
+    ];
+
     public string $search = '';
 
     public string $lineFilter = 'all';
@@ -59,6 +63,13 @@ class Ventas extends Component
         $this->showModal = true;
     }
 
+    public function handlePageHeaderAction(string $action): void
+    {
+        if ($action === 'openCreateModal') {
+            $this->openCreateModal();
+        }
+    }
+
     public function openEditModal(int $saleId): void
     {
         $sale = Sale::with('line')->findOrFail($saleId);
@@ -98,6 +109,7 @@ class Ventas extends Component
 
         if (! $line->platforms()->where('platforms.id', (int) $this->salePlatformId)->exists()) {
             $this->addError('salePlatformId', 'La plataforma no pertenece a esta linea.');
+
             return;
         }
 
@@ -280,7 +292,7 @@ class Ventas extends Component
 
         $hasPermission = LineAgentPermission::where('line_id', $line->id)
             ->where('agent_id', session('active_agent_id'))
-            ->where('permission', Permissions::LINE_EDIT_BASIC)
+            ->where('permission', Permissions::LINE_EDIT)
             ->exists();
 
         if (! $canEdit || ! $hasPermission) {
@@ -304,7 +316,7 @@ class Ventas extends Component
     private function editableLineIds(): Collection
     {
         return LineAgentPermission::where('agent_id', session('active_agent_id'))
-            ->where('permission', Permissions::LINE_EDIT_BASIC)
+            ->where('permission', Permissions::LINE_EDIT)
             ->whereIn('line_id', LineAgent::where('agent_id', session('active_agent_id'))
                 ->where('is_active', true)
                 ->select('line_id'))

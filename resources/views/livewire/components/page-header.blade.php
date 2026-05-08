@@ -8,7 +8,7 @@
 
     <div class="page-header-right">
         @if($buttonText && $buttonAction)
-            <button type="button" class="page-header-btn" wire:click="{{ $buttonAction }}">
+            <button type="button" class="page-header-btn" wire:click="$dispatch('page-header-action', { action: '{{ $buttonAction }}' })">
                 {{ $buttonText }}
             </button>
         @endif
