@@ -102,8 +102,8 @@ class LineDetail extends Component
             'line.ganancia_encargado' => 'nullable|numeric|min:0',
             'line.mejor_mes_total' => 'nullable|numeric|min:0',
             'line.mejor_plataforma_total' => 'nullable|numeric|min:0',
-            'portadaUpload' => 'nullable|image|max:4096',
-            'perfilUpload' => 'nullable|image|max:4096',
+            'portadaUpload' => 'nullable|image|max:20480',
+            'perfilUpload' => 'nullable|image|max:20480',
         ]);
 
         if ($this->portadaUpload) {
@@ -137,25 +137,6 @@ class LineDetail extends Component
             $this->line->perfil_url = null;
         }
     }
-
-    // Sales editing
-    public bool $showSalesModal = false;
-
-    public ?int $editingSaleId = null;
-
-    public int $salePlatformId = 0;
-
-    public int $saleMes = 0;
-
-    public int $saleAnio = 0;
-
-    public string $saleFecha = '';
-
-    public string $saleDescripcion = '';
-
-    public string $saleMontoFichas = '';
-
-    public string $saleGananciaEncargado = '';
 
     // Assign percentage to encargado
     public bool $showPercentageModal = false;
@@ -692,85 +673,7 @@ class LineDetail extends Component
         $this->editingPermAgentId = null;
     }
 
-    // ── Sales Management ─────────────────────────────────────────────────────
-
-    public function openSalesModal(?int $saleId = null): void
-    {
-        $this->checkLinePermission(Permissions::LINE_EDIT);
-
-        if ($saleId) {
-            $sale = Sale::where('line_id', $this->lineId)->findOrFail($saleId);
-            $this->editingSaleId = $sale->id;
-            $this->salePlatformId = $sale->platform_id;
-            $this->saleMes = $sale->fecha->month;
-            $this->saleAnio = $sale->fecha->year;
-            $this->saleFecha = $sale->fecha->format('Y-m-d');
-            $this->saleDescripcion = $sale->descripcion ?? '';
-            $this->saleMontoFichas = $sale->monto_fichas;
-            $this->saleGananciaEncargado = $sale->ganancia_superagente;
-        } else {
-            $this->resetSalesForm();
-        }
-        $this->showSalesModal = true;
-    }
-
-    public function resetSalesForm(): void
-    {
-        $this->editingSaleId = null;
-        $this->salePlatformId = 0;
-        $this->saleMes = now()->month;
-        $this->saleAnio = now()->year;
-        $this->saleFecha = now()->format('Y-m-d');
-        $this->saleDescripcion = '';
-        $this->saleMontoFichas = '';
-        $this->saleGananciaEncargado = '';
-    }
-
-    public function closeSalesModal(): void
-    {
-        $this->showSalesModal = false;
-        $this->resetSalesForm();
-    }
-
-    public function saveSale(): void
-    {
-        $this->checkLinePermission(Permissions::LINE_EDIT);
-
-        $this->validate([
-            'salePlatformId' => 'required|integer|min:1',
-            'saleMes' => 'required|integer|min:1|max:12',
-            'saleAnio' => 'required|integer|min:2020',
-            'saleFecha' => 'required|date',
-            'saleDescripcion' => 'nullable|string|max:255',
-            'saleMontoFichas' => 'required|numeric|min:0',
-        ]);
-
-        $data = [
-            'line_id' => $this->lineId,
-            'platform_id' => $this->salePlatformId,
-            'fecha' => $this->saleFecha,
-            'descripcion' => trim($this->saleDescripcion) ?: null,
-            'monto_fichas' => $this->saleMontoFichas ?: 0,
-            'ganancia_superagente' => $this->saleGananciaEncargado ?: 0,
-        ];
-
-        if ($this->editingSaleId) {
-            Sale::where('line_id', $this->lineId)->findOrFail($this->editingSaleId)->update($data);
-            session()->flash('message', 'Venta actualizada.');
-        } else {
-            Sale::create($data);
-            session()->flash('message', 'Venta registrada.');
-        }
-
-        $this->closeSalesModal();
-    }
-
-    public function deleteSale(int $saleId): void
-    {
-        $this->checkLinePermission(Permissions::LINE_EDIT);
-        Sale::where('line_id', $this->lineId)->findOrFail($saleId)->delete();
-        session()->flash('message', 'Venta eliminada.');
-    }
+    // ── Sales Stats ─────────────────────────────────────────────────────
 
     public function getSalesProperty()
     {

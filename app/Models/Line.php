@@ -19,15 +19,7 @@ class Line extends Model
         'best_sales',
         'portada_url',
         'perfil_url',
-        'mejor_mes',
-        'mejor_mes_total',
-        'mejor_plataforma',
-        'mejor_plataforma_total',
-        'ventas_mes_actual',
-        'ventas_mes_pasado',
-        'ventas_mes_antiguo',
-        'ganancia_encargado',
-        'porcentaje_encargado',
+        'best_sales',
     ];
 
     protected $casts = [

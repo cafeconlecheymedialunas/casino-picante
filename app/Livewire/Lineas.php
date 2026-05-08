@@ -20,7 +20,7 @@ use Livewire\WithFileUploads;
 
 class Lineas extends Component
 {
-    use HasLinePermissions, WithFileUploads, SendsNotifications;
+    use HasLinePermissions, SendsNotifications, WithFileUploads;
 
     public string $search = '';
 
@@ -47,6 +47,8 @@ class Lineas extends Component
 
     public array $linePermissions = [];
 
+    public bool $showLinePermissionsEditor = false;
+
     public string $portada_url = '';
 
     public string $perfil_url = '';
@@ -64,17 +66,18 @@ class Lineas extends Component
 
     public array $selectedPlatformIds = [];
 
+    // Stats fields (manual entry)
+    public string $bestMonth = '';
 
-    // Sales form fields
-    public ?int $editingSaleId = null;
+    public string $bestMonthTotal = '';
 
-    public int $salePlatformId = 0;
+    public string $bestPlatform = '';
 
-    public string $saleDate = '';
+    public string $bestPlatformTotal = '';
 
-    public string $saleDescripcion = '';
+    public string $salesMonthCurrent = '';
 
-    public string $saleMontoFichas = '';
+    public string $salesMonthPast = '';
 
     // Agent permission editor
     public ?int $editingAgentPermissionsId = null;
@@ -86,20 +89,20 @@ class Lineas extends Component
     protected function rules(): array
     {
         return [
-            'name'              => 'required|min:2|max:160',
-            'status'            => 'required|in:active,inactive',
-            'description'       => 'nullable|string|max:500',
-            'linePermissions'   => 'array',
-            'portadaUpload'     => 'nullable|image|max:4096',
-            'perfilUpload'      => 'nullable|image|max:4096',
-            'encargadoId'       => 'nullable|integer|exists:agents,id',
-            'encargadoPercent'  => 'nullable|numeric|min:0|max:100',
-            'channels'               => 'array',
-            'channels.*.type'        => 'nullable|string|max:40',
-            'channels.*.value'       => 'nullable|string|max:500',
+            'name' => 'required|min:2|max:160',
+            'status' => 'required|in:active,inactive',
+            'description' => 'nullable|string|max:500',
+            'linePermissions' => 'array',
+            'portadaUpload' => 'nullable|image|max:20480',
+            'perfilUpload' => 'nullable|image|max:20480',
+            'encargadoId' => 'nullable|integer|exists:agents,id',
+            'encargadoPercent' => 'nullable|numeric|min:0|max:100',
+            'channels' => 'array',
+            'channels.*.type' => 'nullable|string|max:40',
+            'channels.*.value' => 'nullable|string|max:500',
             'channels.*.has_message' => 'nullable|boolean',
-            'channels.*.message'     => 'nullable|string|max:1000',
-            'selectedPlatformIds'   => 'array',
+            'channels.*.message' => 'nullable|string|max:1000',
+            'selectedPlatformIds' => 'array',
             'selectedPlatformIds.*' => 'integer|exists:platforms,id',
         ];
     }
@@ -134,11 +137,32 @@ class Lineas extends Component
     {
         $this->editTab = $tab;
         $this->closeAgentPermissions();
+        $this->showLinePermissionsEditor = false;
 
         if ($tab === 'ventas' && $this->editingLineId) {
             $this->activeLineId = $this->editingLineId;
             $this->resetSalesForm();
         }
+    }
+
+    public function openLinePermissionsEditor(): void
+    {
+        $this->showLinePermissionsEditor = true;
+    }
+
+    public function closeLinePermissionsEditor(): void
+    {
+        $this->showLinePermissionsEditor = false;
+    }
+
+    public function updatedPortadaUpload(): void
+    {
+        $this->validateOnly('portadaUpload');
+    }
+
+    public function updatedPerfilUpload(): void
+    {
+        $this->validateOnly('perfilUpload');
     }
 
     public function saveLine(): void
@@ -150,7 +174,7 @@ class Lineas extends Component
         $this->validate();
 
         $portadaPath = $this->portada_url;
-        $perfilPath  = $this->perfil_url;
+        $perfilPath = $this->perfil_url;
 
         if ($this->portadaUpload) {
             $portadaPath = ImageStorage::store(
@@ -169,18 +193,18 @@ class Lineas extends Component
         }
 
         $encargadoId = $this->encargadoId !== '' ? (int) $this->encargadoId : null;
-        $percent     = (float) $this->encargadoPercent;
+        $percent = (float) $this->encargadoPercent;
 
         $data = [
-            'name'                 => trim($this->name),
-            'status'               => $this->status,
-            'type'                 => 'whatsapp',
-            'description'          => trim($this->description) ?: null,
-            'permissions'          => empty($this->linePermissions) ? null : array_values($this->linePermissions),
-            'encargado_id'         => $encargadoId,
-            'portada_url'          => $portadaPath ?: null,
-            'perfil_url'           => $perfilPath ?: null,
-            'contact_links'        => $this->normalizedChannels(),
+            'name' => trim($this->name),
+            'status' => $this->status,
+            'type' => 'whatsapp',
+            'description' => trim($this->description) ?: null,
+            'permissions' => empty($this->linePermissions) ? null : array_values($this->linePermissions),
+            'encargado_id' => $encargadoId,
+            'portada_url' => $portadaPath ?: null,
+            'perfil_url' => $perfilPath ?: null,
+            'contact_links' => $this->normalizedChannels(),
             'porcentaje_encargado' => $percent,
         ];
 
@@ -204,7 +228,7 @@ class Lineas extends Component
             $this->notifyLineEncargados(
                 $line,
                 $isEdit ? 'Linea asignada actualizada' : 'Nueva linea asignada',
-                'Tenes acceso como encargado a la linea ' . $line->name . '.',
+                'Tenes acceso como encargado a la linea '.$line->name.'.',
                 $isEdit ? 'info' : 'success'
             );
         }
@@ -225,7 +249,7 @@ class Lineas extends Component
 
         $this->notify(
             'Estado de linea cambiado',
-            'La linea ' . $line->name . ' fue ' . ($line->status === 'active' ? 'activada' : 'pausada') . '.',
+            'La linea '.$line->name.' fue '.($line->status === 'active' ? 'activada' : 'pausada').'.',
             'lines',
             '/lineas',
             'warning'
@@ -234,7 +258,7 @@ class Lineas extends Component
         $this->notifyLineEncargados(
             $line,
             'Estado de tu linea cambiado',
-            'La linea ' . $line->name . ' fue ' . ($line->status === 'active' ? 'activada' : 'pausada') . '.',
+            'La linea '.$line->name.' fue '.($line->status === 'active' ? 'activada' : 'pausada').'.',
             'warning'
         );
     }
@@ -253,7 +277,7 @@ class Lineas extends Component
                 Line::whereKey($this->editingLineId)->update(['portada_url' => null]);
             }
             $this->portadaUpload = null;
-            $this->portada_url   = '';
+            $this->portada_url = '';
         }
 
         if ($field === 'perfil') {
@@ -262,7 +286,7 @@ class Lineas extends Component
                 Line::whereKey($this->editingLineId)->update(['perfil_url' => null]);
             }
             $this->perfilUpload = null;
-            $this->perfil_url   = '';
+            $this->perfil_url = '';
         }
     }
 
@@ -320,8 +344,8 @@ class Lineas extends Component
     public function closeAgentPermissions(): void
     {
         $this->editingAgentPermissionsId = null;
-        $this->agentPermissions          = [];
-        $this->availablePermissions      = [];
+        $this->agentPermissions = [];
+        $this->availablePermissions = [];
     }
 
     public function addAgent(int $agentId): void
@@ -349,6 +373,7 @@ class Lineas extends Component
 
         if ($lineAgent->role === LineRoles::ENCARGADO) {
             session()->flash('message', 'No se puede eliminar el encargado desde aquí. Cambialo en la pestaña Encargado.');
+
             return;
         }
 
@@ -373,9 +398,9 @@ class Lineas extends Component
 
         if ($saleId) {
             $sale = Sale::where('line_id', $line->id)->findOrFail($saleId);
-            $this->editingSaleId   = $sale->id;
-            $this->salePlatformId  = $sale->platform_id;
-            $this->saleDate        = $sale->fecha->format('Y-m-d');
+            $this->editingSaleId = $sale->id;
+            $this->salePlatformId = $sale->platform_id;
+            $this->saleDate = $sale->fecha->format('Y-m-d');
             $this->saleDescripcion = $sale->descripcion ?? '';
             $this->saleMontoFichas = (string) $sale->monto_fichas;
         }
@@ -395,9 +420,9 @@ class Lineas extends Component
         $this->authorizeLineEdit($line);
 
         $sale = Sale::where('line_id', $line->id)->findOrFail($saleId);
-        $this->editingSaleId   = $sale->id;
-        $this->salePlatformId  = $sale->platform_id;
-        $this->saleDate        = $sale->fecha->format('Y-m-d');
+        $this->editingSaleId = $sale->id;
+        $this->salePlatformId = $sale->platform_id;
+        $this->saleDate = $sale->fecha->format('Y-m-d');
         $this->saleDescripcion = $sale->descripcion ?? '';
         $this->saleMontoFichas = (string) $sale->monto_fichas;
     }
@@ -410,28 +435,29 @@ class Lineas extends Component
         $this->authorizeLineEdit($line);
 
         $this->validate([
-            'salePlatformId'  => 'required|integer|min:1|exists:platforms,id',
-            'saleDate'        => 'required|date',
+            'salePlatformId' => 'required|integer|min:1|exists:platforms,id',
+            'saleDate' => 'required|date',
             'saleDescripcion' => 'nullable|string|max:255',
             'saleMontoFichas' => 'required|numeric|min:0',
         ]);
 
         if (! $line->platforms()->where('platforms.id', $this->salePlatformId)->exists()) {
             $this->addError('salePlatformId', 'La plataforma no pertenece a esta linea.');
+
             return;
         }
 
-        $monto   = (float) $this->saleMontoFichas;
+        $monto = (float) $this->saleMontoFichas;
         $percent = (float) $line->lineAgents()
             ->where('role', LineRoles::ENCARGADO)
             ->value('porcentaje_ganancia');
 
         $data = [
-            'line_id'              => $line->id,
-            'platform_id'          => $this->salePlatformId,
-            'fecha'                => $this->saleDate,
-            'descripcion'          => $this->saleDescripcion ?: null,
-            'monto_fichas'         => $monto,
+            'line_id' => $line->id,
+            'platform_id' => $this->salePlatformId,
+            'fecha' => $this->saleDate,
+            'descripcion' => $this->saleDescripcion ?: null,
+            'monto_fichas' => $monto,
             'ganancia_superagente' => $monto * ($percent / 100),
         ];
 
@@ -486,14 +512,14 @@ class Lineas extends Component
         $line = Line::findOrFail($lineId);
         $this->authorizeLineView($line);
 
-        $this->activeLineId     = $lineId;
+        $this->activeLineId = $lineId;
         $this->showDetailsModal = true;
     }
 
     public function closeDetailsModal(): void
     {
         $this->showDetailsModal = false;
-        $this->activeLineId     = null;
+        $this->activeLineId = null;
     }
 
     public function editFromDetail(): void
@@ -551,17 +577,17 @@ class Lineas extends Component
             : collect();
 
         return view('livewire.lineas', [
-            'activeLines'         => $lines->where('status', 'active'),
-            'inactiveLines'       => $lines->where('status', 'inactive'),
-            'linesTotal'          => $lines->count(),
+            'activeLines' => $lines->where('status', 'active'),
+            'inactiveLines' => $lines->where('status', 'inactive'),
+            'linesTotal' => $lines->count(),
             'availableEncargados' => $this->availableEncargados(),
-            'allPlatforms'        => Platform::where('is_active', true)->orderBy('name')->get(),
-            'detailLine'          => $detailLine,
-            'salesLine'           => $salesLine,
-            'editSalesLine'       => $editSalesLine,
-            'editLineAgents'      => $editLineAgents,
-            'availableAgents'     => $availableAgents,
-            'permissionCatalog'   => Permissions::catalog(),
+            'allPlatforms' => Platform::where('is_active', true)->orderBy('name')->get(),
+            'detailLine' => $detailLine,
+            'salesLine' => $salesLine,
+            'editSalesLine' => $editSalesLine,
+            'editLineAgents' => $editLineAgents,
+            'availableAgents' => $availableAgents,
+            'permissionCatalog' => Permissions::catalog(),
         ])->layout('layouts.dashboard');
     }
 
@@ -574,30 +600,31 @@ class Lineas extends Component
 
     private function resetForm(): void
     {
-        $this->name             = '';
-        $this->status           = 'active';
-        $this->description      = '';
-        $this->linePermissions  = [];
-        $this->portada_url      = '';
-        $this->perfil_url       = '';
-        $this->portadaUpload    = null;
-        $this->perfilUpload     = null;
-        $this->editTab          = 'info';
-        $this->encargadoId      = '';
+        $this->name = '';
+        $this->status = 'active';
+        $this->description = '';
+        $this->linePermissions = [];
+        $this->showLinePermissionsEditor = false;
+        $this->portada_url = '';
+        $this->perfil_url = '';
+        $this->portadaUpload = null;
+        $this->perfilUpload = null;
+        $this->editTab = 'info';
+        $this->encargadoId = '';
         $this->encargadoPercent = '0';
 
-        $this->channels             = [['type' => 'whatsapp', 'value' => '', 'has_message' => false, 'message' => '']];
-        $this->selectedPlatformIds  = [];
-        $this->linePermissions      = LineAgentPermission::allPermissions();
+        $this->channels = [['type' => 'whatsapp', 'value' => '', 'has_message' => false, 'message' => '']];
+        $this->selectedPlatformIds = [];
+        $this->linePermissions = LineAgentPermission::allPermissions();
 
         $this->resetValidation();
     }
 
     public function resetSalesForm(): void
     {
-        $this->editingSaleId   = null;
-        $this->salePlatformId  = 0;
-        $this->saleDate        = now()->format('Y-m-d');
+        $this->editingSaleId = null;
+        $this->salePlatformId = 0;
+        $this->saleDate = now()->format('Y-m-d');
         $this->saleDescripcion = '';
         $this->saleMontoFichas = '';
 
@@ -606,16 +633,17 @@ class Lineas extends Component
 
     private function fillForm(Line $line): void
     {
-        $this->editingLineId   = $line->id;
-        $this->name            = $line->name;
-        $this->status          = $line->status === 'inactive' ? 'inactive' : 'active';
-        $this->description     = $line->description ?? '';
+        $this->editingLineId = $line->id;
+        $this->name = $line->name;
+        $this->status = $line->status === 'inactive' ? 'inactive' : 'active';
+        $this->description = $line->description ?? '';
         $this->linePermissions = is_array($line->permissions) ? $line->permissions : [];
-        $this->portada_url     = $line->portada_url ?? '';
-        $this->perfil_url      = $line->perfil_url ?? '';
+        $this->showLinePermissionsEditor = false;
+        $this->portada_url = $line->portada_url ?? '';
+        $this->perfil_url = $line->perfil_url ?? '';
 
-        $encargado              = $line->lineAgents->firstWhere('role', LineRoles::ENCARGADO);
-        $this->encargadoId      = (string) ($encargado?->agent_id ?? $line->encargado_id ?? '');
+        $encargado = $line->lineAgents->firstWhere('role', LineRoles::ENCARGADO);
+        $this->encargadoId = (string) ($encargado?->agent_id ?? $line->encargado_id ?? '');
         $this->encargadoPercent = (string) ($encargado?->porcentaje_ganancia ?? $line->porcentaje_encargado ?? 0);
 
         $this->channels = $this->mapChannels($line->contact_links ?? []);
@@ -631,7 +659,7 @@ class Lineas extends Component
     {
         $query = Line::with(['lineAgents.agent', 'sales.platform'])
             ->when($this->search, function ($query) {
-                $search = '%' . $this->search . '%';
+                $search = '%'.$this->search.'%';
                 $query->where(function ($inner) use ($search) {
                     $inner->where('name', 'like', $search)
                         ->orWhereHas(
@@ -674,10 +702,10 @@ class Lineas extends Component
     {
         return collect($this->channels)
             ->map(fn ($r) => [
-                'type'        => trim($r['type'] ?? 'otro'),
-                'value'       => trim($r['value'] ?? ''),
+                'type' => trim($r['type'] ?? 'otro'),
+                'value' => trim($r['value'] ?? ''),
                 'has_message' => (bool) ($r['has_message'] ?? false),
-                'message'     => trim($r['message'] ?? ''),
+                'message' => trim($r['message'] ?? ''),
             ])
             ->filter(fn ($r) => $r['value'] !== '')
             ->values()
@@ -711,10 +739,10 @@ class Lineas extends Component
     {
         return collect($links)
             ->map(fn ($l) => [
-                'type'        => $l['type'] ?? 'otro',
-                'value'       => $l['value'] ?? $l['url'] ?? '',
+                'type' => $l['type'] ?? 'otro',
+                'value' => $l['value'] ?? $l['url'] ?? '',
                 'has_message' => (bool) ($l['has_message'] ?? false),
-                'message'     => $l['message'] ?? '',
+                'message' => $l['message'] ?? '',
             ])
             ->values()
             ->toArray();

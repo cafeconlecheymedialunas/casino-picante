@@ -2,9 +2,12 @@
     <x-livewire.components.page-header title="LINEAS" subtitle="Gestion operativa, encargado, canales, plataformas y ventas" />
 @endsection
 
-<div class="page-container">
+<div class="page-container lineas-page-root">
     <style>
         /* ── List / cards ───────────────────────────────────────────────────── */
+        .dash-shell:has(.lineas-page-root) { height:auto; min-height:100vh; }
+        .main:has(.lineas-page-root) { overflow:visible; }
+        .main-content:has(.lineas-page-root) { overflow-y:visible; }
         .lines-page { display: flex; flex-direction: column; gap: 18px; }
         .search-input, .filter-select, .form-input { background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:7px; padding:9px 12px; color:var(--white); font-size:13px; font-family:var(--font-body); }
         .search-input { width:280px; }
@@ -62,6 +65,8 @@
 
         /* ── Detail / edit inline view ──────────────────────────────────────── */
         .detail-view { display:flex; flex-direction:column; gap:0; }
+        .detail-edit-view { min-height:calc(100vh - 150px); }
+        .detail-edit-view .tab-content { flex:1; min-height:calc(100vh - 490px); }
         .detail-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
         .detail-back { display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:none; border:none; cursor:pointer; padding:0; }
         .detail-back:hover { color:var(--white); }
@@ -186,7 +191,7 @@
         $dContacts  = $detailLine->contact_links ?? [];
         $dAgents    = $detailLine->lineAgents->sortByDesc(fn($la) => $la->role === 'encargado');
     @endphp
-    <div class="detail-view">
+    <div class="detail-view detail-edit-view">
 
         <div class="detail-topbar">
             <button type="button" class="detail-back" wire:click="closeDetailsModal">
@@ -498,7 +503,16 @@
                 <div class="form-group">
                     <label class="form-label">Permisos habilitados en esta línea</label>
                     <p style="color:var(--muted-2);font-size:11px;margin:0 0 10px;line-height:1.6">Determinan qué acciones pueden tener los agentes asignados.</p>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+                    <div>
+                        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">
+                            @if(!$showLinePermissionsEditor)
+                                <button type="button" class="btn-soft" wire:click="openLinePermissionsEditor">Setear permisos</button>
+                            @else
+                                <button type="button" class="btn-soft" wire:click="closeLinePermissionsEditor">Cerrar</button>
+                            @endif
+                        </div>
+                        @if($showLinePermissionsEditor)
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
                         @foreach($permissionCatalog as $resource => $actions)
                             @foreach($actions as $perm)
                             @php $action = str($perm)->after($resource.'.'); @endphp
@@ -508,6 +522,8 @@
                             </label>
                             @endforeach
                         @endforeach
+                        </div>
+                        @endif
                     </div>
                 </div>
 

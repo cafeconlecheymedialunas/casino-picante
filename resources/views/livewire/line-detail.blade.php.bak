@@ -1,4 +1,4 @@
-<div class="ld-page {{ $isEditing ? 'is-editing' : '' }}">
+﻿<div class="ld-page {{ $isEditing ? 'is-editing' : '' }}">
 <form wire:submit.prevent="saveAll" class="ld-form">
     <div style="margin-bottom: 16px;">
         <a href="{{ route('lineas') }}" wire:navigate class="ld-back" style="font-size: 12px; color: var(--muted); text-decoration: none;">â† LÃ­neas & Redes</a>
@@ -333,58 +333,27 @@
             </div>
         </div>
 
-        {{-- ðŸ“Š ESTADISTICAS DESDE VENTAS --}}
+        {{-- ðŸ“Š ESTADÃSTICAS MANUALES --}}
         <div class="ld-section stats-section">
             <div class="ld-section-header">
-                <h2 class="ld-section-title">ðŸ“Š ESTADISTICAS DESDE VENTAS</h2>
-                @php
-            $bestMonth = $this->getBestMonth();
-            $bestPlatform = $this->getBestPlatformThisMonth();
-            $totalThisMonth = $this->getTotalSalesThisMonth();
-            $last3Months = $this->getTotalSalesLast3Months();
-            $encargadoEarnings = $this->getEncargadoEarningsThisMonth();
-            $maxSales = max(array_column($last3Months, 'total'), 1);
-            @endphp
-
-<div class="sales-kpis">
-                <div class="kpi-card kpi-gold">
-                    <div class="kpi-icon">TROFEO</div>
-                    <div class="kpi-label">Mejor Mes</div>
-                    @if($bestMonth)
-                    <div class="kpi-value">{{ $bestMonth['nombre'] }} {{ $bestMonth['anio'] }}</div>
-                    <div class="kpi-amount">${{ number_format($bestMonth['total'], 2) }}</div>
-                    @else
-                    <div class="kpi-empty">Sin datos</div>
-                    @endif
-                </div>
-                <div class="kpi-card kpi-purple">
-                    <div class="kpi-icon">PLATAFORMA</div>
-                    <div class="kpi-label">Top Plataforma</div>
-                    @if($bestPlatform)
-                    <div class="kpi-value">{{ $bestPlatform['platform'] }}</div>
-                    <div class="kpi-amount">${{ number_format($bestPlatform['total'], 2) }}</div>
-                    @else
-                    <div class="kpi-empty">Sin datos</div>
-                    @endif
-                </div>
-                <div class="kpi-card kpi-blue">
-                    <div class="kpi-icon">CALENDARIO</div>
-                    <div class="kpi-label">Este Mes</div>
-                    <div class="kpi-amount" style="color: var(--good);">${{ number_format($totalThisMonth, 2) }}</div>
-                </div>
-                <div class="kpi-card kpi-green">
-                    <div class="kpi-icon">DINERO</div>
-                    <div class="kpi-label">Ganancia Encargado</div>
-                    @if(count($encargadoEarnings) > 0)
-                        @foreach($encargadoEarnings as $earning)
-                        <div class="kpi-value" style="font-size: 14px;">{{ $earning['agent']->name }} - {{ $earning['porcentaje'] }}%</div>
-                        <div class="kpi-amount">${{ number_format($earning['ganancia'], 2) }}</div>
-                        @endforeach
-                    @else
-                    <div class="kpi-empty">Sin encargado</div>
-                    @endif
-                </div>
+                <h2 class="ld-section-title">ðŸ“Š ESTADÃSTICAS MANUALES</h2>
+                @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
+                <span style="font-size:11px;color:var(--muted);">Los valores se ingresan manualmente</span>
+                @endif
             </div>
+
+            {{-- KPIs --}}
+            <div class="sales-kpis">
+                <div class="kpi-card kpi-gold">
+                    <div class="kpi-icon">ðŸ†</div>
+                    <div class="kpi-label">Mejor Mes</div>
+                    @if($line->mejor_mes)
+                    <div class="kpi-value">{{ $line->mejor_mes }}</div>
+                    <div class="kpi-amount">${{ number_format($line->mejor_mes_total ?? 0, 2) }}</div>
+                    @else
+                    <div class="kpi-empty">Sin datos</div>
+                    @endif
+                </div>
                 <div class="kpi-card kpi-purple">
                     <div class="kpi-icon">ðŸŽ¯</div>
                     <div class="kpi-label">Top Plataforma</div>
@@ -410,18 +379,74 @@
 
             {{-- Ãšltimos 3 Meses --}}
             <div class="months-grid">
-                @foreach($last3Months as $index => $month)
                 <div class="month-card">
-                    <div class="month-name">@if($index === 0) Mes Actual @elseif($index === 1) Mes Pasado @else Mes Anterior @endif</div>
-                    <div class="month-total">${{ number_format($month['total'], 2) }}</div>
+                    <div class="month-name">Mes Actual</div>
+                    <div class="month-total">${{ number_format($line->ventas_mes_actual ?? 0, 2) }}</div>
                     <div class="month-bar">
-                        <div class="month-bar-fill" style="width: {{ ($month['total'] / $maxSales * 100) }}%"></div>
+                        @php $max = max($line->ventas_mes_actual ?? 1, $line->ventas_mes_pasado ?? 1, $line->ventas_mes_antiguo ?? 1); @endphp
+                        <div class="month-bar-fill" style="width: {{ (($line->ventas_mes_actual ?? 0) / $max * 100) }}%"></div>
                     </div>
                 </div>
-                @endforeach
+                <div class="month-card">
+                    <div class="month-name">Mes Pasado</div>
+                    <div class="month-total">${{ number_format($line->ventas_mes_pasado ?? 0, 2) }}</div>
+                    <div class="month-bar">
+                        <div class="month-bar-fill" style="width: {{ (($line->ventas_mes_pasado ?? 0) / $max * 100) }}%"></div>
+                    </div>
+                </div>
+                <div class="month-card">
+                    <div class="month-name">Mes Anterior</div>
+                    <div class="month-total">${{ number_format($line->ventas_mes_antiguo ?? 0, 2) }}</div>
+                    <div class="month-bar">
+                        <div class="month-bar-fill" style="width: {{ (($line->ventas_mes_antiguo ?? 0) / $max * 100) }}%"></div>
+                    </div>
+                </div>
             </div>
 
-
+            {{-- Edit Form (only in edit mode) --}}
+            @if($isEditing)
+            <div class="edit-section" style="margin-top: 16px;">
+                <div class="edit-section-title">ðŸ“Š Editar EstadÃ­sticas</div>
+                <div class="stats-edit-grid">
+                    <div class="stat-field">
+                        <label class="edit-label">Mejor Mes</label>
+                        <input type="text" wire:model="line.mejor_mes" class="edit-field" placeholder="Ej: Marzo 2026">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">Mejor Mes ($)</label>
+                        <input type="number" wire:model="line.mejor_mes_total" class="edit-field" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">Mejor Plataforma</label>
+                        <input type="text" wire:model="line.mejor_plataforma" class="edit-field" placeholder="Nombre">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">Mejor Plataforma ($)</label>
+                        <input type="number" wire:model="line.mejor_plataforma_total" class="edit-field" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">Ventas Mes Actual ($)</label>
+                        <input type="number" wire:model="line.ventas_mes_actual" class="edit-field" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">Ventas Mes Pasado ($)</label>
+                        <input type="number" wire:model="line.ventas_mes_pasado" class="edit-field" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">Ventas Mes Anterior ($)</label>
+                        <input type="number" wire:model="line.ventas_mes_antiguo" class="edit-field" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">Ganancia Encargado ($)</label>
+                        <input type="number" wire:model="line.ganancia_encargado" class="edit-field" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="stat-field">
+                        <label class="edit-label">% Encargado</label>
+                        <input type="number" wire:model="line.porcentaje_encargado" class="edit-field" step="0.01" min="0" max="100" placeholder="0">
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </form>

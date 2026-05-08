@@ -61,11 +61,11 @@
 
     .t-head, .t-row {
         display: grid;
-        grid-template-columns: 64px 1fr 1.1fr 1.1fr 1.6fr 1.2fr 126px 80px;
+        grid-template-columns: 46px 1fr 1.4fr 1.7fr 126px 80px 170px;
         gap: 12px;
         align-items: center;
         padding: 11px 20px;
-        min-width: 1000px;
+        min-width: 920px;
     }
     .table-scroll { overflow-x: auto; }
     .t-head { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--muted-2); text-transform: uppercase; border-bottom: 1px solid var(--line); }
@@ -103,6 +103,7 @@
     .strong { font-weight: 700; }
     .muted { color: var(--muted-2); }
     .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .table-avatar { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.05); object-fit: cover; display: block; }
     .s-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 800; white-space: nowrap; }
     .s-active { background: rgba(37,196,107,.12); color: var(--good); }
     .s-inactive { background: rgba(255,71,87,.12); color: #ff4757; }
@@ -148,20 +149,29 @@
     .empty-state { padding: 56px 24px; text-align: center; color: var(--muted-2); }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
-    .modal-box { background: linear-gradient(180deg, #1c0e0e, #120909); border: 1px solid var(--line-2); border-radius: 8px; width: 100%; max-width: 620px; max-height: 92vh; overflow-y: auto; }
+    .modal-box { background: linear-gradient(180deg, #1c0e0e, #120909); border: 1px solid var(--line-2); border-radius: 8px; width: min(760px, 100%); max-height: min(86vh, 820px); overflow-y: auto; }
     .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line); }
     .modal-head h3 { font-family: var(--font-display); font-size: 22px; letter-spacing: .04em; margin: 0; }
     .modal-close { background: none; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
     .modal-close:hover { color: var(--white); background: rgba(255,255,255,.06); }
-    .modal-body { padding: 22px; }
+    .modal-body { padding: 20px 22px 22px; }
     .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-group { margin-bottom: 14px; }
+    .form-group { margin-bottom: 12px; }
     .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
-    .form-input { width: 100%; }
+    .form-input { width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--line-2); border-radius: 7px; padding: 9px 12px; color: var(--white); font-size: 13px; font-family: var(--font-body); }
+    .form-input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,106,26,.12); }
+    .form-input:-webkit-autofill,
+    .form-input:-webkit-autofill:hover,
+    .form-input:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--white);
+        -webkit-box-shadow: 0 0 0 1000px #261313 inset;
+        caret-color: var(--white);
+        transition: background-color 9999s ease-out;
+    }
     .form-input.is-error { border-color: #ff4757; }
     .form-error { font-size: 11px; color: #ff4757; margin-top: 4px; }
     .form-hint { font-size: 11px; color: var(--muted-2); margin-top: 4px; }
-    .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; padding-top: 16px; border-top: 1px solid var(--line); }
     .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
     .detail-item label { display: block; font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--muted-2); text-transform: uppercase; margin-bottom: 4px; }
     .detail-item p { margin: 0; font-size: 13px; word-break: break-word; }
@@ -266,30 +276,29 @@
     @else
         <div class="table-scroll">
             <div class="t-head">
-                <div>ID</div>
+                <div>Avatar</div>
                 <div>Username</div>
-                <div>Nombre</div>
-                <div>Apellido</div>
+                <div>Nombre y apellido</div>
                 <div>Email</div>
-                <div>Linea preferida</div>
                 <div>Enviar mensaje</div>
                 <div>Estado</div>
-                <div>Pausar</div>
+                <div>Acciones</div>
             </div>
 
             @foreach($users as $user)
                 @php($isActive = $user->status === 'active')
+                @php($fullName = trim($user->name.' '.($user->apellido ?? '')))
                 <div class="t-row">
-                    <div class="mono">#{{ $user->id }}</div>
+                    <div>
+                        <img class="table-avatar" src="{{ \App\Support\AvatarLibrary::url($user->avatar ?? null) }}" alt="">
+                    </div>
                     <div class="strong truncate">{{ $user->username ?? '-' }}</div>
-                    <div class="truncate">{{ $user->name }}</div>
-                    <div class="truncate">{{ $user->apellido ?? '-' }}</div>
+                    <div class="truncate">{{ $fullName ?: '-' }}</div>
                     <div class="truncate">{{ $user->email }}</div>
-                    <div class="truncate">{{ $user->preferredLine?->name ?? '-' }}</div>
                     <div>
                         <livewire:components.agent-messaging
                             :target-user-id="$user->id"
-                            :target-name="$user->name"
+                            :target-name="$fullName ?: $user->name"
                             :target-email="$user->email"
                             :target-phone="$user->phone ?? ''"
                             :context-label="$user->preferredLine?->name ?? ''"
@@ -317,7 +326,7 @@
                         <button wire:click="openEditModal({{ $user->id }})" class="btn-icon" title="Editar">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
                         </button>
-                        <button wire:click="deleteUser({{ $user->id }})" wire:confirm="Eliminar al cliente {{ $user->name }}?" class="btn-icon danger" title="Eliminar">
+                        <button wire:click="deleteUser({{ $user->id }})" wire:confirm="Eliminar al cliente {{ $fullName ?: $user->name }}?" class="btn-icon danger" title="Eliminar">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
                         </button>
                     </div>
@@ -379,15 +388,20 @@
                 </div>
 
                 <div class="form-group">
-                        <label class="form-label">Linea preferida</label>
-                        <select wire:model="preferredLineId" class="form-input @error('preferredLineId') is-error @enderror">
-                            <option value="">Sin linea</option>
-                            @foreach($lines as $line)
-                                <option value="{{ $line->id }}">{{ $line->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('preferredLineId') <div class="form-error">{{ $message }}</div> @enderror
-                    </div>
+                    <x-avatar-library model="avatar" :selected="$avatar">
+                        @error('avatar') <div class="form-error">{{ $message }}</div> @enderror
+                    </x-avatar-library>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Linea preferida</label>
+                    <select wire:model="preferredLineId" class="form-input @error('preferredLineId') is-error @enderror">
+                        <option value="">Sin linea</option>
+                        @foreach($lines as $line)
+                            <option value="{{ $line->id }}">{{ $line->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('preferredLineId') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="form-group">
@@ -454,8 +468,7 @@
             <div class="detail-grid">
                 <div class="detail-item"><label>ID</label><p>#{{ $detailUser->id }}</p></div>
                 <div class="detail-item"><label>Username</label><p>{{ $detailUser->username ?? '-' }}</p></div>
-                <div class="detail-item"><label>Nombre</label><p>{{ $detailUser->name }}</p></div>
-                <div class="detail-item"><label>Apellido</label><p>{{ $detailUser->apellido ?? '-' }}</p></div>
+                <div class="detail-item"><label>Nombre y apellido</label><p>{{ trim($detailUser->name.' '.($detailUser->apellido ?? '')) ?: '-' }}</p></div>
                 <div class="detail-item"><label>Email</label><p>{{ $detailUser->email }}</p></div>
                 <div class="detail-item"><label>Linea preferida</label><p>{{ $detailUser->preferredLine?->name ?? '-' }}</p></div>
                 <div class="detail-item"><label>Telefono</label><p>{{ $detailUser->phone ?? '-' }}</p></div>
