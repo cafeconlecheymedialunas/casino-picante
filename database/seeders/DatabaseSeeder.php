@@ -86,9 +86,11 @@ class DatabaseSeeder extends Seeder
 
         $encargadoPivot->syncPermissions(Permissions::all());
         $agentePivot->syncPermissions([
+            Permissions::LINE_READ,
             Permissions::USER_READ,
             Permissions::TICKET_READ,
             Permissions::TICKET_UPDATE,
+            Permissions::TICKET_CLOSE,
             Permissions::BONO_READ,
             Permissions::SORTEO_READ,
         ]);

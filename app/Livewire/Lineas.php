@@ -244,7 +244,7 @@ class Lineas extends Component
         if ($this->editingLineId) {
             $this->authorizeLineEdit(Line::findOrFail($this->editingLineId));
         } else {
-            $this->checkLinePermission(Permissions::LINE_EDIT_BRANDING);
+            $this->checkLinePermission(Permissions::LINE_EDIT);
         }
 
         if ($field === 'portada') {
