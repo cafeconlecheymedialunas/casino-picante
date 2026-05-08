@@ -3,7 +3,7 @@
         <a href="{{ route('lineas') }}" wire:navigate class="ld-back" style="font-size: 12px; color: var(--muted); text-decoration: none;">← Líneas & Redes</a>
     </div>
 
-    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuración de línea" @if($this->hasLinePermission('line.edit.basic') && !$isEditing) buttonText="✎ Editar línea" buttonAction="toggleInlineEdit" @endif />
+    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuración de línea" @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT_BASIC) && !$isEditing) buttonText="✎ Editar línea" buttonAction="toggleInlineEdit" @endif />
 
     @if($isEditing)
     <div style="margin-bottom: 16px; display: flex; gap: 10px;">
@@ -210,7 +210,7 @@
         </div>
 
         {{-- 🎰 PLATAFORMAS (Checkboxes) --}}
-        @if($this->hasLinePermission('line.edit.basic'))
+        @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT_BASIC))
         <div class="ld-section">
             <div class="ld-section-header">
                 <h2 class="ld-section-title">🎰 PLATAFORMAS</h2>
@@ -242,7 +242,7 @@
         <div class="ld-section">
             <div class="ld-section-header">
                 <h2 class="ld-section-title">👥 AGENTES ASIGNADOS</h2>
-                @if($this->hasLinePermission('agent.assign'))
+                @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
                 <button type="button" class="btn-add-agent" wire:click="openAssignModal">+ Agregar agente</button>
                 @endif
             </div>
@@ -266,10 +266,10 @@
                             <input type="checkbox" {{ $la->is_active ? 'checked' : '' }} wire:change="toggleAgentActive({{ $la->agent->id }})">
                             <span>{{ $la->is_active ? 'Activo' : 'Inactivo' }}</span>
                         </label>
-                        @if($this->hasLinePermission('agent.permissions'))
+                        @if($this->hasLinePermission(\App\Support\Permissions::AGENT_PERMISSIONS))
                         <button type="button" class="btn-perms" wire:click="openPermissions({{ $la->agent->id }})">✎ Permisos</button>
                         @endif
-                        @if($this->hasLinePermission('agent.assign'))
+                        @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
                         <button type="button" class="btn-remove-agent" wire:click="removeAgent({{ $la->agent->id }})" wire:confirm="¿Remover este agente de la línea?">✕</button>
                         @endif
                     </div>
@@ -298,16 +298,16 @@
                 @php
                 $linePermissions = [
             
-                    'novedad.read' => 'Ver novedades',
-                    'novedad.create' => 'Crear novedades',
-                    'novedad.edit' => 'Editar novedades',
-                    'ticket.read' => 'Ver tickets',
-                    'ticket.create' => 'Crear tickets',
-                    'bonus.read' => 'Ver bonos',
-                    'sorteo.read' => 'Ver sorteos',
-                    'line.edit.basic' => 'Editar línea',
-                    'agent.assign' => 'Asignar agentes',
-                    'agent.permissions' => 'Gestionar permisos',
+                    \App\Support\Permissions::NEWS_READ => 'Ver novedades',
+                    \App\Support\Permissions::NEWS_CREATE => 'Crear novedades',
+                    \App\Support\Permissions::NEWS_UPDATE => 'Editar novedades',
+                    \App\Support\Permissions::TICKET_READ => 'Ver tickets',
+                    \App\Support\Permissions::TICKET_UPDATE => 'Editar tickets',
+                    \App\Support\Permissions::BONO_READ => 'Ver bonos',
+                    \App\Support\Permissions::SORTEO_READ => 'Ver sorteos',
+                    \App\Support\Permissions::LINE_EDIT_BASIC => 'Editar línea',
+                    \App\Support\Permissions::AGENT_ASSIGN => 'Asignar agentes',
+                    \App\Support\Permissions::AGENT_PERMISSIONS => 'Gestionar permisos',
                 ];
                 @endphp
                 @foreach($linePermissions as $perm => $label)
@@ -323,7 +323,7 @@
         <div class="ld-section stats-section">
             <div class="ld-section-header">
                 <h2 class="ld-section-title">📊 ESTADÍSTICAS MANUALES</h2>
-                @if($this->hasLinePermission('line.edit.basic'))
+                @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT_BASIC))
                 <span style="font-size:11px;color:var(--muted);">Los valores se ingresan manualmente</span>
                 @endif
             </div>
@@ -494,12 +494,12 @@
         <div class="perm-panel-grid">
             @php
             $agentPerms = [
-                'novedad.read' => 'Ver novedades',
-                'novedad.create' => 'Crear novedades',
-                'ticket.read' => 'Ver tickets',
-                'ticket.edit' => 'Editar tickets',
-                'bonus.read' => 'Ver bonos',
-                'sorteo.read' => 'Ver sorteos',
+                \App\Support\Permissions::NEWS_READ => 'Ver novedades',
+                \App\Support\Permissions::NEWS_CREATE => 'Crear novedades',
+                \App\Support\Permissions::TICKET_READ => 'Ver tickets',
+                \App\Support\Permissions::TICKET_UPDATE => 'Editar tickets',
+                \App\Support\Permissions::BONO_READ => 'Ver bonos',
+                \App\Support\Permissions::SORTEO_READ => 'Ver sorteos',
             ];
             @endphp
             @foreach($agentPerms as $perm => $label)

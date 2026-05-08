@@ -4,10 +4,15 @@ namespace App\Livewire\Components;
 
 use App\Models\Chat;
 use App\Models\ChatMessage;
+use App\Models\LineAgent;
+use App\Support\Permissions;
+use App\Traits\HasLinePermissions;
 use Livewire\Component;
 
 class MessageChat extends Component
 {
+    use HasLinePermissions;
+
     public ?int $userId = null;
 
     public ?int $agentId = null;
@@ -29,15 +34,17 @@ class MessageChat extends Component
     public function mount(?int $userId = null, ?int $agentId = null, bool $isAgent = false, bool $allChats = false, ?int $singleChatId = null): void
     {
         $this->userId = $userId;
-        $this->agentId = $agentId ?: session('active_agent_id');
         $this->isAgent = $isAgent;
+        $this->agentId = $isAgent ? (session('active_agent_id') ?: $agentId) : $agentId;
         $this->allChats = $allChats;
         $this->singleChatId = $singleChatId;
+        $this->authorizeChatAccess();
         $this->selectedChatId = $singleChatId ?: $this->chats()->first()?->id;
     }
 
     public function selectChat(int $chatId): void
     {
+        $this->authorizeChatAccess();
         $chat = $this->chats()->firstWhere('id', $chatId);
 
         if ($chat) {
@@ -47,6 +54,8 @@ class MessageChat extends Component
 
     public function createChat(): void
     {
+        $this->authorizeChatAccess();
+
         if ($this->isAgent || ! $this->userId) {
             return;
         }
@@ -78,6 +87,7 @@ class MessageChat extends Component
 
     public function sendReply(): void
     {
+        $this->authorizeChatAccess();
         $chat = $this->selectedChat();
 
         if (! $chat) {
@@ -105,6 +115,8 @@ class MessageChat extends Component
 
     public function closeChat(): void
     {
+        $this->authorizeChatAccess();
+
         if (! $this->isAgent) {
             return;
         }
@@ -114,6 +126,7 @@ class MessageChat extends Component
 
     public function render()
     {
+        $this->authorizeChatAccess();
         $chats = $this->chats();
         $selectedChat = $this->selectedChat();
 
@@ -124,6 +137,8 @@ class MessageChat extends Component
     {
         $query = Chat::with(['user', 'agent', 'messages.user', 'messages.agent'])
             ->orderBy('updated_at', 'desc');
+
+        $this->scopeChatQuery($query);
 
         if ($this->singleChatId) {
             return $query->where('id', $this->singleChatId)->get();
@@ -152,5 +167,76 @@ class MessageChat extends Component
         }
 
         return $this->chats()->firstWhere('id', $this->selectedChatId);
+    }
+
+    private function authorizeChatAccess(): void
+    {
+        if (! auth()->check()) {
+            abort(403, 'Sin sesion activa.');
+        }
+
+        if (! $this->isAgent) {
+            if (! $this->userId || auth()->id() !== $this->userId) {
+                abort(403, 'No podes ver chats de otro usuario.');
+            }
+
+            return;
+        }
+
+        if (
+            ! $this->hasLinePermission(Permissions::TICKET_READ)
+            && ! $this->hasLinePermission(Permissions::USER_READ)
+            && ! $this->hasLinePermission(Permissions::AGENT_UPDATE)
+            && ! $this->hasLinePermission(Permissions::AGENT_ASSIGN)
+        ) {
+            abort(403, 'Sin permiso para ver chats.');
+        }
+    }
+
+    private function scopeChatQuery($query): void
+    {
+        if (! $this->isAgent) {
+            return;
+        }
+
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $agentId = $this->agentId ?: session('active_agent_id');
+        $lineIds = $this->visibleLineIds();
+
+        $query->where(function ($inner) use ($agentId, $lineIds) {
+            if ($agentId) {
+                $inner->where('agent_id', $agentId);
+            }
+
+            if ($lineIds !== []) {
+                $inner->orWhere(function ($clientChats) use ($lineIds) {
+                    $clientChats->whereNotNull('user_id')
+                        ->whereHas('user', function ($user) use ($lineIds) {
+                            $user->whereIn('line_id', $lineIds)
+                                ->orWhereHas('lines', fn ($line) => $line
+                                    ->whereIn('lines.id', $lineIds)
+                                    ->where('line_clients.is_active', true));
+                        });
+                });
+            }
+        });
+    }
+
+    private function visibleLineIds(): array
+    {
+        $lineId = session('active_line_id');
+
+        if ($lineId) {
+            return [(int) $lineId];
+        }
+
+        return LineAgent::where('agent_id', session('active_agent_id'))
+            ->where('is_active', true)
+            ->pluck('line_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 }

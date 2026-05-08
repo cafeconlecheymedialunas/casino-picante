@@ -9,6 +9,8 @@ use App\Models\LineAgentPermission;
 use App\Models\Platform;
 use App\Models\Sale;
 use App\Support\ImageStorage;
+use App\Support\LineRoles;
+use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
@@ -57,7 +59,7 @@ class LineDetail extends Component
 
     public ?int $assignAgentId = null;
 
-    public string $assignRole = 'miembro';
+    public string $assignRole = LineRoles::MIEMBRO;
 
     // Encargado selection
     public $selectedEncargadoId = null;
@@ -88,6 +90,8 @@ class LineDetail extends Component
 
     public function saveAll(): void
     {
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+
         $this->validate([
             'line.name' => 'required|string|max:255',
             'line.encargado_id' => 'nullable|integer|exists:agents,id',
@@ -119,6 +123,8 @@ class LineDetail extends Component
 
     public function removeImageField(string $field): void
     {
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+
         if ($field === 'portada') {
             ImageStorage::delete($this->line->portada_url);
             $this->portadaUpload = null;
@@ -143,9 +149,9 @@ class LineDetail extends Component
 
     public int $saleAnio = 0;
 
-    public string $saleFechaInicio = '';
+    public string $saleFecha = '';
 
-    public string $saleFechaFin = '';
+    public string $saleDescripcion = '';
 
     public string $saleMontoFichas = '';
 
@@ -193,6 +199,7 @@ class LineDetail extends Component
     {
         $this->lineId = $id;
         $this->line = Line::findOrFail($id);
+        $this->authorizeLineContext();
         $this->linePermissionsList = $this->line->permissions ?? [];
         $this->initInlineFields();
     }
@@ -231,7 +238,7 @@ class LineDetail extends Component
 
     public function saveInfo(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
         $this->line->update([
             'name' => $this->inlineName,
             'type' => $this->inlineType,
@@ -260,7 +267,7 @@ class LineDetail extends Component
 
     public function saveContacts(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
         $contacts = array_filter($this->inlineContacts, fn ($c) => ! empty($c['value']));
         $this->line->update(['contact_links' => array_values($contacts)]);
         $this->line->refresh();
@@ -290,7 +297,7 @@ class LineDetail extends Component
 
     public function saveEncargado(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
         $this->line->update(['encargado_id' => $this->inlineEncargadoId ?: null]);
         $this->line->refresh();
         session()->flash('message', 'Encargado actualizado.');
@@ -309,7 +316,7 @@ class LineDetail extends Component
 
     public function saveImages(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
         $this->line->update([
             'portada_url' => $this->inlinePortada ?: null,
             'perfil_url' => $this->inlinePerfil ?: null,
@@ -322,7 +329,7 @@ class LineDetail extends Component
 
     public function openEditModal(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
         $this->editName = $this->line->name;
         $this->editType = $this->line->type ?? 'whatsapp';
         $this->editPhone = $this->line->phone ?? '';
@@ -364,7 +371,7 @@ class LineDetail extends Component
 
     public function saveLineEdit(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         $this->line->update([
             'name' => $this->editName,
@@ -408,6 +415,8 @@ class LineDetail extends Component
 
     public function togglePlatform(int $platformId): void
     {
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+
         $found = false;
         foreach ($this->editPlatforms as &$p) {
             if ($p['platform_id'] == $platformId) {
@@ -433,6 +442,8 @@ class LineDetail extends Component
 
     public function updatePlatformMessage(int $platformId, string $message): void
     {
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+
         foreach ($this->editPlatforms as &$p) {
             if ($p['platform_id'] == $platformId) {
                 $p['custom_message'] = $message;
@@ -442,7 +453,7 @@ class LineDetail extends Component
 
     public function togglePlatformActivation($platformId): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         $platform = Platform::find($platformId);
         if (! $platform) {
@@ -471,10 +482,10 @@ class LineDetail extends Component
 
     public function openAssignModal(): void
     {
-        $this->checkLinePermission('agent.assign');
+        $this->checkLinePermission(Permissions::AGENT_ASSIGN);
         $this->assignAgentSearch = '';
         $this->assignAgentId = null;
-        $this->assignRole = 'miembro';
+        $this->assignRole = LineRoles::MIEMBRO;
         $this->showAssignModal = true;
     }
 
@@ -504,13 +515,13 @@ class LineDetail extends Component
 
     public function confirmAssign(): void
     {
-        $this->checkLinePermission('agent.assign');
+        $this->checkLinePermission(Permissions::AGENT_ASSIGN);
 
         if (! $this->assignAgentId) {
             return;
         }
 
-        LineAgent::firstOrCreate(
+        LineAgent::updateOrCreate(
             ['line_id' => $this->lineId, 'agent_id' => $this->assignAgentId],
             ['role' => $this->assignRole, 'is_active' => true]
         );
@@ -521,7 +532,7 @@ class LineDetail extends Component
 
     public function removeAgent(int $agentId): void
     {
-        $this->checkLinePermission('agent.assign');
+        $this->checkLinePermission(Permissions::AGENT_ASSIGN);
 
         LineAgent::where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
@@ -540,7 +551,7 @@ class LineDetail extends Component
 
     public function toggleAgentActive(int $agentId): void
     {
-        $this->checkLinePermission('agent.update');
+        $this->checkLinePermission(Permissions::AGENT_UPDATE);
 
         $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
         if ($la) {
@@ -550,10 +561,10 @@ class LineDetail extends Component
 
     public function changeAgentRole(int $agentId, string $role): void
     {
-        $this->checkLinePermission('agent.update');
+        $this->checkLinePermission(Permissions::AGENT_UPDATE);
 
         // Validate role is either 'encargado' or 'miembro'
-        if (! in_array($role, ['encargado', 'miembro'])) {
+        if (! in_array($role, [LineRoles::ENCARGADO, LineRoles::MIEMBRO])) {
             session()->flash('error', 'Rol inválido. Debe ser encargado o miembro.');
 
             return;
@@ -568,7 +579,7 @@ class LineDetail extends Component
 
     public function openPermissions(int $agentId): void
     {
-        $this->checkLinePermission('agent.permissions');
+        $this->checkLinePermission(Permissions::AGENT_PERMISSIONS);
 
         $this->editingPermAgentId = $agentId;
 
@@ -611,7 +622,7 @@ class LineDetail extends Component
 
     public function savePermissions(): void
     {
-        $this->checkLinePermission('agent.permissions');
+        $this->checkLinePermission(Permissions::AGENT_PERMISSIONS);
 
         if (! $this->editingPermAgentId) {
             return;
@@ -686,16 +697,16 @@ class LineDetail extends Component
 
     public function openSalesModal(?int $saleId = null): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         if ($saleId) {
-            $sale = Sale::find($saleId);
+            $sale = Sale::where('line_id', $this->lineId)->findOrFail($saleId);
             $this->editingSaleId = $sale->id;
             $this->salePlatformId = $sale->platform_id;
-            $this->saleMes = $sale->mes;
-            $this->saleAnio = $sale->anio;
-            $this->saleFechaInicio = $sale->fecha_inicio->format('Y-m-d');
-            $this->saleFechaFin = $sale->fecha_fin->format('Y-m-d');
+            $this->saleMes = $sale->fecha->month;
+            $this->saleAnio = $sale->fecha->year;
+            $this->saleFecha = $sale->fecha->format('Y-m-d');
+            $this->saleDescripcion = $sale->descripcion ?? '';
             $this->saleMontoFichas = $sale->monto_fichas;
             $this->saleGananciaEncargado = $sale->ganancia_superagente;
         } else {
@@ -710,8 +721,8 @@ class LineDetail extends Component
         $this->salePlatformId = 0;
         $this->saleMes = now()->month;
         $this->saleAnio = now()->year;
-        $this->saleFechaInicio = now()->startOfMonth()->format('Y-m-d');
-        $this->saleFechaFin = now()->endOfMonth()->format('Y-m-d');
+        $this->saleFecha = now()->format('Y-m-d');
+        $this->saleDescripcion = '';
         $this->saleMontoFichas = '';
         $this->saleGananciaEncargado = '';
     }
@@ -724,41 +735,31 @@ class LineDetail extends Component
 
     public function saveSale(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         $this->validate([
             'salePlatformId' => 'required|integer|min:1',
             'saleMes' => 'required|integer|min:1|max:12',
             'saleAnio' => 'required|integer|min:2020',
-            'saleFechaInicio' => 'required|date',
-            'saleFechaFin' => 'required|date|after_or_equal:saleFechaInicio',
+            'saleFecha' => 'required|date',
+            'saleDescripcion' => 'nullable|string|max:255',
             'saleMontoFichas' => 'required|numeric|min:0',
         ]);
 
         $data = [
             'line_id' => $this->lineId,
             'platform_id' => $this->salePlatformId,
-            'mes' => $this->saleMes,
-            'anio' => $this->saleAnio,
-            'fecha_inicio' => $this->saleFechaInicio,
-            'fecha_fin' => $this->saleFechaFin,
+            'fecha' => $this->saleFecha,
+            'descripcion' => trim($this->saleDescripcion) ?: null,
             'monto_fichas' => $this->saleMontoFichas ?: 0,
             'ganancia_superagente' => $this->saleGananciaEncargado ?: 0,
         ];
 
         if ($this->editingSaleId) {
-            Sale::find($this->editingSaleId)->update($data);
+            Sale::where('line_id', $this->lineId)->findOrFail($this->editingSaleId)->update($data);
             session()->flash('message', 'Venta actualizada.');
         } else {
-            Sale::updateOrCreate(
-                [
-                    'line_id' => $this->lineId,
-                    'platform_id' => $this->salePlatformId,
-                    'mes' => $this->saleMes,
-                    'anio' => $this->saleAnio,
-                ],
-                $data
-            );
+            Sale::create($data);
             session()->flash('message', 'Venta registrada.');
         }
 
@@ -767,24 +768,23 @@ class LineDetail extends Component
 
     public function deleteSale(int $saleId): void
     {
-        $this->checkLinePermission('line.edit.basic');
-        Sale::find($saleId)->delete();
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        Sale::where('line_id', $this->lineId)->findOrFail($saleId)->delete();
         session()->flash('message', 'Venta eliminada.');
     }
 
     public function getSalesProperty()
     {
         return Sale::where('line_id', $this->lineId)
-            ->orderBy('anio', 'desc')
-            ->orderBy('mes', 'desc')
+            ->orderByDesc('fecha')
             ->get();
     }
 
     public function getTotalSalesThisMonth(): float
     {
         return Sale::where('line_id', $this->lineId)
-            ->where('mes', now()->month)
-            ->where('anio', now()->year)
+            ->whereMonth('fecha', now()->month)
+            ->whereYear('fecha', now()->year)
             ->sum('monto_fichas');
     }
 
@@ -798,8 +798,8 @@ class LineDetail extends Component
                 'anio' => $date->year,
                 'nombre' => $date->monthName,
                 'total' => Sale::where('line_id', $this->lineId)
-                    ->where('mes', $date->month)
-                    ->where('anio', $date->year)
+                    ->whereMonth('fecha', $date->month)
+                    ->whereYear('fecha', $date->year)
                     ->sum('monto_fichas'),
             ];
         }
@@ -810,30 +810,35 @@ class LineDetail extends Component
     public function getBestMonth(): ?array
     {
         $best = Sale::where('line_id', $this->lineId)
-            ->selectRaw('mes, anio, SUM(monto_fichas) as total')
-            ->groupBy('mes', 'anio')
-            ->orderByDesc('total')
+            ->get()
+            ->groupBy(fn (Sale $sale) => $sale->fecha->format('Y-m'))
+            ->map(fn ($sales) => [
+                'mes' => $sales->first()->fecha->month,
+                'anio' => $sales->first()->fecha->year,
+                'total' => $sales->sum(fn (Sale $sale) => (float) $sale->monto_fichas),
+            ])
+            ->sortByDesc('total')
             ->first();
 
         if (! $best) {
             return null;
         }
 
-        $monthName = Carbon::createFromDate($best->anio, $best->mes, 1)->monthName;
+        $monthName = now()->setDate($best['anio'], $best['mes'], 1)->monthName;
 
         return [
-            'mes' => $best->mes,
-            'anio' => $best->anio,
+            'mes' => $best['mes'],
+            'anio' => $best['anio'],
             'nombre' => $monthName,
-            'total' => $best->total,
+            'total' => $best['total'],
         ];
     }
 
     public function getBestPlatformThisMonth(): ?array
     {
         $best = Sale::where('line_id', $this->lineId)
-            ->where('mes', now()->month)
-            ->where('anio', now()->year)
+            ->whereMonth('fecha', now()->month)
+            ->whereYear('fecha', now()->year)
             ->orderByDesc('monto_fichas')
             ->with('platform')
             ->first();
@@ -851,7 +856,7 @@ class LineDetail extends Component
     public function getEncargadoEarningsThisMonth(): array
     {
         $lineAgents = LineAgent::where('line_id', $this->lineId)
-            ->where('role', 'encargado')
+            ->where('role', LineRoles::ENCARGADO)
             ->where('is_active', true)
             ->get();
 
@@ -875,7 +880,7 @@ class LineDetail extends Component
 
     public function openPercentageModal(int $agentId): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
         if ($la) {
@@ -894,7 +899,7 @@ class LineDetail extends Component
 
     public function savePercentage(): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         if ($this->percentageAgentId) {
             LineAgent::where('line_id', $this->lineId)
@@ -911,7 +916,7 @@ class LineDetail extends Component
 
     public function openImageModal(string $type): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         if ($type === 'portada') {
             $this->portadaUrl = $this->line->portada_url ?? '';
@@ -924,7 +929,7 @@ class LineDetail extends Component
 
     public function saveImageUrl(string $type, string $url): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         if ($type === 'portada') {
             $this->line->update(['portada_url' => $url]);
@@ -940,7 +945,7 @@ class LineDetail extends Component
 
     public function deleteImage(string $type): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         if ($type === 'portada') {
             $this->line->update(['portada_url' => null]);
@@ -968,7 +973,7 @@ class LineDetail extends Component
 
     public function assignEncargado($agentId): void
     {
-        $this->checkLinePermission('line.edit.basic');
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
 
         $this->line->update(['encargado_id' => $agentId ?: null]);
         $this->line->refresh();
@@ -980,7 +985,9 @@ class LineDetail extends Component
 
     public function toggleLinePermission(string $permission): void
     {
-        if (! in_array('line.edit.basic', $this->linePermissionsList) && ! $this->hasLinePermission('line.edit.basic')) {
+        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+
+        if (! in_array($permission, LineAgentPermission::allPermissions(), true)) {
             return;
         }
 
@@ -999,6 +1006,7 @@ class LineDetail extends Component
 
     public function render()
     {
+        $this->authorizeLineContext();
         $availableAgents = $this->availableAgents;
         $currentEncargado = $this->currentEncargado;
         $availablePlatforms = $this->availablePlatforms;
@@ -1008,5 +1016,41 @@ class LineDetail extends Component
             'currentEncargado',
             'availablePlatforms'
         ))->layout('layouts.dashboard');
+    }
+
+    private function authorizeLineContext(): void
+    {
+        if ($this->isAdminMode()) {
+            session(['active_line_id' => $this->lineId]);
+
+            return;
+        }
+
+        $agentId = session('active_agent_id') ?: auth()->user()?->agent?->id;
+        $lineAgent = LineAgent::where('line_id', $this->lineId)
+            ->where('agent_id', $agentId)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $lineAgent) {
+            abort(403, 'No perteneces a esta linea.');
+        }
+
+        session([
+            'active_agent_id' => $agentId,
+            'active_line_id' => $this->lineId,
+        ]);
+
+        if (
+            ! $lineAgent->hasPermission(Permissions::LINE_VIEW)
+            && ! $lineAgent->hasPermission(Permissions::LINE_EDIT_BASIC)
+            && ! $lineAgent->hasPermission(Permissions::LINE_EDIT_CONTACTS)
+            && ! $lineAgent->hasPermission(Permissions::LINE_EDIT_BRANDING)
+        ) {
+            abort(403, 'Sin permiso para ver esta linea.');
+        }
+
+        view()->share('activeLine', $this->line);
+        view()->share('currentLineAgent', $lineAgent);
     }
 }

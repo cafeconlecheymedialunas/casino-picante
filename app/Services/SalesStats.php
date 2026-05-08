@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Line;
 use App\Models\Platform;
 use App\Models\Sale;
+use App\Support\LineRoles;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -53,7 +54,7 @@ class SalesStats
             : $line->lineAgents()->with('agent')->get();
 
         $earnings = $lineAgents
-            ->where('role', 'encargado')
+            ->where('role', LineRoles::ENCARGADO)
             ->map(fn ($lineAgent) => [
                 'name'       => trim(($lineAgent->agent?->name ?? 'Encargado').' '.($lineAgent->agent?->apellido ?? '')),
                 'porcentaje' => (float) ($lineAgent->porcentaje_ganancia ?? 0),

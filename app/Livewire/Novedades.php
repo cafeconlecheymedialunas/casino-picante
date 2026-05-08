@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
+use App\Support\Permissions;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -49,22 +50,22 @@ class Novedades extends Component
 
     public function canCreate(): bool
     {
-        return $this->hasLinePermission('news.create');
+        return $this->hasLinePermission(Permissions::NEWS_CREATE);
     }
 
     public function canUpdate(): bool
     {
-        return $this->hasLinePermission('news.update');
+        return $this->hasLinePermission(Permissions::NEWS_UPDATE);
     }
 
     public function canDelete(): bool
     {
-        return $this->hasLinePermission('news.delete');
+        return $this->hasLinePermission(Permissions::NEWS_DELETE);
     }
 
     public function canRead(): bool
     {
-        return $this->hasLinePermission('news.read');
+        return $this->hasLinePermission(Permissions::NEWS_READ);
     }
 
     public function setStatusFilter($status)
@@ -81,12 +82,13 @@ class Novedades extends Component
 
     public function selectPost($id)
     {
-        $this->selectedPost = Post::find($id);
+        $this->checkLinePermission(Permissions::NEWS_READ);
+        $this->selectedPost = Post::findOrFail($id);
     }
 
     public function openCreateModal()
     {
-        $this->checkLinePermission('news.create');
+        $this->checkLinePermission(Permissions::NEWS_CREATE);
         $this->resetForm();
         $this->type = $this->tab;
         $this->showModal = true;
@@ -94,7 +96,7 @@ class Novedades extends Component
 
     public function openEditModal($postId)
     {
-        $this->checkLinePermission('news.update');
+        $this->checkLinePermission(Permissions::NEWS_UPDATE);
         $post = Post::find($postId);
         $this->editingPost = $post;
         $this->title = $post->title;
@@ -126,6 +128,10 @@ class Novedades extends Component
 
     public function savePost()
     {
+        $this->editingPost
+            ? $this->checkLinePermission(Permissions::NEWS_UPDATE)
+            : $this->checkLinePermission(Permissions::NEWS_CREATE);
+
         $this->validate([
             ...$this->rules,
             'imageUpload' => 'nullable|image|max:4096',
@@ -164,6 +170,8 @@ class Novedades extends Component
 
     public function removeImage(): void
     {
+        $this->checkLinePermission(Permissions::NEWS_UPDATE);
+
         if ($this->editingPost && $this->image) {
             ImageStorage::delete($this->image);
             $this->editingPost->update(['image' => null]);
@@ -175,7 +183,7 @@ class Novedades extends Component
 
     public function deletePost($postId)
     {
-        $this->checkLinePermission('news.delete');
+        $this->checkLinePermission(Permissions::NEWS_DELETE);
         $post = Post::find($postId);
         ImageStorage::delete($post?->image);
         $postTitle = $post?->title;
@@ -192,7 +200,7 @@ class Novedades extends Component
 
     public function toggleStatus($postId)
     {
-        $this->checkLinePermission('news.update');
+        $this->checkLinePermission(Permissions::NEWS_UPDATE);
         $post = Post::find($postId);
         $newStatus = $post->status === 'published' ? 'draft' : 'published';
         $post->update(['status' => $newStatus]);
@@ -202,7 +210,7 @@ class Novedades extends Component
 
     public function getPosts()
     {
-        $this->checkLinePermission('news.read');
+        $this->checkLinePermission(Permissions::NEWS_READ);
 
         $query = Post::query();
 

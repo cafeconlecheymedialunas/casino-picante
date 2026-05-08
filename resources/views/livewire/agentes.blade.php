@@ -149,7 +149,7 @@
                     </div>
 
                     @foreach($agents as $agent)
-                        @php($isActive = $agent->status === 'active')
+                        @php $isActive = $agent->status === 'active'; @endphp
                         <div class="t-row">
                             <div class="mono">#{{ $agent->id }}</div>
                             <div class="strong truncate">{{ $agent->username ?? '-' }}</div>
@@ -338,9 +338,7 @@
                                     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
                                         @foreach($permissionCatalog as $resource => $actions)
                                             @php
-                                                $resourcePerms = [];
-                                                foreach ($actions as $action) { $resourcePerms[] = "{$resource}.{$action}"; }
-                                                $intersect = array_values(array_intersect($resourcePerms, $permEditAvailable));
+                                                $intersect = array_values(array_intersect($actions, $permEditAvailable));
                                             @endphp
                                             @if(!empty($intersect))
                                                 <div>

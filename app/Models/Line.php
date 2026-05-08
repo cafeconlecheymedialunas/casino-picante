@@ -54,6 +54,13 @@ class Line extends Model
         return $this->agents()->wherePivot('is_active', true);
     }
 
+    public function clients()
+    {
+        return $this->belongsToMany(User::class, 'line_clients')
+            ->withPivot('is_active')
+            ->withTimestamps();
+    }
+
     public function managers()
     {
         return $this->agents()->wherePivot('role', 'encargado')->wherePivot('is_active', true);

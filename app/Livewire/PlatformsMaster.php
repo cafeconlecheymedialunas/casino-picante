@@ -77,11 +77,13 @@ class PlatformsMaster extends Component
 
     public function addContact()
     {
+        $this->ensureAdmin();
         $this->contacts[] = ['type' => 'whatsapp', 'value' => '', 'message' => ''];
     }
 
     public function removeContact(int $index)
     {
+        $this->ensureAdmin();
         unset($this->contacts[$index]);
         $this->contacts = array_values($this->contacts);
     }
@@ -162,6 +164,7 @@ class PlatformsMaster extends Component
 
     public function render()
     {
+        $this->ensureAdmin();
         $platforms = Platform::orderBy('name')->get();
         $canManagePlatforms = $this->isAdminMode();
 

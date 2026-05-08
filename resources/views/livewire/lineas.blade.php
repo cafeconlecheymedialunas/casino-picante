@@ -129,7 +129,7 @@
 
         <x-livewire.components.page-header title="LINEAS" subtitle="Gestion operativa, encargado, canales, plataformas y ventas" />
 
-        @if($this->hasLinePermission('line.create'))
+        @if($this->hasLinePermission(\App\Support\Permissions::LINE_CREATE))
         <div class="page-action-strip">
             <button type="button" class="btn-primary" wire:click="openCreateModal">+ Crear linea</button>
         </div>
@@ -496,8 +496,8 @@
                     <p style="color:var(--muted-2);font-size:11px;margin:0 0 10px;line-height:1.6">Determinan qué acciones pueden tener los agentes asignados.</p>
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
                         @foreach($permissionCatalog as $resource => $actions)
-                            @foreach($actions as $action)
-                            @php $perm = $resource.'.'.$action; @endphp
+                            @foreach($actions as $perm)
+                            @php $action = str($perm)->after($resource.'.'); @endphp
                             <label class="perm-check" style="font-size:11px">
                                 <input type="checkbox" wire:model="linePermissions" value="{{ $perm }}">
                                 <span style="color:var(--muted-2);font-size:9px;margin-right:2px">{{ $resource }}</span>{{ $action }}

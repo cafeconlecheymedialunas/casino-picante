@@ -98,8 +98,11 @@
                     </div>
                     <div>{{ $sale->platform?->name ?? '-' }}</div>
                     <div>
-                        {{ $this->monthLabel($sale->mes, $sale->anio) }}
-                        <div class="line-meta">{{ $sale->fecha_inicio?->format('d/m/Y') }} - {{ $sale->fecha_fin?->format('d/m/Y') }}</div>
+                        {{ $this->monthLabel($sale->fecha->month, $sale->fecha->year) }}
+                        <div class="line-meta">{{ $sale->fecha->format('d/m/Y') }}</div>
+                        @if($sale->descripcion)
+                            <div class="line-meta">{{ $sale->descripcion }}</div>
+                        @endif
                     </div>
                     <div><strong>${{ number_format((float) $sale->monto_fichas, 2) }}</strong></div>
                     <div class="actions">
@@ -158,12 +161,14 @@
                             <input type="number" wire:model.live="saleAnio" class="input" style="width:100%">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Fecha inicio</label>
-                            <input type="date" wire:model="saleFechaInicio" class="input" style="width:100%">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" wire:model="saleFecha" class="input" style="width:100%">
+                            @error('saleFecha') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Fecha fin</label>
-                            <input type="date" wire:model="saleFechaFin" class="input" style="width:100%">
+                            <label class="form-label">Descripcion</label>
+                            <input type="text" wire:model="saleDescripcion" class="input" style="width:100%" maxlength="255">
+                            @error('saleDescripcion') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                     </div>
 

@@ -5,8 +5,11 @@ namespace App\Livewire;
 use App\Models\Line;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
+use App\Models\Role;
 use App\Models\User;
 use App\Support\ImageStorage;
+use App\Support\Permissions;
+use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Carbon\Carbon;
@@ -100,7 +103,7 @@ class Sorteos extends Component
 
     public function openCreate(): void
     {
-        $this->checkLinePermission('sorteo.create');
+        $this->checkLinePermission(Permissions::SORTEO_CREATE);
         $this->resetForm();
         $this->start_date = now()->format('Y-m-d');
         $this->end_date = now()->addDays(30)->format('Y-m-d');
@@ -110,7 +113,7 @@ class Sorteos extends Component
 
     public function openEdit(int $id): void
     {
-        $this->checkLinePermission('sorteo.update');
+        $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $raffle = Raffle::with('lines')->findOrFail($id);
         $this->editingRaffle = $raffle;
         $this->title = $raffle->title;
@@ -206,7 +209,7 @@ class Sorteos extends Component
 
         DB::transaction(function () use ($data): void {
             if ($this->editingRaffle) {
-                $this->checkLinePermission('sorteo.update');
+                $this->checkLinePermission(Permissions::SORTEO_UPDATE);
                 $this->editingRaffle->update($data);
                 $this->editingRaffle->lines()->sync($this->lineIds);
                 session()->flash('message', 'Sorteo actualizado');
@@ -215,7 +218,7 @@ class Sorteos extends Component
                 return;
             }
 
-            $this->checkLinePermission('sorteo.create');
+            $this->checkLinePermission(Permissions::SORTEO_CREATE);
             $raffle = Raffle::create($data);
             $raffle->lines()->sync($this->lineIds);
             session()->flash('message', 'Sorteo creado');
@@ -227,7 +230,7 @@ class Sorteos extends Component
 
     public function delete(int $id): void
     {
-        $this->checkLinePermission('sorteo.delete');
+        $this->checkLinePermission(Permissions::SORTEO_DELETE);
         $raffle = Raffle::findOrFail($id);
         $raffleTitle = $raffle->title;
         $raffle->delete();
@@ -262,7 +265,7 @@ class Sorteos extends Component
 
     public function saveSelectedNumbers(): void
     {
-        $this->checkLinePermission('sorteo.read');
+        $this->checkLinePermission(Permissions::SORTEO_READ);
         $this->validate([
             'assignUserId' => 'required|integer|exists:users,id',
             'selectedNumbers' => 'required|array|min:1',
@@ -273,6 +276,12 @@ class Sorteos extends Component
         $user = User::find((int) $this->assignUserId);
 
         if (! $user || ! $this->canAssignInRaffle($raffle)) {
+            return;
+        }
+
+        if (! $this->userCanBeAssignedToRaffle($user, $raffle)) {
+            $this->addError('assignUserId', 'El usuario no pertenece a la linea de asignacion.');
+
             return;
         }
 
@@ -348,7 +357,7 @@ class Sorteos extends Component
 
     public function unassignSelectedNumbers(): void
     {
-        $this->checkLinePermission('sorteo.read');
+        $this->checkLinePermission(Permissions::SORTEO_READ);
         $this->validate([
             'selectedNumbers' => 'required|array|min:1',
             'selectedNumbers.*' => 'integer',
@@ -387,7 +396,7 @@ class Sorteos extends Component
 
     public function toggleNumber(int $number): void
     {
-        $this->checkLinePermission('sorteo.read');
+        $this->checkLinePermission(Permissions::SORTEO_READ);
 
         if (! $this->selectedRaffleId) {
             return;
@@ -411,14 +420,14 @@ class Sorteos extends Component
 
     public function removeNumber(int $numberId): void
     {
-        $this->checkLinePermission('sorteo.update');
+        $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         RaffleNumber::findOrFail($numberId)->delete();
         session()->flash('message', 'Numero eliminado');
     }
 
     public function openWinnerModal(int $raffleId): void
     {
-        $this->checkLinePermission('sorteo.update');
+        $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $raffle = Raffle::findOrFail($raffleId);
         $this->selectedRaffleId = $raffleId;
         $this->winner_user_id = (string) ($raffle->winner_user_id ?? '');
@@ -428,7 +437,7 @@ class Sorteos extends Component
 
     public function saveWinner(): void
     {
-        $this->checkLinePermission('sorteo.update');
+        $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $this->validate([
             'winner_user_id' => 'nullable|exists:users,id',
             'winner_number' => 'nullable|integer',
@@ -453,7 +462,7 @@ class Sorteos extends Component
 
     public function toggleStatus(int $id): void
     {
-        $this->checkLinePermission('sorteo.update');
+        $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $raffle = Raffle::findOrFail($id);
         $raffle->update(['status' => $raffle->status === 'active' ? 'inactive' : 'active']);
         session()->flash('message', 'Estado actualizado');
@@ -512,10 +521,10 @@ class Sorteos extends Component
 
     public function render()
     {
-        $this->checkLinePermission('sorteo.read');
+        $this->checkLinePermission(Permissions::SORTEO_READ);
         $raffles = $this->getRaffles();
         $selectedRaffle = $this->getSelectedRaffle();
-        $users = User::orderBy('name')->get(['id', 'username', 'name', 'email']);
+        $users = $this->assignableUsers($selectedRaffle);
         $participants = $this->participants();
         $totalHistorical = Raffle::withoutGlobalScopes()->count();
         $availableLines = $this->availableLines();
@@ -648,6 +657,35 @@ class Sorteos extends Component
         }
 
         return true;
+    }
+
+    private function assignableUsers(?Raffle $raffle)
+    {
+        $lineId = $this->assignmentLineId($raffle);
+        $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
+
+        return User::query()
+            ->when($clientRoleId, fn ($query) => $query->where('role_id', $clientRoleId))
+            ->where('status', 'active')
+            ->when($lineId, function ($query) use ($lineId) {
+                $query->where(function ($inner) use ($lineId) {
+                    $inner->where('line_id', $lineId)
+                        ->orWhereHas('lines', fn ($line) => $line
+                            ->where('lines.id', $lineId)
+                            ->where('line_clients.is_active', true));
+                });
+            })
+            ->orderBy('name')
+            ->get(['id', 'username', 'name', 'email']);
+    }
+
+    private function userCanBeAssignedToRaffle(User $user, Raffle $raffle): bool
+    {
+        $lineId = $this->assignmentLineId($raffle);
+
+        return $lineId
+            && ((int) $user->line_id === (int) $lineId
+                || $user->lines()->where('lines.id', $lineId)->wherePivot('is_active', true)->exists());
     }
 
     private function participants()

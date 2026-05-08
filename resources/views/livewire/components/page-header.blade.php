@@ -1,4 +1,4 @@
-<div class="page-header">
+<div class="page-header" wire:poll.15s>
     <div class="page-header-left">
         <h1 class="page-title">{{ $title }}</h1>
         @if($subtitle)
@@ -27,17 +27,22 @@
             <div class="header-dropdown notifications-dropdown" x-show="open" x-cloak x-transition>
                 <div class="dropdown-head">
                     <strong>Notificaciones</strong>
-                    <a href="{{ route('settings') }}" wire:navigate class="settings-link">Configurar</a>
-                    @if($unreadCount > 0)
-                        <button type="button" wire:click="markAllRead">Marcar todas leidas</button>
-                    @endif
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        @if($unreadCount > 0)
+                            <button type="button" wire:click="markAllRead" title="Marcar todas leídas" style="font-size:10px;padding:3px 8px;">✓ Leídas</button>
+                        @endif
+                        <button type="button" wire:click="deleteAllRead" title="Borrar notificaciones leídas" style="font-size:10px;padding:3px 8px;color:var(--muted);">Limpiar</button>
+                        @if($canOpenSettings)
+                            <a href="{{ route('settings') }}" wire:navigate class="settings-link">⚙</a>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="dropdown-body">
                     @forelse($notifications as $notification)
-                        <div class="notification-item {{ $notification->read_at ? '' : 'unread' }}" wire:click="markRead({{ $notification->id }})">
+                        <div class="notification-item {{ $notification->read_at ? '' : 'unread' }}">
                             <span class="notification-dot type-{{ $notification->type }}"></span>
-                            <span class="notification-content">
+                            <span class="notification-content" wire:click="markRead({{ $notification->id }})" style="cursor:pointer;flex:1;">
                                 @if($notification->link)
                                     <a href="{{ $notification->link }}" wire:navigate>{{ $notification->title }}</a>
                                 @else
@@ -46,6 +51,14 @@
                                 <small>{{ $notification->message }}</small>
                                 <em>{{ $notification->created_at->diffForHumans() }}</em>
                             </span>
+                            <button
+                                type="button"
+                                wire:click="deleteNotification({{ $notification->id }})"
+                                title="Eliminar"
+                                style="flex-shrink:0;background:none;border:none;color:var(--muted-2);cursor:pointer;padding:2px 4px;font-size:13px;line-height:1;"
+                                onmouseover="this.style.color='#ff4757'"
+                                onmouseout="this.style.color='var(--muted-2)'"
+                            >×</button>
                         </div>
                     @empty
                         <div class="dropdown-empty">No hay notificaciones pendientes.</div>

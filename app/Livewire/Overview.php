@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Models\Agent;
 use App\Models\Bonus;
 use App\Models\BonusAssignment;
-use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Post;
 use App\Models\Promotion;
@@ -14,6 +13,9 @@ use App\Models\RaffleNumber;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SalesStats;
+use App\Support\LineRoles;
+use App\Support\Roles;
+use App\Traits\HasLinePermissions;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -21,6 +23,8 @@ use Livewire\Component;
 #[Layout('layouts.dashboard')]
 class Overview extends Component
 {
+    use HasLinePermissions;
+
     public $editingStats = false;
 
     public $editBestSales = [];
@@ -40,8 +44,6 @@ class Overview extends Component
                 'route' => 'tickets', 'link' => 'Ver tickets →'];
         }
 
-        
-
         return $alerts;
     }
 
@@ -51,15 +53,15 @@ class Overview extends Component
         $today = Carbon::today();
         $yesterday = Carbon::yesterday();
 
-        $total = User::count();
-        $active = User::where('status', 'active')->count();
-        $blocked = User::where('status', 'blocked')->count();
+        $total = $this->clientUsersQuery()->count();
+        $active = $this->clientUsersQuery()->where('status', 'active')->count();
+        $blocked = $this->clientUsersQuery()->where('status', 'blocked')->count();
 
-        $todayNew = User::whereDate('created_at', $today)->count();
-        $yesterdayNew = User::whereDate('created_at', $yesterday)->count();
-        $weekNew = User::where('created_at', '>=', $now->copy()->startOfWeek())->count();
-        $monthNew = User::where('created_at', '>=', $now->copy()->startOfMonth())->count();
-        $lastMonthNew = User::whereBetween('created_at', [
+        $todayNew = $this->clientUsersQuery()->whereDate('created_at', $today)->count();
+        $yesterdayNew = $this->clientUsersQuery()->whereDate('created_at', $yesterday)->count();
+        $weekNew = $this->clientUsersQuery()->where('created_at', '>=', $now->copy()->startOfWeek())->count();
+        $monthNew = $this->clientUsersQuery()->where('created_at', '>=', $now->copy()->startOfMonth())->count();
+        $lastMonthNew = $this->clientUsersQuery()->whereBetween('created_at', [
             $now->copy()->subMonth()->startOfMonth(),
             $now->copy()->subMonth()->endOfMonth(),
         ])->count();
@@ -109,14 +111,14 @@ class Overview extends Component
         $expiredBonuses = Bonus::where('end_date', '<', $now)->count();
         $totalBonuses = Bonus::count();
 
-        $activeAssign = BonusAssignment::where('status', 'active')->count();
-        $usedAssign = BonusAssignment::where('status', 'used')->count();
-        $expiredAssign = BonusAssignment::where('status', 'expired')->count();
-        $totalAssign = BonusAssignment::count();
+        $activeAssign = $this->bonusAssignmentsQuery()->where('status', 'active')->count();
+        $usedAssign = $this->bonusAssignmentsQuery()->where('status', 'used')->count();
+        $expiredAssign = $this->bonusAssignmentsQuery()->where('status', 'expired')->count();
+        $totalAssign = $this->bonusAssignmentsQuery()->count();
 
-        $usedMonth = BonusAssignment::where('status', 'used')
+        $usedMonth = $this->bonusAssignmentsQuery()->where('status', 'used')
             ->where('used_at', '>=', $monthStart)->count();
-        $expiredMonth = BonusAssignment::where('status', 'expired')
+        $expiredMonth = $this->bonusAssignmentsQuery()->where('status', 'expired')
             ->where('updated_at', '>=', $monthStart)->count();
         $denominator = $usedMonth + $expiredMonth;
         $conversionRate = $denominator > 0 ? round($usedMonth / $denominator * 100) : 0;
@@ -133,12 +135,12 @@ class Overview extends Component
         $ended = Raffle::where('status', 'ended')->count();
         $total = $active + $upcoming + $ended;
 
-        $totalNumbers = RaffleNumber::count();
-        $uniqueParticip = RaffleNumber::distinct('user_id')->count('user_id');
+        $totalNumbers = $this->raffleNumbersQuery()->count();
+        $uniqueParticip = $this->raffleNumbersQuery()->select('user_id')->distinct()->count();
 
         $activeRaffle = Raffle::where('status', 'active')->orderBy('end_date')->first();
         $numbersActive = $activeRaffle
-            ? RaffleNumber::where('raffle_id', $activeRaffle->id)->count()
+            ? $this->raffleNumbersQuery()->where('raffle_id', $activeRaffle->id)->count()
             : 0;
 
         return compact('active', 'upcoming', 'ended', 'total',
@@ -162,11 +164,11 @@ class Overview extends Component
 
     public function getAgentStats(): array
     {
-        $total = Agent::count();
-        $active = Agent::where('status', 'active')->count();
-        $inactive = Agent::where('status', '!=', 'active')->count();
-        $parents = Agent::whereNull('parent_id')->count();
-        $children = Agent::whereNotNull('parent_id')->count();
+        $total = $this->agentsQuery()->count();
+        $active = $this->agentsQuery()->where('status', 'active')->count();
+        $inactive = $this->agentsQuery()->where('status', '!=', 'active')->count();
+        $parents = $this->agentsQuery()->whereNull('parent_id')->count();
+        $children = $this->agentsQuery()->whereNotNull('parent_id')->count();
 
         return compact('total', 'active', 'inactive', 'parents', 'children');
     }
@@ -185,17 +187,17 @@ class Overview extends Component
 
     public function getRegisteredUsersCount(): int
     {
-        return User::count();
+        return $this->clientUsersQuery()->count();
     }
 
     public function getAgentsCount(): int
     {
-        return Agent::count();
+        return $this->agentsQuery()->count();
     }
 
     public function getAgentsCountByLine($lineId = null, $role = null): int
     {
-        $query = LineAgent::query();
+        $query = $this->lineAgentsQuery();
 
         if ($lineId) {
             $query->where('line_id', $lineId);
@@ -233,14 +235,14 @@ class Overview extends Component
 
     public function getLast10RegisteredUsers()
     {
-        return User::orderBy('created_at', 'desc')
+        return $this->clientUsersQuery()->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
     }
 
     public function getRecentUsers()
     {
-        return User::orderBy('created_at', 'desc')->limit(6)->get();
+        return $this->clientUsersQuery()->orderBy('created_at', 'desc')->limit(6)->get();
     }
 
     public function getUrgentTickets()
@@ -254,6 +256,8 @@ class Overview extends Component
 
     public function render()
     {
+        $this->ensureAdmin();
+
         return view('livewire.overview', [
             'alerts' => $this->getAlerts(),
             'users' => $this->getUserStats(),
@@ -267,12 +271,95 @@ class Overview extends Component
             'urgentTickets' => $this->getUrgentTickets(),
             'registeredUsersCount' => $this->getRegisteredUsersCount(),
             'agentsCount' => $this->getAgentsCount(),
-            'agentsCountByLine' => LineAgent::count(),
-            'agentsCountEncargado' => LineAgent::where('role', 'encargado')->count(),
+            'agentsCountByLine' => $this->lineAgentsQuery()->count(),
+            'agentsCountEncargado' => $this->lineAgentsQuery()->where('role', LineRoles::ENCARGADO)->count(),
             'activeBonosCount' => $this->getActiveBonosCount(),
             'rafflesByLineCount' => $this->getRafflesByLineCount(),
             'bestSellingLine' => $this->getBestSellingLineOfMonth(),
             'last10Users' => $this->getLast10RegisteredUsers(),
         ]);
+    }
+
+    private function ensureAdmin(): void
+    {
+        if (! $this->isAdminMode()) {
+            abort(403, 'Solo el administrador general puede acceder al dashboard.');
+        }
+    }
+
+    // Usa el método del trait HasLinePermissions::visibleLineIds()
+
+    private function clientUsersQuery()
+    {
+        $query = User::query()
+            ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE));
+
+        $lineIds = $this->visibleLineIds();
+        if ($lineIds !== null) {
+            $query->where(function ($inner) use ($lineIds) {
+                if ($lineIds === []) {
+                    $inner->whereRaw('1 = 0');
+
+                    return;
+                }
+
+                $inner->whereIn('line_id', $lineIds)
+                    ->orWhereHas('lines', fn ($line) => $line
+                        ->whereIn('lines.id', $lineIds)
+                        ->where('line_clients.is_active', true));
+            });
+        }
+
+        return $query;
+    }
+
+    private function agentsQuery()
+    {
+        $query = Agent::query();
+        $lineIds = $this->visibleLineIds();
+
+        if ($lineIds !== null) {
+            $query->whereHas('lineAgents', fn ($lineAgent) => $lineAgent
+                ->whereIn('line_id', $lineIds)
+                ->where('is_active', true));
+        }
+
+        return $query;
+    }
+
+    private function lineAgentsQuery()
+    {
+        $query = LineAgent::query();
+        $lineIds = $this->visibleLineIds();
+
+        if ($lineIds !== null) {
+            $query->whereIn('line_id', $lineIds);
+        }
+
+        return $query;
+    }
+
+    private function bonusAssignmentsQuery()
+    {
+        $query = BonusAssignment::query();
+        $lineIds = $this->visibleLineIds();
+
+        if ($lineIds !== null) {
+            $query->whereHas('bonus', fn ($bonus) => $bonus->whereIn('line_id', $lineIds));
+        }
+
+        return $query;
+    }
+
+    private function raffleNumbersQuery()
+    {
+        $query = RaffleNumber::query();
+        $lineIds = $this->visibleLineIds();
+
+        if ($lineIds !== null) {
+            $query->whereIn('line_id', $lineIds);
+        }
+
+        return $query;
     }
 }

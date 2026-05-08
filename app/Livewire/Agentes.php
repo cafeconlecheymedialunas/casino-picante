@@ -6,6 +6,11 @@ use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
+use App\Models\Role;
+use App\Models\User;
+use App\Support\LineRoles;
+use App\Support\Permissions;
+use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Facades\Hash;
@@ -79,7 +84,7 @@ class Agentes extends Component
 
     public function openCreateModal(): void
     {
-        $this->checkLinePermission('agent.create');
+        $this->checkLinePermission(Permissions::AGENT_CREATE);
         $this->resetForm();
         $this->lineIds = array_filter([(int) (session('active_line_id') ?: Line::orderBy('name')->value('id'))]);
         $this->showModal = true;
@@ -87,7 +92,7 @@ class Agentes extends Component
 
     public function openEditModal(int $agentId): void
     {
-        $this->checkLinePermission('agent.update');
+        $this->checkLinePermission(Permissions::AGENT_UPDATE);
 
         $agent = Agent::with('lineAgents')->findOrFail($agentId);
         $this->authorizeAgentScope($agent);
@@ -134,8 +139,8 @@ class Agentes extends Component
     public function saveAgent(): void
     {
         $this->editingAgentId
-            ? $this->checkLinePermission('agent.update')
-            : $this->checkLinePermission('agent.create');
+            ? $this->checkLinePermission(Permissions::AGENT_UPDATE)
+            : $this->checkLinePermission(Permissions::AGENT_CREATE);
 
         $this->validate($this->rules());
         $this->authorizeSelectedLines();
@@ -159,31 +164,37 @@ class Agentes extends Component
             $agent = Agent::findOrFail($this->editingAgentId);
             $this->authorizeAgentScope($agent);
             $agent->update($data);
+            $this->syncAgentUser($agent);
             session()->flash('message', 'Agente actualizado correctamente.');
 
-            $this->notify('Agente actualizado', "El agente {$agent->name} fue actualizado.", 'agents', '/agentes', 'info');
+            $editorName = $this->currentAgentDisplayName();
+            $this->notify('Agente actualizado', "{$editorName} actualizó los datos del agente {$agent->name}.", 'agents', '/agentes', 'info');
+            $this->notifyAffectedAgent($agent, 'Tu perfil fue actualizado', "{$editorName} modificó tus datos de agente.", 'info');
         } else {
             $data['password'] = Hash::make($this->password);
             $agent = Agent::create($data);
+            $this->syncAgentUser($agent);
             session()->flash('message', 'Agente creado correctamente.');
 
-            $this->notify('Nuevo agente creado', "El agente {$agent->name} fue creado exitosamente.", 'agents', '/agentes', 'success');
+            $creatorName = $this->currentAgentDisplayName();
+            $this->notify('Nuevo agente creado', "{$creatorName} creó el agente {$agent->name} exitosamente.", 'agents', '/agentes', 'success');
+            $this->notifyAffectedAgent($agent, 'Bienvenido al panel', "Tu cuenta de agente fue creada por {$creatorName}.", 'success');
         }
 
         $this->syncLineAssignment($agent);
-        $this->notifyAffectedAgent($agent);
         $this->closeModal();
     }
 
     public function toggleStatus(int $agentId): void
     {
-        $this->checkLinePermission('agent.update');
+        $this->checkLinePermission(Permissions::AGENT_UPDATE);
 
         $agent = Agent::findOrFail($agentId);
         $this->authorizeAgentScope($agent);
 
         $newStatus = $agent->status === 'active' ? 'inactive' : 'active';
         $agent->update(['status' => $newStatus]);
+        $agent->user?->update(['status' => $newStatus]);
 
         LineAgent::where('agent_id', $agentId)->update(['is_active' => $newStatus === 'active']);
         session()->flash('message', $newStatus === 'active' ? 'Agente activado.' : 'Agente pausado.');
@@ -204,11 +215,12 @@ class Agentes extends Component
 
     public function deleteAgent(int $agentId): void
     {
-        $this->checkLinePermission('agent.update');
+        $this->checkLinePermission(Permissions::AGENT_UPDATE);
 
         $agent = Agent::findOrFail($agentId);
         $this->authorizeAgentScope($agent);
         $agentName = $agent->name;
+        $agent->user?->update(['status' => 'inactive']);
         $agent->delete();
 
         session()->flash('message', 'Agente eliminado correctamente.');
@@ -218,9 +230,10 @@ class Agentes extends Component
 
     public function openPermissions(int $agentId, int $lineId): void
     {
-        $this->checkLinePermission('agent.permissions');
+        $this->checkLinePermission(Permissions::AGENT_PERMISSIONS);
 
         $line = Line::findOrFail($lineId);
+        $this->authorizeLineScope($lineId);
         $linePermissions = $line->permissions ?? [];
 
         if ($this->isAdminMode()) {
@@ -249,11 +262,13 @@ class Agentes extends Component
 
     public function savePermissions(): void
     {
-        $this->checkLinePermission('agent.permissions');
+        $this->checkLinePermission(Permissions::AGENT_PERMISSIONS);
 
         if (! $this->permEditAgentId || ! $this->permEditLineId) {
             return;
         }
+
+        $this->authorizeLineScope($this->permEditLineId);
 
         $toSave = array_values(array_intersect($this->permEditSelected, $this->permEditAvailable));
 
@@ -277,7 +292,7 @@ class Agentes extends Component
 
     public function getCanCreateAgentsProperty(): bool
     {
-        return $this->hasLinePermission('agent.create');
+        return $this->hasLinePermission(Permissions::AGENT_CREATE);
     }
 
     public function getAvailableLinesProperty()
@@ -333,19 +348,22 @@ class Agentes extends Component
             'lines'            => $this->availableLines,
             'canCreateAgents'  => $this->canCreateAgents,
             'detailAgent'      => $detailAgent,
-            'permissionCatalog' => LineAgentPermission::$catalog,
+            'permissionCatalog' => Permissions::catalog(),
         ])->layout('layouts.dashboard');
     }
 
     private function rules(): array
     {
         $id = $this->editingAgentId ?: 'NULL';
+        $userId = $this->editingAgentId
+            ? (Agent::find($this->editingAgentId)?->user_id ?: 'NULL')
+            : 'NULL';
 
         return [
-            'username' => "nullable|min:3|max:60|alpha_dash|unique:agents,username,{$id}",
+            'username' => "nullable|min:3|max:60|alpha_dash|unique:agents,username,{$id}|unique:users,username,{$userId}",
             'name' => 'required|min:2|max:100',
             'apellido' => 'nullable|max:100',
-            'email' => "required|email|unique:agents,email,{$id}",
+            'email' => "required|email|unique:agents,email,{$id}|unique:users,email,{$userId}",
             'password' => $this->editingAgentId ? 'nullable|min:6' : 'required|min:6',
             'phone' => 'nullable|max:30',
             'status' => 'required|in:active,inactive',
@@ -390,7 +408,7 @@ class Agentes extends Component
             LineAgent::updateOrCreate(
                 ['line_id' => $lineId, 'agent_id' => $agent->id],
                 [
-                    'role' => $this->cargo === 'super_agente' ? 'encargado' : 'miembro',
+                    'role' => $this->cargo === 'super_agente' ? LineRoles::ENCARGADO : LineRoles::MIEMBRO,
                     'is_active' => $this->status === 'active',
                 ]
             );
@@ -413,6 +431,37 @@ class Agentes extends Component
             '/perfil',
             $type
         );
+    }
+
+    private function syncAgentUser(Agent $agent): void
+    {
+        $roleId = Role::where('name', Roles::AGENTE)->value('id');
+        $userData = [
+            'role_id' => $roleId,
+            'username' => $agent->username,
+            'name' => $agent->name,
+            'apellido' => $agent->apellido,
+            'email' => $agent->email,
+            'phone' => $agent->phone,
+            'status' => $agent->status,
+            'avatar' => $agent->avatar,
+        ];
+
+        if ($this->password !== '') {
+            $userData['password'] = Hash::make($this->password);
+        }
+
+        $user = $agent->user ?: User::where('email', $agent->email)->first();
+        if ($user) {
+            $user->update($userData);
+        } else {
+            $userData['password'] = $userData['password'] ?? $agent->password;
+            $user = User::create($userData);
+        }
+
+        if (! $agent->user_id) {
+            $agent->update(['user_id' => $user->id]);
+        }
     }
 
     private function availableLineIds(): array
@@ -476,6 +525,29 @@ class Agentes extends Component
         if ($selectedLineIds->diff($allowedLineIds)->isNotEmpty()) {
             abort(403, 'No podes asignar agentes a lineas fuera de tu alcance.');
         }
+    }
+
+    private function authorizeLineScope(int $lineId): void
+    {
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        if (! in_array((int) $lineId, $this->availableLineIds(), true)) {
+            abort(403, 'No podes gestionar permisos fuera de tus lineas.');
+        }
+    }
+
+    private function currentAgentDisplayName(): string
+    {
+        $agentId = session('active_agent_id');
+        if ($agentId) {
+            $agent = Agent::find($agentId);
+            return $agent ? trim($agent->name.' '.($agent->apellido ?? '')) : 'Un encargado';
+        }
+
+        $user = auth()->user();
+        return $user ? trim($user->name.' '.($user->apellido ?? '')) : 'El administrador';
     }
 
     private function makeUsername(string $name, string $email): string

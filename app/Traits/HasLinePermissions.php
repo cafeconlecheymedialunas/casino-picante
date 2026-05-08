@@ -6,6 +6,7 @@ use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
+use App\Support\Roles;
 
 trait HasLinePermissions
 {
@@ -13,6 +14,7 @@ trait HasLinePermissions
     public function getActiveLine(): ?Line
     {
         $lineId = session('active_line_id');
+
         return $lineId ? Line::find($lineId) : null;
     }
 
@@ -20,7 +22,7 @@ trait HasLinePermissions
     public function getCurrentLineAgent(): ?LineAgent
     {
         $agentId = session('active_agent_id');
-        $lineId  = session('active_line_id');
+        $lineId = session('active_line_id');
 
         if (! $agentId || ! $lineId) {
             return null;
@@ -36,13 +38,18 @@ trait HasLinePermissions
     public function getCurrentAgent(): ?Agent
     {
         $agentId = session('active_agent_id');
-        return $agentId ? Agent::find($agentId) : null;
+
+        if ($agentId) {
+            return Agent::find($agentId);
+        }
+
+        return auth()->user()?->agent;
     }
 
-    // Returns true when no agent is in session (admin/bypass mode)
+    // Returns true when the authenticated user has the global admin role.
     public function isAdminMode(): bool
     {
-        return session('active_agent_id') === null;
+        return auth()->user()?->hasRole(Roles::ADMIN) ?? false;
     }
 
     // True if current agent has the given permission on the active line.
@@ -78,6 +85,7 @@ trait HasLinePermissions
         }
 
         $lineAgent = $this->getCurrentLineAgent();
+
         return $lineAgent ? $lineAgent->getPermissionsListAttribute() : [];
     }
 
@@ -86,5 +94,32 @@ trait HasLinePermissions
     public function canDelegate(string $permission): bool
     {
         return $this->hasLinePermission($permission);
+    }
+
+    // Returns the list of line IDs the current user/agent can see.
+    // Admin with active_line_id set sees only that line; without it sees all (null).
+    // Agents see only their assigned active lines.
+    public function visibleLineIds(): ?array
+    {
+        $activeLineId = session('active_line_id');
+
+        if ($this->isAdminMode()) {
+            return $activeLineId ? [(int) $activeLineId] : null;
+        }
+
+        if ($activeLineId) {
+            return [(int) $activeLineId];
+        }
+
+        $agentId = session('active_agent_id');
+        if (! $agentId) {
+            return [];
+        }
+
+        return LineAgent::where('agent_id', $agentId)
+            ->where('is_active', true)
+            ->pluck('line_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 }

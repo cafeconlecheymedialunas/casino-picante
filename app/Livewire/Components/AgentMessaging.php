@@ -4,10 +4,14 @@ namespace App\Livewire\Components;
 
 use App\Models\Agent;
 use App\Models\Chat;
+use App\Support\Permissions;
+use App\Traits\HasLinePermissions;
 use Livewire\Component;
 
 class AgentMessaging extends Component
 {
+    use HasLinePermissions;
+
     public ?int $targetUserId = null;
 
     public ?int $targetAgentId = null;
@@ -28,6 +32,7 @@ class AgentMessaging extends Component
 
     public function openPanel(): void
     {
+        $this->authorizeMessaging();
         $this->activeChatId = $this->findOrCreateDirectChat()?->id;
         $this->open = true;
     }
@@ -60,6 +65,7 @@ class AgentMessaging extends Component
 
     private function findOrCreateDirectChat(): ?Chat
     {
+        $this->authorizeMessaging();
         $agentId = $this->directAgentId();
 
         if (! $agentId) {
@@ -99,5 +105,21 @@ class AgentMessaging extends Component
         }
 
         return null;
+    }
+
+    private function authorizeMessaging(): void
+    {
+        if ($this->targetUserId) {
+            $this->checkLinePermission(Permissions::USER_READ);
+            return;
+        }
+
+        if (
+            ! $this->hasLinePermission(Permissions::AGENT_UPDATE)
+            && ! $this->hasLinePermission(Permissions::AGENT_ASSIGN)
+            && ! $this->hasLinePermission(Permissions::TICKET_READ)
+        ) {
+            abort(403, 'Sin permiso para enviar mensajes.');
+        }
     }
 }

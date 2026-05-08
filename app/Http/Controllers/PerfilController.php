@@ -12,14 +12,10 @@ class PerfilController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $isAgent = session('active_agent_id') !== null;
+        $agent = session('active_agent_id') ? Agent::find(session('active_agent_id')) : null;
 
-        if ($isAgent && ! $user) {
-            $agentId = session('active_agent_id');
-            $agent = Agent::find($agentId);
-            if ($agent) {
-                return view('perfil.index', ['user' => $agent, 'isAgent' => true]);
-            }
+        if ($agent) {
+            return view('perfil.index', ['user' => $agent, 'isAgent' => true]);
         }
 
         if ($user) {
@@ -38,16 +34,24 @@ class PerfilController extends Controller
         if ($isAgent) {
             $agentId = session('active_agent_id');
             $agent = Agent::find($agentId);
+            $user = $request->user();
 
             if ($agent) {
                 $request->validate([
                     'name' => 'required|string|max:255',
+                    'apellido' => 'nullable|string|max:255',
                     'avatar' => 'sometimes|string|in:'.implode(',', $availableAvatars),
                 ]);
 
                 $agent->update([
                     'name' => $request->name,
                     'avatar' => $request->avatar ?? $agent->avatar,
+                ]);
+
+                $user?->update([
+                    'name' => $request->name,
+                    'apellido' => $request->apellido ?? $user->apellido,
+                    'avatar' => $request->avatar ?? $user->avatar,
                 ]);
 
                 return back()->with('message', 'Perfil actualizado correctamente');
@@ -77,19 +81,27 @@ class PerfilController extends Controller
         if ($isAgent) {
             $agentId = session('active_agent_id');
             $agent = Agent::find($agentId);
+            $user = $request->user();
 
-            if ($agent) {
-                $request->validate([
-                    'current_password' => ['required', 'current_password'],
-                    'password' => ['required', Password::defaults(), 'confirmed'],
-                ]);
-
-                $agent->update([
-                    'password' => Hash::make($request->password),
-                ]);
-
-                return back()->with('message', 'Contraseña actualizada correctamente');
+            if (! $agent) {
+                return back()->with('error', 'Agente no encontrado.');
             }
+
+            $request->validate([
+                'current_password' => 'required|string',
+                'password' => ['required', Password::defaults(), 'confirmed'],
+            ]);
+
+            $currentHash = $user?->password ?: $agent->password;
+            if (! Hash::check($request->current_password, $currentHash)) {
+                return back()->withErrors(['current_password' => 'La contraseña actual es incorrecta.']);
+            }
+
+            $password = Hash::make($request->password);
+            $agent->update(['password' => $password]);
+            $user?->update(['password' => $password]);
+
+            return back()->with('message', 'Contraseña actualizada correctamente');
         }
 
         $request->validate([

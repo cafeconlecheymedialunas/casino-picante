@@ -84,7 +84,7 @@
         <div class="flash-message">{{ session('info') }}</div>
     @endif
 
-    @if($this->hasLinePermission('sorteo.create'))
+    @if($this->hasLinePermission(\App\Support\Permissions::SORTEO_CREATE))
         <div class="page-action-strip">
             <button type="button" class="btn-primary" wire:click="openCreate">+ Crear sorteo</button>
         </div>

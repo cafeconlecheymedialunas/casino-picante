@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Livewire\Component;
@@ -27,7 +28,8 @@ class Tickets extends Component
 
     public function selectTicket($id)
     {
-        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($id);
+        $this->checkLinePermission(Permissions::TICKET_READ);
+        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->findOrFail($id);
         $this->dispatch('ticketSelected');
     }
 
@@ -38,7 +40,7 @@ class Tickets extends Component
 
     public function sendMessage()
     {
-        $this->checkLinePermission('ticket.update');
+        $this->checkLinePermission(Permissions::TICKET_UPDATE);
 
         $this->validate([
             'newMessage' => 'required|string|min:1',
@@ -64,7 +66,7 @@ class Tickets extends Component
 
     public function quickAction($type)
     {
-        $this->checkLinePermission('ticket.update');
+        $this->checkLinePermission(Permissions::TICKET_UPDATE);
 
         if (! $this->selectedTicket) {
             return;
@@ -93,6 +95,8 @@ class Tickets extends Component
 
     public function updateStatus($status)
     {
+        $this->checkLinePermission(Permissions::TICKET_UPDATE);
+
         if ($this->selectedTicket) {
             $this->selectedTicket->update(['status' => $status]);
             $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
@@ -103,9 +107,14 @@ class Tickets extends Component
 
     public function getTickets()
     {
-        $this->checkLinePermission('ticket.read');
+        $this->checkLinePermission(Permissions::TICKET_READ);
 
         $query = Ticket::with(['user', 'line']);
+
+        $lineIds = $this->visibleLineIds();
+        if ($lineIds !== null) {
+            $query->whereIn('line_id', $lineIds);
+        }
 
         if ($this->filter !== 'all') {
             $query->where('status', $this->filter);
@@ -125,11 +134,18 @@ class Tickets extends Component
 
     public function getMetrics()
     {
-        return [
-            'open' => Ticket::where('status', 'open')->count(),
-            'progress' => Ticket::where('status', 'progress')->count(),
-            'closed' => Ticket::where('status', 'closed')->count(),
-        ];
+        $lineIds = $this->visibleLineIds();
+
+        $base = Ticket::query();
+        if ($lineIds !== null) {
+            $base->whereIn('line_id', $lineIds);
+        }
+
+        $open = (clone $base)->where('status', 'open')->count();
+        $progress = (clone $base)->where('status', 'progress')->count();
+        $closed = (clone $base)->where('status', 'closed')->count();
+
+        return compact('open', 'progress', 'closed');
     }
 
     public function render()

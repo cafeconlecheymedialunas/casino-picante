@@ -9,7 +9,10 @@ use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
+use App\Models\Role;
 use App\Models\User;
+use App\Support\Permissions;
+use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -17,6 +20,17 @@ use Tests\TestCase;
 class SorteosNumberCrudTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $role = Role::firstOrCreate(
+            ['name' => Roles::ADMIN],
+            ['label' => 'Administrador']
+        );
+        $this->actingAs(User::factory()->create(['role_id' => $role->id]));
+    }
 
     public function test_raffle_can_be_created_without_optional_prizes(): void
     {
@@ -145,6 +159,10 @@ class SorteosNumberCrudTest extends TestCase
 
         $firstClient = User::factory()->create(['username' => 'cliente_uno']);
         $secondClient = User::factory()->create(['username' => 'cliente_dos']);
+        $line->clients()->syncWithoutDetaching([
+            $firstClient->id => ['is_active' => true],
+            $secondClient->id => ['is_active' => true],
+        ]);
 
         $raffle = Raffle::withoutGlobalScopes()->create([
             'title' => 'Sorteo Test',
@@ -219,10 +237,11 @@ class SorteosNumberCrudTest extends TestCase
         LineAgentPermission::create([
             'line_id' => $line->id,
             'agent_id' => $agent->id,
-            'permission' => 'sorteo.read',
+            'permission' => Permissions::SORTEO_READ,
         ]);
 
         $client = User::factory()->create(['username' => 'cliente_uno']);
+        $line->clients()->syncWithoutDetaching([$client->id => ['is_active' => true]]);
         $raffle = Raffle::withoutGlobalScopes()->create([
             'title' => 'Sorteo Test',
             'description' => 'Test',
@@ -317,6 +336,7 @@ class SorteosNumberCrudTest extends TestCase
             'status' => 'active',
         ]);
         $client = User::factory()->create(['username' => 'cliente_uno']);
+        $line->clients()->syncWithoutDetaching([$client->id => ['is_active' => true]]);
         $raffle = Raffle::withoutGlobalScopes()->create([
             'title' => 'Sorteo Test',
             'description' => 'Test',
@@ -356,6 +376,7 @@ class SorteosNumberCrudTest extends TestCase
             'status' => 'active',
         ]);
         $client = User::factory()->create(['username' => 'cliente_uno']);
+        $line->clients()->syncWithoutDetaching([$client->id => ['is_active' => true]]);
         $raffle = Raffle::withoutGlobalScopes()->create([
             'title' => 'Sorteo Test',
             'description' => 'Test',

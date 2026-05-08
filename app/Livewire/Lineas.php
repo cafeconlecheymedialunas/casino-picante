@@ -10,6 +10,8 @@ use App\Models\Platform;
 use App\Models\Sale;
 use App\Services\SalesStats;
 use App\Support\ImageStorage;
+use App\Support\LineRoles;
+use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Collection;
@@ -104,7 +106,7 @@ class Lineas extends Component
 
     public function openCreateModal(): void
     {
-        $this->checkLinePermission('line.create');
+        $this->checkLinePermission(Permissions::LINE_CREATE);
         $this->resetForm();
         $this->editTab = 'info';
         $this->showModal = true;
@@ -143,7 +145,7 @@ class Lineas extends Component
     {
         $this->editingLineId
             ? $this->authorizeLineEdit(Line::findOrFail($this->editingLineId))
-            : $this->checkLinePermission('line.create');
+            : $this->checkLinePermission(Permissions::LINE_CREATE);
 
         $this->validate();
 
@@ -198,20 +200,14 @@ class Lineas extends Component
             $isEdit ? 'Linea actualizada correctamente.' : 'Linea creada correctamente.'
         );
 
-        $this->notify(
-            $isEdit ? 'Linea actualizada' : 'Linea creada',
-            'La linea ' . $line->name . ' fue ' . ($isEdit ? 'actualizada' : 'creada') . '.',
-            'lines',
-            '/lineas',
-            $isEdit ? 'info' : 'success'
-        );
-
-        $this->notifyLineEncargados(
-            $line,
-            $isEdit ? 'Linea asignada actualizada' : 'Nueva linea asignada',
-            'Tenes acceso como encargado a la linea ' . $line->name . '.',
-            $isEdit ? 'info' : 'success'
-        );
+        if ($encargadoId) {
+            $this->notifyLineEncargados(
+                $line,
+                $isEdit ? 'Linea asignada actualizada' : 'Nueva linea asignada',
+                'Tenes acceso como encargado a la linea ' . $line->name . '.',
+                $isEdit ? 'info' : 'success'
+            );
+        }
 
         $this->closeModal();
     }
@@ -243,10 +239,14 @@ class Lineas extends Component
         );
     }
 
-    // ── Images ─────────────────────────────────────────────────────────────────
-
     public function deleteImage(string $field): void
     {
+        if ($this->editingLineId) {
+            $this->authorizeLineEdit(Line::findOrFail($this->editingLineId));
+        } else {
+            $this->checkLinePermission(Permissions::LINE_EDIT_BRANDING);
+        }
+
         if ($field === 'portada') {
             if ($this->editingLineId && $this->portada_url) {
                 ImageStorage::delete($this->portada_url);
@@ -284,7 +284,7 @@ class Lineas extends Component
         // If acting as encargado (not admin) further restrict to encargado's own perms
         if (! $this->isAdminMode()) {
             $encargadoLA = LineAgent::where('line_id', $lineAgent->line_id)
-                ->where('role', 'encargado')
+                ->where('role', LineRoles::ENCARGADO)
                 ->first();
 
             if ($encargadoLA) {
@@ -329,9 +329,16 @@ class Lineas extends Component
         $line = Line::findOrFail($this->editingLineId);
         $this->authorizeLineEdit($line);
 
-        LineAgent::firstOrCreate(
+        $result = LineAgent::firstOrCreate(
             ['line_id' => $line->id, 'agent_id' => $agentId],
-            ['role' => 'miembro', 'is_active' => true]
+            ['role' => LineRoles::MIEMBRO, 'is_active' => true]
+        );
+
+        session()->flash(
+            'message',
+            $result->wasRecentlyCreated
+                ? 'Agente agregado a la linea.'
+                : 'El agente ya estaba asignado a esta linea.'
         );
     }
 
@@ -340,7 +347,7 @@ class Lineas extends Component
         $lineAgent = LineAgent::with('line')->findOrFail($lineAgentId);
         $this->authorizeLineEdit($lineAgent->line);
 
-        if ($lineAgent->role === 'encargado') {
+        if ($lineAgent->role === LineRoles::ENCARGADO) {
             session()->flash('message', 'No se puede eliminar el encargado desde aquí. Cambialo en la pestaña Encargado.');
             return;
         }
@@ -384,7 +391,10 @@ class Lineas extends Component
 
     public function openEditSaleInModal(int $saleId): void
     {
-        $sale = Sale::where('line_id', $this->editingLineId)->findOrFail($saleId);
+        $line = Line::findOrFail($this->editingLineId);
+        $this->authorizeLineEdit($line);
+
+        $sale = Sale::where('line_id', $line->id)->findOrFail($saleId);
         $this->editingSaleId   = $sale->id;
         $this->salePlatformId  = $sale->platform_id;
         $this->saleDate        = $sale->fecha->format('Y-m-d');
@@ -413,7 +423,7 @@ class Lineas extends Component
 
         $monto   = (float) $this->saleMontoFichas;
         $percent = (float) $line->lineAgents()
-            ->where('role', 'encargado')
+            ->where('role', LineRoles::ENCARGADO)
             ->value('porcentaje_ganancia');
 
         $data = [
@@ -473,6 +483,9 @@ class Lineas extends Component
 
     public function openDetailsModal(int $lineId): void
     {
+        $line = Line::findOrFail($lineId);
+        $this->authorizeLineView($line);
+
         $this->activeLineId     = $lineId;
         $this->showDetailsModal = true;
     }
@@ -500,7 +513,7 @@ class Lineas extends Component
 
         return LineAgent::where('line_id', $line->id)
             ->where('agent_id', session('active_agent_id'))
-            ->where('role', 'encargado')
+            ->where('role', LineRoles::ENCARGADO)
             ->exists();
     }
 
@@ -548,7 +561,7 @@ class Lineas extends Component
             'editSalesLine'       => $editSalesLine,
             'editLineAgents'      => $editLineAgents,
             'availableAgents'     => $availableAgents,
-            'permissionCatalog'   => LineAgentPermission::$catalog,
+            'permissionCatalog'   => Permissions::catalog(),
         ])->layout('layouts.dashboard');
     }
 
@@ -601,7 +614,7 @@ class Lineas extends Component
         $this->portada_url     = $line->portada_url ?? '';
         $this->perfil_url      = $line->perfil_url ?? '';
 
-        $encargado              = $line->lineAgents->firstWhere('role', 'encargado');
+        $encargado              = $line->lineAgents->firstWhere('role', LineRoles::ENCARGADO);
         $this->encargadoId      = (string) ($encargado?->agent_id ?? $line->encargado_id ?? '');
         $this->encargadoPercent = (string) ($encargado?->porcentaje_ganancia ?? $line->porcentaje_encargado ?? 0);
 
@@ -674,13 +687,13 @@ class Lineas extends Component
     private function syncEncargado(Line $line, int $agentId, float $percent): void
     {
         LineAgent::where('line_id', $line->id)
-            ->where('role', 'encargado')
+            ->where('role', LineRoles::ENCARGADO)
             ->where('agent_id', '!=', $agentId)
             ->delete();
 
         LineAgent::updateOrCreate(
             ['line_id' => $line->id, 'agent_id' => $agentId],
-            ['role' => 'encargado', 'is_active' => true, 'porcentaje_ganancia' => $percent]
+            ['role' => LineRoles::ENCARGADO, 'is_active' => true, 'porcentaje_ganancia' => $percent]
         );
     }
 
@@ -712,7 +725,7 @@ class Lineas extends Component
         $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
 
         LineAgent::where('line_id', $line->id)
-            ->where('role', 'encargado')
+            ->where('role', LineRoles::ENCARGADO)
             ->pluck('agent_id')
             ->unique()
             ->each(function ($agentId) use ($currentAgentId, $title, $message, $type) {
@@ -727,6 +740,22 @@ class Lineas extends Component
     {
         if (! $this->canManageLine($line)) {
             abort(403, 'Solo el administrador o el encargado puede editar esta linea.');
+        }
+    }
+
+    private function authorizeLineView(Line $line): void
+    {
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $canView = LineAgent::where('line_id', $line->id)
+            ->where('agent_id', session('active_agent_id'))
+            ->where('is_active', true)
+            ->exists();
+
+        if (! $canView) {
+            abort(403, 'No podes ver lineas fuera de tu alcance.');
         }
     }
 }

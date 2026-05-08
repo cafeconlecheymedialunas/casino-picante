@@ -19,6 +19,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'role_id',
         'username',
         'name',
         'apellido',
@@ -57,6 +58,21 @@ class User extends Authenticatable
     public function preferredLine()
     {
         return $this->belongsTo(Line::class, 'line_id');
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function agent()
+    {
+        return $this->hasOne(Agent::class);
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->role?->name === $role;
     }
 
     public function lines()

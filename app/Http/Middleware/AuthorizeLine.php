@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
+use App\Support\Roles;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,11 +14,23 @@ class AuthorizeLine
 {
     public function handle(Request $request, Closure $next, string $permission = null): Response
     {
-        $agentId = session('active_agent_id');
+        if (! auth()->check()) {
+            return redirect()->route('admin.login');
+        }
 
-        // No agent in session → admin/bypass mode, allow through
-        if (! $agentId) {
+        $user = $request->user();
+
+        if ($user->hasRole(Roles::ADMIN)) {
             return $next($request);
+        }
+
+        if (! $user->hasRole(Roles::AGENTE)) {
+            abort(403, 'No tenes acceso al panel.');
+        }
+
+        $agentId = session('active_agent_id') ?: $user->agent?->id;
+        if ($agentId) {
+            session(['active_agent_id' => $agentId]);
         }
 
         $agent = Agent::find($agentId);
@@ -52,8 +65,12 @@ class AuthorizeLine
             return redirect($request->url());
         }
 
-        // Check specific permission if provided
-        if ($permission && ! $lineAgent->hasPermission($permission)) {
+        // Check specific permission if provided. Multiple permissions mean "any of these".
+        $permissions = $permission
+            ? preg_split('/[|,]/', $permission, flags: PREG_SPLIT_NO_EMPTY)
+            : [];
+
+        if ($permissions && ! collect($permissions)->contains(fn (string $perm) => $lineAgent->hasPermission(trim($perm)))) {
             abort(403, "Sin permiso: {$permission}");
         }
 

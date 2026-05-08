@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Platform;
 use App\Models\Promotion;
+use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Livewire\Component;
@@ -44,7 +45,7 @@ class Promociones extends Component
 
     public function mount(): void
     {
-        if (! $this->hasLinePermission('promo.read')) {
+        if (! $this->hasLinePermission(Permissions::PROMO_READ)) {
             abort(403);
         }
     }
@@ -71,12 +72,13 @@ class Promociones extends Component
         return view('livewire.promociones', [
             'promos' => $query->latest()->paginate(12),
             'platforms' => Platform::orderBy('name')->get(),
-            'canCreate' => $this->hasLinePermission('promo.create'),
+            'canCreate' => $this->hasLinePermission(Permissions::PROMO_CREATE),
         ])->layout('layouts.dashboard');
     }
 
     public function openCreateModal(): void
     {
+        $this->checkLinePermission(Permissions::PROMO_CREATE);
         $this->resetForm();
         $this->editingPromoId = null;
         $this->showModal = true;
@@ -84,6 +86,7 @@ class Promociones extends Component
 
     public function openEditModal(int $promoId): void
     {
+        $this->checkLinePermission(Permissions::PROMO_UPDATE);
         $promo = Promotion::findOrFail($promoId);
         $this->editingPromoId = $promoId;
         $this->title = $promo->title;
@@ -101,7 +104,7 @@ class Promociones extends Component
 
     public function savePromo(): void
     {
-        $this->checkLinePermission($this->editingPromoId ? 'promo.update' : 'promo.create');
+        $this->checkLinePermission($this->editingPromoId ? Permissions::PROMO_UPDATE : Permissions::PROMO_CREATE);
 
         $data = $this->validate([
             'title' => 'required|string|max:255',
@@ -131,7 +134,7 @@ class Promociones extends Component
 
     public function deletePromo(int $promoId): void
     {
-        $this->checkLinePermission('promo.delete');
+        $this->checkLinePermission(Permissions::PROMO_DELETE);
         $promo = Promotion::findOrFail($promoId);
         $promoTitle = $promo->title;
         $promo->delete();
@@ -140,7 +143,7 @@ class Promociones extends Component
 
     public function toggleStatus(int $promoId): void
     {
-        $this->checkLinePermission('promo.update');
+        $this->checkLinePermission(Permissions::PROMO_UPDATE);
         $promo = Promotion::findOrFail($promoId);
         $newStatus = $promo->status === 'published' ? 'draft' : 'published';
         $promo->update(['status' => $newStatus]);

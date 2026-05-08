@@ -4,8 +4,11 @@ namespace App\Livewire;
 
 use App\Models\Line;
 use App\Models\LineAgent;
+use App\Models\LineAgentPermission;
 use App\Models\Sale;
 use App\Services\SalesStats;
+use App\Support\LineRoles;
+use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Collection;
@@ -35,14 +38,15 @@ class Ventas extends Component
 
     public int $saleAnio;
 
-    public string $saleFechaInicio = '';
+    public string $saleFecha = '';
 
-    public string $saleFechaFin = '';
+    public string $saleDescripcion = '';
 
     public string $saleMontoFichas = '';
 
     public function mount(): void
     {
+        $this->authorizeSalesAccess();
         $this->monthFilter = now()->month;
         $this->yearFilter = now()->year;
         $this->resetSaleForm();
@@ -50,6 +54,7 @@ class Ventas extends Component
 
     public function openCreateModal(): void
     {
+        $this->authorizeSalesAccess();
         $this->resetSaleForm();
         $this->showModal = true;
     }
@@ -62,10 +67,10 @@ class Ventas extends Component
         $this->editingSaleId = $sale->id;
         $this->saleLineId = (string) $sale->line_id;
         $this->salePlatformId = (string) $sale->platform_id;
-        $this->saleMes = $sale->mes;
-        $this->saleAnio = $sale->anio;
-        $this->saleFechaInicio = $sale->fecha_inicio->format('Y-m-d');
-        $this->saleFechaFin = $sale->fecha_fin->format('Y-m-d');
+        $this->saleMes = $sale->fecha->month;
+        $this->saleAnio = $sale->fecha->year;
+        $this->saleFecha = $sale->fecha->format('Y-m-d');
+        $this->saleDescripcion = $sale->descripcion ?? '';
         $this->saleMontoFichas = (string) $sale->monto_fichas;
         $this->showModal = true;
     }
@@ -83,8 +88,8 @@ class Ventas extends Component
             'salePlatformId' => 'required|integer|exists:platforms,id',
             'saleMes' => 'required|integer|min:1|max:12',
             'saleAnio' => 'required|integer|min:2020|max:2100',
-            'saleFechaInicio' => 'required|date',
-            'saleFechaFin' => 'required|date|after_or_equal:saleFechaInicio',
+            'saleFecha' => 'required|date',
+            'saleDescripcion' => 'nullable|string|max:255',
             'saleMontoFichas' => 'required|numeric|min:0',
         ]);
 
@@ -98,16 +103,14 @@ class Ventas extends Component
 
         $amount = (float) $this->saleMontoFichas;
         $percent = (float) $line->lineAgents()
-            ->where('role', 'encargado')
+            ->where('role', LineRoles::ENCARGADO)
             ->value('porcentaje_ganancia');
 
         $data = [
             'line_id' => $line->id,
             'platform_id' => (int) $this->salePlatformId,
-            'mes' => $this->saleMes,
-            'anio' => $this->saleAnio,
-            'fecha_inicio' => $this->saleFechaInicio,
-            'fecha_fin' => $this->saleFechaFin,
+            'fecha' => $this->saleFecha,
+            'descripcion' => trim($this->saleDescripcion) ?: null,
             'monto_fichas' => $amount,
             'ganancia_superagente' => $amount * ($percent / 100),
         ];
@@ -115,12 +118,7 @@ class Ventas extends Component
         if ($this->editingSaleId) {
             Sale::where('line_id', $line->id)->findOrFail($this->editingSaleId)->update($data);
         } else {
-            Sale::updateOrCreate([
-                'line_id' => $line->id,
-                'platform_id' => (int) $this->salePlatformId,
-                'mes' => $this->saleMes,
-                'anio' => $this->saleAnio,
-            ], $data);
+            Sale::create($data);
         }
 
         $this->monthFilter = $this->saleMes;
@@ -162,12 +160,12 @@ class Ventas extends Component
 
     public function updatedSaleMes(): void
     {
-        $this->syncSaleDates();
+        $this->syncSaleDate();
     }
 
     public function updatedSaleAnio(): void
     {
-        $this->syncSaleDates();
+        $this->syncSaleDate();
     }
 
     public function availableLines(): Collection
@@ -178,6 +176,8 @@ class Ventas extends Component
             $query->whereHas('lineAgents', fn ($inner) => $inner
                 ->where('agent_id', session('active_agent_id'))
                 ->where('is_active', true));
+
+            $query->whereIn('id', $this->editableLineIds());
         }
 
         return $query->orderBy('name')->get();
@@ -202,8 +202,8 @@ class Ventas extends Component
 
         return Sale::with(['line', 'platform'])
             ->whereIn('line_id', $lineIds)
-            ->where('mes', $this->monthFilter)
-            ->where('anio', $this->yearFilter)
+            ->whereMonth('fecha', $this->monthFilter)
+            ->whereYear('fecha', $this->yearFilter)
             ->when($this->lineFilter !== 'all', fn ($query) => $query->where('line_id', $this->lineFilter))
             ->when($this->search, function ($query) {
                 $search = '%'.$this->search.'%';
@@ -212,8 +212,7 @@ class Ventas extends Component
                         ->orWhereHas('platform', fn ($platform) => $platform->where('name', 'like', $search));
                 });
             })
-            ->orderByDesc('anio')
-            ->orderByDesc('mes')
+            ->orderByDesc('fecha')
             ->orderBy('line_id')
             ->get();
     }
@@ -232,6 +231,8 @@ class Ventas extends Component
 
     public function render()
     {
+        $this->authorizeSalesAccess();
+
         return view('livewire.ventas', [
             'lines' => $this->availableLines(),
             'formPlatforms' => $this->formPlatforms(),
@@ -249,16 +250,17 @@ class Ventas extends Component
         $this->salePlatformId = '';
         $this->saleMes = $now->month;
         $this->saleAnio = $now->year;
+        $this->saleFecha = $now->format('Y-m-d');
+        $this->saleDescripcion = '';
         $this->saleMontoFichas = '';
-        $this->syncSaleDates();
+        $this->syncSaleDate();
         $this->resetValidation();
     }
 
-    private function syncSaleDates(): void
+    private function syncSaleDate(): void
     {
         $date = now()->setDate($this->saleAnio, $this->saleMes, 1);
-        $this->saleFechaInicio = $date->copy()->startOfMonth()->format('Y-m-d');
-        $this->saleFechaFin = $date->copy()->endOfMonth()->format('Y-m-d');
+        $this->saleFecha = $date->format('Y-m-d');
     }
 
     private function authorizeLineEdit(?Line $line): void
@@ -273,12 +275,39 @@ class Ventas extends Component
 
         $canEdit = LineAgent::where('line_id', $line->id)
             ->where('agent_id', session('active_agent_id'))
-            ->where('role', 'encargado')
             ->where('is_active', true)
             ->exists();
 
-        if (! $canEdit) {
-            abort(403, 'Solo el administrador o el encargado puede cargar ventas.');
+        $hasPermission = LineAgentPermission::where('line_id', $line->id)
+            ->where('agent_id', session('active_agent_id'))
+            ->where('permission', Permissions::LINE_EDIT_BASIC)
+            ->exists();
+
+        if (! $canEdit || ! $hasPermission) {
+            abort(403, 'Necesitas permiso de edicion de linea para cargar ventas.');
         }
+    }
+
+    private function authorizeSalesAccess(): void
+    {
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $canAccess = $this->editableLineIds()->isNotEmpty();
+
+        if (! $canAccess) {
+            abort(403, 'Necesitas permiso de edicion de linea para ver ventas.');
+        }
+    }
+
+    private function editableLineIds(): Collection
+    {
+        return LineAgentPermission::where('agent_id', session('active_agent_id'))
+            ->where('permission', Permissions::LINE_EDIT_BASIC)
+            ->whereIn('line_id', LineAgent::where('agent_id', session('active_agent_id'))
+                ->where('is_active', true)
+                ->select('line_id'))
+            ->pluck('line_id');
     }
 }

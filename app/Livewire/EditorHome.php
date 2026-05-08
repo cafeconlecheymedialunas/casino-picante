@@ -5,12 +5,16 @@ namespace App\Livewire;
 use App\Models\Bonus;
 use App\Models\HomeConfig;
 use App\Models\Post;
+use App\Support\Permissions;
+use App\Traits\HasLinePermissions;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
 #[Layout('layouts.dashboard')]
 class EditorHome extends Component
 {
+    use HasLinePermissions;
+
     public $carouselPosts = [];
     public $bonusItems = [];
     public $blogPosts = [];
@@ -21,6 +25,8 @@ class EditorHome extends Component
 
     public function mount()
     {
+        $this->ensureCanEditHome();
+
         $this->carouselPosts = Post::where('type', Post::TYPE_CARRUSEL)
             ->where('status', Post::STATUS_PUBLISHED)
             ->orderBy('published_at', 'desc')
@@ -56,6 +62,8 @@ class EditorHome extends Component
 
     public function toggleCarousel($itemId)
     {
+        $this->ensureCanEditHome();
+
         if (in_array($itemId, $this->selectedCarousel)) {
             HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
                 ->where('item_id', $itemId)
@@ -78,6 +86,8 @@ class EditorHome extends Component
 
     public function toggleBonus($itemId)
     {
+        $this->ensureCanEditHome();
+
         if (in_array($itemId, $this->selectedBonuses)) {
             HomeConfig::where('section', HomeConfig::SECTION_BONUSES)
                 ->where('item_id', $itemId)
@@ -100,6 +110,8 @@ class EditorHome extends Component
 
     public function toggleBlog($itemId)
     {
+        $this->ensureCanEditHome();
+
         if (in_array($itemId, $this->selectedBlogs)) {
             HomeConfig::where('section', HomeConfig::SECTION_BLOG)
                 ->where('item_id', $itemId)
@@ -122,6 +134,15 @@ class EditorHome extends Component
 
     public function render()
     {
+        $this->ensureCanEditHome();
+
         return view('livewire.editor-home');
+    }
+
+    private function ensureCanEditHome(): void
+    {
+        if (! $this->hasLinePermission(Permissions::HOME_EDIT)) {
+            abort(403, 'Sin permiso para editar la home.');
+        }
     }
 }

@@ -10,6 +10,7 @@ class Agent extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'username',
         'name',
         'apellido',
@@ -24,19 +25,21 @@ class Agent extends Model
 
     protected $casts = [];
 
+    protected $hidden = ['password'];
+
     public function parent()
     {
         return $this->belongsTo(Agent::class, 'parent_id');
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function children()
     {
         return $this->hasMany(Agent::class, 'parent_id');
-    }
-
-    public function permissions()
-    {
-        return $this->hasMany(AgentPermission::class, 'agent_id');
     }
 
     public function lineAgents()

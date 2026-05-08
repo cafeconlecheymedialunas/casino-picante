@@ -8,6 +8,7 @@ use App\Models\Line;
 use App\Models\User;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
+use App\Support\Permissions;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -77,7 +78,7 @@ class Bonos extends Component
 
     public function openCreateModal(): void
     {
-        $this->checkLinePermission('bono.create');
+        $this->checkLinePermission(Permissions::BONO_CREATE);
         $this->resetForm();
         $this->code = Bonus::generateCode();
         $this->startDate = now()->format('Y-m-d');
@@ -88,7 +89,7 @@ class Bonos extends Component
 
     public function openEditModal(int $bonusId): void
     {
-        $this->checkLinePermission('bono.update');
+        $this->checkLinePermission(Permissions::BONO_UPDATE);
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
         $this->editingBonusId = $bonus->id;
         $this->title = $bonus->title;
@@ -117,8 +118,8 @@ class Bonos extends Component
     public function saveBonus(): void
     {
         $this->editingBonusId
-            ? $this->checkLinePermission('bono.update')
-            : $this->checkLinePermission('bono.create');
+            ? $this->checkLinePermission(Permissions::BONO_UPDATE)
+            : $this->checkLinePermission(Permissions::BONO_CREATE);
 
         $this->validate();
         $this->authorizeLineChoice((int) $this->lineId);
@@ -164,7 +165,7 @@ class Bonos extends Component
 
     public function openAssignModal(int $bonusId): void
     {
-        $this->checkLinePermission('bono.read');
+        $this->checkLinePermission(Permissions::BONO_READ);
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
         $this->authorizeLineChoice((int) $bonus->line_id);
         $this->selectedBonusId = $bonus->id;
@@ -183,7 +184,7 @@ class Bonos extends Component
 
     public function assignToUser(): void
     {
-        $this->checkLinePermission('bono.read');
+        $this->checkLinePermission(Permissions::BONO_READ);
         $this->validate([
             'assignUsername' => 'required|string|min:2',
             'assignLineId' => 'required|integer|exists:lines,id',
@@ -215,6 +216,12 @@ class Bonos extends Component
             return;
         }
 
+        if (! $this->clientBelongsToLine($user, (int) $this->assignLineId)) {
+            $this->addError('assignUsername', 'El usuario no pertenece a la linea elegida.');
+
+            return;
+        }
+
         if (! $bonus->canUserClaim($user->id)) {
             $this->addError('assignUsername', 'El usuario ya alcanzo el limite de uso para este bono.');
 
@@ -237,7 +244,7 @@ class Bonos extends Component
 
     public function markClaimed(int $assignmentId): void
     {
-        $this->checkLinePermission('bono.read');
+        $this->checkLinePermission(Permissions::BONO_READ);
         $assignment = BonusAssignment::with('bonus')->findOrFail($assignmentId);
         $this->authorizeLineChoice((int) $assignment->bonus->line_id);
         $assignment->update(['status' => 'used', 'used_at' => now()]);
@@ -248,7 +255,7 @@ class Bonos extends Component
 
     public function deleteBonus(int $bonusId): void
     {
-        $this->checkLinePermission('bono.delete');
+        $this->checkLinePermission(Permissions::BONO_DELETE);
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
         $this->authorizeLineChoice((int) $bonus->line_id);
         $bonusTitle = $bonus->title;
@@ -266,7 +273,7 @@ class Bonos extends Component
             'metrics' => $this->metrics(),
             'lines' => $this->availableLines(),
             'selectedBonus' => $this->selectedBonusId ? Bonus::withoutGlobalScopes()->find($this->selectedBonusId) : null,
-            'canCreateBonus' => $this->hasLinePermission('bono.create'),
+            'canCreateBonus' => $this->hasLinePermission(Permissions::BONO_CREATE),
         ])->layout('layouts.dashboard');
     }
 
@@ -337,6 +344,12 @@ class Bonos extends Component
         if (! $this->availableLines()->pluck('id')->contains($lineId)) {
             abort(403, 'No podes operar bonos fuera de tus lineas.');
         }
+    }
+
+    private function clientBelongsToLine(User $user, int $lineId): bool
+    {
+        return (int) $user->line_id === $lineId
+            || $user->lines()->where('lines.id', $lineId)->wherePivot('is_active', true)->exists();
     }
 
     private function refreshOperationalStatuses(): void

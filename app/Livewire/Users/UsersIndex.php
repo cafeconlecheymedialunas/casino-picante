@@ -3,7 +3,12 @@
 namespace App\Livewire\Users;
 
 use App\Models\Line;
+use App\Models\LineAgent;
+use App\Models\Role;
 use App\Models\User;
+use App\Support\Permissions;
+use App\Support\Roles;
+use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +21,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.dashboard')]
 class UsersIndex extends Component
 {
-    use WithPagination, SendsNotifications;
+    use HasLinePermissions, WithPagination, SendsNotifications;
 
     public string $search = '';
 
@@ -84,11 +89,17 @@ class UsersIndex extends Component
             'contact' => 'nullable|max:100',
             'userStatus' => 'required|in:active,inactive',
             'preferredLineId' => 'nullable|exists:lines,id',
+            'selectedLines' => 'array',
+            'selectedLines.*' => 'integer|exists:lines,id',
         ];
     }
 
     public function getAllLinesProperty()
     {
+        if (! $this->isAdminMode()) {
+            return Line::whereIn('id', $this->availableLineIds())->orderBy('name')->get();
+        }
+
         return Line::orderBy('name')->get();
     }
 
@@ -104,6 +115,7 @@ class UsersIndex extends Component
 
     public function openCreateModal(): void
     {
+        $this->checkLinePermission(Permissions::USER_UPDATE);
         $this->resetForm();
         $this->editingUserId = null;
         $this->showModal = true;
@@ -112,6 +124,8 @@ class UsersIndex extends Component
     public function openEditModal(int $userId): void
     {
         $user = User::findOrFail($userId);
+        $this->checkLinePermission(Permissions::USER_UPDATE);
+        $this->authorizeClientScope($user);
 
         $this->editingUserId = $user->id;
         $this->username = $user->username ?? '';
@@ -135,6 +149,8 @@ class UsersIndex extends Component
 
     public function openDetailModal(int $userId): void
     {
+        $this->checkLinePermission(Permissions::USER_READ);
+        $this->authorizeClientScope(User::findOrFail($userId));
         $this->detailUserId = $userId;
         $this->showDetailModal = true;
     }
@@ -148,12 +164,15 @@ class UsersIndex extends Component
 
     public function saveUser(): void
     {
+        $this->checkLinePermission(Permissions::USER_UPDATE);
         $this->validate();
+        $this->authorizeSelectedLines();
 
         $username = trim($this->username);
         $status = $this->userStatus === 'inactive' ? 'inactive' : 'active';
 
         $data = [
+            'role_id' => Role::where('name', Roles::CLIENTE)->value('id'),
             'username' => $username !== '' ? $username : $this->makeUsername(trim($this->name), trim($this->email)),
             'name' => trim($this->name),
             'apellido' => trim($this->apellido) ?: null,
@@ -166,6 +185,7 @@ class UsersIndex extends Component
 
         if ($this->editingUserId) {
             $user = User::findOrFail($this->editingUserId);
+            $this->authorizeClientScope($user);
 
             if ($this->password) {
                 $data['password'] = Hash::make($this->password);
@@ -191,6 +211,8 @@ class UsersIndex extends Component
 
     public function deleteUser(int $userId): void
     {
+        $this->checkLinePermission(Permissions::USER_BLOCK);
+        $this->authorizeClientScope(User::findOrFail($userId));
         DB::table('line_clients')->where('user_id', $userId)->delete();
         $user = User::findOrFail($userId);
         $userName = $user->name;
@@ -203,6 +225,9 @@ class UsersIndex extends Component
 
     public function setStatus(int $userId, string $status): void
     {
+        $this->checkLinePermission(Permissions::USER_BLOCK);
+        $this->authorizeClientScope(User::findOrFail($userId));
+
         if (! in_array($status, ['active', 'inactive'], true)) {
             return;
         }
@@ -218,14 +243,19 @@ class UsersIndex extends Component
         $this->dispatch('notification-created');
 
         if ($this->detailUserId === $userId) {
+            // Re-assign triggers Livewire to re-render detail panel with fresh data
+            $this->detailUserId = null;
             $this->detailUserId = $userId;
         }
     }
 
     public function render()
     {
+        $this->checkLinePermission(Permissions::USER_READ);
+
         $query = User::query()
-            ->with('preferredLine')
+            ->with(['preferredLine', 'role'])
+            ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE))
             ->when($this->search, function ($q) {
                 $search = '%'.$this->search.'%';
 
@@ -244,8 +274,13 @@ class UsersIndex extends Component
                 $q->whereIn('status', $status);
             });
 
+        $this->scopeClientsToAvailableLines($query);
+
         $users = $query->orderBy('created_at', 'desc')->paginate(15);
         $detailUser = $this->detailUserId ? User::with('preferredLine')->find($this->detailUserId) : null;
+        if ($detailUser) {
+            $this->authorizeClientScope($detailUser);
+        }
         $lines = $this->allLines;
 
         return view('livewire.users.users-index', [
@@ -313,13 +348,16 @@ class UsersIndex extends Component
     private function getMetrics(): array
     {
         $now = Carbon::now();
-        $total = User::count();
-        $active = User::where('status', 'active')->count();
-        $inactive = User::whereIn('status', ['inactive', 'blocked', 'pending'])->count();
-        $todayNew = User::whereDate('created_at', Carbon::today())->count();
-        $weekNew = User::where('created_at', '>=', $now->copy()->startOfWeek())->count();
-        $monthNew = User::where('created_at', '>=', $now->copy()->startOfMonth())->count();
-        $lastMonth = User::whereBetween('created_at', [
+        $base = User::query()->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE));
+        $this->scopeClientsToAvailableLines($base);
+
+        $total = (clone $base)->count();
+        $active = (clone $base)->where('status', 'active')->count();
+        $inactive = (clone $base)->whereIn('status', ['inactive', 'blocked', 'pending'])->count();
+        $todayNew = (clone $base)->whereDate('created_at', Carbon::today())->count();
+        $weekNew = (clone $base)->where('created_at', '>=', $now->copy()->startOfWeek())->count();
+        $monthNew = (clone $base)->where('created_at', '>=', $now->copy()->startOfMonth())->count();
+        $lastMonth = (clone $base)->whereBetween('created_at', [
             $now->copy()->subMonth()->startOfMonth(),
             $now->copy()->subMonth()->endOfMonth(),
         ])->count();
@@ -328,5 +366,73 @@ class UsersIndex extends Component
             : ($monthNew > 0 ? 100 : 0);
 
         return compact('total', 'active', 'inactive', 'todayNew', 'weekNew', 'monthNew', 'growth');
+    }
+
+    private function availableLineIds(): array
+    {
+        if ($this->isAdminMode()) {
+            return Line::pluck('id')->map(fn ($lineId) => (int) $lineId)->toArray();
+        }
+
+        return LineAgent::where('agent_id', session('active_agent_id'))
+            ->where('is_active', true)
+            ->pluck('line_id')
+            ->map(fn ($lineId) => (int) $lineId)
+            ->toArray();
+    }
+
+    private function scopeClientsToAvailableLines($query): void
+    {
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $lineIds = $this->availableLineIds();
+        if (empty($lineIds)) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function ($inner) use ($lineIds) {
+            $inner->whereIn('line_id', $lineIds)
+                ->orWhereHas('lines', fn ($line) => $line->whereIn('lines.id', $lineIds));
+        });
+    }
+
+    private function authorizeClientScope(User $user): void
+    {
+        if (! $user->hasRole(Roles::CLIENTE)) {
+            abort(403, 'Solo podes gestionar clientes desde esta pantalla.');
+        }
+
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $lineIds = $this->availableLineIds();
+        $allowed = ($user->line_id && in_array((int) $user->line_id, $lineIds, true))
+            || $user->lines()->whereIn('lines.id', $lineIds)->exists();
+
+        if (! $allowed) {
+            abort(403, 'No podes gestionar clientes fuera de tus lineas.');
+        }
+    }
+
+    private function authorizeSelectedLines(): void
+    {
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $selected = collect($this->selectedLines)
+            ->push($this->preferredLineId)
+            ->filter()
+            ->map(fn ($lineId) => (int) $lineId)
+            ->unique();
+
+        if ($selected->diff($this->availableLineIds())->isNotEmpty()) {
+            abort(403, 'No podes asignar clientes a lineas fuera de tu alcance.');
+        }
     }
 }

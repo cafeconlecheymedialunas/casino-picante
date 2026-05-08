@@ -150,7 +150,7 @@
             overflow-x: hidden;
         }
 
-        /* ── Global select styles ── */
+        /* â”€â”€ Global select styles â”€â”€ */
         select {
             background-color: var(--black-3);
             color: var(--white);
@@ -258,6 +258,25 @@
             @php
                 $sessionAgentId = session('active_agent_id');
                 $sessionLineId  = session('active_line_id');
+                $sidebarLineAgent = $currentLineAgent ?? null;
+                $sidebarCan = function (array $permissions) use ($sessionAgentId, $sidebarLineAgent): bool {
+                    if (! $sessionAgentId) {
+                        return true;
+                    }
+
+                    if (! $sidebarLineAgent) {
+                        return false;
+                    }
+
+                    foreach ($permissions as $permission) {
+                        if ($sidebarLineAgent->hasPermission($permission)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                };
+                $sidebarCanEditHome = $sidebarCan([\App\Support\Permissions::HOME_EDIT]);
                 $allLines = $sessionAgentId
                     ? \App\Models\LineAgent::with('line')
                         ->where('agent_id', $sessionAgentId)
@@ -268,7 +287,7 @@
             @endphp
             @if($allLines->count() > 0)
             <div class="sidebar-line-selector">
-                <div class="sidebar-line-label">LÍNEA ACTIVA</div>
+                <div class="sidebar-line-label">LÃNEA ACTIVA</div>
                 <form method="POST" id="line-selector-form">
                     @csrf
                     <select class="sidebar-line-select" onchange="switchLine(this.value)">
@@ -278,7 +297,7 @@
                         </option>
                         @endforeach
                         @if(!$sessionAgentId)
-                        <option value="" {{ !$sessionLineId ? 'selected' : '' }}>Todas las líneas</option>
+                        <option value="0" {{ !$sessionLineId ? 'selected' : '' }}>Todas las lÃ­neas</option>
                         @endif
                     </select>
                 </form>
@@ -288,62 +307,88 @@
             <div class="sidebar-section">DASHBOARD</div>
 
             <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">◐</span> Overview
+                <span class="sidebar-item-icon">â—</span> Overview
             </a>
 
-            <div class="sidebar-section">GESTIÓN</div>
+            <div class="sidebar-section">GESTION</div>
 
+            @if($sidebarCan([\App\Support\Permissions::USER_READ, \App\Support\Permissions::USER_UPDATE, \App\Support\Permissions::USER_BLOCK]))
             <a href="{{ route('clientes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('clientes') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">◍</span> Clientes
+                <span class="sidebar-item-icon">●</span> Clientes
             </a>
+            @endif
 
+            @if($sidebarCan([\App\Support\Permissions::AGENT_CREATE, \App\Support\Permissions::AGENT_ASSIGN, \App\Support\Permissions::AGENT_UPDATE, \App\Support\Permissions::AGENT_PERMISSIONS]))
             <a href="{{ route('agentes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('agentes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">⌘</span> Agentes
             </a>
+            @endif
 
+            @if($sidebarCan([\App\Support\Permissions::LINE_READ, \App\Support\Permissions::LINE_VIEW, \App\Support\Permissions::LINE_CREATE, \App\Support\Permissions::LINE_EDIT_BASIC, \App\Support\Permissions::LINE_EDIT_CONTACTS, \App\Support\Permissions::LINE_EDIT_BRANDING]))
             <a href="{{ route('lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('lineas') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">☎</span> Líneas
+                <span class="sidebar-item-icon">☎</span> Lineas
             </a>
+            @endif
 
+            @if(! $sessionAgentId)
             <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master*') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🎮</span> Plataformas
+                <span class="sidebar-item-icon">▣</span> Plataformas
             </a>
+            @endif
 
             <div class="sidebar-section">CONTENIDO</div>
 
+            @if($sidebarCanEditHome)
             <a href="{{ route('editor-home') }}" wire:navigate class="sidebar-item {{ request()->routeIs('editor-home') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🏠</span> Editar Home
+                <span class="sidebar-item-icon">⌂</span> Editar Home
             </a>
+            @endif
 
-
+            @if($sidebarCan([\App\Support\Permissions::NEWS_READ, \App\Support\Permissions::NEWS_CREATE, \App\Support\Permissions::NEWS_UPDATE, \App\Support\Permissions::NEWS_DELETE]))
             <a href="{{ route('novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('novedades') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✎</span> Novedades
             </a>
+            @endif
 
+            @if($sidebarCan([\App\Support\Permissions::LINE_EDIT_BRANDING, \App\Support\Permissions::LINE_EDIT_BASIC]))
             <a href="{{ route('banners') }}" wire:navigate class="sidebar-item {{ request()->routeIs('banners') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">📢</span> Banners & Notif.
+                <span class="sidebar-item-icon">▰</span> Banners & Notif.
             </a>
+            @endif
 
-            <div class="sidebar-section">OPERACIÓN</div>
+            <div class="sidebar-section">OPERACION</div>
 
+            @if($sidebarCan([\App\Support\Permissions::BONO_READ, \App\Support\Permissions::BONO_CREATE, \App\Support\Permissions::BONO_UPDATE, \App\Support\Permissions::BONO_DELETE]))
             <a href="{{ route('bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🎁</span> Bonos
+                <span class="sidebar-item-icon">◇</span> Bonos
             </a>
+            @endif
 
+            @if($sidebarCan([\App\Support\Permissions::LINE_EDIT_BASIC]))
+            <a href="{{ route('ventas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('ventas') ? 'active' : '' }}">
+                <span class="sidebar-item-icon">$</span> Ventas
+            </a>
+            @endif
+
+            @if($sidebarCan([\App\Support\Permissions::SORTEO_READ, \App\Support\Permissions::SORTEO_CREATE, \App\Support\Permissions::SORTEO_UPDATE, \App\Support\Permissions::SORTEO_DELETE]))
             <a href="{{ route('sorteos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('sorteos') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">🎯</span> Sorteos
+                <span class="sidebar-item-icon">◎</span> Sorteos
             </a>
+            @endif
 
+            @if($sidebarCan([\App\Support\Permissions::TICKET_READ, \App\Support\Permissions::TICKET_UPDATE, \App\Support\Permissions::TICKET_CLOSE]))
             <a href="{{ route('tickets') }}" wire:navigate class="sidebar-item {{ request()->routeIs('tickets') ? 'active' : '' }}">
                 <span class="sidebar-item-icon">✉</span> Tickets
             </a>
+            @endif
 
             <div class="sidebar-section">SISTEMA</div>
 
+            @if(! $sessionAgentId)
             <a href="{{ route('settings') }}" wire:navigate class="sidebar-item {{ request()->routeIs('settings*') ? 'active' : '' }}">
-                <span class="sidebar-item-icon">⚙️</span> Configuración
+                <span class="sidebar-item-icon">⚙</span> Configuracion
             </a>
-
+            @endif
             <div class="sidebar-spacer"></div>
         </aside>
         

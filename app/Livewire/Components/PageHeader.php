@@ -4,6 +4,7 @@ namespace App\Livewire\Components;
 
 use App\Models\Agent;
 use App\Models\DashboardNotification;
+use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -29,6 +30,16 @@ class PageHeader extends Component
         $this->notificationsQuery()->whereNull('read_at')->update(['read_at' => now()]);
     }
 
+    public function deleteNotification(int $notificationId): void
+    {
+        $this->notificationsQuery()->whereKey($notificationId)->delete();
+    }
+
+    public function deleteAllRead(): void
+    {
+        $this->notificationsQuery()->whereNotNull('read_at')->delete();
+    }
+
     public function render()
     {
         $currentAgent = $this->currentAgent();
@@ -38,7 +49,7 @@ class PageHeader extends Component
             : ($currentUser ? trim($currentUser->name.' '.($currentUser->apellido ?? '')) : 'Administrador');
         $role = $currentAgent
             ? ($currentAgent->cargo === 'super_agente' ? 'Encargado' : 'Agente')
-            : 'Admin general';
+            : ($currentUser?->hasRole(Roles::ADMIN) ? 'Admin general' : ($currentUser?->role?->label ?? 'Usuario'));
 
         $avatarSeed = $currentAgent?->avatar ?: ($currentUser?->avatar ?: $displayName);
         $seed = str_replace('avatar_', '', $avatarSeed);
@@ -46,13 +57,15 @@ class PageHeader extends Component
 
         $notifications = $this->notificationsQuery()->latest()->take(8)->get();
         $unreadCount = $this->notificationsQuery()->whereNull('read_at')->count();
+        $canOpenSettings = $currentUser?->hasRole(Roles::ADMIN) ?? false;
 
         return view('livewire.components.page-header', compact(
             'displayName',
             'role',
             'avatarUrl',
             'notifications',
-            'unreadCount'
+            'unreadCount',
+            'canOpenSettings'
         ));
     }
 
@@ -64,6 +77,11 @@ class PageHeader extends Component
     private function notificationsQuery()
     {
         $agentId = session('active_agent_id');
+
+        if ($agentId && ! Agent::whereKey($agentId)->exists()) {
+            session()->forget(['active_agent_id', 'active_line_id']);
+            $agentId = null;
+        }
 
         return DashboardNotification::query()
             ->when($agentId, fn ($query) => $query->where('agent_id', $agentId))
