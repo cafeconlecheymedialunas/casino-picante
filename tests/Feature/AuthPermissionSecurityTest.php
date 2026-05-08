@@ -103,7 +103,7 @@ class AuthPermissionSecurityTest extends TestCase
         LineAgentPermission::create([
             'line_id' => $line->id,
             'agent_id' => $agent->id,
-            'permission' => Permissions::LINE_EDIT_BASIC,
+            'permission' => Permissions::LINE_EDIT,
         ]);
 
         $this->actingAs($user)
@@ -116,7 +116,7 @@ class AuthPermissionSecurityTest extends TestCase
     {
         [$user, $agent, $line] = $this->agentWithLine([
             Permissions::BONO_UPDATE,
-            Permissions::LINE_EDIT_BASIC,
+            Permissions::LINE_EDIT,
         ]);
 
         $this->actingAs($user)

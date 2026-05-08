@@ -59,6 +59,33 @@
     .t-row { border-bottom: 1px solid var(--line); font-size: 13px; transition: background .15s; }
     .t-row:last-child { border-bottom: 0; }
     .t-row:hover { background: rgba(255,106,26,.04); }
+    .toggle-btn {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        border-radius: 999px;
+        border: none;
+        cursor: pointer;
+        transition: background .2s;
+        padding: 0;
+        display: block;
+        flex-shrink: 0;
+    }
+    .toggle-on { background: linear-gradient(135deg, #25c46b, #1fa854); box-shadow: 0 0 8px rgba(37,196,107,.35); }
+    .toggle-off { background: rgba(255,255,255,.1); border: 1px solid var(--line-2); }
+    .toggle-knob {
+        position: absolute;
+        top: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 4px rgba(0,0,0,.3);
+        transition: left .2s;
+    }
+    .toggle-on .toggle-knob { left: 23px; }
+    .toggle-off .toggle-knob { left: 3px; }
+    .toggle-btn:hover { opacity: .85; }
     .mono { font-family: var(--font-mono); font-size: 11px; color: var(--muted-2); }
     .strong { font-weight: 700; }
     .muted { color: var(--muted-2); }
@@ -224,7 +251,8 @@
                 <div>Email</div>
                 <div>Linea preferida</div>
                 <div>Enviar mensaje</div>
-                <div>Activo</div>
+                <div>Estado</div>
+                <div>Pausar</div>
             </div>
 
             @foreach($users as $user)
@@ -247,17 +275,20 @@
                         />
                     </div>
                     <div>
-                        <button
-                            type="button"
-                            wire:click="setStatus({{ $user->id }}, '{{ $isActive ? 'inactive' : 'active' }}')"
-                            class="toggle-btn {{ $isActive ? 'toggle-on' : 'toggle-off' }}"
-                            title="{{ $isActive ? 'Pausar acceso' : 'Activar acceso' }}"
-                            wire:loading.attr="disabled"
-                        >
-                            <span class="toggle-knob"></span>
-                        </button>
+                        <span class="s-badge {{ $isActive ? 's-active' : 's-inactive' }}">
+                            {{ $isActive ? 'Activo' : 'Inactivo' }}
+                        </span>
                     </div>
                     <div class="action-row">
+                        @if($isActive)
+                            <button wire:click="setStatus({{ $user->id }}, 'inactive')" class="btn-icon danger" title="Pausar y restringir acceso">
+                                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6v16h4V4ZM18 4h-4v16h4V4Z"/></svg>
+                            </button>
+                        @else
+                            <button wire:click="setStatus({{ $user->id }}, 'active')" class="btn-icon activate" title="Activar acceso">
+                                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
+                            </button>
+                        @endif
                         <button wire:click="openDetailModal({{ $user->id }})" class="btn-icon" title="Ver detalle">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
                         </button>
@@ -296,12 +327,19 @@
                         @error('username') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Estado</label>
-                        <select wire:model="userStatus" class="form-input @error('userStatus') is-error @enderror">
-                            <option value="active">Activo</option>
-                            <option value="inactive">Inactivo</option>
-                        </select>
-                        @error('userStatus') <div class="form-error">{{ $message }}</div> @enderror
+                        <label class="form-label">Activo</label>
+                        <div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+                            <button
+                                type="button"
+                                wire:click="$set('userStatus', userStatus === 'active' ? 'inactive' : 'active')"
+                                class="toggle-btn {{ $userStatus === 'active' ? 'toggle-on' : 'toggle-off' }}"
+                                x-data="{ userStatus: @entangle('userStatus') }"
+                                wire:loading.attr="disabled"
+                            >
+                                <span class="toggle-knob"></span>
+                            </button>
+                            <span style="font-size:12px;color:var(--muted-2)">{{ $userStatus === 'active' ? 'Cliente activo' : 'Cliente inactivo' }}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -318,13 +356,7 @@
                     </div>
                 </div>
 
-                <div class="form-row-2">
-                    <div class="form-group">
-                        <label class="form-label">Email *</label>
-                        <input type="email" wire:model="email" class="form-input @error('email') is-error @enderror" placeholder="correo@ejemplo.com">
-                        @error('email') <div class="form-error">{{ $message }}</div> @enderror
-                    </div>
-                    <div class="form-group">
+                <div class="form-group">
                         <label class="form-label">Linea preferida</label>
                         <select wire:model="preferredLineId" class="form-input @error('preferredLineId') is-error @enderror">
                             <option value="">Sin linea</option>
@@ -334,17 +366,6 @@
                         </select>
                         @error('preferredLineId') <div class="form-error">{{ $message }}</div> @enderror
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Linea preferida</label>
-                    <select wire:model="preferredLineId" class="form-input @error('preferredLineId') is-error @enderror">
-                        <option value="">Sin linea</option>
-                        @foreach($lines as $line)
-                            <option value="{{ $line->id }}">{{ $line->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('preferredLineId') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="form-group">
