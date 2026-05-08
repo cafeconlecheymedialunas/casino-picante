@@ -36,9 +36,18 @@
         @media (max-width:900px){ .stats-grid,.form-grid{grid-template-columns:1fr;} .sales-row{grid-template-columns:1fr;} .toolbar .input{width:100%;} }
     </style>
 
-    <x-livewire.components.page-header title="VENTAS" subtitle="Carga operativa y estadisticas calculadas desde ventas registradas" buttonText="Cargar venta" buttonAction="openCreateModal" />
+    @section('header')
+    <x-livewire.components.page-header title="VENTAS" subtitle="Carga operativa y estadisticas calculadas desde ventas registradas" />
+@endsection
 
-    <div class="sales-page">
+<div class="module-top-bar">
+    <button type="button" class="btn-primary" wire:click="openCreateModal">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Cargar venta
+    </button>
+</div>
+
+<div class="sales-page">
         <div style="margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
             <input type="text" wire:model.live.debounce.300ms="search" class="input" placeholder="Buscar linea o plataforma">
             <select wire:model.live="lineFilter" class="select">
