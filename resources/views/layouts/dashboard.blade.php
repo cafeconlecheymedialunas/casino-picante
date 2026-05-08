@@ -184,6 +184,8 @@
         .page-header-left { flex:1; min-width:0; }
         .page-title { margin:0; font-family:var(--font-display); font-size:34px; letter-spacing:.03em; line-height:.95; }
         .page-subtitle { margin:5px 0 0; color:var(--muted-2); font-size:12px; }
+        .page-header-btn { height:38px; padding:0 16px; border-radius:8px; border:1px solid var(--orange); background:var(--orange); color:#190702; font-weight:600; font-size:13px; cursor:pointer; transition:all .15s; }
+        .page-header-btn:hover { background:#ff8a4a; border-color:#ff8a4a; }
         .page-header-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
         .header-icon-btn { position:relative; width:38px; height:38px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.035); color:var(--white); cursor:pointer; font-weight:900; display:flex; align-items:center; justify-content:center; }
         .header-icon-btn b { position:absolute; top:-6px; right:-5px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--orange); color:#190702; font-size:10px; display:flex; align-items:center; justify-content:center; }

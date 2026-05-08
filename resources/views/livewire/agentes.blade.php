@@ -297,7 +297,7 @@
 
     @if($showDetailModal && $detailAgent)
         <div class="modal-overlay" wire:click.self="closeModal">
-            <div class="modal-panel">
+            <div class="modal-panel" style="width: min(860px, 100%);">
                 <div class="modal-head">
                     <h3>DETALLE DE AGENTE</h3>
                     <button class="modal-close" wire:click="closeModal">x</button>
@@ -311,18 +311,76 @@
                     <div class="detail-item"><label>Telefono</label><p>{{ $detailAgent->phone ?? '-' }}</p></div>
                     <div class="detail-item"><label>Cargo</label><p>{{ $detailAgent->cargo === 'super_agente' ? 'Encargado' : 'Agente' }}</p></div>
                     <div class="detail-item"><label>Estado</label><p>{{ $detailAgent->status === 'active' ? 'Activo' : 'Inactivo' }}</p></div>
-                    <div class="detail-item">
-                        <label>Lineas asignadas</label>
-                        <p>
-                            @forelse($detailAgent->assignedLines as $line)
-                                {{ $line->name }}{{ ! $loop->last ? ', ' : '' }}
-                            @empty
-                                -
-                            @endforelse
-                        </p>
-                    </div>
                     <div class="detail-item"><label>Alta</label><p>{{ $detailAgent->created_at?->format('d/m/Y H:i') ?? '-' }}</p></div>
                 </div>
+
+                {{-- Permisos por linea --}}
+                <div style="padding: 0 22px 22px;">
+                    <div style="font-size: 11px; font-weight: 800; letter-spacing: .1em; color: var(--muted-2); text-transform: uppercase; margin-bottom: 10px; padding-top: 4px; border-top: 1px solid var(--line);">Permisos por linea</div>
+
+                    @forelse($detailAgent->assignedLines as $assignedLine)
+                        <div style="border: 1px solid var(--line); border-radius: 7px; padding: 12px 14px; margin-bottom: 8px; background: rgba(255,255,255,.02);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px;">
+                                <div style="font-size: 13px; font-weight: 700;">
+                                    {{ $assignedLine->icon ?? '●' }} {{ $assignedLine->name }}
+                                </div>
+                                @if($permEditAgentId === $detailAgent->id && $permEditLineId === $assignedLine->id)
+                                    <button wire:click="closePermissions" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Cancelar</button>
+                                @else
+                                    <button wire:click="openPermissions({{ $detailAgent->id }}, {{ $assignedLine->id }})" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Editar permisos</button>
+                                @endif
+                            </div>
+
+                            @if($permEditAgentId === $detailAgent->id && $permEditLineId === $assignedLine->id)
+                                @if(empty($permEditAvailable))
+                                    <div style="color: var(--muted-2); font-size: 12px; padding: 6px 0;">Esta linea no tiene permisos configurados. Configuralos en la seccion Lineas.</div>
+                                @else
+                                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
+                                        @foreach($permissionCatalog as $resource => $actions)
+                                            @php
+                                                $resourcePerms = [];
+                                                foreach ($actions as $action) { $resourcePerms[] = "{$resource}.{$action}"; }
+                                                $intersect = array_values(array_intersect($resourcePerms, $permEditAvailable));
+                                            @endphp
+                                            @if(!empty($intersect))
+                                                <div>
+                                                    <div style="font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--muted-2); text-transform: uppercase; margin-bottom: 5px;">{{ $resource }}</div>
+                                                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                                        @foreach($intersect as $perm)
+                                                            @php $action = substr(strrchr($perm, '.'), 1); @endphp
+                                                            <label style="display: flex; align-items: center; gap: 5px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 5px; cursor: pointer; font-size: 11px; background: rgba(255,255,255,.03);">
+                                                                <input type="checkbox" wire:model="permEditSelected" value="{{ $perm }}" style="accent-color: var(--orange);">
+                                                                {{ $action }}
+                                                            </label>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+                                        <button wire:click="closePermissions" class="btn-ghost" style="font-size: 12px;">Cancelar</button>
+                                        <button wire:click="savePermissions" class="btn-primary" style="font-size: 12px;">Guardar permisos</button>
+                                    </div>
+                                @endif
+                            @else
+                                @php $agentLinePerms = $detailAgent->linePermissionsFor($assignedLine->id); @endphp
+                                @if(!empty($agentLinePerms))
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        @foreach($agentLinePerms as $perm)
+                                            <span style="padding: 2px 8px; background: rgba(255,106,26,.12); color: var(--orange); border-radius: 4px; font-size: 10px; font-weight: 700;">{{ $perm }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div style="color: var(--muted-2); font-size: 11px;">Sin permisos asignados</div>
+                                @endif
+                            @endif
+                        </div>
+                    @empty
+                        <div style="color: var(--muted-2); font-size: 12px;">Sin lineas asignadas.</div>
+                    @endforelse
+                </div>
+
                 <div class="modal-actions" style="margin: 0 22px 22px;">
                     @if($detailAgent->status === 'active')
                         <button wire:click="toggleStatus({{ $detailAgent->id }})" class="btn-ghost">Pausar agente</button>

@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Components;
 
+use Livewire\Attributes\Modelable;
 use Livewire\Component;
 
 class ContactRepeater extends Component
 {
-    public $contacts = [];
+    #[Modelable]
+    public array $contacts = [];
 
     public string $fieldName = 'contacts';
 
@@ -18,9 +20,8 @@ class ContactRepeater extends Component
         'phone' => '📞 Teléfono',
     ];
 
-    public function mount(array $contacts = [], string $fieldName = 'contacts')
+    public function mount(string $fieldName = 'contacts')
     {
-        $this->contacts = $contacts;
         $this->fieldName = $fieldName;
     }
 

@@ -68,7 +68,7 @@ class Bonos extends Component
             'startTime' => 'required',
             'endDate' => 'required|date',
             'endTime' => 'required',
-            'status' => 'required|in:active,upcoming,expired,inactive',
+            'status' => 'required|in:active,upcoming,expired',
             'lineId' => 'required|integer|exists:lines,id',
             'totalQuantity' => 'nullable|integer|min:0',
             'perUserLimit' => 'nullable|integer|min:1',
@@ -98,7 +98,7 @@ class Bonos extends Component
         $this->startTime = $bonus->start_date?->format('H:i') ?? '00:00';
         $this->endDate = $bonus->end_date?->format('Y-m-d') ?? '';
         $this->endTime = $bonus->end_date?->format('H:i') ?? '23:59';
-        $this->status = $bonus->status;
+        $this->status = Bonus::statusForPeriod($bonus->start_date, $bonus->end_date);
         $this->lineId = (string) $bonus->line_id;
         $this->unlimitedQuantity = $bonus->total_quantity === null;
         $this->totalQuantity = $bonus->total_quantity === null ? '' : (string) $bonus->total_quantity;
@@ -139,7 +139,7 @@ class Bonos extends Component
             'type' => 'general',
             'start_date' => $start,
             'end_date' => $end,
-            'status' => $this->status,
+            'status' => Bonus::statusForPeriod($start, $end),
             'line_id' => (int) $this->lineId,
             'total_quantity' => $this->unlimitedQuantity ? null : (int) $this->totalQuantity,
             'per_user_limit' => $this->unlimitedPerUser ? null : (int) ($this->perUserLimit ?: 1),
@@ -156,8 +156,7 @@ class Bonos extends Component
             $bonus = Bonus::create($data);
             session()->flash('message', 'Bono creado correctamente.');
 
-$this->notify('Bono creado', "El bono {$bonus->title} fue creado exitosamente.", 'bonuses', '/bonos', 'success');
-            $this->dispatch('notification-created');
+            $this->notify('Bono creado', "El bono {$bonus->title} fue creado exitosamente.", 'bonuses', '/bonos', 'success');
         }
 
         $this->closeModal();
@@ -192,6 +191,14 @@ $this->notify('Bono creado', "El bono {$bonus->title} fue creado exitosamente.",
         $this->authorizeLineChoice((int) $this->assignLineId);
 
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($this->selectedBonusId);
+        $bonus->updateStatus();
+
+        if ($bonus->status !== 'active') {
+            $this->addError('assignUsername', 'Solo se pueden otorgar bonos activos.');
+
+            return;
+        }
+
         $user = User::where('username', $this->assignUsername)
             ->orWhere('email', $this->assignUsername)
             ->first();
@@ -283,6 +290,8 @@ $this->notify('Bono creado', "El bono {$bonus->title} fue creado exitosamente.",
 
     private function bonuses(): Collection
     {
+        $this->refreshOperationalStatuses();
+
         $query = Bonus::withoutGlobalScopes()
             ->with(['line', 'assignments.user'])
             ->whereIn('line_id', $this->availableLines()->pluck('id'))
@@ -307,7 +316,7 @@ $this->notify('Bono creado', "El bono {$bonus->title} fue creado exitosamente.",
             'active' => $bonuses->where('status', 'active')->count(),
             'upcoming' => $bonuses->where('status', 'upcoming')->count(),
             'expired' => $bonuses->where('status', 'expired')->count(),
-            'claimed' => $bonuses->sum(fn (Bonus $bonus) => $bonus->assignments->whereIn('status', ['used', 'claimed'])->count()),
+            'claimed' => $bonuses->sum(fn (Bonus $bonus) => $bonus->assignments->whereIn('status', Bonus::CLAIMED_STATUSES)->count()),
         ];
     }
 
@@ -328,5 +337,33 @@ $this->notify('Bono creado', "El bono {$bonus->title} fue creado exitosamente.",
         if (! $this->availableLines()->pluck('id')->contains($lineId)) {
             abort(403, 'No podes operar bonos fuera de tus lineas.');
         }
+    }
+
+    private function refreshOperationalStatuses(): void
+    {
+        $lineIds = $this->availableLines()->pluck('id');
+
+        if ($lineIds->isEmpty()) {
+            return;
+        }
+
+        Bonus::withoutGlobalScopes()
+            ->whereIn('line_id', $lineIds)
+            ->where('start_date', '>', now())
+            ->where('status', '!=', 'upcoming')
+            ->update(['status' => 'upcoming']);
+
+        Bonus::withoutGlobalScopes()
+            ->whereIn('line_id', $lineIds)
+            ->where('end_date', '<', now())
+            ->where('status', '!=', 'expired')
+            ->update(['status' => 'expired']);
+
+        Bonus::withoutGlobalScopes()
+            ->whereIn('line_id', $lineIds)
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->where('status', '!=', 'active')
+            ->update(['status' => 'active']);
     }
 }

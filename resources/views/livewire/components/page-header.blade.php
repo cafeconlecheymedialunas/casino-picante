@@ -7,6 +7,12 @@
     </div>
 
     <div class="page-header-right">
+        @if($buttonText && $buttonAction)
+            <button type="button" class="page-header-btn" wire:click="{{ $buttonAction }}">
+                {{ $buttonText }}
+            </button>
+        @endif
+
         <div class="notification-menu" x-data="{ open: false }" @click.outside="open = false">
             <button type="button" class="header-icon-btn" @click="open = !open" aria-label="Notificaciones">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

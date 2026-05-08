@@ -6,23 +6,26 @@ use App\Models\Line;
 use App\Models\Platform;
 use App\Models\Sale;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class SalesStats
 {
     public static function lineStats(Line $line, ?int $month = null, ?int $year = null): array
     {
         $month ??= now()->month;
-        $year ??= now()->year;
+        $year  ??= now()->year;
+
+        [$monthFn, $yearFn] = self::dateFunctions();
 
         $bestMonth = Sale::where('line_id', $line->id)
-            ->selectRaw('mes, anio, SUM(monto_fichas) as total')
-            ->groupBy('mes', 'anio')
+            ->selectRaw("{$yearFn} as anio, {$monthFn} as mes, SUM(monto_fichas) as total")
+            ->groupByRaw("{$yearFn}, {$monthFn}")
             ->orderByDesc('total')
             ->first();
 
         $bestPlatform = Sale::where('line_id', $line->id)
-            ->where('mes', $month)
-            ->where('anio', $year)
+            ->whereRaw("{$monthFn} = ?", [$month])
+            ->whereRaw("{$yearFn} = ?", [$year])
             ->selectRaw('platform_id, SUM(monto_fichas) as total')
             ->groupBy('platform_id')
             ->orderByDesc('total')
@@ -33,16 +36,16 @@ class SalesStats
         }
 
         $lastMonths = Sale::where('line_id', $line->id)
-            ->selectRaw('mes, anio, SUM(monto_fichas) as total')
-            ->groupBy('mes', 'anio')
+            ->selectRaw("{$yearFn} as anio, {$monthFn} as mes, SUM(monto_fichas) as total")
+            ->groupByRaw("{$yearFn}, {$monthFn}")
             ->orderByDesc('anio')
             ->orderByDesc('mes')
             ->limit(3)
             ->get();
 
         $monthTotal = (float) Sale::where('line_id', $line->id)
-            ->where('mes', $month)
-            ->where('anio', $year)
+            ->whereRaw("{$monthFn} = ?", [$month])
+            ->whereRaw("{$yearFn} = ?", [$year])
             ->sum('monto_fichas');
 
         $lineAgents = $line->relationLoaded('lineAgents')
@@ -52,9 +55,9 @@ class SalesStats
         $earnings = $lineAgents
             ->where('role', 'encargado')
             ->map(fn ($lineAgent) => [
-                'name' => trim(($lineAgent->agent?->name ?? 'Encargado').' '.($lineAgent->agent?->apellido ?? '')),
+                'name'       => trim(($lineAgent->agent?->name ?? 'Encargado').' '.($lineAgent->agent?->apellido ?? '')),
                 'porcentaje' => (float) ($lineAgent->porcentaje_ganancia ?? 0),
-                'ganancia' => $monthTotal * ((float) ($lineAgent->porcentaje_ganancia ?? 0) / 100),
+                'ganancia'   => $monthTotal * ((float) ($lineAgent->porcentaje_ganancia ?? 0) / 100),
             ])
             ->values();
 
@@ -64,13 +67,15 @@ class SalesStats
     public static function bestSellingLineOfMonth(?int $month = null, ?int $year = null): ?array
     {
         $month ??= now()->month;
-        $year ??= now()->year;
+        $year  ??= now()->year;
+
+        [$monthFn, $yearFn] = self::dateFunctions();
 
         $sale = Sale::query()
             ->join('lines', 'lines.id', '=', 'sales.line_id')
             ->where('lines.status', 'active')
-            ->where('sales.mes', $month)
-            ->where('sales.anio', $year)
+            ->whereRaw("{$monthFn} = ?", [$month])
+            ->whereRaw("{$yearFn} = ?", [$year])
             ->selectRaw('sales.line_id, SUM(sales.monto_fichas) as total')
             ->groupBy('sales.line_id')
             ->orderByDesc('total')
@@ -82,31 +87,29 @@ class SalesStats
 
         $line = Line::find($sale->line_id);
 
-        if (! $line) {
-            return null;
-        }
-
-        return [
-            'id' => $line->id,
-            'name' => $line->name,
-            'icon' => $line->icon ?: '●',
+        return $line ? [
+            'id'         => $line->id,
+            'name'       => $line->name,
+            'icon'       => $line->icon ?: '●',
             'best_sales' => (float) $sale->total,
-        ];
+        ] : null;
     }
 
     public static function globalMonthStats(Collection $lines, ?int $month = null, ?int $year = null): array
     {
-        $month ??= now()->month;
-        $year ??= now()->year;
+        $month   ??= now()->month;
+        $year    ??= now()->year;
         $lineIds = $lines->pluck('id')->all();
 
-        $query = Sale::whereIn('line_id', $lineIds)
-            ->where('mes', $month)
-            ->where('anio', $year);
+        [$monthFn, $yearFn] = self::dateFunctions();
 
-        $total = (float) (clone $query)->sum('monto_fichas');
-        $records = (clone $query)->count();
-        $lineCount = (clone $query)->distinct('line_id')->count('line_id');
+        $query = Sale::whereIn('line_id', $lineIds)
+            ->whereRaw("{$monthFn} = ?", [$month])
+            ->whereRaw("{$yearFn} = ?", [$year]);
+
+        $total         = (float) (clone $query)->sum('monto_fichas');
+        $records       = (clone $query)->count();
+        $lineCount     = (clone $query)->distinct('line_id')->count('line_id');
         $platformCount = (clone $query)->distinct('platform_id')->count('platform_id');
 
         $bestLine = (clone $query)
@@ -122,18 +125,29 @@ class SalesStats
             ->first();
 
         return [
-            'total' => $total,
-            'records' => $records,
-            'lineCount' => $lineCount,
+            'total'         => $total,
+            'records'       => $records,
+            'lineCount'     => $lineCount,
             'platformCount' => $platformCount,
-            'bestLine' => $bestLine ? [
-                'line' => Line::find($bestLine->line_id),
+            'bestLine'      => $bestLine ? [
+                'line'  => Line::find($bestLine->line_id),
                 'total' => (float) $bestLine->total,
             ] : null,
-            'bestPlatform' => $bestPlatform ? [
+            'bestPlatform'  => $bestPlatform ? [
                 'platform' => Platform::find($bestPlatform->platform_id),
-                'total' => (float) $bestPlatform->total,
+                'total'    => (float) $bestPlatform->total,
             ] : null,
         ];
+    }
+
+    private static function dateFunctions(): array
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            return ["CAST(strftime('%m', fecha) AS INTEGER)", "CAST(strftime('%Y', fecha) AS INTEGER)"];
+        }
+
+        return ['MONTH(fecha)', 'YEAR(fecha)'];
     }
 }

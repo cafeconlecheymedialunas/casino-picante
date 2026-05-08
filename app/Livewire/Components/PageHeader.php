@@ -15,6 +15,10 @@ class PageHeader extends Component
 
     public string $subtitle = '';
 
+    public string $buttonText = '';
+
+    public string $buttonAction = '';
+
     public function markRead(int $notificationId): void
     {
         $this->notificationsQuery()->whereKey($notificationId)->first()?->markRead();

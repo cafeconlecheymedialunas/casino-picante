@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
+use App\Models\LineAgentPermission;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Facades\Hash;
@@ -47,6 +48,14 @@ class Agentes extends Component
     public string $cargo = 'agente';
 
     public array $lineIds = [];
+
+    public ?int $permEditAgentId = null;
+
+    public ?int $permEditLineId = null;
+
+    public array $permEditSelected = [];
+
+    public array $permEditAvailable = [];
 
     public function mount(): void
     {
@@ -207,6 +216,65 @@ class Agentes extends Component
         $this->notify('Agente eliminado', "El agente {$agentName} fue eliminado del sistema.", 'agents', '/agentes', 'danger');
     }
 
+    public function openPermissions(int $agentId, int $lineId): void
+    {
+        $this->checkLinePermission('agent.permissions');
+
+        $line = Line::findOrFail($lineId);
+        $linePermissions = $line->permissions ?? [];
+
+        if ($this->isAdminMode()) {
+            $available = $linePermissions;
+        } else {
+            $currentAgentId = (int) session('active_agent_id');
+            $myPerms = LineAgentPermission::where('line_id', $lineId)
+                ->where('agent_id', $currentAgentId)
+                ->pluck('permission')
+                ->toArray();
+            $available = array_values(array_intersect($linePermissions, $myPerms));
+        }
+
+        $this->permEditAgentId = $agentId;
+        $this->permEditLineId  = $lineId;
+        $this->permEditAvailable = $available;
+
+        // Load current permissions; default to all available if none stored yet
+        $current = LineAgentPermission::where('line_id', $lineId)
+            ->where('agent_id', $agentId)
+            ->pluck('permission')
+            ->toArray();
+
+        $this->permEditSelected = empty($current) ? $available : $current;
+    }
+
+    public function savePermissions(): void
+    {
+        $this->checkLinePermission('agent.permissions');
+
+        if (! $this->permEditAgentId || ! $this->permEditLineId) {
+            return;
+        }
+
+        $toSave = array_values(array_intersect($this->permEditSelected, $this->permEditAvailable));
+
+        $lineAgent = LineAgent::where('line_id', $this->permEditLineId)
+            ->where('agent_id', $this->permEditAgentId)
+            ->firstOrFail();
+
+        $lineAgent->syncPermissions($toSave);
+
+        session()->flash('message', 'Permisos guardados.');
+        $this->closePermissions();
+    }
+
+    public function closePermissions(): void
+    {
+        $this->permEditAgentId   = null;
+        $this->permEditLineId    = null;
+        $this->permEditSelected  = [];
+        $this->permEditAvailable = [];
+    }
+
     public function getCanCreateAgentsProperty(): bool
     {
         return $this->hasLinePermission('agent.create');
@@ -260,11 +328,12 @@ class Agentes extends Component
         ];
 
         return view('livewire.agentes', [
-            'agents' => $agents,
-            'metrics' => $metrics,
-            'lines' => $this->availableLines,
-            'canCreateAgents' => $this->canCreateAgents,
-            'detailAgent' => $detailAgent,
+            'agents'           => $agents,
+            'metrics'          => $metrics,
+            'lines'            => $this->availableLines,
+            'canCreateAgents'  => $this->canCreateAgents,
+            'detailAgent'      => $detailAgent,
+            'permissionCatalog' => LineAgentPermission::$catalog,
         ])->layout('layouts.dashboard');
     }
 

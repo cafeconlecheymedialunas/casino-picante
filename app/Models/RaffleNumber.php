@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RaffleNumber extends Model
 {
-    protected $fillable = ['raffle_id', 'user_id', 'number'];
+    protected $fillable = ['raffle_id', 'user_id', 'line_id', 'number'];
 
     public function raffle()
     {
@@ -16,6 +16,11 @@ class RaffleNumber extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function line()
+    {
+        return $this->belongsTo(Line::class);
     }
 
     public function getFormattedNumberAttribute(): string

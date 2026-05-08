@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bonus extends Model
 {
+    public const CLAIMED_STATUSES = ['used', 'claimed'];
+
+    public const CONSUMED_STATUSES = ['active', 'used', 'claimed', 'available'];
+
     protected static function booted(): void
     {
         static::addGlobalScope(new LineScope);
@@ -80,15 +84,7 @@ class Bonus extends Model
      */
     public function updateStatus(): void
     {
-        $now = now();
-
-        if ($now->lt($this->start_date)) {
-            $this->update(['status' => 'upcoming']);
-        } elseif ($now->gt($this->end_date)) {
-            $this->update(['status' => 'expired']);
-        } else {
-            $this->update(['status' => 'active']);
-        }
+        $this->update(['status' => self::statusForPeriod($this->start_date, $this->end_date)]);
     }
 
     /**
@@ -104,7 +100,12 @@ class Bonus extends Model
      */
     public function getClaimedCountAttribute(): int
     {
-        return $this->assignments()->whereIn('status', ['used', 'claimed'])->count();
+        return $this->assignments()->whereIn('status', self::CLAIMED_STATUSES)->count();
+    }
+
+    public function getAssignedCountAttribute(): int
+    {
+        return $this->assignments()->whereIn('status', self::CONSUMED_STATUSES)->count();
     }
 
     /**
@@ -116,7 +117,7 @@ class Bonus extends Model
             return null; // Unlimited
         }
 
-        return max(0, $this->total_quantity - $this->claimed_count);
+        return max(0, $this->total_quantity - $this->assigned_count);
     }
 
     /**
@@ -126,12 +127,12 @@ class Bonus extends Model
     {
         // Check if user already reached per-user limit
         if (! is_null($this->per_user_limit)) {
-            $userClaimed = $this->assignments()
+            $userAssigned = $this->assignments()
                 ->where('user_id', $userId)
-                    ->whereIn('status', ['active', 'used', 'claimed', 'available'])
+                ->whereIn('status', self::CONSUMED_STATUSES)
                 ->count();
 
-            if ($userClaimed >= $this->per_user_limit) {
+            if ($userAssigned >= $this->per_user_limit) {
                 return false;
             }
         }
@@ -142,6 +143,23 @@ class Bonus extends Model
         }
 
         return true;
+    }
+
+    public static function statusForPeriod($startDate, $endDate): string
+    {
+        $now = now();
+        $start = $startDate instanceof \Carbon\CarbonInterface ? $startDate : \Carbon\Carbon::parse($startDate);
+        $end = $endDate instanceof \Carbon\CarbonInterface ? $endDate : \Carbon\Carbon::parse($endDate);
+
+        if ($now->lt($start)) {
+            return 'upcoming';
+        }
+
+        if ($now->gt($end)) {
+            return 'expired';
+        }
+
+        return 'active';
     }
 
     /**

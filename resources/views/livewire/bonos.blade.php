@@ -69,7 +69,6 @@
                 <option value="active">Activos</option>
                 <option value="upcoming">Proximos</option>
                 <option value="expired">Vencidos</option>
-                <option value="inactive">Inactivos</option>
             </select>
         </div>
 
@@ -113,7 +112,7 @@
                             <div class="strong truncate">{{ $bonus->code ?? '-' }}</div>
                             <div class="truncate">
                                 {{ $bonus->title }}
-                                <div><span class="badge b-{{ $bonus->status }}">{{ $bonus->status === 'upcoming' ? 'Proximo' : ($bonus->status === 'expired' ? 'Vencido' : ucfirst($bonus->status)) }}</span></div>
+                                <div><span class="badge b-{{ $bonus->status }}">{{ $bonus->status === 'upcoming' ? 'Proximo' : ($bonus->status === 'expired' ? 'Vencido' : 'Activo') }}</span></div>
                             </div>
                             <div>{{ $bonus->start_date?->format('d/m/Y H:i') }}</div>
                             <div>{{ $bonus->end_date?->format('d/m/Y H:i') }}</div>
@@ -212,12 +211,9 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Estado</label>
-                            <select wire:model="status" class="form-input">
-                                <option value="active">Activo</option>
-                                <option value="upcoming">Proximo</option>
-                                <option value="expired">Vencido</option>
-                                <option value="inactive">Inactivo</option>
-                            </select>
+                            <div class="form-input" style="color:var(--muted);">
+                                Se calcula por fecha: activo, proximo o vencido.
+                            </div>
                         </div>
                     </div>
                     <div class="form-grid">
@@ -227,9 +223,9 @@
                             <label class="check-row"><input type="checkbox" wire:model.live="unlimitedQuantity"> Ilimitados</label>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Veces por usuario</label>
+                            <label class="form-label">Veces por cliente</label>
                             <input type="number" wire:model="perUserLimit" class="form-input" placeholder="Monto">
-                            <label class="check-row"><input type="checkbox" wire:model.live="unlimitedPerUser"> Ilimitado por usuario</label>
+                            <label class="check-row"><input type="checkbox" wire:model.live="unlimitedPerUser"> Ilimitado por cliente</label>
                         </div>
                     </div>
                     <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;">
