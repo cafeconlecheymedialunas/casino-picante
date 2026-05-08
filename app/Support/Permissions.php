@@ -16,9 +16,7 @@ final class Permissions
     public const LINE_READ = 'line.read';
     public const LINE_VIEW = 'line.view';
     public const LINE_CREATE = 'line.create';
-    public const LINE_EDIT_BASIC = 'line.edit.basic';
-    public const LINE_EDIT_CONTACTS = 'line.edit.contacts';
-    public const LINE_EDIT_BRANDING = 'line.edit.branding';
+    public const LINE_EDIT = 'line.edit';
 
     public const AGENT_CREATE = 'agent.create';
     public const AGENT_ASSIGN = 'agent.assign';
@@ -56,7 +54,7 @@ final class Permissions
         return [
             'promo' => [self::PROMO_READ, self::PROMO_CREATE, self::PROMO_UPDATE, self::PROMO_DELETE],
             'ticket' => [self::TICKET_READ, self::TICKET_UPDATE, self::TICKET_CLOSE],
-            'line' => [self::LINE_READ, self::LINE_VIEW, self::LINE_CREATE, self::LINE_EDIT_BASIC, self::LINE_EDIT_CONTACTS, self::LINE_EDIT_BRANDING],
+            'line' => [self::LINE_READ, self::LINE_VIEW, self::LINE_CREATE, self::LINE_EDIT],
             'agent' => [self::AGENT_CREATE, self::AGENT_ASSIGN, self::AGENT_UPDATE, self::AGENT_PERMISSIONS],
             'bono' => [self::BONO_READ, self::BONO_CREATE, self::BONO_UPDATE, self::BONO_DELETE],
             'sorteo' => [self::SORTEO_READ, self::SORTEO_CREATE, self::SORTEO_UPDATE, self::SORTEO_DELETE],

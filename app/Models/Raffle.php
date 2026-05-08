@@ -9,7 +9,7 @@ class Raffle extends Model
 {
     protected static function booted(): void
     {
-        static::addGlobalScope(new LineScope());
+        static::addGlobalScope(new LineScope);
     }
 
     protected $fillable = [
@@ -50,10 +50,12 @@ class Raffle extends Model
     public function getFirstAvailableNumber(): ?int
     {
         $occupied = $this->numbers()->pluck('number')->toArray();
-        $end = $this->numbers_limit ? $this->start_number + $this->numbers_limit - 1 : ($this->end_number ?? ($this->start_number + 1000));
+        $end = $this->numbers_limit
+            ? $this->start_number + $this->numbers_limit - 1
+            : ($this->end_number ?? ($this->start_number + 1000));
 
         for ($i = $this->start_number; $i <= $end; $i++) {
-            if (!in_array($i, $occupied)) {
+            if (! in_array($i, $occupied)) {
                 return $i;
             }
         }
@@ -69,10 +71,12 @@ class Raffle extends Model
         $assigned = [];
         $occupied = $this->numbers()->pluck('number')->toArray();
         $current = $this->start_number;
-        $end = $this->numbers_limit ? $this->start_number + $this->numbers_limit - 1 : max($this->end_number ?? $this->start_number, $this->numbers()->max('number') + $count + 100);
+        $end = $this->numbers_limit
+            ? $this->start_number + $this->numbers_limit - 1
+            : max($this->end_number ?? $this->start_number, $this->numbers()->max('number') + $count + 100);
 
         while (count($assigned) < $count && $current <= $end) {
-            if (!in_array($current, $occupied)) {
+            if (! in_array($current, $occupied)) {
                 RaffleNumber::create([
                     'raffle_id' => $this->id,
                     'user_id' => $userId,
@@ -90,7 +94,7 @@ class Raffle extends Model
 
     public function hasWinner(): bool
     {
-        return !empty($this->winner_user_id);
+        return ! empty($this->winner_user_id);
     }
 
     public function isExpired(): bool

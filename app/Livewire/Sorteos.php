@@ -245,6 +245,13 @@ class Sorteos extends Component
 
     public function selectRaffle(int $id): void
     {
+        $raffle = Raffle::findOrFail($id);
+        $allowed = $this->availableLines()->pluck('id');
+        $raffleLineIds = $raffle->lines()->pluck('lines.id')->push($raffle->line_id)->filter()->unique();
+        if (! $this->isAdminMode() && $raffleLineIds->intersect($allowed)->isEmpty()) {
+            abort(403, 'Sin acceso a este sorteo.');
+        }
+
         $this->selectedRaffleId = $id;
         $this->assignUserId = '';
         $this->numbersSearch = '';
