@@ -31,7 +31,7 @@
         .table-count { color: var(--muted-2); font-size: 11px; }
         .table-scroll { overflow-x: auto; }
         .t-head, .t-row {
-            display: grid; grid-template-columns: 64px 1fr 1.2fr 128px 1.2fr 122px 170px;
+            display: grid; grid-template-columns: 46px 1fr 1.2fr 128px 1.2fr 122px 170px;
             gap: 12px; align-items: center; min-width: 1080px; padding: 11px 18px;
         }
         .t-head { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
@@ -41,6 +41,7 @@
         .mono { font-family: var(--font-mono); color: var(--muted-2); font-size: 11px; }
         .strong { font-weight: 800; }
         .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .table-avatar { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: rgba(255,255,255,.05); object-fit: cover; display: block; }
         .role-badge, .status-badge, .line-badge {
             display: inline-flex; align-items: center; width: fit-content; max-width: 100%; gap: 5px;
             border-radius: 999px; padding: 4px 10px; font-size: 10px; font-weight: 800; white-space: nowrap;
@@ -141,9 +142,9 @@
             @else
                 <div class="table-scroll">
                     <div class="t-head">
-                        <div>ID</div>
+                        <div>Avatar</div>
                         <div>Username</div>
-                        <div>Nombre</div>
+                        <div>Nombre y apellido</div>
                         <div>Cargo</div>
                         <div>Estado</div>
                         <div>Enviar mensaje</div>
@@ -153,7 +154,9 @@
                     @foreach($agents as $agent)
                         @php $isActive = $agent->status === 'active'; @endphp
                         <div class="t-row">
-                            <div class="mono">#{{ $agent->id }}</div>
+                            <div>
+                                <img class="table-avatar" src="{{ \App\Support\AvatarLibrary::url($agent->avatar ?? null) }}" alt="">
+                            </div>
                             <div class="strong truncate">{{ $agent->username ?? '-' }}</div>
                             <div class="truncate">{{ trim($agent->name.' '.($agent->apellido ?? '')) }}</div>
                             <div>
@@ -266,6 +269,12 @@
                     </div>
 
                     <div class="form-group">
+                        <x-avatar-library model="avatar" :selected="$avatar">
+                            @error('avatar') <div class="form-error">{{ $message }}</div> @enderror
+                        </x-avatar-library>
+                    </div>
+
+                    <div class="form-group">
                         <label class="form-label">Lineas asignadas</label>
                         <div class="line-check-grid">
                             @forelse($lines as $line)
@@ -300,8 +309,7 @@
                 <div class="detail-grid">
                     <div class="detail-item"><label>ID</label><p>#{{ $detailAgent->id }}</p></div>
                     <div class="detail-item"><label>Username</label><p>{{ $detailAgent->username ?? '-' }}</p></div>
-                    <div class="detail-item"><label>Nombre</label><p>{{ $detailAgent->name }}</p></div>
-                    <div class="detail-item"><label>Apellido</label><p>{{ $detailAgent->apellido ?? '-' }}</p></div>
+                    <div class="detail-item"><label>Nombre y apellido</label><p>{{ trim($detailAgent->name.' '.($detailAgent->apellido ?? '')) ?: '-' }}</p></div>
                     <div class="detail-item"><label>Email</label><p>{{ $detailAgent->email }}</p></div>
                     <div class="detail-item"><label>Telefono</label><p>{{ $detailAgent->phone ?? '-' }}</p></div>
                     <div class="detail-item"><label>Cargo</label><p>{{ $detailAgent->cargo === 'super_agente' ? 'Encargado' : 'Agente' }}</p></div>

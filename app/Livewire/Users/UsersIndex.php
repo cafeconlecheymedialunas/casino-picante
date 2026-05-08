@@ -6,6 +6,7 @@ use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\AvatarLibrary;
 use App\Support\Permissions;
 use App\Support\Roles;
 use App\Traits\HasLinePermissions;
@@ -49,6 +50,8 @@ class UsersIndex extends Component
 
     public string $contact = '';
 
+    public string $avatar = '';
+
     public string $userStatus = 'active';
 
     public ?int $preferredLineId = null;
@@ -87,6 +90,7 @@ class UsersIndex extends Component
             'password' => $this->editingUserId ? 'nullable|min:6' : 'required|min:6',
             'phone' => 'nullable|max:30',
             'contact' => 'nullable|max:100',
+            'avatar' => ['required', 'string', 'regex:/^avatar_[A-Za-z0-9_-]{1,80}$/'],
             'userStatus' => 'required|in:active,inactive',
             'preferredLineId' => 'nullable|exists:lines,id',
             'selectedLines' => 'array',
@@ -134,6 +138,7 @@ class UsersIndex extends Component
         $this->email = $user->email;
         $this->phone = $user->phone ?? '';
         $this->contact = $user->contact ?? '';
+        $this->avatar = AvatarLibrary::isValid($user->avatar) ? $user->avatar : AvatarLibrary::default();
         $this->userStatus = $user->status === 'blocked' ? 'inactive' : $user->status;
         $this->preferredLineId = $user->line_id ? (int) $user->line_id : null;
         $this->password = '';
@@ -180,6 +185,7 @@ class UsersIndex extends Component
             'email' => trim($this->email),
             'phone' => $this->phone ?: null,
             'contact' => $this->contact ?: null,
+            'avatar' => $this->avatar,
             'status' => $status,
         ];
 
@@ -300,6 +306,7 @@ class UsersIndex extends Component
         $this->password = '';
         $this->phone = '';
         $this->contact = '';
+        $this->avatar = AvatarLibrary::default();
         $this->userStatus = 'active';
         $this->preferredLineId = null;
         $this->editingUserId = null;

@@ -8,6 +8,7 @@ use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\AvatarLibrary;
 use App\Support\LineRoles;
 use App\Support\Permissions;
 use App\Support\Roles;
@@ -47,6 +48,8 @@ class Agentes extends Component
     public string $password = '';
 
     public string $phone = '';
+
+    public string $avatar = '';
 
     public string $status = 'active';
 
@@ -103,6 +106,7 @@ class Agentes extends Component
         $this->apellido = $agent->apellido ?? '';
         $this->email = $agent->email;
         $this->phone = $agent->phone ?? '';
+        $this->avatar = AvatarLibrary::isValid($agent->avatar) ? $agent->avatar : AvatarLibrary::default();
         $this->status = $agent->status === 'inactive' ? 'inactive' : 'active';
         $this->cargo = $agent->cargo ?: 'agente';
         $this->password = '';
@@ -152,6 +156,7 @@ class Agentes extends Component
             'apellido' => trim($this->apellido) ?: null,
             'email' => trim($this->email),
             'phone' => trim($this->phone) ?: null,
+            'avatar' => $this->avatar,
             'status' => $this->status,
             'cargo' => $this->cargo,
         ];
@@ -366,6 +371,7 @@ class Agentes extends Component
             'email' => "required|email|unique:agents,email,{$id}|unique:users,email,{$userId}",
             'password' => $this->editingAgentId ? 'nullable|min:6' : 'required|min:6',
             'phone' => 'nullable|max:30',
+            'avatar' => ['required', 'string', 'regex:/^avatar_[A-Za-z0-9_-]{1,80}$/'],
             'status' => 'required|in:active,inactive',
             'cargo' => 'required|in:super_agente,agente',
             'lineIds' => 'required|array|min:1',
@@ -382,6 +388,7 @@ class Agentes extends Component
         $this->email = '';
         $this->password = '';
         $this->phone = '';
+        $this->avatar = AvatarLibrary::default();
         $this->status = 'active';
         $this->cargo = 'agente';
         $this->lineIds = array_filter([(int) session('active_line_id')]);

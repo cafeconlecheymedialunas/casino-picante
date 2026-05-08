@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('agents', function (Blueprint $table) {
-            $table->string('avatar')->nullable()->default('avatar_nova')->after('apellido');
+            $table->string('avatar')->nullable()->default('avatar_adventurer__red-picantes-01')->after('apellido');
         });
     }
 

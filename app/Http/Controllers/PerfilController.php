@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Agent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
@@ -35,7 +36,7 @@ class PerfilController extends Controller
     {
         $isAgent = session('active_agent_id') !== null;
         $user = $request->user();
-        $availableAvatars = $this->getAvailableAvatars();
+        $avatarRule = ['sometimes', 'string', 'regex:/^avatar_[A-Za-z0-9_-]{1,80}$/'];
 
         if ($isAgent) {
             $agent = Agent::where('id', session('active_agent_id'))
@@ -46,7 +47,7 @@ class PerfilController extends Controller
                 $request->validate([
                     'name' => 'required|string|max:255',
                     'apellido' => 'nullable|string|max:255',
-                    'avatar' => 'sometimes|string|in:'.implode(',', $availableAvatars),
+                    'avatar' => $avatarRule,
                 ]);
 
                 DB::transaction(function () use ($agent, $user, $request) {
@@ -69,7 +70,7 @@ class PerfilController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
-            'avatar' => 'sometimes|string|in:'.implode(',', $availableAvatars),
+            'avatar' => $avatarRule,
         ]);
 
         $user = $request->user();
@@ -127,20 +128,4 @@ class PerfilController extends Controller
         return back()->with('message', 'Contraseña actualizada correctamente');
     }
 
-    private function getAvailableAvatars(): array
-    {
-        return [
-            'avatar_nova', 'avatar_blaze', 'avatar_onyx', 'avatar_vega',
-            'avatar_luna', 'avatar_orion', 'avatar_pixel', 'avatar_arcade',
-            'avatar_neon', 'avatar_terra', 'avatar_sol', 'avatar_zen',
-            'avatar_ember', 'avatar_cobalt', 'avatar_iris', 'avatar_mint',
-        ];
-    }
-
-    public static function getAvailableAvatarsStatic()
-    {
-        $controller = new static;
-
-        return $controller->getAvailableAvatars();
-    }
 }

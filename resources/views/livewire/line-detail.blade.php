@@ -1,23 +1,23 @@
-<div>
+﻿<div class="ld-page {{ $isEditing ? 'is-editing' : '' }}">
 <form wire:submit.prevent="saveAll" class="ld-form">
     <div style="margin-bottom: 16px;">
-        <a href="{{ route('lineas') }}" wire:navigate class="ld-back" style="font-size: 12px; color: var(--muted); text-decoration: none;">← Líneas & Redes</a>
+        <a href="{{ route('lineas') }}" wire:navigate class="ld-back" style="font-size: 12px; color: var(--muted); text-decoration: none;">â† LÃ­neas & Redes</a>
     </div>
 
 @section('header')
-    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuración de línea" />
+    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuraciÃ³n de lÃ­nea" />
 @endsection
 
 @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT) && !$isEditing)
     <div class="module-top-bar">
-        <button type="button" class="btn-primary" wire:click="toggleInlineEdit">✎ Editar línea</button>
+        <button type="button" class="btn-primary" wire:click="toggleInlineEdit">âœŽ Editar lÃ­nea</button>
     </div>
 @endif
 
 @if($isEditing)
     <div style="margin-bottom: 16px; display: flex; gap: 10px;">
-        <button type="button" class="btn-cancel" wire:click="toggleInlineEdit" style="background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer;">✕ Cancelar</button>
-        <button type="submit" class="btn-save" style="background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; border: none; padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">💾 Guardar cambios</button>
+        <button type="button" class="btn-cancel" wire:click="toggleInlineEdit" style="background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer;">âœ• Cancelar</button>
+        <button type="submit" class="btn-save" style="background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; border: none; padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">ðŸ’¾ Guardar cambios</button>
     </div>
     @else
     <div class="ld-meta" style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -28,7 +28,7 @@
         @if($line->contact_links)
             @foreach($line->contact_links as $link)
                 <span class="ld-contact" style="font-size: 12px; color: var(--muted); font-family: var(--font-mono);">
-                    @if($link['type'] === 'whatsapp')💬 @elseif($link['type'] === 'telegram')✈️ @elseif($link['type'] === 'instagram')📷 @elseif($link['type'] === 'facebook')📘 @endif {{ $link['value'] }}
+                    @if($link['type'] === 'whatsapp')ðŸ’¬ @elseif($link['type'] === 'telegram')âœˆï¸ @elseif($link['type'] === 'instagram')ðŸ“· @elseif($link['type'] === 'facebook')ðŸ“˜ @endif {{ $link['value'] }}
                 </span>
             @endforeach
         @endif
@@ -40,26 +40,26 @@
     @endif
 
     <div class="ld-body">
-        {{-- 📝 INFORMACIÓN --}}
+        {{-- ðŸ“ INFORMACIÃ“N --}}
         <div class="ld-section">
             <div class="ld-section-header">
-                <h2 class="ld-section-title">📝 INFORMACIÓN DE LA LÍNEA</h2>
+                <h2 class="ld-section-title">ðŸ“ INFORMACIÃ“N DE LA LÃNEA</h2>
             </div>
 
             @if($isEditing)
             <div class="edit-section">
-                <div class="edit-section-title">Datos Básicos</div>
+                <div class="edit-section-title">Datos BÃ¡sicos</div>
                 <div class="info-grid">
                     <div class="info-card">
                         <div class="info-label">Icono</div>
-                        <input type="text" wire:model="line.icon" class="edit-field" placeholder="🔥">
+                        <input type="text" wire:model="line.icon" class="edit-field" placeholder="ðŸ”¥">
                     </div>
                     <div class="info-card">
                         <div class="info-label">Tipo</div>
                         <select wire:model="line.type" class="edit-field">
                             <option value="whatsapp">WhatsApp</option>
                             <option value="telegram">Telegram</option>
-                            <option value="phone">Teléfono</option>
+                            <option value="phone">TelÃ©fono</option>
                         </select>
                     </div>
                     <div class="info-card">
@@ -80,12 +80,12 @@
                     </div>
                     @if($isEditing)
                     <div class="info-card" style="grid-column: span 2;">
-                        <div class="info-label">Descripción</div>
-                        <textarea wire:model="line.description" class="edit-field" rows="2" placeholder="Descripción de la línea..."></textarea>
+                        <div class="info-label">DescripciÃ³n</div>
+                        <textarea wire:model="line.description" class="edit-field" rows="2" placeholder="DescripciÃ³n de la lÃ­nea..."></textarea>
                     </div>
                     @elseif($line->description)
                     <div class="info-card" style="grid-column: span 2;">
-                        <div class="info-label">Descripción</div>
+                        <div class="info-label">DescripciÃ³n</div>
                         <div class="info-value">{{ $line->description }}</div>
                     </div>
                     @endif
@@ -95,7 +95,7 @@
             <div class="info-grid">
                 <div class="info-card">
                     <div class="info-label">Icono</div>
-                    <div class="info-value">{{ $line->icon ?: '—' }}</div>
+                    <div class="info-value">{{ $line->icon ?: 'â€”' }}</div>
                 </div>
                 <div class="info-card">
                     <div class="info-label">Tipo</div>
@@ -125,17 +125,17 @@
                 </div>
                 @if($line->description)
                 <div class="info-card" style="grid-column: span 2;">
-                    <div class="info-label">Descripción</div>
+                    <div class="info-label">DescripciÃ³n</div>
                     <div class="info-value">{{ $line->description }}</div>
                 </div>
                 @endif
             </div>
             @endif
 
-            {{-- Imágenes --}}
+            {{-- ImÃ¡genes --}}
             @if($isEditing)
             <div class="edit-section" style="margin-top: 16px;">
-                <div class="edit-section-title">📸 Imágenes</div>
+                <div class="edit-section-title">ðŸ“¸ ImÃ¡genes</div>
                 <div class="info-grid">
                     <div class="info-card">
                         <x-image-uploader label="Portada 851x315" model="portadaUpload" :upload="$portadaUpload" :value="$line->portada_url" remove-action="removeImageField('portada')" variant="wide">
@@ -167,10 +167,10 @@
             @endif
         </div>
 
-        {{-- 📱 CONTACTOS --}}
+        {{-- ðŸ“± CONTACTOS --}}
         <div class="ld-section">
             <div class="ld-section-header">
-                <h2 class="ld-section-title">📱 CONTACTOS</h2>
+                <h2 class="ld-section-title">ðŸ“± CONTACTOS</h2>
             </div>
             @if($isEditing)
             <div class="edit-section">
@@ -178,14 +178,14 @@
                 @if(!empty($link['value']) || $isEditing)
                 <div class="contact-edit-row" wire:key="contact-{{ $index }}">
                     <select wire:model="line.contact_links.{{ $index }}.type" class="contact-type-edit">
-                        <option value="whatsapp">💬 WhatsApp</option>
-                        <option value="telegram">✈️ Telegram</option>
-                        <option value="instagram">📷 Instagram</option>
-                        <option value="facebook">📘 Facebook</option>
-                        <option value="phone">📞 Teléfono</option>
+                        <option value="whatsapp">ðŸ’¬ WhatsApp</option>
+                        <option value="telegram">âœˆï¸ Telegram</option>
+                        <option value="instagram">ðŸ“· Instagram</option>
+                        <option value="facebook">ðŸ“˜ Facebook</option>
+                        <option value="phone">ðŸ“ž TelÃ©fono</option>
                     </select>
-                    <input type="text" wire:model="line.contact_links.{{ $index }}.value" class="contact-value-edit" placeholder="Número o enlace...">
-                    <button type="button" wire:click="removeContactLink({{ $index }})" class="contact-remove">✕</button>
+                    <input type="text" wire:model="line.contact_links.{{ $index }}.value" class="contact-value-edit" placeholder="NÃºmero o enlace...">
+                    <button type="button" wire:click="removeContactLink({{ $index }})" class="contact-remove">âœ•</button>
                 </div>
                 @endif
                 @endforeach
@@ -197,12 +197,12 @@
                 @if(!empty($link['value']))
                 <div class="link-card link-card-{{ $link['type'] ?? '' }}">
                     <div class="link-icon">
-                        @if(($link['type'] ?? '') === 'whatsapp')💬
-                        @elseif(($link['type'] ?? '') === 'telegram')✈️
-                        @elseif(($link['type'] ?? '') === 'instagram')📷
-                        @elseif(($link['type'] ?? '') === 'facebook')📘
-                        @elseif(($link['type'] ?? '') === 'phone')📞
-                        @else 🔗
+                        @if(($link['type'] ?? '') === 'whatsapp')ðŸ’¬
+                        @elseif(($link['type'] ?? '') === 'telegram')âœˆï¸
+                        @elseif(($link['type'] ?? '') === 'instagram')ðŸ“·
+                        @elseif(($link['type'] ?? '') === 'facebook')ðŸ“˜
+                        @elseif(($link['type'] ?? '') === 'phone')ðŸ“ž
+                        @else ðŸ”—
                         @endif
                     </div>
                     <div class="link-info">
@@ -218,13 +218,13 @@
             @endif
         </div>
 
-        {{-- 🎰 PLATAFORMAS (Checkboxes) --}}
+        {{-- ðŸŽ° PLATAFORMAS (Checkboxes) --}}
         @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
         <div class="ld-section">
             <div class="ld-section-header">
-                <h2 class="ld-section-title">🎰 PLATAFORMAS</h2>
+                <h2 class="ld-section-title">ðŸŽ° PLATAFORMAS</h2>
             </div>
-            <p class="section-desc">Activa o desactiva las plataformas disponibles para esta línea.</p>
+            <p class="section-desc">Activa o desactiva las plataformas disponibles para esta lÃ­nea.</p>
             <div class="platforms-toggle-grid">
                 @foreach($availablePlatforms as $platform)
                 @php $isActive = $line->activePlatforms()->where('platform_id', $platform->id)->exists(); @endphp
@@ -233,7 +233,7 @@
                         @if($platform->logo_url)
                         <img src="{{ $platform->logo_url }}" class="platform-toggle-logo">
                         @else
-                        <div class="platform-toggle-icon">🎮</div>
+                        <div class="platform-toggle-icon">ðŸŽ®</div>
                         @endif
                         <span class="platform-toggle-name">{{ $platform->name }}</span>
                     </div>
@@ -250,7 +250,7 @@
         {{-- AGENTES --}}
         <div class="ld-section">
             <div class="ld-section-header">
-                <h2 class="ld-section-title">👥 AGENTES ASIGNADOS</h2>
+                <h2 class="ld-section-title">ðŸ‘¥ AGENTES ASIGNADOS</h2>
                 @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
                 <button type="button" class="btn-add-agent" wire:click="openAssignModal">+ Agregar agente</button>
                 @endif
@@ -276,10 +276,10 @@
                             <span>{{ $la->is_active ? 'Activo' : 'Inactivo' }}</span>
                         </label>
                         @if($this->hasLinePermission(\App\Support\Permissions::AGENT_PERMISSIONS))
-                        <button type="button" class="btn-perms" wire:click="openPermissions({{ $la->agent->id }})">✎ Permisos</button>
+                        <button type="button" class="btn-perms" wire:click="openPermissions({{ $la->agent->id }})">âœŽ Permisos</button>
                         @endif
                         @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
-                        <button type="button" class="btn-remove-agent" wire:click="removeAgent({{ $la->agent->id }})" wire:confirm="¿Remover este agente de la línea?">✕</button>
+                        <button type="button" class="btn-remove-agent" wire:click="removeAgent({{ $la->agent->id }})" wire:confirm="Â¿Remover este agente de la lÃ­nea?">âœ•</button>
                         @endif
                     </div>
                     @if($isEditing)
@@ -292,46 +292,51 @@
                 @endforeach
             </div>
             @else
-            <div class="ld-empty">No hay agentes asignados a esta línea</div>
+            <div class="ld-empty">No hay agentes asignados a esta lÃ­nea</div>
             @endif
         </div>
 
-        {{-- PERMISOS DE LÍNEA --}}
-        <div class="ld-section">
+        {{-- PERMISOS DE LÃNEA --}}
+        <div class="ld-section" x-data="{ permissionsOpen: false }">
             <div class="ld-section-header">
-                <h2 class="ld-section-title">🔐 PERMISOS DE LA LÍNEA</h2>
+                <h2 class="ld-section-title">PERMISOS DE LA LINEA</h2>
+                <button type="button" class="btn-perms" x-on:click="permissionsOpen = true" x-show="!permissionsOpen">Setear permisos</button>
             </div>
-            <p class="section-desc">Define qué operaciones permite esta línea.</p>
+            <div x-show="permissionsOpen">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
+                    <p class="section-desc" style="margin:0;">Define que operaciones permite esta linea.</p>
+                    <button type="button" class="btn-ghost" x-on:click="permissionsOpen = false" style="padding:7px 14px;">Cerrar</button>
+                </div>
 
-            <div class="line-perms-grid">
-                @php
-                $linePermissions = [
-            
-                    \App\Support\Permissions::NEWS_READ => 'Ver novedades',
-                    \App\Support\Permissions::NEWS_CREATE => 'Crear novedades',
-                    \App\Support\Permissions::NEWS_UPDATE => 'Editar novedades',
-                    \App\Support\Permissions::TICKET_READ => 'Ver tickets',
-                    \App\Support\Permissions::TICKET_UPDATE => 'Editar tickets',
-                    \App\Support\Permissions::BONO_READ => 'Ver bonos',
-                    \App\Support\Permissions::SORTEO_READ => 'Ver sorteos',
-                    \App\Support\Permissions::LINE_EDIT => 'Editar línea',
-                    \App\Support\Permissions::AGENT_ASSIGN => 'Asignar agentes',
-                    \App\Support\Permissions::AGENT_PERMISSIONS => 'Gestionar permisos',
-                ];
-                @endphp
-                @foreach($linePermissions as $perm => $label)
-                <label class="perm-check {{ in_array($perm, $linePermissionsList ?? []) ? 'active' : '' }}">
-                    <input type="checkbox" wire:change="toggleLinePermission('{{ $perm }}')" {{ in_array($perm, $linePermissionsList ?? []) ? 'checked' : '' }}>
-                    <span>{{ $label }}</span>
-                </label>
-                @endforeach
+                <div class="line-perms-grid">
+                    @php
+                    $linePermissions = [
+                        \App\Support\Permissions::NEWS_READ => 'Ver novedades',
+                        \App\Support\Permissions::NEWS_CREATE => 'Crear novedades',
+                        \App\Support\Permissions::NEWS_UPDATE => 'Editar novedades',
+                        \App\Support\Permissions::TICKET_READ => 'Ver tickets',
+                        \App\Support\Permissions::TICKET_UPDATE => 'Editar tickets',
+                        \App\Support\Permissions::BONO_READ => 'Ver bonos',
+                        \App\Support\Permissions::SORTEO_READ => 'Ver sorteos',
+                        \App\Support\Permissions::LINE_EDIT => 'Editar linea',
+                        \App\Support\Permissions::AGENT_ASSIGN => 'Asignar agentes',
+                        \App\Support\Permissions::AGENT_PERMISSIONS => 'Gestionar permisos',
+                    ];
+                    @endphp
+                    @foreach($linePermissions as $perm => $label)
+                    <label class="perm-check {{ in_array($perm, $linePermissionsList ?? []) ? 'active' : '' }}">
+                        <input type="checkbox" wire:change="toggleLinePermission('{{ $perm }}')" {{ in_array($perm, $linePermissionsList ?? []) ? 'checked' : '' }}>
+                        <span>{{ $label }}</span>
+                    </label>
+                    @endforeach
+                </div>
             </div>
         </div>
 
-        {{-- 📊 ESTADÍSTICAS MANUALES --}}
+        {{-- ðŸ“Š ESTADÃSTICAS MANUALES --}}
         <div class="ld-section stats-section">
             <div class="ld-section-header">
-                <h2 class="ld-section-title">📊 ESTADÍSTICAS MANUALES</h2>
+                <h2 class="ld-section-title">ðŸ“Š ESTADÃSTICAS MANUALES</h2>
                 @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
                 <span style="font-size:11px;color:var(--muted);">Los valores se ingresan manualmente</span>
                 @endif
@@ -340,7 +345,7 @@
             {{-- KPIs --}}
             <div class="sales-kpis">
                 <div class="kpi-card kpi-gold">
-                    <div class="kpi-icon">🏆</div>
+                    <div class="kpi-icon">ðŸ†</div>
                     <div class="kpi-label">Mejor Mes</div>
                     @if($line->mejor_mes)
                     <div class="kpi-value">{{ $line->mejor_mes }}</div>
@@ -350,7 +355,7 @@
                     @endif
                 </div>
                 <div class="kpi-card kpi-purple">
-                    <div class="kpi-icon">🎯</div>
+                    <div class="kpi-icon">ðŸŽ¯</div>
                     <div class="kpi-label">Top Plataforma</div>
                     @if($line->mejor_plataforma)
                     <div class="kpi-value">{{ $line->mejor_plataforma }}</div>
@@ -360,19 +365,19 @@
                     @endif
                 </div>
                 <div class="kpi-card kpi-blue">
-                    <div class="kpi-icon">📅</div>
+                    <div class="kpi-icon">ðŸ“…</div>
                     <div class="kpi-label">Este Mes</div>
                     <div class="kpi-amount" style="color: var(--good);">${{ number_format($line->ventas_mes_actual ?? 0, 2) }}</div>
                 </div>
                 <div class="kpi-card kpi-green">
-                    <div class="kpi-icon">💵</div>
+                    <div class="kpi-icon">ðŸ’µ</div>
                     <div class="kpi-label">Ganancia Encargado</div>
                     <div class="kpi-value" style="font-size: 14px;">{{ $line->porcentaje_encargado ?? 0 }}%</div>
                     <div class="kpi-amount">${{ number_format($line->ganancia_encargado ?? 0, 2) }}</div>
                 </div>
             </div>
 
-            {{-- Últimos 3 Meses --}}
+            {{-- Ãšltimos 3 Meses --}}
             <div class="months-grid">
                 <div class="month-card">
                     <div class="month-name">Mes Actual</div>
@@ -401,7 +406,7 @@
             {{-- Edit Form (only in edit mode) --}}
             @if($isEditing)
             <div class="edit-section" style="margin-top: 16px;">
-                <div class="edit-section-title">📊 Editar Estadísticas</div>
+                <div class="edit-section-title">ðŸ“Š Editar EstadÃ­sticas</div>
                 <div class="stats-edit-grid">
                     <div class="stat-field">
                         <label class="edit-label">Mejor Mes</label>
@@ -452,7 +457,7 @@
     <div class="modal-content" wire:click.stop>
         <div class="modal-header">
             <h3>ASIGNAR AGENTE</h3>
-            <button class="modal-close" wire:click="closeAssignModal">✕</button>
+            <button class="modal-close" wire:click="closeAssignModal">âœ•</button>
         </div>
         <div class="modal-form">
             <div class="form-group">
@@ -496,7 +501,7 @@
     <div class="perm-panel" wire:click.stop>
         <div class="perm-panel-header">
             <h3>PERMISOS DE AGENTE</h3>
-            <button class="perm-panel-close" wire:click="closePermissions">✕</button>
+            <button class="perm-panel-close" wire:click="closePermissions">âœ•</button>
         </div>
         <p class="perm-panel-desc">Selecciona los permisos para este agente.</p>
 
@@ -528,7 +533,10 @@
 @endif
 
     <style>
-    .ld-form { margin: 0; padding: 0; }
+    .ld-page { min-height: 100%; }
+    .ld-form { margin: 0; padding: 0; min-height: calc(100vh - 132px); }
+    .ld-page.is-editing .ld-form { display: flex; flex-direction: column; }
+    .ld-page.is-editing .ld-body { flex: 1; padding-bottom: 24px; }
     .ld-back { font-size: 12px; color: var(--muted); text-decoration: none; }
     .ld-back:hover { color: var(--orange); }
     .ld-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.06em; }
@@ -703,6 +711,3 @@
 }
     </style>
 </div>
-</form>
-</div>
-</form>

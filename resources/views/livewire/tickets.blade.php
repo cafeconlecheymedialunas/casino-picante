@@ -58,13 +58,11 @@
                     $isAgent = (bool)$message->agent_id;
                     $sender = $isAgent ? $message->agent : $message->user;
                     $senderName = $sender ? $sender->name : ($isAgent ? 'Agente' : 'Usuario');
-                    $avatarSeed = $sender ? $sender->avatar : ($isAgent ? 'Agente' : 'Usuario');
-                    // For DiceBear seeds from our library, we might need to map them if they are just the value
-                    $seed = str_replace('avatar_', '', $avatarSeed ?? ($isAgent ? 'Agente' : 'Usuario'));
+                    $avatarValue = $sender?->avatar ?: 'avatar_'.\Illuminate\Support\Str::slug($senderName ?: ($isAgent ? 'agente' : 'usuario'), '-');
                 @endphp
                 <div class="message {{ $isAgent ? 'agent' : '' }}">
                     <div class="message-avatar {{ $isAgent ? 'agent' : '' }}">
-                        <img src="https://api.dicebear.com/9.x/adventurer/svg?seed={{ urlencode($seed) }}&backgroundColor=ffdfbf,ffd5dc,d1d4f9,c0aede,b6e3f4" 
+                        <img src="{{ \App\Support\AvatarLibrary::url($avatarValue) }}"
                              alt="{{ $senderName }}"
                              style="width: 100%; height: 100%; border-radius: 50%;">
                     </div>
