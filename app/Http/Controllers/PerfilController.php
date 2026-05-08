@@ -12,7 +12,13 @@ class PerfilController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $agent = session('active_agent_id') ? Agent::find(session('active_agent_id')) : null;
+        $agent = null;
+
+        if (session('active_agent_id') && $user) {
+            $agent = Agent::where('id', session('active_agent_id'))
+                ->where('user_id', $user->id)
+                ->first();
+        }
 
         if ($agent) {
             return view('perfil.index', ['user' => $agent, 'isAgent' => true]);
@@ -28,13 +34,13 @@ class PerfilController extends Controller
     public function update(Request $request)
     {
         $isAgent = session('active_agent_id') !== null;
-
+        $user = $request->user();
         $availableAvatars = $this->getAvailableAvatars();
 
         if ($isAgent) {
-            $agentId = session('active_agent_id');
-            $agent = Agent::find($agentId);
-            $user = $request->user();
+            $agent = Agent::where('id', session('active_agent_id'))
+                ->where('user_id', $user->id)
+                ->first();
 
             if ($agent) {
                 $request->validate([
@@ -43,16 +49,18 @@ class PerfilController extends Controller
                     'avatar' => 'sometimes|string|in:'.implode(',', $availableAvatars),
                 ]);
 
-                $agent->update([
-                    'name' => $request->name,
-                    'avatar' => $request->avatar ?? $agent->avatar,
-                ]);
+                DB::transaction(function () use ($agent, $user, $request) {
+                    $agent->update([
+                        'name' => $request->name,
+                        'avatar' => $request->avatar ?? $agent->avatar,
+                    ]);
 
-                $user?->update([
-                    'name' => $request->name,
-                    'apellido' => $request->apellido ?? $user->apellido,
-                    'avatar' => $request->avatar ?? $user->avatar,
-                ]);
+                    $user->update([
+                        'name' => $request->name,
+                        'apellido' => $request->apellido ?? $user->apellido,
+                        'avatar' => $request->avatar ?? $user->avatar,
+                    ]);
+                });
 
                 return back()->with('message', 'Perfil actualizado correctamente');
             }
@@ -77,11 +85,12 @@ class PerfilController extends Controller
     public function updatePassword(Request $request)
     {
         $isAgent = session('active_agent_id') !== null;
+        $user = $request->user();
 
         if ($isAgent) {
-            $agentId = session('active_agent_id');
-            $agent = Agent::find($agentId);
-            $user = $request->user();
+            $agent = Agent::where('id', session('active_agent_id'))
+                ->where('user_id', $user->id)
+                ->first();
 
             if (! $agent) {
                 return back()->with('error', 'Agente no encontrado.');
@@ -92,14 +101,16 @@ class PerfilController extends Controller
                 'password' => ['required', Password::defaults(), 'confirmed'],
             ]);
 
-            $currentHash = $user?->password ?: $agent->password;
+            $currentHash = $user->password ?: $agent->password;
             if (! Hash::check($request->current_password, $currentHash)) {
                 return back()->withErrors(['current_password' => 'La contraseña actual es incorrecta.']);
             }
 
             $password = Hash::make($request->password);
-            $agent->update(['password' => $password]);
-            $user?->update(['password' => $password]);
+            DB::transaction(function () use ($agent, $user, $password) {
+                $agent->update(['password' => $password]);
+                $user->update(['password' => $password]);
+            });
 
             return back()->with('message', 'Contraseña actualizada correctamente');
         }

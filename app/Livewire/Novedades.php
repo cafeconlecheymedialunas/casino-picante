@@ -2,17 +2,18 @@
 
 namespace App\Livewire;
 
+use App\Models\Comment;
 use App\Models\Post;
 use App\Support\ImageStorage;
+use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
-use App\Support\Permissions;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class Novedades extends Component
 {
-    use HasLinePermissions, WithFileUploads, SendsNotifications;
+    use HasLinePermissions, SendsNotifications, WithFileUploads;
 
     public $tab = 'novedad';
 
@@ -68,16 +69,9 @@ class Novedades extends Component
         return $this->hasLinePermission(Permissions::NEWS_READ);
     }
 
-    public function setStatusFilter($status)
+    public function canModerateComments(): bool
     {
-        $this->statusFilter = $status;
-    }
-
-    public function setTab($tab)
-    {
-        $this->tab = $tab;
-        $this->type = $tab;
-        $this->selectedPost = null;
+        return $this->hasLinePermission(Permissions::NEWS_UPDATE);
     }
 
     public function selectPost($id)
@@ -195,7 +189,7 @@ class Novedades extends Component
 
         session()->flash('message', 'Contenido eliminado correctamente');
 
-            $this->notify('Contenido eliminado', "El contenido {$postTitle} fue eliminado del sistema.", 'posts', '/novedades', 'danger');
+        $this->notify('Contenido eliminado', "El contenido {$postTitle} fue eliminado del sistema.", 'posts', '/novedades', 'danger');
     }
 
     public function toggleStatus($postId)
@@ -205,14 +199,73 @@ class Novedades extends Component
         $newStatus = $post->status === 'published' ? 'draft' : 'published';
         $post->update(['status' => $newStatus]);
 
-            $this->notify('Estado de contenido cambiado', "El contenido {$post->title} fue " . ($newStatus === 'published' ? 'publicado' : 'puesto en borrador') . ".", 'posts', '/novedades', 'warning');
+        $this->notify('Estado de contenido cambiado', "El contenido {$post->title} fue ".($newStatus === 'published' ? 'publicado' : 'puesto en borrador').'.', 'posts', '/novedades', 'warning');
+    }
+
+    public function addComment()
+    {
+        if (! $this->selectedPost) {
+            return;
+        }
+
+        $this->authorizePostLineAccess($this->selectedPost->id);
+
+        $this->validate([
+            'newComment' => 'required|string|min:3|max:1000',
+        ]);
+
+        Comment::create([
+            'post_id' => $this->selectedPost->id,
+            'user_id' => auth()->id(),
+            'content' => $this->newComment,
+            'is_approved' => $this->canModerateComments(),
+        ]);
+
+        $this->newComment = '';
+        session()->flash('message', $this->canModerateComments() ? 'Comentario agregado' : 'Comentario enviado para aprobación');
+    }
+
+    public function approveComment($commentId)
+    {
+        $this->checkLinePermission(Permissions::NEWS_UPDATE);
+        $comment = Comment::with('post')->findOrFail($commentId);
+        $this->authorizePostLineAccess($comment->post_id);
+        $comment->update(['is_approved' => true]);
+        session()->flash('message', 'Comentario aprobado');
+    }
+
+    public function deleteComment($commentId)
+    {
+        $this->checkLinePermission(Permissions::NEWS_DELETE);
+        $comment = Comment::with('post')->findOrFail($commentId);
+        $this->authorizePostLineAccess($comment->post_id);
+        $comment->delete();
+        session()->flash('message', 'Comentario eliminado');
+    }
+
+    private function authorizePostLineAccess(int $postId): void
+    {
+        $lineIds = $this->visibleLineIds();
+        if ($lineIds === null) {
+            return;
+        }
+        $post = Post::findOrFail($postId);
+        if (! in_array($post->line_id, $lineIds)) {
+            abort(403, 'Sin acceso a este contenido.');
+        }
     }
 
     public function getPosts()
     {
         $this->checkLinePermission(Permissions::NEWS_READ);
 
+        $lineIds = $this->visibleLineIds();
+
         $query = Post::query();
+
+        if ($lineIds !== null) {
+            $query->whereIn('line_id', $lineIds);
+        }
 
         if ($this->tab !== 'all') {
             $query->where('type', $this->tab);

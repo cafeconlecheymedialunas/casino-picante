@@ -50,7 +50,7 @@
             </form>
         </div>
     </div>
-    @endif
+    @endif>
 
     @if(session()->has('message'))
     <div style="position:fixed;top:20px;right:20px;background:var(--good);color:#000;padding:12px 20px;border-radius:8px;font-weight:700;z-index:2000;">
@@ -60,7 +60,7 @@
 
     <div class="content-grid">
         <div>
-<div class="tab-bar">
+            <div class="tab-bar">
                 <div class="tabs">
                     <button class="tab {{ $tab === 'novedad' ? 'active' : '' }}" wire:click="setTab('novedad')">Novedades</button>
                     <button class="tab {{ $tab === 'blog' ? 'active' : '' }}" wire:click="setTab('blog')">Blog</button>
@@ -81,8 +81,6 @@
                     <button class="status-filter {{ $statusFilter === 'hidden' ? 'active' : '' }}" wire:click="setStatusFilter('hidden')">Ocultos</button>
                 </div>
             </div>
-                <button class="btn-primary" style="height: 32px; padding: 0 14px; font-size: 12px;" wire:click="openCreateModal">+ Nueva</button>
-            </div>
             <div class="search-box" style="margin-bottom:12px;">
                 <input type="text" placeholder="Buscar..." wire:model="search" class="search-input" style="width:100%;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:12px;color:var(--muted);">
             </div>
@@ -93,12 +91,12 @@
                     <div class="list-thumb">{{ $post->image ? '🖼️' : '📝' }}</div>
                     <div>
                         <div class="list-title">{{ $post->title }}</div>
-                        <div class="list-date">{{ $post->published_at?->format('d/m/y') ?? $post->created_at->format('d/m/y') }}</div>
+                        <div class="list-date">{{ $post->published_at?->format('d/m/Y') ?? $post->created_at->format('d/m/Y') }}</div>
                     </div>
                     <span class="list-status status-{{ $post->status }}">
-                        @if($post->status === 'published')● Published
+                        @if($post->status === 'published')● Publicado
                         @elseif($post->status === 'draft')● Borrador
-                        @else● Hidden
+                        @else● Oculto
                         @endif
                     </span>
                     <div class="list-actions">
@@ -123,7 +121,7 @@
                 <div class="field-label">Imagen destacada</div>
                 <div class="field-image">
                     @if($selectedPost->image)
-                        <img src="{{ $selectedPost->image }}" alt="{{ $selectedPost->title }}" style="width:100%;height:100%;object-fit:cover;">
+                    <img src="{{ $selectedPost->image }}" alt="{{ $selectedPost->title }}" style="width:100%;height:100%;object-fit:cover;">
                     @endif
                 </div>
             </div>
@@ -170,33 +168,73 @@
                 </div>
             </div>
 
+            {{-- Comments Section --}}
+            @if($selectedPost->comments->count())
+            <div style="margin-top:24px; border-top:1px solid var(--line); padding-top:20px;">
+                <div style="font-size:11px; font-weight:700; color:var(--orange); letter-spacing:0.08em; margin-bottom:12px;">
+                    COMENTARIOS ({{ $selectedPost->comments->count() }})
+                </div>
+                @foreach($selectedPost->comments as $comment)
+                <div style="padding:12px; border-radius:10px; background:rgba(255,255,255,0.03); border:1px solid var(--line); margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                        <div>
+                            <div style="font-weight:700; font-size:13px;">{{ $comment->user?->name ?? 'Anónimo' }}</div>
+                            <div style="font-size:10px; color:var(--muted);">{{ $comment->created_at->diffForHumans() }}</div>
+                        </div>
+                        @if($canModerateComments)
+                        <div style="display:flex; gap:4px;">
+                            @if(!$comment->is_approved)
+                            <button wire:click="approveComment({{ $comment->id }})" style="padding:4px 8px; font-size:10px; background:rgba(37,196,107,0.12); color:var(--good); border:1px solid rgba(37,196,107,0.3); border-radius:4px; cursor:pointer;">Aprobar</button>
+                            @endif
+                            <button wire:click="deleteComment({{ $comment->id }})" style="padding:4px 8px; font-size:10px; background:rgba(255,71,87,0.12); color:#ff4757; border:1px solid rgba(255,71,87,0.3); border-radius:4px; cursor:pointer;">×</button>
+                        </div>
+                        @endif
+                    </div>
+                    <div style="font-size:13px; color:var(--muted-2);">{{ $comment->content }}</div>
+                </div>
+                @endforeach
+            </div>
+            @endif>
+
+            {{-- Add Comment --}}
+            <div style="margin-top:16px;">
+                <form wire:submit.prevent="addComment">
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" wire:model="newComment" placeholder="Escribí un comentario..." style="flex:1; background:rgba(255,255,255,0.04); border:1px solid var(--line-2); border-radius:8px; padding:8px 12px; color:#fff; font-size:13px;">
+                        <button type="submit" style="padding:8px 16px; background:var(--orange); color:#190702; border:none; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer;">Comentar</button>
+                    </div>
+                    @error('newComment') <div style="color:#ff4757; font-size:11px; margin-top:4px;">{{ $message }}</div> @enderror
+                </form>
+            </div>
+
             <div class="editor-actions">
                 <button class="editor-btn-ghost">Vista previa</button>
                 <button class="editor-btn-primary">Guardar y publicar</button>
             </div>
+
             @else
             <div class="editor-empty">
                 <p>Selecciona una publicación para editarla</p>
             </div>
             @endif
         </div>
-    </div>
+</div>
 
-    <style>
+<style>
         .content-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; padding: 0 28px 28px; }
         @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } }
-
+         
         .tab-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
         .tabs { display: flex; gap: 6px; }
         .tab { padding: 8px 14px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--muted); border: 1px solid var(--line-2); }
         .tab.active { background: var(--orange); color: #190702; border: none; }
-        
+         
         .filter-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
         .filter-box { flex: 1; min-width: 150px; }
         .status-filters { display: flex; gap: 4px; flex-wrap: wrap; }
         .status-filter { padding: 8px 12px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); color: var(--muted); transition: all 0.2s; }
         .status-filter.active { background: var(--orange); color: #190702; border-color: var(--orange); }
-
+       
         .list { display: grid; gap: 10px; }
         .list-item { padding: 12px; display: grid; grid-template-columns: 70px 1fr 90px 80px; gap: 12px; align-items: center; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
         .list-item.selected { border: 1px solid rgba(255,106,26,0.5); background: linear-gradient(180deg, rgba(255,106,26,0.06), rgba(20,8,8,0.85)); }
@@ -211,43 +249,43 @@
         .list-actions { display: flex; gap: 4px; justify-content: flex-end; }
         .action-btn { width: 28px; height: 28px; padding: 0; background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 999px; color: var(--muted); cursor: pointer; font-size: 11px; transition: all 0.2s; }
         .action-btn:hover { background: var(--orange); color: #190702; border-color: var(--orange); }
-
+        
         .editor { padding: 20px; background: linear-gradient(180deg, #170b0b 0%, #0f0707 100%); border: 1px solid var(--line); border-radius: 20px; }
         .editor-empty { text-align: center; color: var(--muted); padding: 40px; }
         .editor-label { font-size: 10px; color: var(--orange); font-weight: 800; letter-spacing: 0.14em; }
         .editor-title { font-family: var(--font-display); font-size: 22px; margin: 4px 0 16px; letter-spacing: 0.02em; }
-
+        
         .field { margin-bottom: 14px; }
         .field-label { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
         .field-image { height: 140px; border-radius: 12px; position: relative; overflow: hidden; border: 1px dashed var(--line-warm); background: radial-gradient(60% 60% at 50% 50%, #ff8a3d, #1a0606); display: flex; align-items: center; justify-content: center; }
         .field-image-btn { position: absolute; right: 10px; bottom: 10px; height: 28px; padding: 0 12px; font-size: 11px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); border-radius: 999px; color: #fff; cursor: pointer; }
-        .field-input { padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); font-size: 13px; color: #fff; width: 100%; }
-        .field-textarea { padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); font-size: 13px; color: var(--muted); width: 100%; min-height: 120px; resize: vertical; }
-
+        .field-input { padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); color: #fff; font-size: 13px; width: 100%; }
+        .field-textarea { padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); color: var(--muted); width: 100%; min-height: 120px; resize: vertical; }
+        
         .toolbar { display: flex; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
         .toolbar-btn { width: 26px; height: 24px; padding: 0; background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 4px; color: var(--muted); cursor: pointer; font-size: 10px; font-weight: 700; transition: all 0.2s; }
         .toolbar-btn:hover { background: var(--orange); color: #190702; border-color: var(--orange); }
-
+        
         .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .status-btns { display: flex; gap: 4px; }
         .status-btn { flex: 1; height: 30px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); color: var(--muted); transition: all 0.2s; }
         .status-btn.active { background: var(--orange); color: #190702; border: none; }
-
+        
         .editor-actions { display: flex; gap: 8px; margin-top: 6px; }
         .editor-btn-ghost { flex: 1; height: 38px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); border-radius: 999px; color: #fff; cursor: pointer; }
         .editor-btn-primary { flex: 2; height: 38px; font-size: 12px; background: linear-gradient(180deg, var(--orange-2) 0%, var(--orange) 60%, var(--orange-deep) 100%); border: none; border-radius: 999px; color: #190702; font-weight: 800; cursor: pointer; }
-
+        
         .empty-state { text-align: center; color: var(--muted); padding: 40px; }
         
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: linear-gradient(180deg, #1a0d0d 0%, #120909 100%); border: 1px solid var(--line); border-radius: 20px; width: 100%; max-width: 520px; }
+        .modal-content { background: linear-gradient(180deg, #1a0d0d 0%, #120909 100%); border: 1px solid var(--line); border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line); }
         .modal-header h3 { font-family: var(--font-display); font-size: 22px; margin: 0; }
         .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
         .modal-form { padding: 24px; }
         .form-group { margin-bottom: 14px; }
         .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 10px; padding: 12px 16px; color: var(--white); font-size: 14px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 10px; padding: 12px 16px; color: #fff; font-size: 14px; }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
     </style>
 </div>

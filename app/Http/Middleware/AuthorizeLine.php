@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AuthorizeLine
 {
-    public function handle(Request $request, Closure $next, string $permission = null): Response
+    public function handle(Request $request, Closure $next, ?string $permission = null): Response
     {
         if (! auth()->check()) {
             return redirect()->route('admin.login');
@@ -28,12 +28,19 @@ class AuthorizeLine
             abort(403, 'No tenes acceso al panel.');
         }
 
-        $agentId = session('active_agent_id') ?: $user->agent?->id;
+        // Validate session agent_id belongs to user
+        $sessionAgentId = session('active_agent_id');
+        if ($sessionAgentId && ! Agent::where('id', $sessionAgentId)->where('user_id', $user->id)->exists()) {
+            session()->forget(['active_agent_id', 'active_line_id']);
+            $sessionAgentId = null;
+        }
+
+        $agentId = $sessionAgentId ?: $user->agent?->id;
         if ($agentId) {
             session(['active_agent_id' => $agentId]);
         }
 
-        $agent = Agent::find($agentId);
+        $agent = Agent::where('id', $agentId)->where('user_id', $user->id)->first();
         if (! $agent || $agent->status !== 'active') {
             abort(403, 'Agente inactivo o no encontrado.');
         }
@@ -62,6 +69,7 @@ class AuthorizeLine
                 abort(403, 'No pertenecés a ninguna línea activa.');
             }
             session(['active_line_id' => $first->line_id]);
+
             return redirect($request->url());
         }
 

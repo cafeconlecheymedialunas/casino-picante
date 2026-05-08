@@ -41,6 +41,10 @@ class LineAgent extends Model
 
     public function hasPermission(string $permission): bool
     {
+        if (! $this->is_active) {
+            return false;
+        }
+
         return LineAgentPermission::where('line_id', $this->line_id)
             ->where('agent_id', $this->agent_id)
             ->where('permission', $permission)

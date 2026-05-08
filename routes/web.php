@@ -95,17 +95,10 @@ Route::middleware('line.authorize')->group(function () {
         Permissions::USER_READ,
     ]))->name('chats');
     Route::get('/platforms', PlatformsMaster::class)->middleware('admin')->name('platforms.master');
-    Route::get('/ventas', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT_BASIC)->name('ventas');
+    Route::get('/ventas', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
 
-    Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.implode('|', [
-        Permissions::LINE_READ,
-        Permissions::LINE_VIEW,
-        Permissions::LINE_CREATE,
-        Permissions::LINE_EDIT_BASIC,
-        Permissions::LINE_EDIT_CONTACTS,
-        Permissions::LINE_EDIT_BRANDING,
-    ]))->name('lineas');
-    Route::get('/lineas/{id}', LineDetail::class)->name('lineas.detail');
+    Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_READ)->name('lineas');
+    Route::get('/lineas/{id}', LineDetail::class)->middleware('line.authorize')->name('lineas.detail');
 
     Route::middleware('line.authorize:'.Permissions::PROMO_READ)->group(function () {
         Route::get('/promociones', Promociones::class)->name('promociones');
@@ -121,18 +114,13 @@ Route::middleware('line.authorize')->group(function () {
 
     Route::get('/editor-home', EditorHome::class)->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home');
 
-    Route::middleware('line.authorize:'.Permissions::TICKET_READ)->group(function () {
-        Route::get('/tickets', Tickets::class)->name('tickets');
-    });
+    Route::get('/tickets', Tickets::class)->middleware('line.authorize')->name('tickets');
 
     Route::middleware('line.authorize:'.Permissions::SORTEO_READ)->group(function () {
         Route::get('/sorteos', Sorteos::class)->name('sorteos');
     });
 
-    Route::get('/banners', Banners::class)->middleware('line.authorize:'.implode('|', [
-        Permissions::LINE_EDIT_BRANDING,
-        Permissions::LINE_EDIT_BASIC,
-    ]))->name('banners');
+    Route::get('/banners', Banners::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('banners');
 
     // Settings – admin only
     Route::get('/settings', Settings::class)->middleware('admin')->name('settings');

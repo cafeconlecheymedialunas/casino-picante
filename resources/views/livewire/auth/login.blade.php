@@ -9,7 +9,7 @@
         <div style="background:linear-gradient(180deg,#1c0e0e,#120909);border:1px solid var(--line-2);border-radius:14px;padding:32px 28px;position:relative;overflow:hidden;">
             <div style="position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--orange),var(--amber));"></div>
 
-            <form wire:submit.prevent="login">
+            <form wire:submit="login">
 
                 @if($errors->has('username'))
                     <div style="background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.35);border-radius:8px;padding:12px 14px;margin-bottom:20px;color:#ff6b7a;font-size:13px;font-weight:700;">
@@ -21,7 +21,7 @@
                     <label style="display:block;margin-bottom:7px;color:var(--muted-2);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Usuario</label>
                     <input
                         type="text"
-                        wire:model="username"
+                        wire:model.blur="username"
                         placeholder="Username o email"
                         autocomplete="username"
                         autofocus
@@ -35,7 +35,7 @@
                     <label style="display:block;margin-bottom:7px;color:var(--muted-2);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Contraseña</label>
                     <input
                         type="password"
-                        wire:model="password"
+                        wire:model.blur="password"
                         placeholder="••••••••"
                         autocomplete="current-password"
                         style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:var(--font-body);outline:none;transition:border-color .15s;"

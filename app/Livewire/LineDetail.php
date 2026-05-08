@@ -90,7 +90,7 @@ class LineDetail extends Component
 
     public function saveAll(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         $this->validate([
             'line.name' => 'required|string|max:255',
@@ -123,7 +123,7 @@ class LineDetail extends Component
 
     public function removeImageField(string $field): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if ($field === 'portada') {
             ImageStorage::delete($this->line->portada_url);
@@ -198,7 +198,6 @@ class LineDetail extends Component
     public function mount(int $id): void
     {
         $this->lineId = $id;
-        $this->line = Line::findOrFail($id);
         $this->authorizeLineContext();
         $this->linePermissionsList = $this->line->permissions ?? [];
         $this->initInlineFields();
@@ -238,7 +237,7 @@ class LineDetail extends Component
 
     public function saveInfo(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
         $this->line->update([
             'name' => $this->inlineName,
             'type' => $this->inlineType,
@@ -267,7 +266,7 @@ class LineDetail extends Component
 
     public function saveContacts(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
         $contacts = array_filter($this->inlineContacts, fn ($c) => ! empty($c['value']));
         $this->line->update(['contact_links' => array_values($contacts)]);
         $this->line->refresh();
@@ -297,7 +296,7 @@ class LineDetail extends Component
 
     public function saveEncargado(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
         $this->line->update(['encargado_id' => $this->inlineEncargadoId ?: null]);
         $this->line->refresh();
         session()->flash('message', 'Encargado actualizado.');
@@ -316,7 +315,7 @@ class LineDetail extends Component
 
     public function saveImages(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
         $this->line->update([
             'portada_url' => $this->inlinePortada ?: null,
             'perfil_url' => $this->inlinePerfil ?: null,
@@ -329,7 +328,7 @@ class LineDetail extends Component
 
     public function openEditModal(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
         $this->editName = $this->line->name;
         $this->editType = $this->line->type ?? 'whatsapp';
         $this->editPhone = $this->line->phone ?? '';
@@ -371,7 +370,7 @@ class LineDetail extends Component
 
     public function saveLineEdit(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         $this->line->update([
             'name' => $this->editName,
@@ -415,7 +414,7 @@ class LineDetail extends Component
 
     public function togglePlatform(int $platformId): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         $found = false;
         foreach ($this->editPlatforms as &$p) {
@@ -442,7 +441,7 @@ class LineDetail extends Component
 
     public function updatePlatformMessage(int $platformId, string $message): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         foreach ($this->editPlatforms as &$p) {
             if ($p['platform_id'] == $platformId) {
@@ -453,7 +452,7 @@ class LineDetail extends Component
 
     public function togglePlatformActivation($platformId): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         $platform = Platform::find($platformId);
         if (! $platform) {
@@ -697,7 +696,7 @@ class LineDetail extends Component
 
     public function openSalesModal(?int $saleId = null): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if ($saleId) {
             $sale = Sale::where('line_id', $this->lineId)->findOrFail($saleId);
@@ -735,7 +734,7 @@ class LineDetail extends Component
 
     public function saveSale(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         $this->validate([
             'salePlatformId' => 'required|integer|min:1',
@@ -768,7 +767,7 @@ class LineDetail extends Component
 
     public function deleteSale(int $saleId): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
         Sale::where('line_id', $this->lineId)->findOrFail($saleId)->delete();
         session()->flash('message', 'Venta eliminada.');
     }
@@ -880,7 +879,7 @@ class LineDetail extends Component
 
     public function openPercentageModal(int $agentId): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
         if ($la) {
@@ -899,7 +898,7 @@ class LineDetail extends Component
 
     public function savePercentage(): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if ($this->percentageAgentId) {
             LineAgent::where('line_id', $this->lineId)
@@ -916,7 +915,7 @@ class LineDetail extends Component
 
     public function openImageModal(string $type): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if ($type === 'portada') {
             $this->portadaUrl = $this->line->portada_url ?? '';
@@ -929,7 +928,7 @@ class LineDetail extends Component
 
     public function saveImageUrl(string $type, string $url): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if ($type === 'portada') {
             $this->line->update(['portada_url' => $url]);
@@ -945,7 +944,7 @@ class LineDetail extends Component
 
     public function deleteImage(string $type): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if ($type === 'portada') {
             $this->line->update(['portada_url' => null]);
@@ -973,7 +972,7 @@ class LineDetail extends Component
 
     public function assignEncargado($agentId): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         $this->line->update(['encargado_id' => $agentId ?: null]);
         $this->line->refresh();
@@ -985,7 +984,7 @@ class LineDetail extends Component
 
     public function toggleLinePermission(string $permission): void
     {
-        $this->checkLinePermission(Permissions::LINE_EDIT_BASIC);
+        $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if (! in_array($permission, LineAgentPermission::allPermissions(), true)) {
             return;
@@ -1020,13 +1019,22 @@ class LineDetail extends Component
 
     private function authorizeLineContext(): void
     {
+        $this->line = Line::findOrFail($this->lineId);
+
         if ($this->isAdminMode()) {
             session(['active_line_id' => $this->lineId]);
 
             return;
         }
 
-        $agentId = session('active_agent_id') ?: auth()->user()?->agent?->id;
+        // Validate session agent_id belongs to user
+        $sessionAgentId = session('active_agent_id');
+        if ($sessionAgentId && ! Agent::where('id', $sessionAgentId)->where('user_id', auth()->id())->exists()) {
+            session()->forget(['active_agent_id', 'active_line_id']);
+            $sessionAgentId = null;
+        }
+
+        $agentId = $sessionAgentId ?: auth()->user()?->agent?->id;
         $lineAgent = LineAgent::where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
             ->where('is_active', true)
@@ -1042,10 +1050,9 @@ class LineDetail extends Component
         ]);
 
         if (
-            ! $lineAgent->hasPermission(Permissions::LINE_VIEW)
-            && ! $lineAgent->hasPermission(Permissions::LINE_EDIT_BASIC)
-            && ! $lineAgent->hasPermission(Permissions::LINE_EDIT_CONTACTS)
-            && ! $lineAgent->hasPermission(Permissions::LINE_EDIT_BRANDING)
+            ! $lineAgent->hasPermission(Permissions::LINE_READ)
+            && ! $lineAgent->hasPermission(Permissions::LINE_VIEW)
+            && ! $lineAgent->hasPermission(Permissions::LINE_EDIT)
         ) {
             abort(403, 'Sin permiso para ver esta linea.');
         }

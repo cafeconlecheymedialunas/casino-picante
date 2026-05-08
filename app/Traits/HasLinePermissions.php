@@ -10,18 +10,65 @@ use App\Support\Roles;
 
 trait HasLinePermissions
 {
+    // Validates that the session active_agent_id belongs to the authenticated user
+    private function validateSessionAgent(): ?int
+    {
+        $agentId = session('active_agent_id');
+        if (! $agentId) {
+            return null;
+        }
+
+        $user = auth()->user();
+        if (! $user) {
+            session()->forget(['active_agent_id', 'active_line_id']);
+
+            return null;
+        }
+
+        $valid = Agent::where('id', $agentId)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if (! $valid) {
+            session()->forget(['active_agent_id', 'active_line_id']);
+
+            return null;
+        }
+
+        return $agentId;
+    }
+
     // Returns the currently active Line from session, or null (admin mode)
     public function getActiveLine(): ?Line
     {
         $lineId = session('active_line_id');
+        if (! $lineId) {
+            return null;
+        }
 
-        return $lineId ? Line::find($lineId) : null;
+        $line = Line::find($lineId);
+
+        // For agents, verify they have access to this line
+        if (! $this->isAdminMode()) {
+            $agentId = $this->validateSessionAgent();
+            if ($agentId && $line) {
+                $hasAccess = LineAgent::where('line_id', $lineId)
+                    ->where('agent_id', $agentId)
+                    ->where('is_active', true)
+                    ->exists();
+                if (! $hasAccess) {
+                    return null;
+                }
+            }
+        }
+
+        return $line;
     }
 
     // Returns the LineAgent pivot for the current agent+line, or null (admin mode)
     public function getCurrentLineAgent(): ?LineAgent
     {
-        $agentId = session('active_agent_id');
+        $agentId = $this->validateSessionAgent();
         $lineId = session('active_line_id');
 
         if (! $agentId || ! $lineId) {
@@ -37,7 +84,7 @@ trait HasLinePermissions
     // Returns the current authenticated Agent model, or null
     public function getCurrentAgent(): ?Agent
     {
-        $agentId = session('active_agent_id');
+        $agentId = $this->validateSessionAgent();
 
         if ($agentId) {
             return Agent::find($agentId);

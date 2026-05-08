@@ -3,7 +3,7 @@
         <a href="{{ route('lineas') }}" wire:navigate class="ld-back" style="font-size: 12px; color: var(--muted); text-decoration: none;">← Líneas & Redes</a>
     </div>
 
-    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuración de línea" @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT_BASIC) && !$isEditing) buttonText="✎ Editar línea" buttonAction="toggleInlineEdit" @endif />
+    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuración de línea" @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT) && !$isEditing) buttonText="✎ Editar línea" buttonAction="toggleInlineEdit" @endif />
 
     @if($isEditing)
     <div style="margin-bottom: 16px; display: flex; gap: 10px;">
@@ -210,7 +210,7 @@
         </div>
 
         {{-- 🎰 PLATAFORMAS (Checkboxes) --}}
-        @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT_BASIC))
+        @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
         <div class="ld-section">
             <div class="ld-section-header">
                 <h2 class="ld-section-title">🎰 PLATAFORMAS</h2>
@@ -305,7 +305,7 @@
                     \App\Support\Permissions::TICKET_UPDATE => 'Editar tickets',
                     \App\Support\Permissions::BONO_READ => 'Ver bonos',
                     \App\Support\Permissions::SORTEO_READ => 'Ver sorteos',
-                    \App\Support\Permissions::LINE_EDIT_BASIC => 'Editar línea',
+                    \App\Support\Permissions::LINE_EDIT => 'Editar línea',
                     \App\Support\Permissions::AGENT_ASSIGN => 'Asignar agentes',
                     \App\Support\Permissions::AGENT_PERMISSIONS => 'Gestionar permisos',
                 ];
@@ -323,7 +323,7 @@
         <div class="ld-section stats-section">
             <div class="ld-section-header">
                 <h2 class="ld-section-title">📊 ESTADÍSTICAS MANUALES</h2>
-                @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT_BASIC))
+                @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
                 <span style="font-size:11px;color:var(--muted);">Los valores se ingresan manualmente</span>
                 @endif
             </div>

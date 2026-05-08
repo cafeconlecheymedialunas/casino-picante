@@ -12,7 +12,7 @@ class Banners extends Component
 
     public function render()
     {
-        if (! $this->hasLinePermission(Permissions::LINE_EDIT_BRANDING) && ! $this->hasLinePermission(Permissions::LINE_EDIT_BASIC)) {
+        if (! $this->hasLinePermission(Permissions::LINE_EDIT)) {
             abort(403, 'Sin permiso para gestionar banners.');
         }
 

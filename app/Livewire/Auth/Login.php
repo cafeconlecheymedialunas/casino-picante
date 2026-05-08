@@ -46,7 +46,7 @@ class Login extends Component
 
         $this->incrementAttempts();
         $remaining = self::MAX_ATTEMPTS - $this->getAttempts();
-        $this->addError('username', 'Usuario o contrasena incorrectos. ('.$remaining.' intentos restantes)');
+        $this->addError('username', 'Usuario o contrasena incorrectos.');
         $this->reset('password');
     }
 
@@ -95,32 +95,36 @@ class Login extends Component
 
         if ($user?->status !== 'active') {
             Auth::logout();
-            $this->addError('username', 'Esta cuenta esta inactiva.');
-            $this->reset('password');
+            $this->addGenericError();
 
             return true;
         }
 
         if ($user?->hasRole(Roles::ADMIN)) {
             session()->forget(['active_agent_id', 'active_line_id']);
-            session()->regenerate();
-            $this->redirect('/dashboard', navigate: true);
+
+            $this->redirect('/dashboard', navigate: false);
 
             return true;
         }
 
         if ($user?->hasRole(Roles::AGENTE) && $user->agent?->status === 'active') {
-            session()->regenerate();
             session(['active_agent_id' => $user->agent->id]);
-            $this->redirect('/dashboard', navigate: true);
+
+            $this->redirect('/dashboard', navigate: false);
 
             return true;
         }
 
         Auth::logout();
-        $this->addError('username', 'Esta cuenta no tiene acceso al panel.');
-        $this->reset('password');
+        $this->addGenericError();
 
         return true;
+    }
+
+    private function addGenericError(): void
+    {
+        $this->addError('username', 'Usuario o contrasena incorrectos.');
+        $this->reset('password');
     }
 }

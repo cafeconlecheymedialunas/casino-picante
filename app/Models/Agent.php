@@ -68,17 +68,24 @@ class Agent extends Model
 
     public function linePermissionsFor(int $lineId): array
     {
-        return LineAgentPermission::where('line_id', $lineId)
+        $lineAgent = LineAgent::where('line_id', $lineId)
             ->where('agent_id', $this->id)
-            ->pluck('permission')
-            ->toArray();
+            ->where('is_active', true)
+            ->first();
+
+        if (! $lineAgent) {
+            return [];
+        }
+
+        return $lineAgent->getPermissionsListAttribute();
     }
 
     public function hasLinePermission(int $lineId, string $permission): bool
     {
-        return LineAgentPermission::where('line_id', $lineId)
+        return LineAgent::where('line_id', $lineId)
             ->where('agent_id', $this->id)
-            ->where('permission', $permission)
+            ->where('is_active', true)
+            ->whereHas('linePermissions', fn ($q) => $q->where('permission', $permission))
             ->exists();
     }
 }
