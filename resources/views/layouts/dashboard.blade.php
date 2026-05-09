@@ -280,6 +280,21 @@
         .notification-content small { color:var(--muted); font-size:11px; line-height:1.35; margin-top:2px; }
         .notification-content em { color:var(--muted-2); font-size:10px; margin-top:5px; font-style:normal; }
         .dropdown-empty { padding:22px 14px; color:var(--muted-2); text-align:center; font-size:12px; }
+        .image-uploader { display:flex;flex-direction:column;gap:6px; }
+        .image-uploader-head { display:flex;align-items:center;gap:8px; }
+        .image-uploader-label { font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted-2);text-transform:uppercase; }
+        .image-uploader-hint { font-size:10px;color:var(--muted);background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px; }
+        .image-uploader-drop { display:flex;align-items:center;justify-content:center;border:1px dashed var(--line-2);border-radius:7px;min-height:80px;cursor:pointer;overflow:hidden;transition:border-color .2s;position:relative; }
+        .image-uploader-drop:hover { border-color:var(--orange); }
+        .image-uploader-drop img { width:100%;height:80px;object-fit:cover;display:block; }
+        .image-uploader-empty { font-size:11px;color:var(--muted);pointer-events:none; }
+        .image-uploader-drop input[type=file] { position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%; }
+        .image-uploader-actions { display:flex;gap:6px;flex-wrap:wrap; }
+        .image-uploader-button { display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--line-2);background:rgba(255,255,255,.05);color:var(--white);transition:background .15s;position:relative;overflow:hidden; }
+        .image-uploader-button:hover { background:rgba(255,255,255,.1); }
+        .image-uploader-button.danger { border-color:rgba(255,80,80,.3);color:#ff5050; }
+        .image-uploader-button.danger:hover { background:rgba(255,80,80,.1); }
+        .image-uploader-button input[type=file] { position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%; }
         .image-uploader-loading { color:var(--orange); font-size:11px; font-weight:800; }
 
         .module-header-row {

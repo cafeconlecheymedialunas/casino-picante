@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\User;
 use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
@@ -25,6 +26,55 @@ class Tickets extends Component
     }
 
     public $newMessage = '';
+
+    public bool $showCreateModal = false;
+    public string $createSubject = '';
+    public string $createUserId = '';
+    public string $createPriority = 'medium';
+    public string $createMessage = '';
+
+    public function openCreateModal(): void
+    {
+        $this->checkLinePermission(Permissions::TICKET_UPDATE);
+        $this->createSubject = '';
+        $this->createUserId = '';
+        $this->createPriority = 'medium';
+        $this->createMessage = '';
+        $this->resetValidation();
+        $this->showCreateModal = true;
+    }
+
+    public function createTicket(): void
+    {
+        $this->checkLinePermission(Permissions::TICKET_UPDATE);
+
+        $this->validate([
+            'createSubject' => 'required|string|min:3|max:255',
+            'createUserId'  => 'required|integer|exists:users,id',
+            'createPriority' => 'required|in:low,medium,high',
+            'createMessage' => 'required|string|min:1',
+        ]);
+
+        $lineId = session('active_line_id');
+
+        $ticket = Ticket::create([
+            'user_id'  => (int) $this->createUserId,
+            'line_id'  => $lineId,
+            'subject'  => trim($this->createSubject),
+            'status'   => 'open',
+            'priority' => $this->createPriority,
+        ]);
+
+        TicketMessage::create([
+            'ticket_id' => $ticket->id,
+            'agent_id'  => $this->getCurrentAgentId(),
+            'message'   => trim($this->createMessage),
+        ]);
+
+        $this->showCreateModal = false;
+        $this->notify('Ticket creado', "Ticket {$ticket->tracking_code}: {$ticket->subject}", 'tickets', '/tickets', 'success');
+        $this->selectTicket($ticket->id);
+    }
 
     public function selectTicket($id)
     {
@@ -67,6 +117,11 @@ class Tickets extends Component
             'agent_id' => $this->getCurrentAgentId(),
             'message' => $this->newMessage,
         ]);
+
+        // Auto-advance to progress when agent first replies
+        if ($this->selectedTicket->status === 'open') {
+            $this->selectedTicket->update(['status' => 'progress']);
+        }
 
         $this->newMessage = '';
         $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
@@ -112,6 +167,27 @@ class Tickets extends Component
         $this->dispatch('messageSent');
     }
 
+    public function reopenTicket(): void
+    {
+        $this->checkLinePermission(Permissions::TICKET_UPDATE);
+
+        if (! $this->selectedTicket) {
+            return;
+        }
+
+        $this->selectedTicket->update(['status' => 'open']);
+
+        TicketMessage::create([
+            'ticket_id' => $this->selectedTicket->id,
+            'agent_id'  => $this->getCurrentAgentId(),
+            'message'   => '🔄 Ticket reabierto',
+        ]);
+
+        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+        $this->dispatch('messageSent');
+        $this->notify('Ticket reabierto', "El ticket {$this->selectedTicket->subject} fue reabierto.", 'tickets', '/tickets', 'warning');
+    }
+
     public function updateStatus($status)
     {
         $this->checkLinePermission(
@@ -149,8 +225,10 @@ class Tickets extends Component
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('subject', 'like', '%'.$this->search.'%')
+                    ->orWhere('tracking_code', 'like', '%'.$this->search.'%')
                     ->orWhereHas('user', function ($uq) {
-                        $uq->where('name', 'like', '%'.$this->search.'%');
+                        $uq->where('name', 'like', '%'.$this->search.'%')
+                            ->orWhere('username', 'like', '%'.$this->search.'%');
                     });
             });
         }
@@ -178,7 +256,15 @@ class Tickets extends Component
     {
         $tickets = $this->getTickets();
         $metrics = $this->getMetrics();
+        $lineId = session('active_line_id');
+        $assignableUsers = User::where('status', 'active')
+            ->when($lineId, fn ($q) => $q->where(function ($inner) use ($lineId) {
+                $inner->where('line_id', $lineId)
+                    ->orWhereHas('lines', fn ($l) => $l->where('lines.id', $lineId)->where('line_clients.is_active', true));
+            }))
+            ->orderBy('name')
+            ->get(['id', 'name', 'username']);
 
-        return view('livewire.tickets', compact('tickets', 'metrics'))->layout('layouts.dashboard');
+        return view('livewire.tickets', compact('tickets', 'metrics', 'assignableUsers'))->layout('layouts.dashboard');
     }
 }

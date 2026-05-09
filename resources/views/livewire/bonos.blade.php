@@ -15,7 +15,13 @@
         .table-title { font-family:var(--font-display); font-size:22px; letter-spacing:.03em; }
         .table-count { color:var(--muted-2); font-size:11px; }
         .table-scroll { overflow-x:auto; }
-        .t-head, .t-row { display:grid; grid-template-columns:64px 1fr 1fr 1fr 1fr 1fr 1fr 150px; gap:12px; align-items:center; min-width:1180px; padding:11px 18px; }
+        .t-head, .t-row { display:grid; grid-template-columns:2fr 150px 130px 110px 140px; gap:12px; align-items:center; min-width:680px; padding:11px 18px; }
+        .t-bono-code { font-size:10px;font-weight:800;color:var(--orange);letter-spacing:.08em;margin-bottom:2px; }
+        .t-bono-name { font-size:13px;font-weight:600; }
+        .t-vigencia-dates { font-size:12px; }
+        .t-vigencia-sep { color:var(--muted);margin:0 4px; }
+        .t-uso { font-size:13px;font-weight:700; }
+        .t-uso-sub { font-size:10px;color:var(--muted);margin-top:1px; }
         .t-head { color:var(--muted-2); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; border-bottom:1px solid var(--line); }
         .t-row { border-bottom:1px solid var(--line); font-size:13px; }
         .t-row:hover { background:rgba(255,106,26,.04); }
@@ -75,11 +81,7 @@
         .ap-head { display:flex;justify-content:space-between;align-items:flex-start;padding:16px;border-bottom:1px solid var(--line); }
         .ap-code { font-size:10px;font-weight:800;color:var(--orange);letter-spacing:.1em;margin-bottom:2px; }
         .ap-title { font-family:var(--font-display);font-size:16px;letter-spacing:.02em; }
-        .ap-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--line); }
-        .ap-stat { padding:12px 8px;text-align:center;border-right:1px solid var(--line); }
-        .ap-stat:last-child { border-right:none; }
-        .ap-stat-val { font-size:20px;font-weight:800;font-family:var(--font-display); }
-        .ap-stat-lbl { font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin-top:2px; }
+
         .ap-list { max-height:420px;overflow-y:auto; }
         .ap-row { display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s; }
         .ap-row:hover { background:rgba(255,255,255,.03); }
@@ -146,28 +148,41 @@
             @else
                 <div class="table-scroll">
                     <div class="t-head">
-                        <div>ID</div>
-                        <div>Codigo</div>
-                        <div>Nombre</div>
-                        <div>Fecha inicio</div>
-                        <div>Fecha fin</div>
-                        <div>Bonos reclamados</div>
-                        <div>Bonos disponibles</div>
-                        <div>Editar</div>
+                        <div>Bono</div>
+                        <div>Vigencia</div>
+                        <div>Tipo</div>
+                        <div>Uso</div>
+                        <div>Acciones</div>
                     </div>
 
                     @foreach($bonuses as $bonus)
                         <div class="t-row">
-                            <div class="mono">#{{ $bonus->id }}</div>
-                            <div class="strong truncate">{{ $bonus->code ?? '-' }}</div>
-                            <div class="truncate">
-                                {{ $bonus->title }}
-                                <div><span class="badge b-{{ $bonus->status }}">{{ $bonus->status === 'upcoming' ? 'Proximo' : ($bonus->status === 'expired' ? 'Vencido' : 'Activo') }}</span></div>
+                            {{-- Bono: código + nombre + estado --}}
+                            <div>
+                                <div class="t-bono-code">{{ $bonus->code ?? '-' }}</div>
+                                <div class="t-bono-name truncate">{{ $bonus->title }}</div>
+                                <span class="badge b-{{ $bonus->status }}">{{ $bonus->status === 'upcoming' ? 'Próximo' : ($bonus->status === 'expired' ? 'Vencido' : 'Activo') }}</span>
                             </div>
-                            <div>{{ $bonus->start_date?->format('d/m/Y H:i') }}</div>
-                            <div>{{ $bonus->end_date?->format('d/m/Y H:i') }}</div>
-                            <div>{{ $bonus->claimed_count }}</div>
-                            <div>{{ is_null($bonus->total_quantity) ? 'Ilimitados' : $bonus->remaining_quantity.' / '.$bonus->total_quantity }}</div>
+                            {{-- Vigencia: inicio → fin --}}
+                            <div class="t-vigencia-dates">
+                                {{ $bonus->start_date?->format('d/m/y') }}
+                                <span class="t-vigencia-sep">→</span>
+                                {{ $bonus->end_date?->format('d/m/y') }}
+                            </div>
+                            {{-- Tipo: general/específico + plataforma --}}
+                            <div>
+                                <div style="font-size:12px;font-weight:600;text-transform:capitalize">{{ $bonus->type }}</div>
+                                @if($bonus->platform)
+                                    <div style="font-size:11px;color:var(--muted)">{{ $bonus->platform->name }}</div>
+                                @endif
+                            </div>
+                            {{-- Uso: reclamados / disponibles --}}
+                            <div>
+                                <div class="t-uso">{{ $bonus->claimed_count }} reclamados</div>
+                                <div class="t-uso-sub">
+                                    {{ is_null($bonus->total_quantity) ? 'Ilimitados' : $bonus->remaining_quantity.' / '.$bonus->total_quantity.' disp.' }}
+                                </div>
+                            </div>
                             <div class="action-row">
                                 <button class="btn-icon {{ $bonusForAssignments === $bonus->id ? 'active' : '' }}"
                                     wire:click="{{ $bonusForAssignments === $bonus->id ? 'closeAssignmentsPanel' : 'openAssignmentsPanel('.$bonus->id.')' }}"
@@ -208,34 +223,6 @@
                 <button class="modal-close" wire:click="closeAssignmentsPanel"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            {{-- Stats --}}
-            @php
-                $totalA   = $panelAssignments->count() + ($assignmentsSearch ? 0 : 0);
-                $allAssignments = \App\Models\BonusAssignment::where('bonus_id', $panelBonus->id)->get();
-                $totalAll = $allAssignments->count();
-                $claimed  = $allAssignments->where('status', 'used')->count();
-                $pending  = $allAssignments->where('status', 'active')->count();
-            @endphp
-            <div class="ap-stats">
-                <div class="ap-stat">
-                    <div class="ap-stat-val">{{ $totalAll }}</div>
-                    <div class="ap-stat-lbl">Total</div>
-                </div>
-                <div class="ap-stat">
-                    <div class="ap-stat-val" style="color:var(--good)">{{ $claimed }}</div>
-                    <div class="ap-stat-lbl">Reclamados</div>
-                </div>
-                <div class="ap-stat">
-                    <div class="ap-stat-val" style="color:var(--orange)">{{ $pending }}</div>
-                    <div class="ap-stat-lbl">Pendientes</div>
-                </div>
-                <div class="ap-stat">
-                    <div class="ap-stat-val" style="color:var(--muted)">
-                        {{ is_null($panelBonus->total_quantity) ? '∞' : max(0, $panelBonus->total_quantity - $totalAll) }}
-                    </div>
-                    <div class="ap-stat-lbl">Disponibles</div>
-                </div>
-            </div>
 
             {{-- Buscador --}}
             <div style="padding:0 16px 12px;">

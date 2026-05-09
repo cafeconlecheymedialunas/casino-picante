@@ -17,6 +17,7 @@
             $preview = $value;
         }
     }
+    $inputId = 'img-upload-' . md5($model . uniqid());
 @endphp
 
 <div class="image-uploader image-uploader-{{ $variant }}">
@@ -27,20 +28,19 @@
         @endif
     </div>
 
-    <label class="image-uploader-drop">
+    <label class="image-uploader-drop" for="{{ $inputId }}">
         @if($preview)
             <img src="{{ $preview }}" alt="">
         @else
             <span class="image-uploader-empty">Seleccionar imagen</span>
         @endif
-        <input type="file" wire:model="{{ $model }}" accept="image/png,image/jpeg,image/webp,image/gif">
     </label>
 
+    <input type="file" id="{{ $inputId }}" wire:model="{{ $model }}"
+        accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
+
     <div class="image-uploader-actions">
-        <label class="image-uploader-button">
-            Subir
-            <input type="file" wire:model="{{ $model }}" accept="image/png,image/jpeg,image/webp,image/gif">
-        </label>
+        <label class="image-uploader-button" for="{{ $inputId }}">Subir imagen</label>
         @if($preview && $removeAction)
             <button type="button" class="image-uploader-button danger" wire:click="{{ $removeAction }}">Borrar</button>
         @endif

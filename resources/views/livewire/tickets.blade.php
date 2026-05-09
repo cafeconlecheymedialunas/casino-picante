@@ -6,9 +6,10 @@
     <div class="content-grid">
         <div class="ticket-list">
             <div class="ticket-search">
-                <input type="text" placeholder="Buscar tickets..." wire:model="search" class="search-input">
+                <input type="text" placeholder="Buscar tickets..." wire:model.live.debounce.200ms="search" class="search-input">
             </div>
             <div class="ticket-filters">
+                <button class="btn-primary" style="height:32px;padding:0 14px;font-size:11px;" wire:click="openCreateModal">+ Nuevo ticket</button>
                 <button class="ticket-filter {{ $filter === 'all' ? 'active' : '' }}" wire:click="$set('filter', 'all')">Todos</button>
                 <button class="ticket-filter {{ $filter === 'open' ? 'active' : '' }}" wire:click="$set('filter', 'open')">Abiertos ({{ $metrics['open'] }})</button>
                 <button class="ticket-filter {{ $filter === 'progress' ? 'active' : '' }}" wire:click="$set('filter', 'progress')">En proceso ({{ $metrics['progress'] }})</button>
@@ -18,7 +19,12 @@
             @forelse($tickets as $ticket)
             <div class="ticket-item {{ $selectedTicket && $selectedTicket->id === $ticket->id ? 'selected' : '' }}" wire:click="selectTicket({{ $ticket->id }})">
                 <div class="ticket-item-header">
-                    <span class="ticket-user">{{ $ticket->user->name ?? 'Usuario' }}</span>
+                    <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                        <span class="ticket-user">{{ $ticket->user->name ?? 'Usuario' }}</span>
+                        @if($ticket->tracking_code)
+                            <span class="ticket-code">{{ $ticket->tracking_code }}</span>
+                        @endif
+                    </div>
                     <span class="ticket-time">{{ $ticket->created_at->diffForHumans() }}</span>
                 </div>
                 <div class="ticket-subject">{{ $ticket->subject }}</div>
@@ -44,11 +50,22 @@
             <div class="conv-header">
                 <div>
                     <div class="conv-title">{{ $selectedTicket->user->name ?? 'Usuario' }} · {{ $selectedTicket->subject }}</div>
-                    <div class="conv-meta">{{ $selectedTicket->line->name ?? 'Sin línea' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->priority }} · {{ $selectedTicket->created_at->diffForHumans() }}</div>
+                    <div class="conv-meta">
+                    @if($selectedTicket->tracking_code)
+                        <span style="color:var(--orange);font-weight:800;">{{ $selectedTicket->tracking_code }}</span> ·
+                    @endif
+                    {{ $selectedTicket->line->name ?? 'Sin línea' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->priority }} · {{ $selectedTicket->created_at->diffForHumans() }}
+                </div>
                 </div>
                 <div class="conv-actions">
-                    <button class="btn-ghost" style="height: 30px; padding: 0 12px; font-size: 11px;" wire:click="updateStatus('progress')">En proceso</button>
-                    <button class="btn-primary" style="height: 30px; padding: 0 12px; font-size: 11px;" wire:click="updateStatus('closed')">Cerrar</button>
+                    @if($selectedTicket->status === 'closed')
+                        <button class="btn-ghost" style="height:30px;padding:0 12px;font-size:11px;" wire:click="reopenTicket">🔄 Reabrir</button>
+                    @else
+                        @if($selectedTicket->status === 'open')
+                            <button class="btn-ghost" style="height:30px;padding:0 12px;font-size:11px;" wire:click="updateStatus('progress')">En proceso</button>
+                        @endif
+                        <button class="btn-primary" style="height:30px;padding:0 12px;font-size:11px;" wire:click="updateStatus('closed')">Cerrar</button>
+                    @endif
                 </div>
             </div>
 
@@ -76,6 +93,7 @@
                 @endforeach
             </div>
 
+            @if($selectedTicket->status !== 'closed')
             <div class="conv-input">
                 <div class="quick-actions">
                     <button class="btn-ghost quick-btn" wire:click="quickAction('resolved')">👍 Resuelto</button>
@@ -91,12 +109,67 @@
                 @error('newMessage') <span style="color: var(--orange); font-size: 11px; margin-top: 4px; display: block;">{{ $message }}</span> @enderror
             </div>
             @else
+            <div class="conv-input" style="text-align:center;padding:14px;">
+                <span style="font-size:12px;color:var(--muted);">Ticket cerrado ·</span>
+                <button class="btn-ghost" style="height:26px;padding:0 10px;font-size:11px;margin-left:6px;" wire:click="reopenTicket">🔄 Reabrir</button>
+            </div>
+            @endif
+            @else
             <div class="conv-empty">
                 <p>Selecciona un ticket para ver la conversación</p>
             </div>
             @endif
         </div>
     </div>
+
+    {{-- Modal crear ticket --}}
+    @if($showCreateModal)
+    <div class="modal-overlay" wire:click.self="$set('showCreateModal', false)">
+        <div class="modal-box" style="max-width:480px;">
+            <div class="modal-header">
+                <div class="modal-title">Nuevo Ticket</div>
+                <button class="modal-close" wire:click="$set('showCreateModal', false)">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Usuario</label>
+                    <select class="form-input" wire:model="createUserId">
+                        <option value="">Seleccionar usuario...</option>
+                        @foreach($assignableUsers as $u)
+                            <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->username }})</option>
+                        @endforeach
+                    </select>
+                    @error('createUserId') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Asunto</label>
+                    <input type="text" class="form-input" wire:model="createSubject" placeholder="Describe el problema...">
+                    @error('createSubject') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prioridad</label>
+                    <select class="form-input" wire:model="createPriority">
+                        <option value="low">Baja</option>
+                        <option value="medium">Media</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mensaje inicial</label>
+                    <textarea class="form-input" wire:model="createMessage" rows="4" placeholder="Descripción detallada..."></textarea>
+                    @error('createMessage') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" wire:click="$set('showCreateModal', false)">Cancelar</button>
+                <button class="btn-primary" wire:click="createTicket" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="createTicket">Crear ticket</span>
+                    <span wire:loading wire:target="createTicket">Creando...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <script>
         document.addEventListener('livewire:init', () => {
@@ -131,7 +204,8 @@
         .ticket-item.selected { border-color: rgba(255,106,26,0.5); background: linear-gradient(180deg, rgba(255,106,26,0.06), rgba(20,8,8,0.85)); }
         .ticket-item-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
         .ticket-user { font-weight: 700; font-size: 13px; }
-        .ticket-time { font-size: 10px; color: var(--muted); }
+        .ticket-code { font-size: 9px; font-weight: 800; color: var(--orange); letter-spacing: .06em; background: rgba(255,106,26,.1); padding: 1px 5px; border-radius: 4px; }
+        .ticket-time { font-size: 10px; color: var(--muted); white-space: nowrap; }
         .ticket-subject { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
         .ticket-item-footer { display: flex; gap: 6px; align-items: center; }
         .ticket-line { padding: 2px 6px; border-radius: 4px; background: rgba(255,106,26,0.12); color: var(--orange); font-size: 10px; font-weight: 700; }
@@ -167,5 +241,19 @@
         .ticket-search { margin-bottom: 12px; }
         .search-input { width: 100%; padding: 10px 16px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--line-2); font-size: 12px; color: var(--muted); }
         .search-input:focus { outline: none; border-color: var(--orange); color: var(--white); }
+
+        .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px); }
+        .modal-box { background:linear-gradient(180deg,#1e0d09,#130808);border:1px solid var(--line-warm);border-radius:14px;width:100%;padding:0;overflow:hidden; }
+        .modal-header { display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line); }
+        .modal-title { font-family:var(--font-display);font-size:18px;letter-spacing:.04em; }
+        .modal-close { background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px; }
+        .modal-close:hover { color:var(--white); }
+        .modal-body { padding:20px 22px;display:flex;flex-direction:column;gap:14px; }
+        .modal-actions { display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line); }
+        .form-group { display:flex;flex-direction:column;gap:5px; }
+        .form-label { font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted-2);text-transform:uppercase; }
+        .form-input { background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:7px;padding:9px 12px;color:var(--white);font-size:13px;font-family:var(--font-body);width:100%; }
+        .form-input:focus { outline:none;border-color:var(--orange); }
+        .form-error { font-size:11px;color:#ff5050;margin-top:2px; }
     </style>
 </div>

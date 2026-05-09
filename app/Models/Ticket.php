@@ -15,10 +15,29 @@ class Ticket extends Model
     protected $fillable = [
         'user_id',
         'line_id',
+        'tracking_code',
         'subject',
         'status',
         'priority',
     ];
+
+    protected static function booting(): void
+    {
+        static::creating(function (self $ticket) {
+            if (empty($ticket->tracking_code)) {
+                $ticket->tracking_code = static::generateTrackingCode();
+            }
+        });
+    }
+
+    public static function generateTrackingCode(): string
+    {
+        do {
+            $code = 'TKT-' . strtoupper(substr(md5(uniqid()), 0, 6));
+        } while (static::withoutGlobalScopes()->where('tracking_code', $code)->exists());
+
+        return $code;
+    }
 
     public function user()
     {
