@@ -69,6 +69,8 @@ class Sorteos extends Component
 
     public bool $showWinnerModal = false;
 
+    public bool $finalizeOnSave = false;
+
     public array $winnerPrizes = [];
 
     public string $numbersSearch = '';
@@ -82,7 +84,7 @@ class Sorteos extends Component
         return [
             'title' => 'required|min:2|max:180',
             'description' => 'nullable|max:2000',
-            'status' => 'required|in:active,inactive',
+            'status' => 'required|in:active,inactive,finished',
             'start_date' => 'required|date',
             'start_time' => 'required',
             'end_date' => 'required|date',
@@ -435,6 +437,7 @@ class Sorteos extends Component
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $raffle = Raffle::findOrFail($raffleId);
         $this->selectedRaffleId = $raffleId;
+        $this->finalizeOnSave = false;
         $this->winnerPrizes = collect($raffle->prizes ?? [])
             ->map(fn ($prize, $i) => [
                 'position'    => (int) ($prize['position'] ?? $i + 1),
@@ -492,22 +495,43 @@ class Sorteos extends Component
             })
             ->toArray();
 
-        $raffle->update([
+        $updateData = [
             'prizes'         => $prizes,
             'winner_user_id' => $firstWinnerUserId,
             'winner_number'  => $firstWinnerNumber,
-        ]);
+        ];
+
+        if ($this->finalizeOnSave) {
+            $updateData['status'] = 'finished';
+        }
+
+        $raffle->update($updateData);
 
         $this->showWinnerModal = false;
         $this->winnerPrizes = [];
-        session()->flash('message', 'Resultados registrados');
+        $this->finalizeOnSave = false;
+
+        $message = $this->finalizeOnSave ? 'Sorteo finalizado' : 'Resultados registrados';
+        session()->flash('message', $message);
         $this->notify('Resultados registrados', "Se cargaron los resultados del sorteo {$raffle->title}.", 'raffles', '/sorteos', 'success');
+    }
+
+    public function reopenRaffle(int $id): void
+    {
+        $this->checkLinePermission(Permissions::SORTEO_UPDATE);
+        Raffle::findOrFail($id)->update(['status' => 'inactive']);
+        session()->flash('message', 'Sorteo reabierto');
     }
 
     public function toggleStatus(int $id): void
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $raffle = Raffle::findOrFail($id);
+
+        if ($raffle->isFinished()) {
+            return;
+        }
+
         $raffle->update(['status' => $raffle->status === 'active' ? 'inactive' : 'active']);
         session()->flash('message', 'Estado actualizado');
         $this->notify('Estado de sorteo cambiado', "El sorteo {$raffle->title} fue ".($raffle->status === 'active' ? 'activado' : 'pausado').'.', 'raffles', '/sorteos', 'warning');

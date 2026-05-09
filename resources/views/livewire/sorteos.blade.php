@@ -26,6 +26,13 @@
         .badge { display:inline-flex; width:fit-content; align-items:center; border-radius:999px; padding:4px 10px; font-size:10px; font-weight:800; }
         .b-active { color:var(--good); background:rgba(37,196,107,.12); }
         .b-inactive { color:var(--muted); background:rgba(255,255,255,.06); }
+        .b-finished { color:var(--amber); background:rgba(255,179,71,.14); }
+        .finished-banner { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; background:rgba(255,179,71,.10); border:1px solid rgba(255,179,71,.3); color:var(--amber); font-size:12px; font-weight:800; letter-spacing:.06em; margin-bottom:14px; }
+        .winner-card { border:1px solid rgba(255,179,71,.3); border-radius:8px; overflow:hidden; background:rgba(255,179,71,.06); }
+        .winner-card .prize-body { border-top:2px solid var(--amber); }
+        .winner-number { font-family:var(--font-display); font-size:36px; color:var(--amber); line-height:1; margin:4px 0; }
+        .winner-info { font-size:12px; color:var(--good); font-weight:700; margin-top:6px; }
+        .winner-meta { font-size:11px; color:var(--muted); }
         .btn-icon, .btn-soft { height:32px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.03); color:var(--white); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; }
         .btn-icon { width:32px; color:var(--muted); }
         .btn-soft { padding:0 10px; font-size:11px; font-weight:800; }
@@ -98,8 +105,8 @@
     <div class="raffles-page">
         <div class="stats-grid">
             <div class="stat-card"><div class="stat-label">Historico total</div><div class="stat-value">{{ $totalHistorical }}</div></div>
-            <div class="stat-card"><div class="stat-label">Visibles</div><div class="stat-value">{{ $raffles->count() }}</div></div>
             <div class="stat-card"><div class="stat-label">Activos</div><div class="stat-value" style="color:var(--good);">{{ $raffles->where('status','active')->count() }}</div></div>
+            <div class="stat-card"><div class="stat-label">Finalizados</div><div class="stat-value" style="color:var(--amber);">{{ $raffles->where('status','finished')->count() }}</div></div>
             <div class="stat-card"><div class="stat-label">Numeros asignados</div><div class="stat-value" style="color:var(--orange);">{{ $selectedRaffle?->numbers->count() ?? 0 }}</div></div>
         </div>
 
@@ -125,7 +132,9 @@
                         <div class="raffle-item {{ $selectedRaffleId == $raffle->id ? 'selected' : '' }}" wire:click="selectRaffle({{ $raffle->id }})">
                             <div style="display:flex;justify-content:space-between;gap:10px;">
                                 <div class="raffle-name">{{ $raffle->title }}</div>
-                                <span class="badge {{ $raffle->status === 'active' ? 'b-active' : 'b-inactive' }}">{{ $raffle->status === 'active' ? 'Activo' : 'Inactivo' }}</span>
+                                <span class="badge {{ $raffle->status === 'finished' ? 'b-finished' : ($raffle->status === 'active' ? 'b-active' : 'b-inactive') }}">
+                                    {{ $raffle->status === 'finished' ? '★ Finalizado' : ($raffle->status === 'active' ? 'Activo' : 'Inactivo') }}
+                                </span>
                             </div>
                             <div class="raffle-meta">
                                 {{ $raffle->start_date->format('d/m/Y H:i') }} - {{ $raffle->end_date->format('d/m/Y H:i') }}<br>
@@ -148,31 +157,64 @@
                             </div>
                             <div class="action-row">
                                 <button class="btn-soft" wire:click="openEdit({{ $selectedRaffle->id }})">Editar</button>
-                                <button class="btn-soft" wire:click="openWinnerModal({{ $selectedRaffle->id }})">Ganador</button>
-                                <button class="btn-soft" wire:click="toggleStatus({{ $selectedRaffle->id }})">Cambiar estado</button>
+                                <button class="btn-soft" wire:click="openWinnerModal({{ $selectedRaffle->id }})">
+                                    {{ $selectedRaffle->isFinished() ? 'Ver resultados' : 'Cargar resultados' }}
+                                </button>
+                                @if($selectedRaffle->isFinished())
+                                    <button class="btn-soft" wire:click="reopenRaffle({{ $selectedRaffle->id }})" wire:confirm="Reabrir este sorteo? Se marcara como Inactivo.">Reabrir</button>
+                                @else
+                                    <button class="btn-soft" wire:click="toggleStatus({{ $selectedRaffle->id }})">Cambiar estado</button>
+                                @endif
                                 <button class="btn-icon btn-danger" wire:click="delete({{ $selectedRaffle->id }})" wire:confirm="Eliminar sorteo?">
                                     <svg class="mini-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>
                                 </button>
                             </div>
                         </div>
                         <div class="panel-body">
+                            @if($selectedRaffle->isFinished())
+                                <div class="finished-banner">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                                    SORTEO FINALIZADO
+                                </div>
+                            @endif
+
                             <div class="info-grid">
-                                <div class="info-box"><div class="info-label">Estado</div><div class="info-value">{{ $selectedRaffle->status === 'active' ? 'Activo' : 'Inactivo' }}</div></div>
+                                <div class="info-box">
+                                    <div class="info-label">Estado</div>
+                                    <div class="info-value" style="color:{{ $selectedRaffle->isFinished() ? 'var(--amber)' : ($selectedRaffle->status === 'active' ? 'var(--good)' : 'var(--muted)') }}">
+                                        {{ $selectedRaffle->isFinished() ? 'Finalizado' : ($selectedRaffle->status === 'active' ? 'Activo' : 'Inactivo') }}
+                                    </div>
+                                </div>
                                 <div class="info-box"><div class="info-label">Lineas</div><div class="info-value">{{ $selectedRaffle->lines->pluck('name')->join(', ') ?: '-' }}</div></div>
                                 <div class="info-box"><div class="info-label">Limite</div><div class="info-value">{{ $selectedRaffle->numbers_limit ? $selectedRaffle->numbers_limit.' numeros' : 'Ilimitado' }}</div></div>
                                 <div class="info-box"><div class="info-label">Linea que otorga</div><div class="info-value">{{ $assignmentLine?->name ?? '-' }}</div></div>
                             </div>
 
                             @if(!empty($selectedRaffle->prizes))
-                                <div class="prize-list">
+                                <div class="prize-list" style="margin-top:14px;">
                                     @foreach($selectedRaffle->prizes as $prize)
-                                        <div class="prize-card">
+                                        @php $hasWinner = !empty($prize['winner_number']); @endphp
+                                        <div class="{{ $hasWinner && $selectedRaffle->isFinished() ? 'winner-card' : 'prize-card' }}">
                                             @if(!empty($prize['image']))
-                                                <img src="{{ $prize['image'] }}" alt="">
+                                                <img src="{{ $prize['image'] }}" alt="" style="width:100%;aspect-ratio:1.4;object-fit:cover;display:block;background:rgba(255,255,255,.04);">
                                             @endif
-                                            <div class="prize-body">
+                                            <div class="prize-body" style="padding:10px;">
                                                 <div class="raffle-meta">Puesto {{ $prize['position'] ?? '-' }}</div>
                                                 <div class="raffle-name">{{ $prize['name'] ?? '-' }}</div>
+                                                @if($selectedRaffle->isFinished())
+                                                    @if($hasWinner)
+                                                        <div class="winner-number">{{ $prize['winner_number'] }}</div>
+                                                        <div class="winner-info">{{ $prize['winner_username'] ?? $prize['winner_name'] ?? 'Cliente' }}</div>
+                                                        <div class="winner-meta">
+                                                            {{ $prize['winner_line_name'] ?? '-' }}
+                                                            @if(!empty($prize['winner_participations_count']))
+                                                                · {{ $prize['winner_participations_count'] }} participaciones
+                                                            @endif
+                                                        </div>
+                                                    @else
+                                                        <div class="raffle-meta" style="margin-top:8px;color:var(--muted-2);">Sin resultado cargado</div>
+                                                    @endif
+                                                @endif
                                             </div>
                                         </div>
                                     @endforeach
@@ -185,10 +227,39 @@
                         <div class="panel-head">
                             <div>
                                 <div class="panel-title">NUMEROS Y PARTICIPANTES</div>
-                                <div class="raffle-meta">Selecciona un cliente y administra los numeros desde el tablero</div>
+                                <div class="raffle-meta">
+                                    {{ $selectedRaffle->isFinished() ? 'Participantes del sorteo finalizado' : 'Selecciona un cliente y administra los numeros desde el tablero' }}
+                                </div>
                             </div>
                         </div>
                         <div class="panel-body">
+                        @if($selectedRaffle->isFinished())
+                            <div class="table-scroll">
+                                <div class="raffle-tools" style="margin:0 0 14px;">
+                                    <input wire:model.live.debounce.300ms="participantsSearch" class="search-input" placeholder="Buscar ID, username, nombre o email">
+                                    <select wire:model.live="participantsLineFilter" class="filter-select">
+                                        <option value="all">Todas las lineas</option>
+                                        @foreach($selectedRaffle->lines as $line)
+                                            <option value="{{ $line->id }}">{{ $line->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="t-head">
+                                    <div>ID</div><div>Username</div><div>Linea otorgada</div><div>Numero</div><div>Total</div>
+                                </div>
+                                @forelse($participants as $participant)
+                                    <div class="t-row">
+                                        <div>#{{ $participant->user?->id }}</div>
+                                        <div>{{ $participant->user?->username ?? $participant->user?->email ?? '-' }}</div>
+                                        <div>{{ $participant->line?->name ?? '-' }}</div>
+                                        <div>{{ $participant->number }}</div>
+                                        <div>{{ $participant->total_for_user }}</div>
+                                    </div>
+                                @empty
+                                    <div style="padding:22px;color:var(--muted);text-align:center;">Sin participantes registrados.</div>
+                                @endforelse
+                            </div>
+                        @else
                             @php
                                 $selectedCollection = collect($selectedNumbers)->map(fn ($number) => (int) $number);
                                 $selectedNumberMap = $selectedCollection->flip();
@@ -329,6 +400,7 @@
                                     @endforelse
                                 </div>
                             @endif
+                        @endif
                         </div>
                     </div>
                 @else
@@ -516,9 +588,14 @@
                         <div style="padding:24px;text-align:center;color:var(--muted);">Este sorteo no tiene premios cargados. Agregalos desde Editar.</div>
                     @endforelse
 
-                    <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;">
+                    <div class="modal-actions" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:18px;flex-wrap:wrap;gap:8px;">
                         <button type="button" wire:click="$set('showWinnerModal', false)" class="btn-soft">Cancelar</button>
-                        <button type="submit" class="btn-primary">Guardar resultados</button>
+                        <div style="display:flex;gap:8px;">
+                            <button type="submit" wire:click="$set('finalizeOnSave', false)" class="btn-soft">Guardar resultados</button>
+                            <button type="submit" wire:click="$set('finalizeOnSave', true)" class="btn-primary" style="background:var(--amber);border-color:var(--amber);color:#190702;">
+                                ★ Guardar y finalizar sorteo
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>

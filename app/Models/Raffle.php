@@ -97,6 +97,11 @@ class Raffle extends Model
         return ! empty($this->winner_user_id);
     }
 
+    public function isFinished(): bool
+    {
+        return $this->status === 'finished';
+    }
+
     public function isExpired(): bool
     {
         return now()->gt($this->end_date);
