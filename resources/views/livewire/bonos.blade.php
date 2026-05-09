@@ -63,9 +63,38 @@
         .ms-option.selected { background:rgba(255,106,26,.1);color:var(--orange); }
         .ms-check { color:var(--orange);font-size:11px;width:14px; }
         .ms-empty { padding:14px;text-align:center;color:var(--muted);font-size:13px; }
-        .assignments { grid-column:1 / -1; padding:10px 18px 14px; background:rgba(0,0,0,.18); border-bottom:1px solid var(--line); }
-        .assignment-row { display:grid; grid-template-columns:1fr 130px 120px; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:12px; }
-        @media (max-width:900px) { .stats-grid,.form-grid{grid-template-columns:1fr;} .search-input{width:100%;} .assignment-row{grid-template-columns:1fr;} }
+        @media (max-width:900px) { .stats-grid,.form-grid{grid-template-columns:1fr;} .search-input{width:100%;} }
+
+        /* Layout with side panel */
+        .bonos-layout { display:grid;grid-template-columns:1fr;gap:16px;align-items:start; }
+        .bonos-layout.with-panel { grid-template-columns:1fr 340px; }
+        @media (max-width:1100px) { .bonos-layout.with-panel { grid-template-columns:1fr; } }
+
+        /* Assignments panel */
+        .ap-panel { background:linear-gradient(180deg,#170b0b,#0f0707);border:1px solid var(--line);border-radius:18px;overflow:hidden;position:sticky;top:20px; }
+        .ap-head { display:flex;justify-content:space-between;align-items:flex-start;padding:16px;border-bottom:1px solid var(--line); }
+        .ap-code { font-size:10px;font-weight:800;color:var(--orange);letter-spacing:.1em;margin-bottom:2px; }
+        .ap-title { font-family:var(--font-display);font-size:16px;letter-spacing:.02em; }
+        .ap-stats { display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--line); }
+        .ap-stat { padding:12px 8px;text-align:center;border-right:1px solid var(--line); }
+        .ap-stat:last-child { border-right:none; }
+        .ap-stat-val { font-size:20px;font-weight:800;font-family:var(--font-display); }
+        .ap-stat-lbl { font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin-top:2px; }
+        .ap-list { max-height:420px;overflow-y:auto; }
+        .ap-row { display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s; }
+        .ap-row:hover { background:rgba(255,255,255,.03); }
+        .ap-avatar { width:32px;height:32px;border-radius:50%;background:rgba(255,106,26,.2);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0; }
+        .ap-info { flex:1;min-width:0; }
+        .ap-username { font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .ap-date { font-size:10px;color:var(--muted);margin-top:1px; }
+        .ap-right { flex-shrink:0; }
+        .ap-badge { display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700; }
+        .ap-badge.claimed { background:rgba(37,196,107,.12);color:var(--good);border:1px solid rgba(37,196,107,.25); }
+        .ap-badge.expired { background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--line); }
+        .ap-claim-btn { width:28px;height:28px;border-radius:8px;background:rgba(255,106,26,.1);border:1px solid rgba(255,106,26,.3);color:var(--orange);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s; }
+        .ap-claim-btn:hover { background:var(--orange);color:#190702;border-color:var(--orange); }
+        .btn-badge { position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--orange);color:#190702;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center; }
+        .btn-icon { position:relative; }
     </style>
 
 @section('header')
@@ -103,6 +132,7 @@
             <div class="stat-card"><div class="stat-label">Reclamados</div><div class="stat-value" style="color:var(--orange);">{{ $metrics['claimed'] }}</div></div>
         </div>
 
+        <div class="bonos-layout {{ $showAssignmentsPanel ? 'with-panel' : '' }}">
         <div class="table-card">
             <div class="table-top">
                 <div>
@@ -139,6 +169,14 @@
                             <div>{{ $bonus->claimed_count }}</div>
                             <div>{{ is_null($bonus->total_quantity) ? 'Ilimitados' : $bonus->remaining_quantity.' / '.$bonus->total_quantity }}</div>
                             <div class="action-row">
+                                <button class="btn-icon {{ $bonusForAssignments === $bonus->id ? 'active' : '' }}"
+                                    wire:click="{{ $bonusForAssignments === $bonus->id ? 'closeAssignmentsPanel' : 'openAssignmentsPanel('.$bonus->id.')' }}"
+                                    title="Ver asignados">
+                                    <i class="fa-solid fa-users" style="font-size:12px"></i>
+                                    @if($bonus->assigned_count > 0)
+                                    <span class="btn-badge">{{ $bonus->assigned_count }}</span>
+                                    @endif
+                                </button>
                                 <button class="btn-icon" wire:click="openAssignModal({{ $bonus->id }})" title="Otorgar bono">
                                     <svg class="mini-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><path d="M12 7a4 4 0 1 0 0 .1"/><path d="M19 8v6M22 11h-6"/></svg>
                                 </button>
@@ -154,26 +192,89 @@
                                 @endif
                             </div>
                         </div>
-
-                        @if($bonus->assignments->isNotEmpty())
-                            <div class="assignments">
-                                @foreach($bonus->assignments->take(6) as $assignment)
-                                    <div class="assignment-row">
-                                        <div>{{ $assignment->user?->username ?? $assignment->user?->email ?? '-' }}</div>
-                                        <div><span class="badge {{ $assignment->status === 'used' ? 'b-active' : 'b-inactive' }}">{{ $assignment->status === 'used' ? 'Reclamado' : 'Otorgado' }}</span></div>
-                                        <div>
-                                            @if($assignment->status !== 'used')
-                                                <button class="btn-soft" wire:click="markClaimed({{ $assignment->id }})">Reclamado</button>
-                                            @endif
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
                     @endforeach
                 </div>
             @endif
         </div>
+
+        {{-- ── Panel de asignados ─────────────────────────────── --}}
+        @if($showAssignmentsPanel && $panelBonus)
+        <div class="ap-panel">
+            <div class="ap-head">
+                <div>
+                    <div class="ap-code">{{ $panelBonus->code }}</div>
+                    <div class="ap-title">{{ $panelBonus->title }}</div>
+                </div>
+                <button class="modal-close" wire:click="closeAssignmentsPanel"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            {{-- Stats --}}
+            @php
+                $totalA   = $panelAssignments->count() + ($assignmentsSearch ? 0 : 0);
+                $allAssignments = \App\Models\BonusAssignment::where('bonus_id', $panelBonus->id)->get();
+                $totalAll = $allAssignments->count();
+                $claimed  = $allAssignments->where('status', 'used')->count();
+                $pending  = $allAssignments->where('status', 'active')->count();
+            @endphp
+            <div class="ap-stats">
+                <div class="ap-stat">
+                    <div class="ap-stat-val">{{ $totalAll }}</div>
+                    <div class="ap-stat-lbl">Total</div>
+                </div>
+                <div class="ap-stat">
+                    <div class="ap-stat-val" style="color:var(--good)">{{ $claimed }}</div>
+                    <div class="ap-stat-lbl">Reclamados</div>
+                </div>
+                <div class="ap-stat">
+                    <div class="ap-stat-val" style="color:var(--orange)">{{ $pending }}</div>
+                    <div class="ap-stat-lbl">Pendientes</div>
+                </div>
+                <div class="ap-stat">
+                    <div class="ap-stat-val" style="color:var(--muted)">
+                        {{ is_null($panelBonus->total_quantity) ? '∞' : max(0, $panelBonus->total_quantity - $totalAll) }}
+                    </div>
+                    <div class="ap-stat-lbl">Disponibles</div>
+                </div>
+            </div>
+
+            {{-- Buscador --}}
+            <div style="padding:0 16px 12px;">
+                <input type="text" wire:model.live.debounce.200ms="assignmentsSearch"
+                    placeholder="Buscar usuario..." class="form-input" style="font-size:12px;">
+            </div>
+
+            {{-- Lista --}}
+            <div class="ap-list">
+                @forelse($panelAssignments as $a)
+                <div class="ap-row">
+                    <div class="ap-avatar">{{ strtoupper(substr($a->user?->username ?? $a->user?->email ?? '?', 0, 1)) }}</div>
+                    <div class="ap-info">
+                        <div class="ap-username">{{ $a->user?->username ?? $a->user?->email ?? '—' }}</div>
+                        <div class="ap-date">{{ $a->assigned_at?->format('d/m/Y H:i') ?? $a->created_at->format('d/m/Y H:i') }}</div>
+                    </div>
+                    <div class="ap-right">
+                        @if($a->status === 'used')
+                            <span class="ap-badge claimed"><i class="fa-solid fa-check"></i> Reclamado</span>
+                        @elseif($a->status === 'expired')
+                            <span class="ap-badge expired">Vencido</span>
+                        @else
+                            <button wire:click="markClaimed({{ $a->id }})" class="ap-claim-btn" title="Marcar reclamado">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+                @empty
+                <div style="text-align:center;color:var(--muted);padding:40px 20px;font-size:13px;">
+                    <i class="fa-solid fa-users-slash" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3"></i>
+                    Sin asignaciones
+                </div>
+                @endforelse
+            </div>
+        </div>
+        @endif
+
+        </div>{{-- /bonos-layout --}}
     </div>
 
     @if($showModal)

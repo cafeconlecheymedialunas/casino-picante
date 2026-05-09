@@ -74,6 +74,12 @@ class Bonos extends Component
 
     public array $assignUserIds = [];
 
+    public bool $showAssignmentsPanel = false;
+
+    public ?int $bonusForAssignments = null;
+
+    public string $assignmentsSearch = '';
+
     protected function rules(): array
     {
         return [
@@ -296,12 +302,20 @@ class Bonos extends Component
 
     public function render()
     {
+        $panelBonus = $this->bonusForAssignments
+            ? Bonus::withoutGlobalScopes()->with('line')->find($this->bonusForAssignments)
+            : null;
+
+        $panelAssignments = $this->getAssignmentsForPanel();
+
         return view('livewire.bonos', [
             'bonuses' => $this->bonuses(),
             'metrics' => $this->metrics(),
             'platforms' => Platform::orderBy('name')->get(),
             'selectedBonus' => $this->selectedBonusId ? Bonus::withoutGlobalScopes()->with('line')->find($this->selectedBonusId) : null,
             'canCreateBonus' => $this->hasLinePermission(Permissions::BONO_CREATE),
+            'panelBonus' => $panelBonus,
+            'panelAssignments' => $panelAssignments,
         ])->layout('layouts.dashboard');
     }
 
@@ -378,6 +392,37 @@ class Bonos extends Component
         if (! $this->availableLines()->pluck('id')->contains($lineId)) {
             abort(403, 'No podes operar bonos fuera de tus lineas.');
         }
+    }
+
+    public function openAssignmentsPanel(int $bonusId): void
+    {
+        $this->checkLinePermission(Permissions::BONO_READ);
+        $this->bonusForAssignments = $bonusId;
+        $this->assignmentsSearch = '';
+        $this->showAssignmentsPanel = true;
+    }
+
+    public function closeAssignmentsPanel(): void
+    {
+        $this->showAssignmentsPanel = false;
+        $this->bonusForAssignments = null;
+        $this->assignmentsSearch = '';
+    }
+
+    public function getAssignmentsForPanel()
+    {
+        if (! $this->bonusForAssignments) {
+            return collect();
+        }
+
+        return BonusAssignment::with('user')
+            ->where('bonus_id', $this->bonusForAssignments)
+            ->when($this->assignmentsSearch, function ($q) {
+                $s = '%' . $this->assignmentsSearch . '%';
+                $q->whereHas('user', fn($u) => $u->where('username', 'like', $s)->orWhere('email', 'like', $s));
+            })
+            ->orderByDesc('assigned_at')
+            ->get();
     }
 
     public function getUsersForAssign(): array
