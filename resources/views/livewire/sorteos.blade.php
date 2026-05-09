@@ -148,7 +148,7 @@
                             </div>
                             <div class="action-row">
                                 <button class="btn-soft" wire:click="openEdit({{ $selectedRaffle->id }})">Editar</button>
-                                <button class="btn-soft" wire:click="openWinnerModal({{ $selectedRaffle->id }})">Ganador</button>
+                                <button class="btn-soft" wire:click="openWinnerModal({{ $selectedRaffle->id }})">Cargar resultados</button>
                                 <button class="btn-soft" wire:click="toggleStatus({{ $selectedRaffle->id }})">Cambiar estado</button>
                                 <button class="btn-icon btn-danger" wire:click="delete({{ $selectedRaffle->id }})" wire:confirm="Eliminar sorteo?">
                                     <svg class="mini-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>
@@ -173,6 +173,15 @@
                                             <div class="prize-body">
                                                 <div class="raffle-meta">Puesto {{ $prize['position'] ?? '-' }}</div>
                                                 <div class="raffle-name">{{ $prize['name'] ?? '-' }}</div>
+                                                @if(!empty($prize['winner_number']))
+                                                    <div class="raffle-meta" style="margin-top:8px;color:var(--orange);">
+                                                        Numero ganador: <strong>{{ $prize['winner_number'] }}</strong><br>
+                                                        {{ $prize['winner_username'] ?? $prize['winner_name'] ?? 'Sin cliente asignado' }}
+                                                        @if(!empty($prize['winner_participations_count']))
+                                                            · {{ $prize['winner_participations_count'] }} participaciones
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     @endforeach
@@ -462,28 +471,64 @@
 
     @if($showWinnerModal)
         <div class="modal-overlay" wire:click.self="$set('showWinnerModal', false)">
-            <div class="modal-panel" style="width:min(460px,100%);">
+            <div class="modal-panel" style="width:min(840px,100%);">
                 <div class="modal-head">
-                    <h3>REGISTRAR GANADOR</h3>
+                    <h3>CARGAR RESULTADOS</h3>
                     <button class="modal-close" wire:click="$set('showWinnerModal', false)">x</button>
                 </div>
                 <form class="modal-form" wire:submit.prevent="saveWinner">
-                    <div class="form-group">
-                        <label class="form-label">Cliente ganador</label>
-                        <select class="form-input" wire:model="winner_user_id">
-                            <option value="">Sin ganador</option>
-                            @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->username ?? $user->name }}</option>
-                            @endforeach
-                        </select>
+                    <div class="raffle-meta" style="margin-bottom:16px;">
+                        Carga el numero que salio en la aplicacion externa para cada premio. El sistema detecta el cliente automaticamente si ese numero fue asignado en este sorteo.
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Numero ganador</label>
-                        <input type="number" class="form-input" wire:model="winner_number">
-                    </div>
+
+                    @forelse($winnerPrizes as $idx => $winnerPrize)
+                        @php
+                            $winnerNumber = trim((string) ($winnerPrize['winner_number'] ?? ''));
+                            $winnerModel = $winnerNumber !== '' && $selectedRaffle
+                                ? $selectedRaffle->numbers->firstWhere('number', (int) $winnerNumber)
+                                : null;
+                            $winnerParticipationCount = $winnerModel && $selectedRaffle
+                                ? $selectedRaffle->numbers->where('user_id', $winnerModel->user_id)->count()
+                                : null;
+                        @endphp
+
+                        <div class="repeat-row" style="grid-template-columns:80px 1fr 170px 1.3fr;" wire:key="winner-prize-{{ $idx }}">
+                            <div>
+                                <label class="form-label">Puesto</label>
+                                <div class="form-input" style="color:var(--muted);">#{{ $winnerPrize['position'] ?? $idx + 1 }}</div>
+                            </div>
+                            <div>
+                                <label class="form-label">Premio</label>
+                                <div class="form-input" style="color:var(--white);">{{ $winnerPrize['name'] ?? '-' }}</div>
+                            </div>
+                            <div>
+                                <label class="form-label">Numero ganador</label>
+                                <input type="number" class="form-input" wire:model.live.debounce.300ms="winnerPrizes.{{ $idx }}.winner_number">
+                                @error('winnerPrizes.'.$idx.'.winner_number') <div class="form-error">{{ $message }}</div> @enderror
+                            </div>
+                            <div>
+                                <label class="form-label">Resultado detectado</label>
+                                @if($winnerNumber === '')
+                                    <div class="form-input" style="color:var(--muted);">Sin numero cargado</div>
+                                @elseif($winnerModel)
+                                    <div class="form-input" style="height:auto;line-height:1.5;color:var(--good);">
+                                        <strong>{{ $winnerModel->user?->username ?? $winnerModel->user?->name ?? 'Cliente' }}</strong><br>
+                                        <span style="color:var(--muted);">
+                                            {{ $winnerModel->line?->name ?? 'Sin linea' }} · {{ $winnerParticipationCount }} participaciones
+                                        </span>
+                                    </div>
+                                @else
+                                    <div class="form-input" style="color:#ff6b7a;">Numero no asignado</div>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="empty-state">Este sorteo no tiene premios cargados.</div>
+                    @endforelse
+
                     <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;">
                         <button type="button" wire:click="$set('showWinnerModal', false)" class="btn-soft">Cancelar</button>
-                        <button type="submit" class="btn-primary">Guardar ganador</button>
+                        <button type="submit" class="btn-primary">Guardar resultados</button>
                     </div>
                 </form>
             </div>
