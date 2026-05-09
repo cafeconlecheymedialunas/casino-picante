@@ -136,13 +136,7 @@ class Ventas extends Component
         $line = Line::with(['platforms', 'lineAgents.agent'])->findOrFail((int) $this->saleLineId);
         $this->authorizeLineEdit($line);
 
-        if ($this->salePlatformId && ! $line->platforms()->where('platforms.id', (int) $this->salePlatformId)->exists()) {
-            $this->addError('salePlatformId', 'La plataforma no pertenece a esta linea.');
-
-            return;
-        }
-
-        $amount = (float) $this->saleMontoFichas;
+$amount = (float) $this->saleMontoFichas;
         $percent = (float) $line->lineAgents()
             ->where('role', LineRoles::ENCARGADO)
             ->value('porcentaje_ganancia');
@@ -228,19 +222,7 @@ class Ventas extends Component
 
     public function formPlatforms(): Collection
     {
-        if (! $this->saleLineId) {
-            return collect();
-        }
-
-        return \DB::table('line_platform')
-            ->join('platforms', 'line_platform.platform_id', '=', 'platforms.id')
-            ->where('line_platform.line_id', (int) $this->saleLineId)
-            ->where('line_platform.is_active', true)
-            ->select('platforms.*')
-            ->get()
-            ->map(function ($platform) {
-                return new Platform((array) $platform);
-            });
+        return Platform::where('is_active', true)->orderBy('name')->get();
     }
 
     public function formAgents(): Collection
@@ -264,15 +246,18 @@ class Ventas extends Component
             return collect();
         }
 
-        return \DB::table('line_clients')
-            ->join('users', 'line_clients.user_id', '=', 'users.id')
-            ->where('line_clients.line_id', (int) $this->saleLineId)
-            ->where('line_clients.is_active', true)
-            ->select('users.*')
-            ->get()
-            ->map(function ($user) {
-                return new User((array) $user);
-            });
+        $lineId = (int) $this->saleLineId;
+
+        // Include clients linked via line_clients pivot OR with this as their preferred line
+        return User::where('status', 'active')
+            ->where(function ($q) use ($lineId) {
+                $q->where('line_id', $lineId)
+                    ->orWhereHas('lines', fn ($l) => $l
+                        ->where('lines.id', $lineId)
+                        ->where('line_clients.is_active', true));
+            })
+            ->orderBy('name')
+            ->get(['id', 'username', 'name', 'email', 'line_id']);
     }
 
     public function sales()
