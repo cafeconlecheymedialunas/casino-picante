@@ -19,7 +19,7 @@ class Novedades extends Component
 
     public $selectedPost = null;
 
-    public $showModal = false;
+    public $showPanel = false;
 
     public $editingPost = null;
 
@@ -72,20 +72,8 @@ class Novedades extends Component
     public function selectPost($id)
     {
         $this->checkLinePermission(Permissions::NEWS_READ);
-        $this->selectedPost = Post::findOrFail($id);
-    }
-
-    public function openCreateModal()
-    {
-        $this->checkLinePermission(Permissions::NEWS_CREATE);
-        $this->resetForm();
-        $this->showModal = true;
-    }
-
-    public function openEditModal($postId)
-    {
-        $this->checkLinePermission(Permissions::NEWS_UPDATE);
-        $post = Post::find($postId);
+        $post = Post::findOrFail($id);
+        $this->selectedPost = $post;
         $this->editingPost = $post;
         $this->title = $post->title;
         $this->content = $post->content ?? '';
@@ -93,12 +81,29 @@ class Novedades extends Component
         $this->status = $post->status;
         $this->image = $post->image ?? '';
         $this->imageUpload = null;
-        $this->showModal = true;
+        $this->showPanel = true;
     }
 
-    public function closeModal()
+    public function openCreatePanel()
     {
-        $this->showModal = false;
+        $this->checkLinePermission(Permissions::NEWS_CREATE);
+        $this->selectedPost = null;
+        $this->editingPost = null;
+        $this->resetForm();
+        $this->showPanel = true;
+    }
+
+    public function closeSidePanel()
+    {
+        $this->selectedPost = null;
+        $this->editingPost = null;
+        $this->showPanel = false;
+        $this->resetForm();
+    }
+
+    public function closeSidePanel()
+    {
+        $this->selectedPost = null;
         $this->editingPost = null;
         $this->resetForm();
     }
@@ -142,6 +147,9 @@ class Novedades extends Component
 
         if ($this->editingPost) {
             $this->editingPost->update($data);
+            $this->selectedPost = $this->editingPost->fresh();
+            $this->image = $imagePath ?: '';
+            $this->imageUpload = null;
             session()->flash('message', 'Contenido actualizado correctamente');
 
             $this->notify('Contenido actualizado', "El contenido {$this->editingPost->title} fue actualizado.", 'posts', '/novedades', 'info');
@@ -151,9 +159,8 @@ class Novedades extends Component
             session()->flash('message', 'Contenido creado correctamente');
 
             $this->notify('Nuevo contenido creado', "El contenido {$post->title} fue creado exitosamente.", 'posts', '/novedades', 'success');
+            $this->selectPost($post->id);
         }
-
-        $this->closeModal();
     }
 
     public function removeImage(): void
@@ -178,7 +185,7 @@ class Novedades extends Component
         $post?->delete();
 
         if ($this->selectedPost && $this->selectedPost->id === $postId) {
-            $this->selectedPost = null;
+            $this->closeSidePanel();
         }
 
         session()->flash('message', 'Contenido eliminado correctamente');
@@ -282,6 +289,7 @@ class Novedades extends Component
             'canUpdate' => $this->canUpdate(),
             'canDelete' => $this->canDelete(),
             'canRead' => $this->canRead(),
+            'canModerateComments' => $this->canModerateComments(),
         ])->layout('layouts.dashboard');
     }
 }
