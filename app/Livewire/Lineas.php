@@ -538,7 +538,7 @@ class Lineas extends Component
         $editLineAgents = ($this->editingLineId && $this->editTab === 'agentes')
             ? LineAgent::with('agent')
                 ->where('line_id', $this->editingLineId)
-                ->orderByRaw("CASE WHEN role = 'encargado' THEN 0 ELSE 1 END")
+                ->where('role', '!=', LineRoles::ENCARGADO)
                 ->orderBy('id')
                 ->get()
             : collect();

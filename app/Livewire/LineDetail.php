@@ -582,17 +582,16 @@ class LineDetail extends Component
             ->flip()
             ->toArray();
 
-        // Build checkbox map - only show permissions allowed by line AND (if there's encargado) by encargado
+        // Build checkbox map
         $this->editingPerms = [];
+        $isAdmin = $this->isAdminMode();
         foreach (LineAgentPermission::allPermissions() as $perm) {
-            // Only show permissions the delegator actually has (delegation rule)
-            if ($this->canDelegate($perm)) {
-                // Only show permissions that are allowed by line
+            if ($isAdmin) {
+                // Admin sees and can assign all permissions
+                $this->editingPerms[$perm] = isset($granted[$perm]);
+            } elseif ($this->canDelegate($perm)) {
                 $allowedByLine = in_array($perm, $linePerms);
-
-                // If there's an encargado, also check their permissions
                 $allowedByEncargado = empty($encargadoPerms) || in_array($perm, $encargadoPerms);
-
                 if ($allowedByLine && $allowedByEncargado) {
                     $this->editingPerms[$perm] = isset($granted[$perm]);
                 }
@@ -622,39 +621,30 @@ class LineDetail extends Component
 
         // Collect only the checked ones that are allowed (subset of line AND encargado permissions AND delegation rule)
         $toGrant = [];
-        $invalidPerms = [];
+        $isAdmin = $this->isAdminMode();
         foreach ($this->editingPerms as $perm => $checked) {
             if ($checked) {
-                // Check if permission is allowed by line AND (if there's an encargado) by encargado
-                $allowedByLine = in_array($perm, $linePerms);
-                $allowedByEncargado = empty($encargadoPerms) || in_array($perm, $encargadoPerms);
-                // Delegation rule: you can only grant what you yourself have
-                $allowedByDelegation = $this->canDelegate($perm);
-
-                if ($allowedByLine && $allowedByEncargado && $allowedByDelegation) {
+                if ($isAdmin) {
                     $toGrant[] = $perm;
                 } else {
-                    $invalidPerms[] = $perm;
+                    $allowedByLine = in_array($perm, $linePerms);
+                    $allowedByEncargado = empty($encargadoPerms) || in_array($perm, $encargadoPerms);
+                    $allowedByDelegation = $this->canDelegate($perm);
+                    if ($allowedByLine && $allowedByEncargado && $allowedByDelegation) {
+                        $toGrant[] = $perm;
+                    }
                 }
             }
         }
 
-        if (! empty($invalidPerms)) {
-            session()->flash('error', 'Algunos permisos exceden los límites permitidos. Los permisos del agente no pueden ser mayores a los de la línea o del encargado.');
-
-            return;
+        // Remove old permissions for this agent/line
+        $deleteQuery = LineAgentPermission::where('line_id', $this->lineId)
+            ->where('agent_id', $this->editingPermAgentId);
+        if (! $isAdmin) {
+            $delegatable = array_filter(LineAgentPermission::allPermissions(), fn ($p) => $this->canDelegate($p));
+            $deleteQuery->whereIn('permission', $delegatable);
         }
-
-        // Remove old permissions for this agent/line (only those the delegator can touch)
-        $delegatable = array_filter(
-            LineAgentPermission::allPermissions(),
-            fn ($p) => $this->canDelegate($p)
-        );
-
-        LineAgentPermission::where('line_id', $this->lineId)
-            ->where('agent_id', $this->editingPermAgentId)
-            ->whereIn('permission', $delegatable)
-            ->delete();
+        $deleteQuery->delete();
 
         foreach ($toGrant as $perm) {
             LineAgentPermission::firstOrCreate([
@@ -884,6 +874,16 @@ class LineDetail extends Component
     }
 
     // ── Line Permissions ──────────────────────────────────────────────────
+
+    public function setAllLinePermissions(bool $grant): void
+    {
+        $this->checkLinePermission(Permissions::LINE_EDIT);
+
+        $this->linePermissionsList = $grant ? LineAgentPermission::allPermissions() : [];
+        $this->line->update(['permissions' => $this->linePermissionsList]);
+        $this->line->refresh();
+        session()->flash('message', $grant ? 'Todos los permisos habilitados.' : 'Todos los permisos removidos.');
+    }
 
     public function toggleLinePermission(string $permission): void
     {

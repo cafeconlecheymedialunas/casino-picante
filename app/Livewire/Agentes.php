@@ -412,10 +412,11 @@ class Agentes extends Component
             ->delete();
 
         foreach ($lineIds as $lineId) {
+            $existing = LineAgent::where('line_id', $lineId)->where('agent_id', $agent->id)->first();
             LineAgent::updateOrCreate(
                 ['line_id' => $lineId, 'agent_id' => $agent->id],
                 [
-                    'role' => $this->cargo === 'super_agente' ? LineRoles::ENCARGADO : LineRoles::MIEMBRO,
+                    'role' => $existing ? $existing->role : LineRoles::MIEMBRO,
                     'is_active' => $this->status === 'active',
                 ]
             );

@@ -118,8 +118,9 @@
         .perm-check { display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer; padding:5px 10px; border-radius:6px; border:1px solid var(--line); background:rgba(255,255,255,.03); transition:border-color .15s,background .15s; }
         .perm-check:has(input:checked) { border-color:var(--orange); background:rgba(255,106,26,.12); color:var(--orange); }
         .perm-check input { accent-color:var(--orange); }
-        .perm-chip-edit { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid transparent; cursor:pointer; transition:all .15s; }
-        .perm-chip-edit:hover { border-color:var(--orange) !important; }
+        .perm-chip-edit { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer; transition:all .15s; }
+        .perm-chip-edit:hover { border-color:var(--orange) !important; color:var(--orange); }
+        .perm-chip-edit:has(input:checked) { background:rgba(255,106,26,.12); border-color:rgba(255,106,26,.35) !important; color:var(--orange); }
         .perm-chip-on  { background:rgba(255,106,26,.12); border-color:rgba(255,106,26,.35) !important; color:var(--orange); }
         .perm-chip-off { background:rgba(255,255,255,.03); border-color:var(--line) !important; color:var(--muted); }
 
@@ -159,7 +160,7 @@
          1. LIST VIEW
          ════════════════════════════════════════════════════════════════════════ --}}
 @if(!$showModal && !$showDetailsModal)
-        @if($this->hasLinePermission(\App\Support\Permissions::LINE_CREATE))
+        @if($this->isAdminMode())
         <div class="module-top-bar">
             <button type="button" class="btn-primary" wire:click="openCreateModal">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -342,6 +343,7 @@
             </div>
 
             {{-- Agentes de la línea --}}
+            @php $permLabelsShow = \App\Support\Permissions::labels(); @endphp
             <div>
                 <div class="form-label" style="margin-bottom:12px">Agentes de la línea</div>
                 @if($dAgents->isEmpty())
@@ -361,17 +363,21 @@
                                     </span>
                                 </div>
                             </div>
-                            <div>
-                                @if(!empty($perms))
-                                    <div class="chip-row">
-                                        @foreach(array_slice($perms, 0, 4) as $p)<span class="chip" style="font-size:9px">{{ $p }}</span>@endforeach
-                                        @if(count($perms) > 4)<span class="chip" style="opacity:.6;font-size:9px">+{{ count($perms)-4 }}</span>@endif
-                                    </div>
-                                @else
-                                    <span style="color:var(--muted-2);font-size:11px">Sin permisos</span>
-                                @endif
-                            </div>
                         </div>
+                        @if(!empty($perms))
+                        <div style="padding:10px 14px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;border-top:1px solid var(--line)">
+                            @foreach($permLabelsShow as $perm => [$icon, $label])
+                                @if(in_array($perm, $perms))
+                                <div style="display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:7px;background:rgba(255,106,26,.08);border:1px solid rgba(255,106,26,.25);color:var(--orange);font-size:11px;font-weight:700">
+                                    <i class="{{ $icon }}" style="font-size:11px;flex-shrink:0"></i>
+                                    <span>{{ $label }}</span>
+                                </div>
+                                @endif
+                            @endforeach
+                        </div>
+                        @else
+                        <div style="padding:8px 14px 12px;color:var(--muted-2);font-size:11px;border-top:1px solid var(--line)">Sin permisos asignados</div>
+                        @endif
                     </div>
                     @endforeach
                 </div>
@@ -496,19 +502,19 @@
                     <label class="form-label">Permisos habilitados en esta línea</label>
                     <p style="color:var(--muted-2);font-size:11px;margin:0 0 12px;line-height:1.6">Determinan qué acciones pueden tener los agentes asignados.</p>
                     @php
-                    $permChipMeta = [
-                        \App\Support\Permissions::NEWS_READ         => ['fa-solid fa-newspaper',       'Ver novedades'],
-                        \App\Support\Permissions::NEWS_CREATE       => ['fa-solid fa-file-circle-plus', 'Crear novedades'],
-                        \App\Support\Permissions::NEWS_UPDATE       => ['fa-solid fa-pen-to-square',    'Editar novedades'],
-                        \App\Support\Permissions::TICKET_READ       => ['fa-solid fa-ticket',           'Ver tickets'],
-                        \App\Support\Permissions::TICKET_UPDATE     => ['fa-solid fa-ticket-simple',    'Editar tickets'],
-                        \App\Support\Permissions::BONO_READ         => ['fa-solid fa-gift',             'Ver bonos'],
-                        \App\Support\Permissions::SORTEO_READ       => ['fa-solid fa-dice',             'Ver sorteos'],
-                        \App\Support\Permissions::LINE_EDIT         => ['fa-solid fa-sliders',          'Editar línea'],
-                        \App\Support\Permissions::AGENT_ASSIGN      => ['fa-solid fa-user-plus',        'Asignar agentes'],
-                        \App\Support\Permissions::AGENT_PERMISSIONS => ['fa-solid fa-shield-halved',    'Gestionar permisos'],
-                    ];
+                    $permChipMeta = \App\Support\Permissions::labels();
+                    $allPerms = array_keys($permChipMeta);
                     @endphp
+                    <div style="display:flex;gap:8px;margin-bottom:10px;">
+                        <button type="button" class="btn-soft" style="font-size:11px;"
+                            wire:click="$set('linePermissions', {{ json_encode($allPerms) }})">
+                            <i class="fa-solid fa-check-double"></i> Seleccionar todos
+                        </button>
+                        <button type="button" class="btn-soft" style="font-size:11px;"
+                            wire:click="$set('linePermissions', [])">
+                            <i class="fa-solid fa-xmark"></i> Desmarcar todos
+                        </button>
+                    </div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
                         @foreach($permChipMeta as $perm => [$icon, $label])
                         @php $on = in_array($perm, $linePermissions ?? []); @endphp
@@ -573,6 +579,80 @@
                     <button type="submit" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
                 </div>
             </form>
+
+            {{-- Permisos del encargado (solo al editar y si hay encargado asignado) --}}
+            @if($editingLineId && $encargadoId)
+            @php
+                $encLA = \App\Models\LineAgent::with('agent')
+                    ->where('line_id', $editingLineId)
+                    ->where('role', 'encargado')
+                    ->first();
+            @endphp
+            @if($encLA)
+            <div style="margin-top:28px;border-top:1px solid var(--line);padding-top:22px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                    <div>
+                        <div class="form-label" style="margin-bottom:2px">Permisos del encargado</div>
+                        <div style="font-size:11px;color:var(--muted-2)">{{ $encLA->agent?->name ?? '—' }}</div>
+                    </div>
+                    @if($editingAgentPermissionsId !== $encLA->id)
+                    <button type="button" class="btn-soft" wire:click="openAgentPermissions({{ $encLA->id }})">
+                        <i class="fa-solid fa-shield-halved"></i> Editar permisos
+                    </button>
+                    @endif
+                </div>
+
+                @if($editingAgentPermissionsId === $encLA->id)
+                <div class="perm-editor" style="border-radius:8px;border:1px solid var(--line)">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                        <span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">
+                            Permisos de {{ $encLA->agent?->name ?? 'encargado' }}
+                        </span>
+                        <button type="button" class="btn-soft" wire:click="closeAgentPermissions" style="font-size:10px">Cancelar</button>
+                    </div>
+                    @php $permLabelsEnc = \App\Support\Permissions::labels(); @endphp
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
+                        @foreach($permLabelsEnc as $perm => [$icon, $label])
+                        @if(in_array($perm, $availablePermissions))
+                        <label class="perm-chip-edit">
+                            <input type="checkbox" wire:model="agentPermissions" value="{{ $perm }}"
+                                {{ in_array($perm, $agentPermissions) ? 'checked' : '' }}
+                                style="position:absolute;opacity:0;width:0;height:0">
+                            <i class="{{ $icon }}"></i>
+                            <span>{{ $label }}</span>
+                        </label>
+                        @endif
+                        @endforeach
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--line)">
+                        <button type="button" class="btn-soft" wire:click="closeAgentPermissions">Cancelar</button>
+                        <button type="button" class="btn-primary" wire:click="saveAgentPermissions">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar permisos
+                        </button>
+                    </div>
+                </div>
+                @else
+                @php $encPermsNow = $encLA->getPermissionsListAttribute(); @endphp
+                @if(!empty($encPermsNow))
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
+                    @foreach(\App\Support\Permissions::labels() as $perm => [$icon, $label])
+                        @if(in_array($perm, $encPermsNow))
+                        <div class="perm-chip-edit perm-chip-on" style="cursor:default">
+                            <i class="{{ $icon }}"></i>
+                            <span>{{ $label }}</span>
+                            <i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>
+                        </div>
+                        @endif
+                    @endforeach
+                </div>
+                @else
+                <div style="color:var(--muted-2);font-size:12px">Sin permisos asignados aún.</div>
+                @endif
+                @endif
+            </div>
+            @endif
+            @endif
+
         </div>
         @endif
 
@@ -660,24 +740,20 @@
                                 La línea no tiene permisos configurados. Configura permisos en la línea primero.
                             </div>
                         @else
-                            @foreach($permissionCatalog as $resource => $actions)
-                            @php
-                                $resourceAvail = array_filter($availablePermissions, fn($p) => str_starts_with($p, $resource.'.'));
-                            @endphp
-                            @if(!empty($resourceAvail))
-                            <div class="perm-resource">
-                                <div class="perm-resource-label">{{ $resource }}</div>
-                                <div class="perm-checks">
-                                    @foreach($resourceAvail as $perm)
-                                    <label class="perm-check">
-                                        <input type="checkbox" wire:model="agentPermissions" value="{{ $perm }}">
-                                        {{ explode('.', $perm)[1] ?? $perm }}
-                                    </label>
-                                    @endforeach
-                                </div>
-                            </div>
+                        @php $permLabelsAg = \App\Support\Permissions::labels(); @endphp
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
+                            @foreach($permLabelsAg as $perm => [$icon, $label])
+                            @if(in_array($perm, $availablePermissions))
+                            @php $checked = in_array($perm, $agentPermissions); @endphp
+                            <label class="perm-chip-edit {{ $checked ? 'perm-chip-on' : 'perm-chip-off' }}">
+                                <input type="checkbox" wire:model="agentPermissions" value="{{ $perm }}" style="display:none">
+                                <i class="{{ $icon }}"></i>
+                                <span>{{ $label }}</span>
+                                @if($checked)<i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>@endif
+                            </label>
                             @endif
                             @endforeach
+                        </div>
                         @endif
 
                         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
@@ -720,7 +796,8 @@
                     'total' => (float) $month->total,
                 ])->all();
                 $encargadoEarnings = $stats['earnings'];
-                $maxSales = max(array_column($last3Months, 'total'), 1);
+                $colTotals = array_column($last3Months, 'total');
+                $maxSales = $colTotals ? max(max($colTotals), 1) : 1;
             }
         @endphp
         <div class="tab-content">

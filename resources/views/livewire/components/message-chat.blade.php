@@ -75,8 +75,14 @@
             <div class="chat-title">{{ $selectedChat?->subject ?? 'Chat' }}</div>
             <div class="chat-sub">
                 @if($selectedChat)
-                    Estado: {{ $selectedChat->status }}
-                    @if($isAgent && $selectedChat->user) · {{ $selectedChat->user->name }} @endif
+                    <span style="color:var(--muted-2);">Estado: {{ $selectedChat->status }}</span>
+                    @if($isAgent)
+                        @if($selectedChat->user)
+                            &nbsp;·&nbsp;<span style="color:var(--muted);">Cliente: <strong style="color:var(--white);">{{ $selectedChat->user->username ?? $selectedChat->user->name }}</strong></span>
+                        @elseif($selectedChat->context_name)
+                            &nbsp;·&nbsp;<span style="color:var(--muted);">{{ $selectedChat->context_type }}: <strong style="color:var(--white);">{{ $selectedChat->context_name }}</strong></span>
+                        @endif
+                    @endif
                 @else
                     Selecciona una conversacion
                 @endif
@@ -87,10 +93,38 @@
             <div class="chat-body">
                 <div class="messages">
                     @foreach($selectedChat->messages as $message)
-                        @php($mine = $isAgent ? $message->agent_id === $agentId : $message->user_id === $userId)
+                        @php
+                            // Determinar si este mensaje es "mio" (lado derecho)
+                            if ($isAgent) {
+                                if ($agentId !== null) {
+                                    // Agente con identity: solo sus propios mensajes por agent_id
+                                    $mine = (int) $message->agent_id === (int) $agentId;
+                                } else {
+                                    // Admin sin agent record: sus mensajes se guardaron con user_id = auth()->id()
+                                    $mine = $message->agent_id === null
+                                        && $message->user_id !== null
+                                        && (int) $message->user_id === auth()->id();
+                                }
+                            } else {
+                                $mine = (int) $message->user_id === (int) $userId;
+                            }
+
+                            // Nombre a mostrar en la burbuja
+                            if ($message->agent_id) {
+                                $senderName = $message->agent?->name ?? 'Agente';
+                                $senderRole = 'agente';
+                            } elseif ($message->user_id && (int) $message->user_id !== (int) $userId) {
+                                // user_id es del admin (no del cliente del chat)
+                                $senderName = $message->user?->name ?? 'Admin';
+                                $senderRole = 'admin';
+                            } else {
+                                $senderName = $message->user?->username ?? $message->user?->name ?? 'Cliente';
+                                $senderRole = 'cliente';
+                            }
+                        @endphp
                         <div class="bubble {{ $mine ? 'mine' : '' }}">
-                            <div class="bubble-agent">
-                                {{ $message->agent_id ? ($message->agent?->name ?? 'Agente') : ($message->user?->name ?? 'Cliente') }}
+                            <div class="bubble-agent" style="{{ $senderRole === 'cliente' ? 'color:var(--muted)' : ($senderRole === 'admin' ? 'color:var(--amber)' : '') }}">
+                                {{ strtoupper($senderRole) }}: {{ $senderName }}
                             </div>
                             <div class="bubble-text">{{ $message->message }}</div>
                             <div class="bubble-time">{{ $message->created_at->format('d/m/Y H:i') }}</div>

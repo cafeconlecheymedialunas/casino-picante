@@ -401,7 +401,7 @@
             </a>
             @endif
 
-            @if($sidebarCan([\App\Support\Permissions::LINE_READ, \App\Support\Permissions::LINE_VIEW, \App\Support\Permissions::LINE_CREATE, \App\Support\Permissions::LINE_EDIT]))
+            @if($sidebarCan([\App\Support\Permissions::LINE_READ, \App\Support\Permissions::LINE_VIEW, \App\Support\Permissions::LINE_EDIT]))
             <a href="{{ route('lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('lineas') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-layer-group"></i></span> Lineas
             </a>

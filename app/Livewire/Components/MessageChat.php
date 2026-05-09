@@ -7,11 +7,12 @@ use App\Models\ChatMessage;
 use App\Models\LineAgent;
 use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Livewire\Component;
 
 class MessageChat extends Component
 {
-    use HasLinePermissions;
+    use HasLinePermissions, SendsNotifications;
 
     public ?int $userId = null;
 
@@ -35,7 +36,9 @@ class MessageChat extends Component
     {
         $this->userId = $userId;
         $this->isAgent = $isAgent;
-        $this->agentId = $isAgent ? (session('active_agent_id') ?: $agentId) : $agentId;
+        $this->agentId = $isAgent
+            ? (session('active_agent_id') ?: auth()->user()?->agent?->id ?: $agentId)
+            : $agentId;
         $this->allChats = $allChats;
         $this->singleChatId = $singleChatId;
         $this->authorizeChatAccess();
@@ -83,6 +86,7 @@ class MessageChat extends Component
         $this->newChatMessage = '';
         $this->selectedChatId = $chat->id;
         session()->flash('chat_message', 'Mensaje enviado correctamente.');
+        $this->notify('Nuevo mensaje', "El cliente envió un nuevo mensaje: {$chat->subject}", 'chats', '/chats', 'info');
     }
 
     public function sendReply(): void
@@ -100,7 +104,9 @@ class MessageChat extends Component
 
         ChatMessage::create([
             'chat_id' => $chat->id,
-            'user_id' => $this->isAgent ? null : $this->userId,
+            'user_id' => $this->isAgent
+                ? ($this->agentId ? null : auth()->id())  // admin sin agent record usa su propio user_id
+                : $this->userId,
             'agent_id' => $this->isAgent ? $this->agentId : null,
             'message' => trim($this->reply),
         ]);
@@ -111,6 +117,14 @@ class MessageChat extends Component
 
         $this->reply = '';
         $this->selectedChatId = $chat->id;
+
+        if ($this->isAgent) {
+            // Agente/admin responde → notificar al admin general
+            $this->notify('Respuesta enviada', "Respuesta enviada en el chat: {$chat->subject}", 'chats', '/chats', 'info');
+        } else {
+            // Cliente responde → notificar a agentes
+            $this->notify('Nuevo mensaje de cliente', "El cliente respondió en: {$chat->subject}", 'chats', '/chats', 'info');
+        }
     }
 
     public function closeChat(): void

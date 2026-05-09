@@ -158,22 +158,52 @@
             <div class="agent-hero-info">
                 <div class="agent-hero-name">{{ $encargadoLA->agent?->name ?? '—' }} {{ $encargadoLA->agent?->apellido ?? '' }}</div>
                 <div class="agent-hero-email">{{ $encargadoLA->agent?->email ?? '' }}</div>
-                <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+                <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
                     <span class="role-badge role-enc"><i class="fa-solid fa-crown"></i> Encargado</span>
                     @if($encargadoLA->porcentaje_ganancia)
                         <span class="role-badge role-pct"><i class="fa-solid fa-percent"></i> {{ number_format($encargadoLA->porcentaje_ganancia, 0) }}% ganancia</span>
+                    @endif
+                    @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
+                        <button type="button" class="btn-icon-sm" wire:click="openPercentageModal({{ $encargadoLA->agent->id }})" title="Editar % ganancia">
+                            <i class="fa-solid fa-percent"></i>
+                        </button>
+                    @endif
+                    @if($this->hasLinePermission(\App\Support\Permissions::AGENT_PERMISSIONS))
+                        <button type="button" class="btn-icon-sm" wire:click="openPermissions({{ $encargadoLA->agent->id }})" title="Permisos del encargado">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </button>
                     @endif
                 </div>
             </div>
             <div class="agent-hero-stat">
                 <div class="info-box-label">Ganancia este mes</div>
-                @php
-                    $gananciaEnc = $totalThisMonth * (($encargadoLA->porcentaje_ganancia ?? 0) / 100);
-                @endphp
+                @php $gananciaEnc = $totalThisMonth * (($encargadoLA->porcentaje_ganancia ?? 0) / 100); @endphp
                 <div style="font-family:var(--font-display);font-size:28px;color:var(--good)">${{ number_format($gananciaEnc, 2) }}</div>
                 <div style="font-size:11px;color:var(--muted);margin-top:2px">de ${{ number_format($totalThisMonth, 2) }} en ventas</div>
             </div>
         </div>
+
+        {{-- Permisos del encargado --}}
+        @php $encPerms = $encargadoLA->permissionsList; @endphp
+        @if(!empty($encPerms))
+            <div style="margin-top:16px">
+                <div style="color:var(--muted-2);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Permisos asignados</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
+                    @foreach(\App\Support\Permissions::labels() as $perm => [$icon, $label])
+                        @if(in_array($perm, $encPerms))
+                        <div class="perm-chip perm-chip-on">
+                            <i class="{{ $icon }}"></i>
+                            <span>{{ $label }}</span>
+                            <i class="fa-solid fa-check perm-check-icon"></i>
+                        </div>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+        @else
+            <div style="margin-top:16px;color:var(--muted-2);font-size:12px;">Sin permisos asignados aún.</div>
+        @endif
+
         @else
         <div class="empty-state">
             <i class="fa-solid fa-user-slash" style="font-size:32px;opacity:.3;margin-bottom:12px"></i>
@@ -191,14 +221,15 @@
             </button>
         </div>
         @endif
-        @if($lineAgents->isEmpty())
+        @php $regularAgents = $lineAgents->where('role', '!=', 'encargado'); @endphp
+        @if($regularAgents->isEmpty())
         <div class="empty-state">
             <i class="fa-solid fa-users-slash" style="font-size:32px;opacity:.3;margin-bottom:12px"></i>
             <div>No hay agentes asignados</div>
         </div>
         @else
         <div class="agents-list">
-            @foreach($lineAgents as $la)
+            @foreach($regularAgents as $la)
             <div class="agent-row {{ $la->is_active ? '' : 'agent-row-inactive' }}">
                 <div class="agent-row-avatar">
                     {{ strtoupper(mb_substr($la->agent?->name ?? 'A', 0, 2)) }}
@@ -377,20 +408,7 @@
 
     {{-- ── TAB: PERMISOS ──────────────────────────────────────────────────── --}}
     <div x-show="tab==='permisos'" x-cloak>
-        @php
-        $permLabels = [
-            \App\Support\Permissions::NEWS_READ        => ['fa-solid fa-newspaper',      'Ver novedades'],
-            \App\Support\Permissions::NEWS_CREATE      => ['fa-solid fa-file-circle-plus','Crear novedades'],
-            \App\Support\Permissions::NEWS_UPDATE      => ['fa-solid fa-pen-to-square',   'Editar novedades'],
-            \App\Support\Permissions::TICKET_READ      => ['fa-solid fa-ticket',          'Ver tickets'],
-            \App\Support\Permissions::TICKET_UPDATE    => ['fa-solid fa-ticket-simple',   'Editar tickets'],
-            \App\Support\Permissions::BONO_READ        => ['fa-solid fa-gift',            'Ver bonos'],
-            \App\Support\Permissions::SORTEO_READ      => ['fa-solid fa-dice',            'Ver sorteos'],
-            \App\Support\Permissions::LINE_EDIT        => ['fa-solid fa-sliders',         'Editar línea'],
-            \App\Support\Permissions::AGENT_ASSIGN     => ['fa-solid fa-user-plus',       'Asignar agentes'],
-            \App\Support\Permissions::AGENT_PERMISSIONS=> ['fa-solid fa-shield-halved',   'Gestionar permisos'],
-        ];
-        @endphp
+        @php $permLabels = \App\Support\Permissions::labels(); @endphp
         <div class="perms-grid">
             @foreach($permLabels as $perm => [$icon, $label])
             @php $active = in_array($perm, $linePermissionsList ?? []); @endphp
@@ -409,6 +427,14 @@
                 <i class="fa-solid fa-sliders"></i> Modificar permisos
             </button>
             <div x-show="open" x-cloak style="margin-top:16px">
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <button type="button" class="btn-soft" wire:click="setAllLinePermissions(true)">
+                        <i class="fa-solid fa-check-double"></i> Seleccionar todos
+                    </button>
+                    <button type="button" class="btn-soft" wire:click="setAllLinePermissions(false)">
+                        <i class="fa-solid fa-xmark"></i> Desmarcar todos
+                    </button>
+                </div>
                 <div class="perms-grid">
                     @foreach($permLabels as $perm => [$icon, $label])
                     <label class="perm-chip perm-chip-edit {{ in_array($perm, $linePermissionsList ?? []) ? 'perm-chip-on' : 'perm-chip-off' }}">

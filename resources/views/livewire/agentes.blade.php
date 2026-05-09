@@ -338,20 +338,7 @@
                                 @endif
                             </div>
 
-                            @php
-                            $permChipMeta = [
-                                \App\Support\Permissions::NEWS_READ         => ['fa-solid fa-newspaper',        'Ver novedades'],
-                                \App\Support\Permissions::NEWS_CREATE       => ['fa-solid fa-file-circle-plus', 'Crear novedades'],
-                                \App\Support\Permissions::NEWS_UPDATE       => ['fa-solid fa-pen-to-square',    'Editar novedades'],
-                                \App\Support\Permissions::TICKET_READ       => ['fa-solid fa-ticket',           'Ver tickets'],
-                                \App\Support\Permissions::TICKET_UPDATE     => ['fa-solid fa-ticket-simple',    'Editar tickets'],
-                                \App\Support\Permissions::BONO_READ         => ['fa-solid fa-gift',             'Ver bonos'],
-                                \App\Support\Permissions::SORTEO_READ       => ['fa-solid fa-dice',             'Ver sorteos'],
-                                \App\Support\Permissions::LINE_EDIT         => ['fa-solid fa-sliders',          'Editar línea'],
-                                \App\Support\Permissions::AGENT_ASSIGN      => ['fa-solid fa-user-plus',        'Asignar agentes'],
-                                \App\Support\Permissions::AGENT_PERMISSIONS => ['fa-solid fa-shield-halved',    'Gestionar permisos'],
-                            ];
-                            @endphp
+                            @php $permChipMeta = \App\Support\Permissions::labels(); @endphp
                             @if($permEditAgentId === $detailAgent->id && $permEditLineId === $assignedLine->id)
                                 @if(empty($permEditAvailable))
                                     <div style="color:var(--muted-2);font-size:12px;padding:6px 0">Esta línea no tiene permisos configurados. Configuralos en la sección Líneas.</div>
