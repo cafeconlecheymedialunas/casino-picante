@@ -561,6 +561,14 @@ class LineDetail extends Component
     {
         $this->checkLinePermission(Permissions::AGENT_PERMISSIONS);
 
+        // Prevent agents from editing their own permissions here unless admin
+        $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
+        if (! $this->isAdminMode() && $currentAgentId && $agentId === $currentAgentId) {
+            session()->flash('error', 'No podés editar tus propios permisos desde la edición de la línea.');
+
+            return;
+        }
+
         $this->editingPermAgentId = $agentId;
 
         // Get line permissions (max allowed)
@@ -652,6 +660,31 @@ class LineDetail extends Component
                 'agent_id' => $this->editingPermAgentId,
                 'permission' => $perm,
             ]);
+        }
+
+        // If the edited agent is the encargado, ensure no other agent keeps permissions outside the encargado's set
+        $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $this->editingPermAgentId)->first();
+        if ($la && $la->role === LineRoles::ENCARGADO) {
+            $deleteQuery = LineAgentPermission::where('line_id', $this->lineId)
+                ->where('agent_id', '!=', $this->editingPermAgentId);
+
+            if (empty($toGrant)) {
+                $deleted = $deleteQuery->delete();
+                \Log::info('LineDetail::savePermissions deleted all other agents permissions', [
+                    'line_id' => $this->lineId,
+                    'encargado_agent_id' => $this->editingPermAgentId,
+                    'deleted_rows' => $deleted,
+                    'toGrant' => $toGrant,
+                ]);
+            } else {
+                $deleted = $deleteQuery->whereNotIn('permission', $toGrant)->delete();
+                \Log::info('LineDetail::savePermissions deleted permissions not in encargado set', [
+                    'line_id' => $this->lineId,
+                    'encargado_agent_id' => $this->editingPermAgentId,
+                    'deleted_rows' => $deleted,
+                    'toGrant' => $toGrant,
+                ]);
+            }
         }
 
         $this->editingPermAgentId = null;
@@ -882,6 +915,19 @@ class LineDetail extends Component
         $this->linePermissionsList = $grant ? LineAgentPermission::allPermissions() : [];
         $this->line->update(['permissions' => $this->linePermissionsList]);
         $this->line->refresh();
+
+        // Enforce hierarchical inheritance: remove any agent permissions no longer allowed by the line
+        $allowed = $this->line->permissions;
+        $deleteQuery = \App\Models\LineAgentPermission::where('line_id', $this->line->id);
+        if ($allowed === null) {
+            // no explicit restrictions => do not delete
+        } elseif (is_array($allowed) && empty($allowed)) {
+            // explicit empty list => remove all agent permissions
+            $deleteQuery->delete();
+        } else {
+            $deleteQuery->whereNotIn('permission', $allowed)->delete();
+        }
+
         session()->flash('message', $grant ? 'Todos los permisos habilitados.' : 'Todos los permisos removidos.');
     }
 
@@ -901,6 +947,18 @@ class LineDetail extends Component
 
         $this->line->update(['permissions' => array_values($this->linePermissionsList)]);
         $this->line->refresh();
+
+        // Enforce hierarchical inheritance: remove any agent permissions no longer allowed by the line
+        $allowed = $this->line->permissions;
+        $deleteQuery = \App\Models\LineAgentPermission::where('line_id', $this->line->id);
+        if ($allowed === null) {
+            // no explicit restrictions => do not delete
+        } elseif (is_array($allowed) && empty($allowed)) {
+            $deleteQuery->delete();
+        } else {
+            $deleteQuery->whereNotIn('permission', $allowed)->delete();
+        }
+
         session()->flash('message', 'Permisos de línea actualizados.');
     }
 

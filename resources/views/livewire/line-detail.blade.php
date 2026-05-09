@@ -163,16 +163,7 @@
                     @if($encargadoLA->porcentaje_ganancia)
                         <span class="role-badge role-pct"><i class="fa-solid fa-percent"></i> {{ number_format($encargadoLA->porcentaje_ganancia, 0) }}% ganancia</span>
                     @endif
-                    @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
-                        <button type="button" class="btn-icon-sm" wire:click="openPercentageModal({{ $encargadoLA->agent->id }})" title="Editar % ganancia">
-                            <i class="fa-solid fa-percent"></i>
-                        </button>
-                    @endif
-                    @if($this->hasLinePermission(\App\Support\Permissions::AGENT_PERMISSIONS))
-                        <button type="button" class="btn-icon-sm" wire:click="openPermissions({{ $encargadoLA->agent->id }})" title="Permisos del encargado">
-                            <i class="fa-solid fa-shield-halved"></i>
-                        </button>
-                    @endif
+
                 </div>
             </div>
             <div class="agent-hero-stat">
@@ -185,23 +176,28 @@
 
         {{-- Permisos del encargado --}}
         @php $encPerms = $encargadoLA->permissionsList; @endphp
-        @if(!empty($encPerms))
-            <div style="margin-top:16px">
-                <div style="color:var(--muted-2);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Permisos asignados</div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
-                    @foreach(\App\Support\Permissions::labels() as $perm => [$icon, $label])
-                        @if(in_array($perm, $encPerms))
-                        <div class="perm-chip perm-chip-on">
-                            <i class="{{ $icon }}"></i>
-                            <span>{{ $label }}</span>
-                            <i class="fa-solid fa-check perm-check-icon"></i>
-                        </div>
-                        @endif
-                    @endforeach
+        @php $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null; @endphp
+        @if($this->isAdminMode() || ($encargadoLA && $encargadoLA->agent?->id === $currentAgentId))
+            @if(!empty($encPerms))
+                <div style="margin-top:16px">
+                    <div style="color:var(--muted-2);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Permisos asignados</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
+                        @foreach(\App\Support\Permissions::labels() as $perm => [$icon, $label])
+                            @if(in_array($perm, $encPerms))
+                            <div class="perm-chip perm-chip-on">
+                                <i class="{{ $icon }}"></i>
+                                <span>{{ $label }}</span>
+                                <i class="fa-solid fa-check perm-check-icon"></i>
+                            </div>
+                            @endif
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @else
+                <div style="margin-top:16px;color:var(--muted-2);font-size:12px;">Sin permisos asignados aún.</div>
+            @endif
         @else
-            <div style="margin-top:16px;color:var(--muted-2);font-size:12px;">Sin permisos asignados aún.</div>
+            {{-- Regular agents should not see encargado permissions --}}
         @endif
 
         @else
@@ -214,13 +210,7 @@
 
     {{-- ── TAB: AGENTES ───────────────────────────────────────────────────── --}}
     <div x-show="tab==='agentes'" x-cloak>
-        @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
-        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button type="button" class="btn-outline" wire:click="openAssignModal">
-                <i class="fa-solid fa-user-plus"></i> Agregar agente
-            </button>
-        </div>
-        @endif
+        
         @php $regularAgents = $lineAgents->where('role', '!=', 'encargado'); @endphp
         @if($regularAgents->isEmpty())
         <div class="empty-state">
@@ -409,130 +399,79 @@
     {{-- ── TAB: PERMISOS ──────────────────────────────────────────────────── --}}
     <div x-show="tab==='permisos'" x-cloak>
         @php $permLabels = \App\Support\Permissions::labels(); @endphp
-        <div class="perms-grid">
-            @foreach($permLabels as $perm => [$icon, $label])
-            @php $active = in_array($perm, $linePermissionsList ?? []); @endphp
-            <div class="perm-chip {{ $active ? 'perm-chip-on' : 'perm-chip-off' }}">
-                <i class="{{ $icon }}"></i>
-                <span>{{ $label }}</span>
-                @if($active)
-                    <i class="fa-solid fa-check perm-check-icon"></i>
+
+        @if($this->isAdminMode())
+            <div class="perms-grid">
+                @foreach($permLabels as $perm => [$icon, $label])
+                @php $active = in_array($perm, $linePermissionsList ?? []); @endphp
+                <div class="perm-chip {{ $active ? 'perm-chip-on' : 'perm-chip-off' }}">
+                    <i class="{{ $icon }}"></i>
+                    <span>{{ $label }}</span>
+                    @if($active)
+                        <i class="fa-solid fa-check perm-check-icon"></i>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
+            <div x-data="{ open: false }" style="margin-top:20px">
+                <button type="button" class="btn-outline" @click="open=!open">
+                    <i class="fa-solid fa-sliders"></i> Modificar permisos
+                </button>
+                <div x-show="open" x-cloak style="margin-top:16px">
+                    <div style="display:flex;gap:8px;margin-bottom:12px;">
+                        <button type="button" class="btn-soft" wire:click="setAllLinePermissions(true)">
+                            <i class="fa-solid fa-check-double"></i> Seleccionar todos
+                        </button>
+                        <button type="button" class="btn-soft" wire:click="setAllLinePermissions(false)">
+                            <i class="fa-solid fa-xmark"></i> Desmarcar todos
+                        </button>
+                    </div>
+                    <div class="perms-grid">
+                        @foreach($permLabels as $perm => [$icon, $label])
+                        <label class="perm-chip perm-chip-edit {{ in_array($perm, $linePermissionsList ?? []) ? 'perm-chip-on' : 'perm-chip-off' }}">
+                            <input type="checkbox" wire:change="toggleLinePermission('{{ $perm }}')"
+                                   {{ in_array($perm, $linePermissionsList ?? []) ? 'checked' : '' }}
+                                   style="display:none">
+                            <i class="{{ $icon }}"></i>
+                            <span>{{ $label }}</span>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+        @else
+            {{-- Non-admin agents: show only their own permissions (view-only) --}}
+            @php $myPerms = $this->currentLinePermissions(); @endphp
+            <div style="margin-bottom:12px;">
+                <div class="form-label" style="margin-bottom:6px">Tus permisos en esta línea</div>
+                @if(!empty($myPerms))
+                    <div class="perms-grid">
+                        @foreach($permLabels as $perm => [$icon, $label])
+                            @if(in_array($perm, $myPerms))
+                                <div class="perm-chip perm-chip-on">
+                                    <i class="{{ $icon }}"></i>
+                                    <span>{{ $label }}</span>
+                                    <i class="fa-solid fa-check perm-check-icon"></i>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                @else
+                    <div style="color:var(--muted-2);font-size:12px">No tenés permisos asignados en esta línea.</div>
                 @endif
             </div>
-            @endforeach
-        </div>
-        @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
-        <div x-data="{ open: false }" style="margin-top:20px">
-            <button type="button" class="btn-outline" @click="open=!open">
-                <i class="fa-solid fa-sliders"></i> Modificar permisos
-            </button>
-            <div x-show="open" x-cloak style="margin-top:16px">
-                <div style="display:flex;gap:8px;margin-bottom:12px;">
-                    <button type="button" class="btn-soft" wire:click="setAllLinePermissions(true)">
-                        <i class="fa-solid fa-check-double"></i> Seleccionar todos
-                    </button>
-                    <button type="button" class="btn-soft" wire:click="setAllLinePermissions(false)">
-                        <i class="fa-solid fa-xmark"></i> Desmarcar todos
-                    </button>
-                </div>
-                <div class="perms-grid">
-                    @foreach($permLabels as $perm => [$icon, $label])
-                    <label class="perm-chip perm-chip-edit {{ in_array($perm, $linePermissionsList ?? []) ? 'perm-chip-on' : 'perm-chip-off' }}">
-                        <input type="checkbox" wire:change="toggleLinePermission('{{ $perm }}')"
-                               {{ in_array($perm, $linePermissionsList ?? []) ? 'checked' : '' }}
-                               style="display:none">
-                        <i class="{{ $icon }}"></i>
-                        <span>{{ $label }}</span>
-                    </label>
-                    @endforeach
-                </div>
-            </div>
-        </div>
         @endif
     </div>
 
 </div>{{-- /ld-tab-body --}}
 
 {{-- ── MODAL: ASIGNAR AGENTE ──────────────────────────────────────────────── --}}
-@if($showAssignModal)
-<div class="modal-overlay" wire:click="closeAssignModal">
-    <div class="modal-panel" wire:click.stop>
-        <div class="modal-head">
-            <h3><i class="fa-solid fa-user-plus"></i> Asignar agente</h3>
-            <button type="button" class="modal-close" wire:click="closeAssignModal">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="form-group">
-                <label class="form-label">Buscar agente</label>
-                <input type="text" wire:model.live="assignAgentSearch" class="form-input" placeholder="Nombre o email...">
-            </div>
-            @if($this->searchAgents && $this->searchAgents->count() > 0)
-            <div class="search-results">
-                @foreach($this->searchAgents as $ag)
-                <div class="search-result-row" wire:click="selectAssignAgent({{ $ag->id }})">
-                    <div class="result-avatar">{{ strtoupper(mb_substr($ag->name, 0, 2)) }}</div>
-                    <div>
-                        <div style="font-weight:700;font-size:13px">{{ $ag->name }}</div>
-                        <div style="font-size:11px;color:var(--muted)">{{ $ag->email }}</div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-            @endif
-            @if($assignAgentId)
-            <div class="form-group" style="margin-top:16px">
-                <label class="form-label">Rol</label>
-                <select wire:model="assignRole" class="form-input">
-                    <option value="miembro">Agente</option>
-                    <option value="encargado">Encargado</option>
-                </select>
-            </div>
-            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
-                <button type="button" class="btn-ghost" wire:click="closeAssignModal">Cancelar</button>
-                <button type="button" class="btn-primary" wire:click="confirmAssign">
-                    <i class="fa-solid fa-check"></i> Asignar
-                </button>
-            </div>
-            @endif
-        </div>
-    </div>
-</div>
-@endif
+
 
 {{-- ── MODAL: PERMISOS DE AGENTE ───────────────────────────────────────────── --}}
-@if($editingPermAgentId)
-<div class="modal-overlay" wire:click="closePermissions">
-    <div class="modal-panel" wire:click.stop>
-        <div class="modal-head">
-            <h3><i class="fa-solid fa-shield-halved"></i> Permisos de agente</h3>
-            <button type="button" class="modal-close" wire:click="closePermissions">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size:12px;color:var(--muted);margin:0 0 16px">Solo se muestran los permisos habilitados en la línea.</p>
-            <div class="perms-grid">
-                @foreach($editingPerms as $perm => $checked)
-                @php $info = $permLabels[$perm] ?? ['fa-solid fa-key', $perm]; @endphp
-                <label class="perm-chip perm-chip-edit {{ $checked ? 'perm-chip-on' : 'perm-chip-off' }}">
-                    <input type="checkbox" wire:model="editingPerms.{{ $perm }}" style="display:none">
-                    <i class="{{ $info[0] }}"></i>
-                    <span>{{ $info[1] }}</span>
-                </label>
-                @endforeach
-            </div>
-            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
-                <button type="button" class="btn-ghost" wire:click="closePermissions">Cancelar</button>
-                <button type="button" class="btn-primary" wire:click="savePermissions">
-                    <i class="fa-solid fa-floppy-disk"></i> Guardar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
+
 
 <style>
 [x-cloak] { display: none !important; }

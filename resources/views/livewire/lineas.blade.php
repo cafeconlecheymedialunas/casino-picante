@@ -432,7 +432,6 @@
                 <svg class="mini-icon" viewBox="0 0 15 15"><circle cx="7.5" cy="5" r="2.5"/><path d="M2 13c0-3 2.5-4.5 5.5-4.5s5.5 1.5 5.5 4.5"/></svg>
                 Encargado
             </button>
-            @if($editingLineId)
             <button type="button" wire:click="switchTab('agentes')" class="tab-btn {{ $editTab==='agentes' ? 'tab-btn-active' : '' }}">
                 <svg class="mini-icon" viewBox="0 0 15 15"><circle cx="5" cy="5" r="2"/><path d="M1 13c0-2.5 1.8-3.5 4-3.5M10.5 2.5l2 2-4 4H7v-2l3.5-3.5z"/></svg>
                 Agentes
@@ -441,7 +440,6 @@
                 <svg class="mini-icon" viewBox="0 0 15 15"><rect x="1.5" y="2.5" width="12" height="10" rx="1.5"/><path d="M4.5 6.5h6M4.5 9h4"/></svg>
                 Ventas
             </button>
-            @endif
             <button type="button" wire:click="switchTab('canales')" class="tab-btn {{ $editTab==='canales' ? 'tab-btn-active' : '' }}">
                 <svg class="mini-icon" viewBox="0 0 15 15"><path d="M13 4c0 4-3.5 7.5-6 9-2.5-1.5-6-5-6-9a6 6 0 0112 0z"/><circle cx="7" cy="4" r="1.5" fill="currentColor" stroke="none"/></svg>
                 Canales
@@ -580,289 +578,312 @@
                 </div>
             </form>
 
-            {{-- Permisos del encargado (solo al editar y si hay encargado asignado) --}}
-            @if($editingLineId && $encargadoId)
-            @php
-                $encLA = \App\Models\LineAgent::with('agent')
-                    ->where('line_id', $editingLineId)
-                    ->where('role', 'encargado')
-                    ->first();
-            @endphp
-            @if($encLA)
-            <div style="margin-top:28px;border-top:1px solid var(--line);padding-top:22px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                    <div>
-                        <div class="form-label" style="margin-bottom:2px">Permisos del encargado</div>
-                        <div style="font-size:11px;color:var(--muted-2)">{{ $encLA->agent?->name ?? '—' }}</div>
+            {{-- Permisos del encargado --}}
+            @if(!$editingLineId)
+                <div style="margin-top:28px;border-top:1px solid var(--line);padding-top:22px">
+                    <div class="empty-state" style="padding:20px">
+                        <i class="fa-solid fa-shield-halved" style="font-size:20px;margin-bottom:10px;display:block;color:var(--muted-2)"></i>
+                        Los permisos específicos del encargado se podrán gestionar una vez creada la línea.
                     </div>
-                    @if($editingAgentPermissionsId !== $encLA->id)
-                    <button type="button" class="btn-soft" wire:click="openAgentPermissions({{ $encLA->id }})">
-                        <i class="fa-solid fa-shield-halved"></i> Editar permisos
-                    </button>
-                    @endif
                 </div>
-
-                @if($editingAgentPermissionsId === $encLA->id)
-                <div class="perm-editor" style="border-radius:8px;border:1px solid var(--line)">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                        <span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">
-                            Permisos de {{ $encLA->agent?->name ?? 'encargado' }}
-                        </span>
-                        <button type="button" class="btn-soft" wire:click="closeAgentPermissions" style="font-size:10px">Cancelar</button>
-                    </div>
-                    @php $permLabelsEnc = \App\Support\Permissions::labels(); @endphp
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
-                        @foreach($permLabelsEnc as $perm => [$icon, $label])
-                        @if(in_array($perm, $availablePermissions))
-                        <label class="perm-chip-edit">
-                            <input type="checkbox" wire:model="agentPermissions" value="{{ $perm }}"
-                                {{ in_array($perm, $agentPermissions) ? 'checked' : '' }}
-                                style="position:absolute;opacity:0;width:0;height:0">
-                            <i class="{{ $icon }}"></i>
-                            <span>{{ $label }}</span>
-                        </label>
+            @elseif($encargadoId)
+                @php
+                    $encLA = \App\Models\LineAgent::with('agent')
+                        ->where('line_id', $editingLineId)
+                        ->where('role', 'encargado')
+                        ->first();
+                @endphp
+                @if($encLA)
+                <div style="margin-top:28px;border-top:1px solid var(--line);padding-top:22px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                        <div>
+                            <div class="form-label" style="margin-bottom:2px">Permisos del encargado</div>
+                            <div style="font-size:11px;color:var(--muted-2)">{{ $encLA->agent?->name ?? '—' }}</div>
+                        </div>
+                        @if($editingAgentPermissionsId !== $encLA->id)
+                        <button type="button" class="btn-soft" wire:click="openAgentPermissions({{ $encLA->id }})">
+                            <i class="fa-solid fa-shield-halved"></i> Editar permisos
+                        </button>
                         @endif
+                    </div>
+
+                    @if($editingAgentPermissionsId === $encLA->id)
+                    <div class="perm-editor" style="border-radius:8px;border:1px solid var(--line)">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                            <span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">
+                                Permisos de {{ $encLA->agent?->name ?? 'encargado' }}
+                            </span>
+                            <button type="button" class="btn-soft" wire:click="closeAgentPermissions" style="font-size:10px">Cancelar</button>
+                        </div>
+                        @php $permLabelsEnc = \App\Support\Permissions::labels(); @endphp
+                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
+                            @foreach($permLabelsEnc as $perm => [$icon, $label])
+                            @if(in_array($perm, $availablePermissions))
+                            <label class="perm-chip-edit">
+                                <input type="checkbox" wire:model="agentPermissions" value="{{ $perm }}"
+                                    {{ in_array($perm, $agentPermissions) ? 'checked' : '' }}
+                                    style="position:absolute;opacity:0;width:0;height:0">
+                                <i class="{{ $icon }}"></i>
+                                <span>{{ $label }}</span>
+                            </label>
+                            @endif
+                            @endforeach
+                        </div>
+                        <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--line)">
+                            <button type="button" class="btn-soft" wire:click="closeAgentPermissions">Cancelar</button>
+                            <button type="button" class="btn-primary" wire:click="saveAgentPermissions">
+                                <i class="fa-solid fa-floppy-disk"></i> Guardar permisos
+                            </button>
+                        </div>
+                    </div>
+                    @else
+                    @php $encPermsNow = $encLA->getPermissionsListAttribute(); @endphp
+                    @if(!empty($encPermsNow))
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
+                        @foreach(\App\Support\Permissions::labels() as $perm => [$icon, $label])
+                            @if(in_array($perm, $encPermsNow))
+                            <div class="perm-chip-edit perm-chip-on" style="cursor:default">
+                                <i class="{{ $icon }}"></i>
+                                <span>{{ $label }}</span>
+                                <i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>
+                            </div>
+                            @endif
                         @endforeach
                     </div>
-                    <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--line)">
-                        <button type="button" class="btn-soft" wire:click="closeAgentPermissions">Cancelar</button>
-                        <button type="button" class="btn-primary" wire:click="saveAgentPermissions">
-                            <i class="fa-solid fa-floppy-disk"></i> Guardar permisos
-                        </button>
-                    </div>
+                    @else
+                    <div style="color:var(--muted-2);font-size:12px">Sin permisos asignados aún.</div>
+                    @endif
+                    @endif
                 </div>
-                @else
-                @php $encPermsNow = $encLA->getPermissionsListAttribute(); @endphp
-                @if(!empty($encPermsNow))
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
-                    @foreach(\App\Support\Permissions::labels() as $perm => [$icon, $label])
-                        @if(in_array($perm, $encPermsNow))
-                        <div class="perm-chip-edit perm-chip-on" style="cursor:default">
-                            <i class="{{ $icon }}"></i>
-                            <span>{{ $label }}</span>
-                            <i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>
-                        </div>
-                        @endif
-                    @endforeach
-                </div>
-                @else
-                <div style="color:var(--muted-2);font-size:12px">Sin permisos asignados aún.</div>
                 @endif
-                @endif
-            </div>
-            @endif
             @endif
 
         </div>
         @endif
 
-        {{-- ── TAB: AGENTES (solo al editar) ──────────────────────────────── --}}
-        @if($editTab === 'agentes' && $editingLineId)
+        {{-- ── TAB: AGENTES ──────────────────────────────── --}}
+        @if($editTab === 'agentes')
         <div class="tab-content">
 
-            {{-- Select para agregar agente --}}
-            <div style="margin-bottom:20px">
-                <label class="form-label">Agregar agente a la línea</label>
-                @if($availableAgents->isEmpty())
-                    <div style="color:var(--muted-2);font-size:12px;padding:10px 0">Todos los agentes activos ya están asignados.</div>
-                @else
-                <div style="display:flex;gap:8px;align-items:flex-end">
-                    <div style="flex:1">
-                        <select id="agent-select-add" class="form-input">
-                            <option value="">Seleccionar agente...</option>
-                            @foreach($availableAgents as $agent)
-                                <option value="{{ $agent->id }}">{{ trim($agent->name.' '.($agent->apellido ?? '')) }}{{ $agent->username ? ' — @'.$agent->username : '' }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <button type="button" class="btn-primary"
-                        x-on:click="const s=document.getElementById('agent-select-add');if(s.value){$wire.addAgent(parseInt(s.value));s.value='';}">
-                        + Agregar
-                    </button>
+            @if(!$editingLineId)
+                <div class="empty-state">
+                    <i class="fa-solid fa-users" style="font-size:32px;margin-bottom:12px;display:block;color:var(--muted-2)"></i>
+                    Guarda la línea primero para poder gestionar sus agentes.
                 </div>
-                @endif
-            </div>
-
-            {{-- Lista de agentes asignados --}}
-            @if($editLineAgents->isEmpty())
-                <div class="empty-state">No hay agentes asignados a esta línea aún.</div>
             @else
-            <div class="agent-list">
-                @foreach($editLineAgents as $la)
-                @php $laPerms = $la->getPermissionsListAttribute(); @endphp
-                <div class="agent-item" wire:key="la-{{ $la->id }}">
-                    <div class="agent-item-head">
-                        <div class="agent-avatar">{{ strtoupper(mb_substr($la->agent?->name ?? 'A', 0, 2)) }}</div>
-                        <div style="flex:1;min-width:0">
-                            <div class="agent-name">{{ $la->agent?->name ?? '—' }} {{ $la->agent?->apellido ?? '' }}</div>
-                            <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
-                                <span class="role-badge {{ $la->role === 'encargado' ? 'role-encargado' : 'role-agente' }}">
-                                    {{ $la->role === 'encargado' ? 'Encargado' : 'Agente' }}
-                                </span>
+                {{-- Select para agregar agente --}}
+                <div style="margin-bottom:20px">
+                    <label class="form-label">Agregar agente a la línea</label>
+                    @if($availableAgents->isEmpty())
+                        <div style="color:var(--muted-2);font-size:12px;padding:10px 0">Todos los agentes activos ya están asignados.</div>
+                    @else
+                    <div style="display:flex;gap:8px;align-items:flex-end">
+                        <div style="flex:1">
+                            <select id="agent-select-add" class="form-input">
+                                <option value="">Seleccionar agente...</option>
+                                @foreach($availableAgents as $agent)
+                                    <option value="{{ $agent->id }}">{{ trim($agent->name.' '.($agent->apellido ?? '')) }}{{ $agent->username ? ' — @'.$agent->username : '' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <button type="button" class="btn-primary"
+                            x-on:click="const s=document.getElementById('agent-select-add');if(s.value){$wire.addAgent(parseInt(s.value));s.value='';}">
+                            + Agregar
+                        </button>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Lista de agentes asignados --}}
+                @if($editLineAgents->isEmpty())
+                    <div class="empty-state">No hay agentes asignados a esta línea aún.</div>
+                @else
+                <div class="agent-list">
+                    @foreach($editLineAgents as $la)
+                    @php $laPerms = $la->getPermissionsListAttribute(); @endphp
+                    <div class="agent-item" wire:key="la-{{ $la->id }}">
+                        <div class="agent-item-head">
+                            <div class="agent-avatar">{{ strtoupper(mb_substr($la->agent?->name ?? 'A', 0, 2)) }}</div>
+                            <div style="flex:1;min-width:0">
+                                <div class="agent-name">{{ $la->agent?->name ?? '—' }} {{ $la->agent?->apellido ?? '' }}</div>
+                                <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
+                                    <span class="role-badge {{ $la->role === 'encargado' ? 'role-encargado' : 'role-agente' }}">
+                                        {{ $la->role === 'encargado' ? 'Encargado' : 'Agente' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px">
+                                @if(!empty($laPerms))
+                                    <div class="chip-row">
+                                        @foreach(array_slice($laPerms, 0, 3) as $p)<span class="chip" style="font-size:9px">{{ $p }}</span>@endforeach
+                                        @if(count($laPerms) > 3)<span class="chip" style="opacity:.6;font-size:9px">+{{ count($laPerms)-3 }}</span>@endif
+                                    </div>
+                                @else
+                                    <span style="color:var(--muted-2);font-size:11px">Sin permisos</span>
+                                @endif
+                                <button type="button" class="btn-soft" wire:click="openAgentPermissions({{ $la->id }})">
+                                    <svg class="mini-icon" viewBox="0 0 15 15"><path d="M10.5 2.5l2 2-8.5 8.5H2.5v-2l8.5-8.5z"/></svg>
+                                    Permisos
+                                </button>
+                                @if($la->role !== 'encargado')
+                                <button type="button" class="btn-icon btn-danger"
+                                    wire:click="removeLineAgent({{ $la->id }})"
+                                    wire:confirm="¿Quitar a {{ $la->agent?->name ?? 'este agente' }} de la línea?"
+                                    title="Quitar de la línea">
+                                    <svg class="mini-icon" viewBox="0 0 15 15"><path d="M3 3l9 9M12 3l-9 9"/></svg>
+                                </button>
+                                @endif
                             </div>
                         </div>
-                        <div style="display:flex;align-items:center;gap:8px">
-                            @if(!empty($laPerms))
-                                <div class="chip-row">
-                                    @foreach(array_slice($laPerms, 0, 3) as $p)<span class="chip" style="font-size:9px">{{ $p }}</span>@endforeach
-                                    @if(count($laPerms) > 3)<span class="chip" style="opacity:.6;font-size:9px">+{{ count($laPerms)-3 }}</span>@endif
+
+                        {{-- Permission editor (expands inline) --}}
+                        @if($editingAgentPermissionsId === $la->id)
+                        <div class="perm-editor">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                                <span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">
+                                    Permisos de {{ $la->agent?->name ?? 'agente' }}
+                                </span>
+                                <button type="button" class="btn-soft" wire:click="closeAgentPermissions" style="font-size:10px">Cancelar</button>
+                            </div>
+
+                            @if(empty($availablePermissions))
+                                <div style="color:var(--muted-2);font-size:12px;margin-bottom:14px">
+                                    La línea no tiene permisos configurados. Configura permisos en la línea primero.
                                 </div>
                             @else
-                                <span style="color:var(--muted-2);font-size:11px">Sin permisos</span>
-                            @endif
-                            <button type="button" class="btn-soft" wire:click="openAgentPermissions({{ $la->id }})">
-                                <svg class="mini-icon" viewBox="0 0 15 15"><path d="M10.5 2.5l2 2-8.5 8.5H2.5v-2l8.5-8.5z"/></svg>
-                                Permisos
-                            </button>
-                            @if($la->role !== 'encargado')
-                            <button type="button" class="btn-icon btn-danger"
-                                wire:click="removeLineAgent({{ $la->id }})"
-                                wire:confirm="¿Quitar a {{ $la->agent?->name ?? 'este agente' }} de la línea?"
-                                title="Quitar de la línea">
-                                <svg class="mini-icon" viewBox="0 0 15 15"><path d="M3 3l9 9M12 3l-9 9"/></svg>
-                            </button>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- Permission editor (expands inline) --}}
-                    @if($editingAgentPermissionsId === $la->id)
-                    <div class="perm-editor">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                            <span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">
-                                Permisos de {{ $la->agent?->name ?? 'agente' }}
-                            </span>
-                            <button type="button" class="btn-soft" wire:click="closeAgentPermissions" style="font-size:10px">Cancelar</button>
-                        </div>
-
-                        @if(empty($availablePermissions))
-                            <div style="color:var(--muted-2);font-size:12px;margin-bottom:14px">
-                                La línea no tiene permisos configurados. Configura permisos en la línea primero.
+                            @php $permLabelsAg = \App\Support\Permissions::labels(); @endphp
+                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
+                                @foreach($permLabelsAg as $perm => [$icon, $label])
+                                @if(in_array($perm, $availablePermissions))
+                                @php $checked = in_array($perm, $agentPermissions); @endphp
+                                <label class="perm-chip-edit {{ $checked ? 'perm-chip-on' : 'perm-chip-off' }}">
+                                    <input type="checkbox" wire:model="agentPermissions" value="{{ $perm }}" style="display:none">
+                                    <i class="{{ $icon }}"></i>
+                                    <span>{{ $label }}</span>
+                                    @if($checked)<i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>@endif
+                                </label>
+                                @endif
+                                @endforeach
                             </div>
-                        @else
-                        @php $permLabelsAg = \App\Support\Permissions::labels(); @endphp
-                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
-                            @foreach($permLabelsAg as $perm => [$icon, $label])
-                            @if(in_array($perm, $availablePermissions))
-                            @php $checked = in_array($perm, $agentPermissions); @endphp
-                            <label class="perm-chip-edit {{ $checked ? 'perm-chip-on' : 'perm-chip-off' }}">
-                                <input type="checkbox" wire:model="agentPermissions" value="{{ $perm }}" style="display:none">
-                                <i class="{{ $icon }}"></i>
-                                <span>{{ $label }}</span>
-                                @if($checked)<i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>@endif
-                            </label>
                             @endif
-                            @endforeach
+
+                            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+                                <button type="button" class="btn-soft" wire:click="closeAgentPermissions">Cancelar</button>
+                                <button type="button" class="btn-primary" wire:click="saveAgentPermissions">Guardar permisos</button>
+                            </div>
                         </div>
                         @endif
 
-                        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
-                            <button type="button" class="btn-soft" wire:click="closeAgentPermissions">Cancelar</button>
-                            <button type="button" class="btn-primary" wire:click="saveAgentPermissions">Guardar permisos</button>
-                        </div>
                     </div>
-                    @endif
-
+                    @endforeach
                 </div>
-                @endforeach
-            </div>
+                @endif
             @endif
 
         </div>
         @endif
 
         {{-- ── TAB: VENTAS ─────────────────────────────────────────────────── --}}
-        @if($editTab === 'ventas' && $editingLineId)
-        @php
-            $editLine = \App\Models\Line::find($editingLineId);
-            if ($editLine) {
-                $stats = \App\Services\SalesStats::lineStats($editLine);
-
-                $bestMonth = $stats['bestMonth'] ? [
-                    'nombre' => ($monthNames[(int)$stats['bestMonth']->mes] ?? $stats['bestMonth']->mes),
-                    'anio'   => $stats['bestMonth']->anio,
-                    'total'  => (float) $stats['bestMonth']->total,
-                ] : null;
-
-                $bestPlatform = $stats['bestPlatform'] ? [
-                    'platform' => $stats['bestPlatform']->platform?->name ?? '—',
-                    'total'    => (float) $stats['bestPlatform']->total,
-                ] : null;
-
-                $totalThisMonth = (float) $stats['monthTotal'];
-                $last3Months = $stats['lastMonths']->map(fn($month) => [
-                    'mes'   => (int) $month->mes,
-                    'anio'  => (int) $month->anio,
-                    'total' => (float) $month->total,
-                ])->all();
-                $encargadoEarnings = $stats['earnings'];
-                $colTotals = array_column($last3Months, 'total');
-                $maxSales = $colTotals ? max(max($colTotals), 1) : 1;
-            }
-        @endphp
+        @if($editTab === 'ventas')
         <div class="tab-content">
 
-            @if($editLine)
-                @if(count($last3Months) === 0 && !$bestMonth && !$bestPlatform && $totalThisMonth == 0)
-                    <div class="empty-state" style="padding: 24px; margin: 16px 0;">
-                        No hay datos de ventas para esta línea todavía.
-                    </div>
-                @else
-                    <div class="sales-kpis">
-                        <div class="kpi-card kpi-gold">
-                            <div class="kpi-icon">TROFEO</div>
-                            <div class="kpi-label">Mejor Mes</div>
-                            @if($bestMonth)
-                                <div class="kpi-value">{{ $bestMonth['nombre'] }} {{ $bestMonth['anio'] }}</div>
-                                <div class="kpi-amount">${{ number_format($bestMonth['total'], 2) }}</div>
-                            @else
-                                <div class="kpi-empty">Sin datos</div>
-                            @endif
-                        </div>
-                        <div class="kpi-card kpi-purple">
-                            <div class="kpi-icon">PLATAFORMA</div>
-                            <div class="kpi-label">Top Plataforma</div>
-                            @if($bestPlatform)
-                                <div class="kpi-value">{{ $bestPlatform['platform'] }}</div>
-                                <div class="kpi-amount">${{ number_format($bestPlatform['total'], 2) }}</div>
-                            @else
-                                <div class="kpi-empty">Sin datos</div>
-                            @endif
-                        </div>
-                        <div class="kpi-card kpi-blue">
-                            <div class="kpi-icon">CALENDARIO</div>
-                            <div class="kpi-label">Este Mes</div>
-                            <div class="kpi-amount" style="color: var(--good);">${{ number_format($totalThisMonth, 2) }}</div>
-                        </div>
-                        <div class="kpi-card kpi-green">
-                            <div class="kpi-icon">DINERO</div>
-                            <div class="kpi-label">Ganancia Encargado</div>
-                            @if(count($encargadoEarnings) > 0)
-                                @foreach($encargadoEarnings as $earning)
-                                    <div class="kpi-value" style="font-size: 14px;">{{ $earning['name'] ?? 'Encargado' }} - {{ $earning['porcentaje'] }}%</div>
-                                    <div class="kpi-amount">${{ number_format($earning['ganancia'], 2) }}</div>
-                                @endforeach
-                            @else
-                                <div class="kpi-empty">Sin encargado</div>
-                            @endif
-                        </div>
-                    </div>
-
-                    {{-- Últimos 3 Meses --}}
-                    <div class="months-grid">
-                        @foreach($last3Months as $index => $month)
-                            <div class="month-card">
-                                <div class="month-name">@if($index === 0) Mes Actual @elseif($index === 1) Mes Pasado @else Mes Anterior @endif</div>
-                                <div class="month-total">${{ number_format($month['total'], 2) }}</div>
-                                <div class="month-bar">
-                                    <div class="month-bar-fill" style="width: {{ ($month['total'] / $maxSales * 100) }}%"></div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
+            @if(!$editingLineId)
+                <div class="empty-state">
+                    <i class="fa-solid fa-chart-line" style="font-size:32px;margin-bottom:12px;display:block;color:var(--muted-2)"></i>
+                    Guarda la línea primero para ver sus estadísticas de ventas.
+                </div>
             @else
-                <div class="empty-state">Guarda la línea primero para ver estadísticas de ventas.</div>
+                @php
+                    $monthNames = [1=>'Ene',2=>'Feb',3=>'Mar',4=>'Abr',5=>'May',6=>'Jun',7=>'Jul',8=>'Ago',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dic'];
+                    $editLine = \App\Models\Line::find($editingLineId);
+                    if ($editLine) {
+                        $stats = \App\Services\SalesStats::lineStats($editLine);
+
+                        $bestMonth = $stats['bestMonth'] ? [
+                            'nombre' => ($monthNames[(int)$stats['bestMonth']->mes] ?? $stats['bestMonth']->mes),
+                            'anio'   => $stats['bestMonth']->anio,
+                            'total'  => (float) $stats['bestMonth']->total,
+                        ] : null;
+
+                        $bestPlatform = $stats['bestPlatform'] ? [
+                            'platform' => $stats['bestPlatform']->platform?->name ?? '—',
+                            'total'    => (float) $stats['bestPlatform']->total,
+                        ] : null;
+
+                        $totalThisMonth = (float) $stats['monthTotal'];
+                        $last3Months = $stats['lastMonths']->map(fn($month) => [
+                            'mes'   => (int) $month->mes,
+                            'anio'  => (int) $month->anio,
+                            'total' => (float) $month->total,
+                        ])->all();
+                        $encargadoEarnings = $stats['earnings'];
+                        $colTotals = array_column($last3Months, 'total');
+                        $maxSales = $colTotals ? max(max($colTotals), 1) : 1;
+                    }
+                @endphp
+
+                @if($editLine)
+                    @if(count($last3Months) === 0 && !$bestMonth && !$bestPlatform && $totalThisMonth == 0)
+                        <div class="empty-state" style="padding: 24px; margin: 16px 0;">
+                            No hay datos de ventas para esta línea todavía.
+                        </div>
+                    @else
+                        <div class="sales-kpis">
+                            <div class="kpi-card kpi-gold">
+                                <div class="kpi-icon">TROFEO</div>
+                                <div class="kpi-label">Mejor Mes</div>
+                                @if($bestMonth)
+                                    <div class="kpi-value">{{ $bestMonth['nombre'] }} {{ $bestMonth['anio'] }}</div>
+                                    <div class="kpi-amount">${{ number_format($bestMonth['total'], 2) }}</div>
+                                @else
+                                    <div class="kpi-empty">Sin datos</div>
+                                @endif
+                            </div>
+                            <div class="kpi-card kpi-purple">
+                                <div class="kpi-icon">PLATAFORMA</div>
+                                <div class="kpi-label">Top Plataforma</div>
+                                @if($bestPlatform)
+                                    <div class="kpi-value">{{ $bestPlatform['platform'] }}</div>
+                                    <div class="kpi-amount">${{ number_format($bestPlatform['total'], 2) }}</div>
+                                @else
+                                    <div class="kpi-empty">Sin datos</div>
+                                @endif
+                            </div>
+                            <div class="kpi-card kpi-blue">
+                                <div class="kpi-icon">CALENDARIO</div>
+                                <div class="kpi-label">Este Mes</div>
+                                <div class="kpi-amount" style="color: var(--good);">${{ number_format($totalThisMonth, 2) }}</div>
+                            </div>
+                            <div class="kpi-card kpi-green">
+                                <div class="kpi-icon">DINERO</div>
+                                <div class="kpi-label">Ganancia Encargado</div>
+                                @if(count($encargadoEarnings) > 0)
+                                    @foreach($encargadoEarnings as $earning)
+                                        <div class="kpi-value" style="font-size: 14px;">{{ $earning['name'] ?? 'Encargado' }} - {{ $earning['porcentaje'] }}%</div>
+                                        <div class="kpi-amount">${{ number_format($earning['ganancia'], 2) }}</div>
+                                    @endforeach
+                                @else
+                                    <div class="kpi-empty">Sin encargado</div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Últimos 3 Meses --}}
+                        <div class="months-grid">
+                            @foreach($last3Months as $index => $month)
+                                <div class="month-card">
+                                    <div class="month-name">@if($index === 0) Mes Actual @elseif($index === 1) Mes Pasado @else Mes Anterior @endif</div>
+                                    <div class="month-total">${{ number_format($month['total'], 2) }}</div>
+                                    <div class="month-bar">
+                                        <div class="month-bar-fill" style="width: {{ ($month['total'] / $maxSales * 100) }}%"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                @else
+                    <div class="empty-state">Guarda la línea primero para ver estadísticas de ventas.</div>
+                @endif
             @endif
 
         </div>

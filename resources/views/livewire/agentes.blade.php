@@ -334,7 +334,12 @@
                                 @if($permEditAgentId === $detailAgent->id && $permEditLineId === $assignedLine->id)
                                     <button wire:click="closePermissions" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Cancelar</button>
                                 @else
-                                    <button wire:click="openPermissions({{ $detailAgent->id }}, {{ $assignedLine->id }})" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Editar permisos</button>
+                                    @php $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null; @endphp
+                                    @if(auth()->user()?->hasRole('\App\Support\Roles::ADMIN') || $detailAgent->id !== $currentAgentId)
+                                        <button wire:click="openPermissions({{ $detailAgent->id }}, {{ $assignedLine->id }})" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Editar permisos</button>
+                                    @else
+                                        <button class="btn-ghost disabled" style="font-size:11px;padding:4px 10px;opacity:.5;cursor:not-allowed" title="No podés editar tus propios permisos">Editar permisos</button>
+                                    @endif
                                 @endif
                             </div>
 

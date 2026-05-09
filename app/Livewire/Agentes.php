@@ -241,6 +241,14 @@ class Agentes extends Component
         $this->authorizeLineScope($lineId);
         $linePermissions = $line->permissions ?? [];
 
+        // Prevent agents from editing their own permissions here unless admin
+        $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
+        if (! $this->isAdminMode() && $currentAgentId && $agentId === $currentAgentId) {
+            session()->flash('error', 'No podés editar tus propios permisos desde la edición de la línea.');
+
+            return;
+        }
+
         if ($this->isAdminMode()) {
             $available = $linePermissions;
         } else {
@@ -273,9 +281,31 @@ class Agentes extends Component
             return;
         }
 
+        // Prevent agents from saving their own permissions here unless admin
+        $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
+        if (! $this->isAdminMode() && $currentAgentId && $this->permEditAgentId === $currentAgentId) {
+            session()->flash('error', 'No podés editar tus propios permisos desde la edición de la línea.');
+
+            return;
+        }
+
         $this->authorizeLineScope($this->permEditLineId);
 
-        $toSave = array_values(array_intersect($this->permEditSelected, $this->permEditAvailable));
+        // Recompute allowed permissions server-side to avoid client tampering
+        $line = Line::findOrFail($this->permEditLineId);
+        $linePermissions = $line->permissions ?? [];
+        if ($this->isAdminMode()) {
+            $available = $linePermissions;
+        } else {
+            $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
+            $myPerms = LineAgentPermission::where('line_id', $this->permEditLineId)
+                ->where('agent_id', $currentAgentId)
+                ->pluck('permission')
+                ->toArray();
+            $available = array_values(array_intersect($linePermissions, $myPerms));
+        }
+
+        $toSave = array_values(array_intersect($this->permEditSelected, $available));
 
         $lineAgent = LineAgent::where('line_id', $this->permEditLineId)
             ->where('agent_id', $this->permEditAgentId)

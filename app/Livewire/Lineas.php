@@ -225,6 +225,19 @@ class Lineas extends Component
         }
         $this->syncPlatforms($line);
 
+        // Enforce hierarchical inheritance: if the line has an explicit permissions list,
+        // remove any agent permissions that are no longer allowed by the line.
+        if (is_array($this->linePermissions)) {
+            if (empty($this->linePermissions)) {
+                // Explicit empty list => remove all agent permissions for the line
+                LineAgentPermission::where('line_id', $line->id)->delete();
+            } else {
+                LineAgentPermission::where('line_id', $line->id)
+                    ->whereNotIn('permission', $this->linePermissions)
+                    ->delete();
+            }
+        }
+
         $isEdit = (bool) $this->editingLineId;
 
         session()->flash(
@@ -242,6 +255,44 @@ class Lineas extends Component
         }
 
         $this->closeModal();
+    }
+
+    // Save only the line permissions from the edit form and synchronize agent permissions
+    public function saveLinePermissions(): void
+    {
+        $this->checkLinePermission(Permissions::LINE_EDIT);
+
+        if (! $this->editingLineId) {
+            return;
+        }
+
+        $permissionsToSave = array_values($this->linePermissions);
+
+        Line::whereKey($this->editingLineId)->update(['permissions' => $permissionsToSave]);
+
+        // Remove any agent permissions that are no longer allowed by the line
+        $deleteQuery = LineAgentPermission::where('line_id', $this->editingLineId);
+        if (empty($permissionsToSave)) {
+            // Explicit empty list => remove all agent permissions for this line
+            $deleteQuery->delete();
+        } else {
+            $deleteQuery->whereNotIn('permission', $permissionsToSave)->delete();
+        }
+
+        // Refresh local form state
+        $this->fillForm(Line::findOrFail($this->editingLineId));
+
+        session()->flash('message', 'Permisos de línea guardados y sincronizados.');
+    }
+
+    public function reloadLineForm(): void
+    {
+        if (! $this->editingLineId) {
+            return;
+        }
+
+        $line = Line::findOrFail($this->editingLineId);
+        $this->fillForm($line);
     }
 
     public function toggleLine(int $lineId): void
@@ -305,6 +356,14 @@ class Lineas extends Component
         $lineAgent = LineAgent::with('line')->findOrFail($lineAgentId);
         $this->authorizeLineEdit($lineAgent->line);
 
+        // Prevent agents from editing their own permissions here unless admin
+        $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
+        if (! $this->isAdminMode() && $currentAgentId && $lineAgent->agent_id === $currentAgentId) {
+            session()->flash('error', 'No podés editar tus propios permisos desde la edición de la línea.');
+
+            return;
+        }
+
         $this->editingAgentPermissionsId = $lineAgent->id;
 
         // Available = what the line has enabled (or full catalog if not set)
@@ -337,12 +396,58 @@ class Lineas extends Component
         $lineAgent = LineAgent::with('line')->findOrFail($this->editingAgentPermissionsId);
         $this->authorizeLineEdit($lineAgent->line);
 
-        // Only allow permissions from the computed available set
-        $filtered = array_values(
-            array_intersect($this->agentPermissions, $this->availablePermissions)
-        );
+        // Recompute allowed permissions server-side to avoid client tampering
+        $linePermsRaw = $lineAgent->line->permissions ?? null;
+        $linePerms = is_array($linePermsRaw) ? $linePermsRaw : LineAgentPermission::allPermissions();
+
+        if ($this->isAdminMode()) {
+            $available = $linePerms;
+        } else {
+            $encargadoLA = LineAgent::where('line_id', $lineAgent->line_id)
+                ->where('role', LineRoles::ENCARGADO)
+                ->first();
+            if ($encargadoLA) {
+                $encPerms = $encargadoLA->getPermissionsListAttribute();
+                $available = array_values(array_intersect($linePerms, $encPerms));
+            } else {
+                $available = $linePerms;
+            }
+        }
+
+        $filtered = array_values(array_intersect($this->agentPermissions, $available));
+
+        // Ensure filtered is array
+        $filtered = is_array($filtered) ? $filtered : [];
 
         $lineAgent->syncPermissions($filtered);
+
+        // If we're updating the encargado, remove from other agents any permissions not allowed by the new encargado set
+        if ($lineAgent->role === LineRoles::ENCARGADO) {
+            $deleteQuery = LineAgentPermission::where('line_id', $lineAgent->line_id)
+                ->where('agent_id', '!=', $lineAgent->agent_id);
+
+            if (empty($filtered)) {
+                // Explicit empty => delete all other agents' permissions
+                $deleted = $deleteQuery->delete();
+                \Log::info('Lineas::saveAgentPermissions deleted all other agents permissions', [
+                    'line_id' => $lineAgent->line_id,
+                    'encargado_agent_id' => $lineAgent->agent_id,
+                    'deleted_rows' => $deleted,
+                    'filtered' => $filtered,
+                ]);
+            } else {
+                $deleted = $deleteQuery->whereNotIn('permission', $filtered)->delete();
+                \Log::info('Lineas::saveAgentPermissions deleted permissions not in encargado set', [
+                    'line_id' => $lineAgent->line_id,
+                    'encargado_agent_id' => $lineAgent->agent_id,
+                    'deleted_rows' => $deleted,
+                    'filtered' => $filtered,
+                ]);
+            }
+
+            // Refresh related models to ensure UI reads latest data
+            $lineAgent->line->refresh();
+        }
 
         session()->flash('message', 'Permisos actualizados correctamente.');
 
