@@ -7,33 +7,34 @@
                 <option value="{{ $type }}">{{ $label }}</option>
                 @endforeach
             </select>
+            @php
+                $type = $contact['type'] ?? '';
+                $placeholder = match ($type) {
+                    'email' => 'Correo electrónico',
+                    'instagram', 'facebook' => 'Usuario',
+                    'whatsapp' => 'Número o chat',
+                    'telegram' => 'Usuario o enlace',
+                    default => 'Número, usuario o URL...',
+                };
+            @endphp
             <input 
                 type="text" 
                 wire:model="{{ $fieldName }}.{{ $index }}.value" 
-                placeholder="Número, usuario o URL..." 
+                placeholder="{{ $placeholder }}" 
                 class="contact-value"
             >
             <button type="button" wire:click="removeContact({{ $index }})" class="contact-remove" title="Eliminar">✕</button>
         </div>
         
-        @if(in_array($contact['type'] ?? '', ['whatsapp', 'telegram']))
+        @if(in_array($contact['type'] ?? '', $messageTypes))
         <div class="contact-message-wrapper">
-            <label class="contact-checkbox-label">
-                <input 
-                    type="checkbox" 
-                    wire:model="{{ $fieldName }}.{{ $index }}.has_message"
-                    class="contact-checkbox"
-                >
-                <span>Mensaje automático</span>
-            </label>
-            @if($contact['has_message'] ?? false)
+            <div class="contact-message-label">Mensaje</div>
             <textarea 
-                wire:model="{{ $fieldName }}. {{ $index }}.message" 
-                placeholder="Escribe el mensaje automático..." 
+                wire:model="{{ $fieldName }}.{{ $index }}.message" 
+                placeholder="Escribe el mensaje..." 
                 rows="2"
                 class="contact-msg-textarea"
             ></textarea>
-            @endif
         </div>
         @endif
     </div>
@@ -113,20 +114,11 @@
         border-top: 1px solid var(--line);
     }
     
-    .contact-checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    .contact-message-label {
+        display: block;
+        margin-bottom: 8px;
         font-size: 12px;
         color: var(--muted);
-        cursor: pointer;
-        margin-bottom: 8px;
-    }
-    
-    .contact-checkbox {
-        width: 16px;
-        height: 16px;
-        accent-color: var(--orange);
     }
     
     .contact-msg-textarea {

@@ -125,15 +125,11 @@
                         <svg class="mini-icon" viewBox="0 0 15 15"><path d="M10.5 2.5l2 2-8.5 8.5H2.5v-2l8.5-8.5z"/></svg>
                         Editar
                     </button>
-                    <button type="button" class="btn-soft" wire:click="openSalesModal({{ $line->id }})">
-                        <svg class="mini-icon" viewBox="0 0 15 15"><rect x="1.5" y="2.5" width="12" height="10" rx="1.5"/><path d="M4.5 6.5h6M4.5 9h4"/></svg>
-                        Ventas
-                    </button>
                 @endif
             </div>
-            <button type="button" class="btn-soft" wire:click="openDetailsModal({{ $line->id }})">
+            <a href="{{ route('lineas.detail', $line->id) }}" class="btn-soft">
                 Ver más →
-            </button>
+            </a>
         </div>
 
     </div>

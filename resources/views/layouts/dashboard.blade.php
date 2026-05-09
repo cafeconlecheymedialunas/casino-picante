@@ -170,7 +170,15 @@
         }
 
         /* â”€â”€ Global select styles â”€â”€ */
-        select {
+        select,
+        select.select,
+        select.filter-select,
+        select.form-input,
+        select.form-select,
+        select.lns-select,
+        select.sidebar-line-select,
+        select.contact-type,
+        select.repeater-type {
             background-color: var(--black-3);
             color: var(--white);
             border: 1px solid var(--line-2);
@@ -182,22 +190,54 @@
             cursor: pointer;
             appearance: none;
             -webkit-appearance: none;
+            -moz-appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ff6a1a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 10px center;
+            background-size: 12px 12px;
+            background-origin: content-box;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        select:hover  { border-color: var(--orange); }
-        select:focus  { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,106,26,0.15); }
+        select:hover,
+        select.select:hover,
+        select.filter-select:hover,
+        select.form-input:hover,
+        select.form-select:hover,
+        select.lns-select:hover,
+        select.sidebar-line-select:hover,
+        select.contact-type:hover,
+        select.repeater-type:hover { border-color: var(--orange); }
+        select:focus,
+        select.select:focus,
+        select.filter-select:focus,
+        select.form-input:focus,
+        select.form-select:focus,
+        select.lns-select:focus,
+        select.sidebar-line-select:focus,
+        select.contact-type:focus,
+        select.repeater-type:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,106,26,0.15); }
 
-        option {
-            background-color: #1a0d0d;
+        select option {
+            background-color: #120909;
             color: var(--white);
             padding: 8px 12px;
         }
-        option:checked  { background-color: rgba(255,106,26,0.25); color: var(--orange-2); }
-        option:disabled { color: var(--muted-2); }
-        option[value=""] { color: var(--muted-2); }
+        select option:hover,
+        select option:focus {
+            background-color: rgba(255,106,26,0.12);
+            color: var(--orange-2);
+        }
+        select option:checked,
+        select option[selected] {
+            background-color: rgba(255,106,26,0.25);
+            color: var(--orange);
+        }
+        select option:disabled {
+            color: var(--muted-2);
+        }
+        select option[value=""] {
+            color: var(--muted-2);
+        }
 
         .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 14px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; flex-wrap:wrap;margin-bottom: 25px;}
         .page-header-left { flex:1; min-width:0; }

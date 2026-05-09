@@ -118,6 +118,10 @@
         .perm-check { display:flex; align-items:center; gap:5px; font-size:11px; cursor:pointer; padding:5px 10px; border-radius:6px; border:1px solid var(--line); background:rgba(255,255,255,.03); transition:border-color .15s,background .15s; }
         .perm-check:has(input:checked) { border-color:var(--orange); background:rgba(255,106,26,.12); color:var(--orange); }
         .perm-check input { accent-color:var(--orange); }
+        .perm-chip-edit { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid transparent; cursor:pointer; transition:all .15s; }
+        .perm-chip-edit:hover { border-color:var(--orange) !important; }
+        .perm-chip-on  { background:rgba(255,106,26,.12); border-color:rgba(255,106,26,.35) !important; color:var(--orange); }
+        .perm-chip-off { background:rgba(255,255,255,.03); border-color:var(--line) !important; color:var(--muted); }
 
         .sales-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
         .kpi-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 12px; padding: 16px; text-align: center; }
@@ -522,28 +526,31 @@
                 {{-- Permisos de la línea --}}
                 <div class="form-group">
                     <label class="form-label">Permisos habilitados en esta línea</label>
-                    <p style="color:var(--muted-2);font-size:11px;margin:0 0 10px;line-height:1.6">Determinan qué acciones pueden tener los agentes asignados.</p>
-                    <div>
-                        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px">
-                            @if(!$showLinePermissionsEditor)
-                                <button type="button" class="btn-soft" wire:click="openLinePermissionsEditor">Setear permisos</button>
-                            @else
-                                <button type="button" class="btn-soft" wire:click="closeLinePermissionsEditor">Cerrar</button>
-                            @endif
-                        </div>
-                        @if($showLinePermissionsEditor)
-                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
-                        @foreach($permissionCatalog as $resource => $actions)
-                            @foreach($actions as $perm)
-                            @php $action = str($perm)->after($resource.'.'); @endphp
-                            <label class="perm-check" style="font-size:11px">
-                                <input type="checkbox" wire:model="linePermissions" value="{{ $perm }}">
-                                <span style="color:var(--muted-2);font-size:9px;margin-right:2px">{{ $resource }}</span>{{ $action }}
-                            </label>
-                            @endforeach
+                    <p style="color:var(--muted-2);font-size:11px;margin:0 0 12px;line-height:1.6">Determinan qué acciones pueden tener los agentes asignados.</p>
+                    @php
+                    $permChipMeta = [
+                        \App\Support\Permissions::NEWS_READ         => ['fa-solid fa-newspaper',       'Ver novedades'],
+                        \App\Support\Permissions::NEWS_CREATE       => ['fa-solid fa-file-circle-plus', 'Crear novedades'],
+                        \App\Support\Permissions::NEWS_UPDATE       => ['fa-solid fa-pen-to-square',    'Editar novedades'],
+                        \App\Support\Permissions::TICKET_READ       => ['fa-solid fa-ticket',           'Ver tickets'],
+                        \App\Support\Permissions::TICKET_UPDATE     => ['fa-solid fa-ticket-simple',    'Editar tickets'],
+                        \App\Support\Permissions::BONO_READ         => ['fa-solid fa-gift',             'Ver bonos'],
+                        \App\Support\Permissions::SORTEO_READ       => ['fa-solid fa-dice',             'Ver sorteos'],
+                        \App\Support\Permissions::LINE_EDIT         => ['fa-solid fa-sliders',          'Editar línea'],
+                        \App\Support\Permissions::AGENT_ASSIGN      => ['fa-solid fa-user-plus',        'Asignar agentes'],
+                        \App\Support\Permissions::AGENT_PERMISSIONS => ['fa-solid fa-shield-halved',    'Gestionar permisos'],
+                    ];
+                    @endphp
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
+                        @foreach($permChipMeta as $perm => [$icon, $label])
+                        @php $on = in_array($perm, $linePermissions ?? []); @endphp
+                        <label class="perm-chip-edit {{ $on ? 'perm-chip-on' : 'perm-chip-off' }}">
+                            <input type="checkbox" wire:model="linePermissions" value="{{ $perm }}" style="display:none">
+                            <i class="{{ $icon }}"></i>
+                            <span>{{ $label }}</span>
+                            @if($on)<i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>@endif
+                        </label>
                         @endforeach
-                        </div>
-                        @endif
                     </div>
                 </div>
 
@@ -723,73 +730,94 @@
         {{-- ── TAB: VENTAS ─────────────────────────────────────────────────── --}}
         @if($editTab === 'ventas' && $editingLineId)
         @php
-            $editLine = Line::find($editingLineId);
+            $editLine = \App\Models\Line::find($editingLineId);
             if ($editLine) {
-                $bestMonth = \App\Services\SalesStats::bestMonthForLine($editLine);
-                $bestPlatform = \App\Services\SalesStats::bestPlatformForLineThisMonth($editLine);
-                $totalThisMonth = \App\Services\SalesStats::totalSalesForLineThisMonth($editLine);
-                $last3Months = \App\Services\SalesStats::last3MonthsSalesForLine($editLine);
-                $encargadoEarnings = \App\Services\SalesStats::encargadoEarningsForLineThisMonth($editLine);
+                $stats = \App\Services\SalesStats::lineStats($editLine);
+
+                $bestMonth = $stats['bestMonth'] ? [
+                    'nombre' => ($monthNames[(int)$stats['bestMonth']->mes] ?? $stats['bestMonth']->mes),
+                    'anio'   => $stats['bestMonth']->anio,
+                    'total'  => (float) $stats['bestMonth']->total,
+                ] : null;
+
+                $bestPlatform = $stats['bestPlatform'] ? [
+                    'platform' => $stats['bestPlatform']->platform?->name ?? '—',
+                    'total'    => (float) $stats['bestPlatform']->total,
+                ] : null;
+
+                $totalThisMonth = (float) $stats['monthTotal'];
+                $last3Months = $stats['lastMonths']->map(fn($month) => [
+                    'mes'   => (int) $month->mes,
+                    'anio'  => (int) $month->anio,
+                    'total' => (float) $month->total,
+                ])->all();
+                $encargadoEarnings = $stats['earnings'];
                 $maxSales = max(array_column($last3Months, 'total'), 1);
             }
         @endphp
         <div class="tab-content">
 
             @if($editLine)
-            <div class="sales-kpis">
-                <div class="kpi-card kpi-gold">
-                    <div class="kpi-icon">TROFEO</div>
-                    <div class="kpi-label">Mejor Mes</div>
-                    @if($bestMonth)
-                    <div class="kpi-value">{{ $bestMonth['nombre'] }} {{ $bestMonth['anio'] }}</div>
-                    <div class="kpi-amount">${{ number_format($bestMonth['total'], 2) }}</div>
-                    @else
-                    <div class="kpi-empty">Sin datos</div>
-                    @endif
-                </div>
-                <div class="kpi-card kpi-purple">
-                    <div class="kpi-icon">PLATAFORMA</div>
-                    <div class="kpi-label">Top Plataforma</div>
-                    @if($bestPlatform)
-                    <div class="kpi-value">{{ $bestPlatform['platform'] }}</div>
-                    <div class="kpi-amount">${{ number_format($bestPlatform['total'], 2) }}</div>
-                    @else
-                    <div class="kpi-empty">Sin datos</div>
-                    @endif
-                </div>
-                <div class="kpi-card kpi-blue">
-                    <div class="kpi-icon">CALENDARIO</div>
-                    <div class="kpi-label">Este Mes</div>
-                    <div class="kpi-amount" style="color: var(--good);">${{ number_format($totalThisMonth, 2) }}</div>
-                </div>
-                <div class="kpi-card kpi-green">
-                    <div class="kpi-icon">DINERO</div>
-                    <div class="kpi-label">Ganancia Encargado</div>
-                    @if(count($encargadoEarnings) > 0)
-                        @foreach($encargadoEarnings as $earning)
-                        <div class="kpi-value" style="font-size: 14px;">{{ $earning['agent']->name }} - {{ $earning['porcentaje'] }}%</div>
-                        <div class="kpi-amount">${{ number_format($earning['ganancia'], 2) }}</div>
-                        @endforeach
-                    @else
-                    <div class="kpi-empty">Sin encargado</div>
-                    @endif
-                </div>
-            </div>
-
-            {{-- Últimos 3 Meses --}}
-            <div class="months-grid">
-                @foreach($last3Months as $index => $month)
-                <div class="month-card">
-                    <div class="month-name">@if($index === 0) Mes Actual @elseif($index === 1) Mes Pasado @else Mes Anterior @endif</div>
-                    <div class="month-total">${{ number_format($month['total'], 2) }}</div>
-                    <div class="month-bar">
-                        <div class="month-bar-fill" style="width: {{ ($month['total'] / $maxSales * 100) }}%"></div>
+                @if(count($last3Months) === 0 && !$bestMonth && !$bestPlatform && $totalThisMonth == 0)
+                    <div class="empty-state" style="padding: 24px; margin: 16px 0;">
+                        No hay datos de ventas para esta línea todavía.
                     </div>
-                </div>
-                @endforeach
-            </div>
+                @else
+                    <div class="sales-kpis">
+                        <div class="kpi-card kpi-gold">
+                            <div class="kpi-icon">TROFEO</div>
+                            <div class="kpi-label">Mejor Mes</div>
+                            @if($bestMonth)
+                                <div class="kpi-value">{{ $bestMonth['nombre'] }} {{ $bestMonth['anio'] }}</div>
+                                <div class="kpi-amount">${{ number_format($bestMonth['total'], 2) }}</div>
+                            @else
+                                <div class="kpi-empty">Sin datos</div>
+                            @endif
+                        </div>
+                        <div class="kpi-card kpi-purple">
+                            <div class="kpi-icon">PLATAFORMA</div>
+                            <div class="kpi-label">Top Plataforma</div>
+                            @if($bestPlatform)
+                                <div class="kpi-value">{{ $bestPlatform['platform'] }}</div>
+                                <div class="kpi-amount">${{ number_format($bestPlatform['total'], 2) }}</div>
+                            @else
+                                <div class="kpi-empty">Sin datos</div>
+                            @endif
+                        </div>
+                        <div class="kpi-card kpi-blue">
+                            <div class="kpi-icon">CALENDARIO</div>
+                            <div class="kpi-label">Este Mes</div>
+                            <div class="kpi-amount" style="color: var(--good);">${{ number_format($totalThisMonth, 2) }}</div>
+                        </div>
+                        <div class="kpi-card kpi-green">
+                            <div class="kpi-icon">DINERO</div>
+                            <div class="kpi-label">Ganancia Encargado</div>
+                            @if(count($encargadoEarnings) > 0)
+                                @foreach($encargadoEarnings as $earning)
+                                    <div class="kpi-value" style="font-size: 14px;">{{ $earning['name'] ?? 'Encargado' }} - {{ $earning['porcentaje'] }}%</div>
+                                    <div class="kpi-amount">${{ number_format($earning['ganancia'], 2) }}</div>
+                                @endforeach
+                            @else
+                                <div class="kpi-empty">Sin encargado</div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Últimos 3 Meses --}}
+                    <div class="months-grid">
+                        @foreach($last3Months as $index => $month)
+                            <div class="month-card">
+                                <div class="month-name">@if($index === 0) Mes Actual @elseif($index === 1) Mes Pasado @else Mes Anterior @endif</div>
+                                <div class="month-total">${{ number_format($month['total'], 2) }}</div>
+                                <div class="month-bar">
+                                    <div class="month-bar-fill" style="width: {{ ($month['total'] / $maxSales * 100) }}%"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             @else
-            <div class="empty-state">Guarda la línea primero para ver estadísticas de ventas.</div>
+                <div class="empty-state">Guarda la línea primero para ver estadísticas de ventas.</div>
             @endif
 
         </div>

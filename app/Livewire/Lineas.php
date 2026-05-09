@@ -104,6 +104,16 @@ class Lineas extends Component
         ];
     }
 
+    public function mount(): void
+    {
+        if ($editId = request()->query('edit')) {
+            $line = Line::find((int) $editId);
+            if ($line && $this->canManageLine($line)) {
+                $this->openEditModal((int) $editId);
+            }
+        }
+    }
+
     public function openCreateModal(): void
     {
         $this->checkLinePermission(Permissions::LINE_CREATE);

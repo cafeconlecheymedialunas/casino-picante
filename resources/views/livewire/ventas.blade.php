@@ -2,8 +2,44 @@
     <style>
         .sales-page { display:flex; flex-direction:column; gap:18px; }
         .toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-        .input, .select { background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:7px; padding:9px 12px; color:var(--white); font-size:13px; font-family:var(--font-body); }
-        .input:focus, .select:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,106,26,.12); }
+        .input, .select {
+            background:rgba(255,255,255,.04);
+            border:1px solid var(--line-2);
+            border-radius:7px;
+            padding:9px 12px;
+            color:var(--white);
+            font-size:13px;
+            font-family:var(--font-body);
+            min-height:40px;
+            appearance:none;
+            -webkit-appearance:none;
+            -moz-appearance:none;
+            background-image: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px 12px;
+        }
+        .select {
+            background-image: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5' fill='none' stroke='%23ffffff' stroke-width='2'/%3E%3C/svg%3E");
+            background-position: right 12px center, right 42px center;
+            background-size: 12px 12px, 12px 12px;
+        }
+        .input:focus, .select:focus {
+            outline:none;
+            border-color:var(--orange);
+            box-shadow:0 0 0 3px rgba(255,106,26,.12);
+        }
+        .select option {
+            background: #100808;
+            color: #fff;
+        }
+        .select:focus option {
+            background: #120909;
+        }
+        .select::-ms-expand {
+            display:none;
+        }
         .stats-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
         .stat-card { border:1px solid var(--line); border-radius:8px; padding:14px; background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.025)); }
         .stat-label { color:var(--muted-2); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px; }
@@ -15,12 +51,23 @@
         .sales-row:last-child { border-bottom:0; }
         .line-meta { color:var(--muted-2); font-size:11px; margin-top:3px; }
         .actions { display:flex; gap:8px; justify-content:flex-end; }
+        .table-card { background: linear-gradient(180deg, #170b0b, #0f0707); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+        .table-header-row { display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid var(--line); gap:14px; flex-wrap:wrap; }
+        .table-header-left .tc-title { font-family: var(--font-display); font-size: 22px; letter-spacing: .03em; }
+        .table-scroll { overflow-x:auto; }
+        .t-head, .t-row { display:grid; grid-template-columns: 1.2fr 1fr 1fr 1fr 160px 130px; gap:12px; align-items:center; min-width:1080px; padding:11px 18px; }
+        .t-head { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
+        .t-row { border-bottom: 1px solid var(--line); font-size: 13px; }
+        .t-row:last-child { border-bottom: 0; }
+        .t-row:hover { background: rgba(255,106,26,.04); }
+        .action-row { display:flex; align-items:center; gap:6px; justify-content:flex-end; }
         .btn-icon, .btn-soft { height:32px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.03); color:var(--white); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; }
         .btn-icon { width:32px; color:var(--muted); }
         .btn-soft { padding:0 10px; font-size:11px; font-weight:800; }
+        .mini-icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
         .btn-icon:hover, .btn-soft:hover { border-color:var(--orange); background:rgba(255,106,26,.15); color:var(--white); }
-        .btn-danger:hover { border-color:#ff4757; background:rgba(255,71,87,.15); }
-        .empty-state { border:1px dashed var(--line-2); border-radius:8px; padding:38px 20px; text-align:center; color:var(--muted-2); background:rgba(255,255,255,.02); }
+        .btn-icon.danger:hover, .btn-icon.btn-danger:hover { border-color:#ff4757; background:rgba(255,71,87,.15); color:#fff; }
+        .empty-state { padding:56px 24px; text-align:center; color:var(--muted-2); }
         .flash-message { border:1px solid rgba(37,196,107,.35); background:rgba(37,196,107,.12); color:var(--good); border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; }
         .modal-overlay { position:fixed; inset:0; z-index:240; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.78); }
         .modal-panel { width:min(720px,100%); max-height:92vh; overflow-y:auto; border:1px solid var(--line-2); border-radius:8px; background:linear-gradient(180deg,#1c0e0e,#120909); }
@@ -105,41 +152,45 @@
             </div>
         </div>
 
-        <div class="sales-table">
-            <div class="sales-row head">
-                <div>Linea</div>
-                <div>Agente</div>
-                <div>Cliente</div>
-                <div>Plataforma</div>
-                <div>Periodo</div>
-                <div>Monto fichas</div>
-                <div>Acciones</div>
-            </div>
-            @forelse($sales as $sale)
-                <div class="sales-row" wire:key="sale-{{ $sale->id }}">
-                    <div>
-                        <strong>{{ $sale->line?->name ?? '-' }}</strong>
-                        <div class="line-meta">#{{ str_pad($sale->line_id, 4, '0', STR_PAD_LEFT) }}</div>
-                    </div>
-                    <div>{{ $sale->agent?->name ?? '-' }}</div>
-                    <div>{{ $sale->client?->name ?? '-' }}</div>
-                    <div>{{ $sale->platform?->name ?? '-' }}</div>
-                    <div>
-                        {{ $this->monthLabel($sale->fecha->month, $sale->fecha->year) }}
-                        <div class="line-meta">{{ $sale->fecha->format('d/m/Y') }}</div>
-                        @if($sale->descripcion)
-                            <div class="line-meta">{{ $sale->descripcion }}</div>
-                        @endif
-                    </div>
-                    <div><strong>${{ number_format((float) $sale->monto_fichas, 2) }}</strong></div>
-                    <div class="actions">
-                        <button type="button" class="btn-icon" wire:click="openEditModal({{ $sale->id }})" title="Editar">E</button>
-                        <button type="button" class="btn-icon btn-danger" wire:click="deleteSale({{ $sale->id }})" wire:confirm="Eliminar esta venta?" title="Eliminar">x</button>
-                    </div>
+        <div class="table-card">
+            <div class="table-header-row">
+                <div class="table-header-left">
+                    <span class="tc-title">VENTAS REGISTRADAS</span>
                 </div>
-            @empty
-                <div class="empty-state">No hay ventas cargadas para este periodo.</div>
-            @endforelse
+            </div>
+
+            <div class="table-scroll">
+                <div class="t-head">
+                    <div>Linea Principal</div>
+                    <div>Agente</div>
+                    <div>Cliente</div>
+                    <div>Plataforma</div>
+                    <div>Monto fichas</div>
+                    <div>Acciones</div>
+                </div>
+                @forelse($sales as $sale)
+                    <div class="t-row">
+                        <div>
+                            <strong>{{ $sale->line?->name ?? '-' }}</strong>
+                            <div class="line-meta">#{{ str_pad($sale->line_id, 4, '0', STR_PAD_LEFT) }} {{ $sale->fecha->format('d/m/Y') }}</div>
+                        </div>
+                        <div>{{ $sale->agent?->name ?? '-' }}</div>
+                        <div>{{ $sale->client?->name ?? '-' }}</div>
+                        <div>{{ $sale->platform?->name ?? '-' }}</div>
+                        <div><strong>${{ number_format((float) $sale->monto_fichas, 2) }}</strong></div>
+                        <div class="action-row">
+                            <button type="button" class="btn-icon" wire:click="openEditModal({{ $sale->id }})" title="Editar">
+                                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
+                            </button>
+                            <button type="button" class="btn-icon danger" wire:click="deleteSale({{ $sale->id }})" wire:confirm="Eliminar esta venta?" title="Eliminar">
+                                <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-state">No hay ventas cargadas para este periodo.</div>
+                @endforelse
+            </div>
         </div>
     </div>
 

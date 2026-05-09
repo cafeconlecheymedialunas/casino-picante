@@ -1,448 +1,473 @@
-<div class="ld-page {{ $isEditing ? 'is-editing' : '' }}">
-<form wire:submit.prevent="saveAll" class="ld-form">
-    <div style="margin-bottom: 16px;">
-        <a href="{{ route('lineas') }}" wire:navigate class="ld-back" style="font-size: 12px; color: var(--muted); text-decoration: none;">â† LÃ­neas & Redes</a>
-    </div>
+@php
+    $monthNames = [1=>'Ene',2=>'Feb',3=>'Mar',4=>'Abr',5=>'May',6=>'Jun',7=>'Jul',8=>'Ago',9=>'Sep',10=>'Oct',11=>'Nov',12=>'Dic'];
+    $bestMonth        = $this->getBestMonth();
+    $bestPlatform     = $this->getBestPlatformThisMonth();
+    $totalThisMonth   = $this->getTotalSalesThisMonth();
+    $last3Months      = $this->getTotalSalesLast3Months();
+    $encargadoEarnings = $this->getEncargadoEarningsThisMonth();
+    $salesTotals      = array_column($last3Months, 'total');
+    $maxSales         = $salesTotals ? max(max($salesTotals), 1) : 1;
+    $lineAgents       = $line->lineAgents()->with('agent')->get();
+    $encargadoLA      = $lineAgents->firstWhere('role', 'encargado');
+    $contactLinks     = $line->contact_links ?? [];
+    $linePlatforms    = $line->platforms()->get();
+@endphp
 
 @section('header')
-    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalles y configuraciÃ³n de lÃ­nea" />
+    <x-livewire.components.page-header title="{{ strtoupper($line->name) }}" subtitle="Detalle de línea" />
 @endsection
 
-@if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT) && !$isEditing)
-    <div class="module-top-bar">
-        <button type="button" class="btn-primary" wire:click="toggleInlineEdit">âœŽ Editar lÃ­nea</button>
+<div class="ld-root" x-data="{ tab: 'info' }">
+
+{{-- ── HERO ─────────────────────────────────────────────────────────────── --}}
+<div class="ld-hero">
+    <div class="ld-cover">
+        @if($line->portada_url)
+            <img src="{{ $line->portada_url }}" alt="{{ $line->name }}">
+        @endif
+        <div class="ld-avatar">
+            @if($line->perfil_url)
+                <img src="{{ $line->perfil_url }}" alt="">
+            @else
+                <span>{{ strtoupper(mb_substr($line->name, 0, 2)) }}</span>
+            @endif
+        </div>
     </div>
+    <div class="ld-hero-meta">
+        <div>
+            <a href="{{ route('lineas') }}" class="ld-back">
+                <i class="fa-solid fa-arrow-left"></i> Volver a líneas
+            </a>
+            <div class="ld-hero-name">{{ strtoupper($line->name) }}</div>
+            <div class="ld-hero-sub">
+                <span class="ld-mono">#{{ str_pad($line->id, 4, '0', STR_PAD_LEFT) }}</span>
+                <span class="status-pill {{ $line->status === 'active' ? 'pill-active' : 'pill-inactive' }}">
+                    {{ $line->status === 'active' ? 'Activa' : 'Inactiva' }}
+                </span>
+                @if($line->description)
+                    <span class="ld-desc-inline">{{ $line->description }}</span>
+                @endif
+            </div>
+        </div>
+        @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
+        <a href="{{ route('lineas') }}?edit={{ $line->id }}" class="btn-edit-hero">
+            <i class="fa-solid fa-pen-to-square"></i> Editar línea
+        </a>
+        @endif
+    </div>
+</div>
+
+@if(session()->has('message'))
+<div class="ld-flash"><i class="fa-solid fa-circle-check"></i> {{ session('message') }}</div>
 @endif
 
-@if($isEditing)
-    <div style="margin-bottom: 16px; display: flex; gap: 10px;">
-        <button type="button" class="btn-cancel" wire:click="toggleInlineEdit" style="background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer;">âœ• Cancelar</button>
-        <button type="submit" class="btn-save" style="background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; border: none; padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">ðŸ’¾ Guardar cambios</button>
+{{-- ── TABS ─────────────────────────────────────────────────────────────── --}}
+<div class="ld-tabs">
+    <button type="button" class="ld-tab" :class="tab==='info'?'ld-tab-active':''" @click="tab='info'">
+        <i class="fa-solid fa-circle-info"></i> Info
+    </button>
+    <button type="button" class="ld-tab" :class="tab==='encargado'?'ld-tab-active':''" @click="tab='encargado'">
+        <i class="fa-solid fa-user-tie"></i> Encargado
+    </button>
+    <button type="button" class="ld-tab" :class="tab==='agentes'?'ld-tab-active':''" @click="tab='agentes'">
+        <i class="fa-solid fa-users"></i> Agentes
+    </button>
+    <button type="button" class="ld-tab" :class="tab==='ventas'?'ld-tab-active':''" @click="tab='ventas'">
+        <i class="fa-solid fa-chart-bar"></i> Ventas
+    </button>
+    <button type="button" class="ld-tab" :class="tab==='canales'?'ld-tab-active':''" @click="tab='canales'">
+        <i class="fa-solid fa-comments"></i> Canales
+    </button>
+    <button type="button" class="ld-tab" :class="tab==='plataformas'?'ld-tab-active':''" @click="tab='plataformas'">
+        <i class="fa-solid fa-gamepad"></i> Plataformas
+    </button>
+    <button type="button" class="ld-tab" :class="tab==='permisos'?'ld-tab-active':''" @click="tab='permisos'">
+        <i class="fa-solid fa-shield-halved"></i> Permisos
+    </button>
+</div>
+
+<div class="ld-tab-body">
+
+    {{-- ── TAB: INFO ──────────────────────────────────────────────────────── --}}
+    <div x-show="tab==='info'" x-cloak>
+        <div class="info-grid-4">
+            <div class="info-box">
+                <div class="info-box-label"><i class="fa-solid fa-tag"></i> Estado</div>
+                <div class="info-box-value">
+                    <span class="status-pill {{ $line->status === 'active' ? 'pill-active' : 'pill-inactive' }}">
+                        {{ $line->status === 'active' ? 'Activa' : 'Inactiva' }}
+                    </span>
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-box-label"><i class="fa-brands fa-whatsapp"></i> Tipo</div>
+                <div class="info-box-value">{{ ucfirst($line->type ?? 'General') }}</div>
+            </div>
+            <div class="info-box">
+                <div class="info-box-label"><i class="fa-solid fa-user-tie"></i> Encargado</div>
+                <div class="info-box-value">
+                    @if($encargadoLA)
+                        {{ $encargadoLA->agent?->name ?? '—' }}
+                        @if($encargadoLA->porcentaje_ganancia)
+                            <span class="pct-badge">{{ number_format($encargadoLA->porcentaje_ganancia, 0) }}%</span>
+                        @endif
+                    @else
+                        <span style="color:var(--muted)">Sin asignar</span>
+                    @endif
+                </div>
+            </div>
+            <div class="info-box">
+                <div class="info-box-label"><i class="fa-solid fa-users"></i> Agentes</div>
+                <div class="info-box-value">{{ $lineAgents->count() }}</div>
+            </div>
+        </div>
+
+        @if($line->description)
+        <div class="desc-box">
+            <div class="info-box-label" style="margin-bottom:6px"><i class="fa-solid fa-align-left"></i> Descripción</div>
+            <p style="margin:0;font-size:13px;color:var(--muted);line-height:1.7">{{ $line->description }}</p>
+        </div>
+        @endif
+
+        {{-- Imágenes --}}
+        @if($line->portada_url || $line->perfil_url)
+        <div class="images-row">
+            @if($line->portada_url)
+            <div class="img-preview-box" style="flex:2">
+                <div class="info-box-label" style="margin-bottom:8px"><i class="fa-solid fa-image"></i> Portada</div>
+                <img src="{{ $line->portada_url }}" class="img-portada">
+            </div>
+            @endif
+            @if($line->perfil_url)
+            <div class="img-preview-box" style="flex:1">
+                <div class="info-box-label" style="margin-bottom:8px"><i class="fa-solid fa-circle-user"></i> Perfil</div>
+                <img src="{{ $line->perfil_url }}" class="img-perfil">
+            </div>
+            @endif
+        </div>
+        @endif
     </div>
-    @else
-    <div class="ld-meta" style="margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <span class="ld-badge {{ $line->status === 'active' ? 'badge-active' : 'badge-inactive' }}" style="font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.06em; background: {{ $line->status === 'active' ? 'rgba(37,196,107,0.15)' : 'rgba(255,255,255,0.06)' }}; color: {{ $line->status === 'active' ? 'var(--good)' : 'var(--muted)' }}; border: 1px solid {{ $line->status === 'active' ? 'rgba(37,196,107,0.3)' : 'var(--line)' }};">
-            {{ $line->status === 'active' ? 'Activa' : 'Inactiva' }}
-        </span>
-        <span class="ld-badge-type" style="font-size: 10px; font-weight: 800; color: var(--orange); letter-spacing: 0.1em;">{{ strtoupper($line->type ?? 'GENERAL') }}</span>
-        @if($line->contact_links)
-            @foreach($line->contact_links as $link)
-                <span class="ld-contact" style="font-size: 12px; color: var(--muted); font-family: var(--font-mono);">
-                    @if($link['type'] === 'whatsapp')ðŸ’¬ @elseif($link['type'] === 'telegram')âœˆï¸ @elseif($link['type'] === 'instagram')ðŸ“· @elseif($link['type'] === 'facebook')ðŸ“˜ @endif {{ $link['value'] }}
-                </span>
+
+    {{-- ── TAB: ENCARGADO ─────────────────────────────────────────────────── --}}
+    <div x-show="tab==='encargado'" x-cloak>
+        @if($encargadoLA)
+        <div class="agent-hero-card">
+            <div class="agent-hero-avatar">
+                {{ strtoupper(mb_substr($encargadoLA->agent?->name ?? 'E', 0, 2)) }}
+            </div>
+            <div class="agent-hero-info">
+                <div class="agent-hero-name">{{ $encargadoLA->agent?->name ?? '—' }} {{ $encargadoLA->agent?->apellido ?? '' }}</div>
+                <div class="agent-hero-email">{{ $encargadoLA->agent?->email ?? '' }}</div>
+                <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+                    <span class="role-badge role-enc"><i class="fa-solid fa-crown"></i> Encargado</span>
+                    @if($encargadoLA->porcentaje_ganancia)
+                        <span class="role-badge role-pct"><i class="fa-solid fa-percent"></i> {{ number_format($encargadoLA->porcentaje_ganancia, 0) }}% ganancia</span>
+                    @endif
+                </div>
+            </div>
+            <div class="agent-hero-stat">
+                <div class="info-box-label">Ganancia este mes</div>
+                @php
+                    $gananciaEnc = $totalThisMonth * (($encargadoLA->porcentaje_ganancia ?? 0) / 100);
+                @endphp
+                <div style="font-family:var(--font-display);font-size:28px;color:var(--good)">${{ number_format($gananciaEnc, 2) }}</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px">de ${{ number_format($totalThisMonth, 2) }} en ventas</div>
+            </div>
+        </div>
+        @else
+        <div class="empty-state">
+            <i class="fa-solid fa-user-slash" style="font-size:32px;opacity:.3;margin-bottom:12px"></i>
+            <div>Sin encargado asignado</div>
+        </div>
+        @endif
+    </div>
+
+    {{-- ── TAB: AGENTES ───────────────────────────────────────────────────── --}}
+    <div x-show="tab==='agentes'" x-cloak>
+        @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+            <button type="button" class="btn-outline" wire:click="openAssignModal">
+                <i class="fa-solid fa-user-plus"></i> Agregar agente
+            </button>
+        </div>
+        @endif
+        @if($lineAgents->isEmpty())
+        <div class="empty-state">
+            <i class="fa-solid fa-users-slash" style="font-size:32px;opacity:.3;margin-bottom:12px"></i>
+            <div>No hay agentes asignados</div>
+        </div>
+        @else
+        <div class="agents-list">
+            @foreach($lineAgents as $la)
+            <div class="agent-row {{ $la->is_active ? '' : 'agent-row-inactive' }}">
+                <div class="agent-row-avatar">
+                    {{ strtoupper(mb_substr($la->agent?->name ?? 'A', 0, 2)) }}
+                </div>
+                <div class="agent-row-info">
+                    <div class="agent-row-name">{{ $la->agent?->name ?? '—' }} {{ $la->agent?->apellido ?? '' }}</div>
+                    <div class="agent-row-meta">
+                        @if($la->agent?->username) <span>&#64;{{ $la->agent->username }}</span> @endif
+                        <span class="role-badge {{ $la->role === 'encargado' ? 'role-enc' : 'role-age' }}">
+                            @if($la->role === 'encargado')
+                                <i class="fa-solid fa-crown"></i> Encargado
+                            @else
+                                <i class="fa-solid fa-user"></i> Agente
+                            @endif
+                        </span>
+                        @if($la->porcentaje_ganancia)
+                            <span class="role-badge role-pct"><i class="fa-solid fa-percent"></i> {{ number_format($la->porcentaje_ganancia, 0) }}</span>
+                        @endif
+                    </div>
+                </div>
+                <div class="agent-row-actions">
+                    <span class="agent-status-dot {{ $la->is_active ? 'dot-active' : 'dot-inactive' }}"
+                          title="{{ $la->is_active ? 'Activo' : 'Inactivo' }}"></span>
+                    @if($this->hasLinePermission(\App\Support\Permissions::AGENT_PERMISSIONS))
+                    <button type="button" class="btn-icon-sm" wire:click="openPermissions({{ $la->agent->id }})" title="Permisos">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </button>
+                    @endif
+                    @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN) && $la->role !== 'encargado')
+                    <button type="button" class="btn-icon-sm btn-danger-sm"
+                            wire:click="removeAgent({{ $la->agent->id }})"
+                            wire:confirm="¿Quitar a {{ $la->agent?->name }} de la línea?"
+                            title="Quitar">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    @endif
+                </div>
+            </div>
             @endforeach
+        </div>
         @endif
     </div>
-    @endif
 
-    @if(session()->has('message'))
-    <div class="ld-flash">{{ session('message') }}</div>
-    @endif
-
-    <div class="ld-body">
-        {{-- ðŸ“ INFORMACIÃ“N --}}
-        <div class="ld-section">
-            <div class="ld-section-header">
-                <h2 class="ld-section-title">ðŸ“ INFORMACIÃ“N DE LA LÃNEA</h2>
-            </div>
-
-            @if($isEditing)
-            <div class="edit-section">
-                <div class="edit-section-title">Datos BÃ¡sicos</div>
-                <div class="info-grid">
-                    <div class="info-card">
-                        <div class="info-label">Icono</div>
-                        <input type="text" wire:model="line.icon" class="edit-field" placeholder="ðŸ”¥">
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">Tipo</div>
-                        <select wire:model="line.type" class="edit-field">
-                            <option value="whatsapp">WhatsApp</option>
-                            <option value="telegram">Telegram</option>
-                            <option value="phone">TelÃ©fono</option>
-                        </select>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">Estado</div>
-                        <select wire:model="line.status" class="edit-field">
-                            <option value="active">Activa</option>
-                            <option value="inactive">Inactiva</option>
-                        </select>
-                    </div>
-                    <div class="info-card">
-                        <div class="info-label">Encargado</div>
-                        <select wire:model="line.encargado_id" class="edit-field">
-                            <option value="">Sin encargado</option>
-                            @foreach($availableAgents as $agent)
-                            <option value="{{ $agent->id }}">{{ $agent->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @if($isEditing)
-                    <div class="info-card" style="grid-column: span 2;">
-                        <div class="info-label">DescripciÃ³n</div>
-                        <textarea wire:model="line.description" class="edit-field" rows="2" placeholder="DescripciÃ³n de la lÃ­nea..."></textarea>
-                    </div>
-                    @elseif($line->description)
-                    <div class="info-card" style="grid-column: span 2;">
-                        <div class="info-label">DescripciÃ³n</div>
-                        <div class="info-value">{{ $line->description }}</div>
-                    </div>
-                    @endif
-                </div>
-            </div>
-            @else
-            <div class="info-grid">
-                <div class="info-card">
-                    <div class="info-label">Icono</div>
-                    <div class="info-value">{{ $line->icon ?: 'â€”' }}</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">Tipo</div>
-                    <div class="info-value">{{ ucfirst($line->type ?? 'general') }}</div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">Estado</div>
-                    <div class="info-value">
-                        <span class="ld-badge {{ $line->status === 'active' ? 'badge-active' : 'badge-inactive' }}">{{ $line->status === 'active' ? 'Activa' : 'Inactiva' }}</span>
-                    </div>
-                </div>
-                <div class="info-card">
-                    <div class="info-label">Encargado</div>
-                    <div class="info-value">
-                        @if($currentEncargado)
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <div style="width:32px;height:32px;border-radius:50%;background:var(--orange);color:#190702;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;">{{ strtoupper(substr($currentEncargado->name, 0, 1)) }}</div>
-                            <div>
-                                <div style="font-weight:700;color:var(--white);font-size:13px;">{{ $currentEncargado->name }}</div>
-                                <div style="font-size:11px;color:var(--muted);">{{ $currentEncargado->email }}</div>
-                            </div>
-                        </div>
-                        @else
-                        <span style="color:var(--muted);">Sin asignar</span>
-                        @endif
-                    </div>
-                </div>
-                @if($line->description)
-                <div class="info-card" style="grid-column: span 2;">
-                    <div class="info-label">DescripciÃ³n</div>
-                    <div class="info-value">{{ $line->description }}</div>
-                </div>
+    {{-- ── TAB: VENTAS ─────────────────────────────────────────────────────── --}}
+    <div x-show="tab==='ventas'" x-cloak>
+        <div class="kpi-grid">
+            <div class="kpi-card kpi-gold">
+                <div class="kpi-icon-fa"><i class="fa-solid fa-trophy"></i></div>
+                <div class="kpi-label">Mejor Mes</div>
+                @if($bestMonth)
+                    <div class="kpi-val">{{ $monthNames[$bestMonth['mes']] ?? '' }} {{ $bestMonth['anio'] }}</div>
+                    <div class="kpi-amt">${{ number_format($bestMonth['total'], 2) }}</div>
+                @else
+                    <div class="kpi-empty">Sin datos</div>
                 @endif
             </div>
-            @endif
-
-            {{-- ImÃ¡genes --}}
-            @if($isEditing)
-            <div class="edit-section" style="margin-top: 16px;">
-                <div class="edit-section-title">ðŸ“¸ ImÃ¡genes</div>
-                <div class="info-grid">
-                    <div class="info-card">
-                        <x-image-uploader label="Portada 851x315" model="portadaUpload" :upload="$portadaUpload" :value="$line->portada_url" remove-action="removeImageField('portada')" variant="wide">
-                            @error('portadaUpload') <div class="form-error">{{ $message }}</div> @enderror
-                        </x-image-uploader>
-                    </div>
-                    <div class="info-card">
-                        <x-image-uploader label="Perfil 800x800" model="perfilUpload" :upload="$perfilUpload" :value="$line->perfil_url" remove-action="removeImageField('perfil')" variant="square">
-                            @error('perfilUpload') <div class="form-error">{{ $message }}</div> @enderror
-                        </x-image-uploader>
-                    </div>
-                </div>
-            </div>
-            @elseif($line->portada_url || $line->perfil_url)
-            <div class="info-grid" style="margin-top: 12px;">
-                @if($line->portada_url)
-                <div class="info-card">
-                    <div class="info-label">Portada</div>
-                    <img src="{{ $line->portada_url }}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;">
-                </div>
-                @endif
-                @if($line->perfil_url)
-                <div class="info-card">
-                    <div class="info-label">Perfil</div>
-                    <img src="{{ $line->perfil_url }}" style="width:80px;height:80px;object-fit:cover;border-radius:50%;">
-                </div>
+            <div class="kpi-card kpi-purple">
+                <div class="kpi-icon-fa"><i class="fa-solid fa-gamepad"></i></div>
+                <div class="kpi-label">Top Plataforma</div>
+                @if($bestPlatform)
+                    <div class="kpi-val">{{ $bestPlatform['platform'] }}</div>
+                    <div class="kpi-amt">${{ number_format($bestPlatform['total'], 2) }}</div>
+                @else
+                    <div class="kpi-empty">Sin datos</div>
                 @endif
             </div>
-            @endif
+            <div class="kpi-card kpi-blue">
+                <div class="kpi-icon-fa"><i class="fa-solid fa-calendar-day"></i></div>
+                <div class="kpi-label">Ventas este mes</div>
+                <div class="kpi-amt" style="color:var(--good)">${{ number_format($totalThisMonth, 2) }}</div>
+            </div>
+            <div class="kpi-card kpi-green">
+                <div class="kpi-icon-fa"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                <div class="kpi-label">Ganancia encargado</div>
+                @if(count($encargadoEarnings) > 0)
+                    @foreach($encargadoEarnings as $earning)
+                        <div class="kpi-val" style="font-size:12px">{{ $earning['agent']->name ?? '—' }} · {{ $earning['porcentaje'] }}%</div>
+                        <div class="kpi-amt">${{ number_format($earning['ganancia'], 2) }}</div>
+                    @endforeach
+                @else
+                    <div class="kpi-empty">Sin encargado</div>
+                @endif
+            </div>
         </div>
 
-        {{-- ðŸ“± CONTACTOS --}}
-        <div class="ld-section">
-            <div class="ld-section-header">
-                <h2 class="ld-section-title">ðŸ“± CONTACTOS</h2>
-            </div>
-            @if($isEditing)
-            <div class="edit-section">
-                @foreach($line->contact_links as $index => $link)
-                @if(!empty($link['value']) || $isEditing)
-                <div class="contact-edit-row" wire:key="contact-{{ $index }}">
-                    <select wire:model="line.contact_links.{{ $index }}.type" class="contact-type-edit">
-                        <option value="whatsapp">ðŸ’¬ WhatsApp</option>
-                        <option value="telegram">âœˆï¸ Telegram</option>
-                        <option value="instagram">ðŸ“· Instagram</option>
-                        <option value="facebook">ðŸ“˜ Facebook</option>
-                        <option value="phone">ðŸ“ž TelÃ©fono</option>
-                    </select>
-                    <input type="text" wire:model="line.contact_links.{{ $index }}.value" class="contact-value-edit" placeholder="NÃºmero o enlace...">
-                    <button type="button" wire:click="removeContactLink({{ $index }})" class="contact-remove">âœ•</button>
+        <div class="months-grid">
+            @foreach($last3Months as $i => $month)
+            <div class="month-card">
+                <div class="month-label">
+                    <i class="fa-solid fa-calendar-week" style="color:var(--orange)"></i>
+                    @if($i===0) Mes actual @elseif($i===1) Mes pasado @else Mes anterior @endif
                 </div>
-                @endif
-                @endforeach
-                <button type="button" wire:click="addContactLink" class="btn-add-contact">+ Agregar contacto</button>
-            </div>
-            @elseif($line->contact_links && count($line->contact_links) > 0)
-            <div class="links-grid">
-                @foreach($line->contact_links as $link)
-                @if(!empty($link['value']))
-                <div class="link-card link-card-{{ $link['type'] ?? '' }}">
-                    <div class="link-icon">
-                        @if(($link['type'] ?? '') === 'whatsapp')ðŸ’¬
-                        @elseif(($link['type'] ?? '') === 'telegram')âœˆï¸
-                        @elseif(($link['type'] ?? '') === 'instagram')ðŸ“·
-                        @elseif(($link['type'] ?? '') === 'facebook')ðŸ“˜
-                        @elseif(($link['type'] ?? '') === 'phone')ðŸ“ž
-                        @else ðŸ”—
-                        @endif
-                    </div>
-                    <div class="link-info">
-                        <div class="link-type">{{ ucfirst($link['type'] ?? '') }}</div>
-                        <div class="link-value">{{ $link['value'] }}</div>
-                    </div>
+                <div class="month-name-sm">{{ $monthNames[$month['mes']] ?? '' }} {{ $month['anio'] }}</div>
+                <div class="month-total">${{ number_format($month['total'], 2) }}</div>
+                <div class="month-bar">
+                    <div class="month-bar-fill" style="width:{{ $maxSales > 0 ? round($month['total'] / $maxSales * 100) : 0 }}%"></div>
                 </div>
-                @endif
-                @endforeach
             </div>
-            @else
-            <div class="ld-empty">No hay contactos configurados</div>
-            @endif
+            @endforeach
         </div>
+    </div>
 
-        {{-- ðŸŽ° PLATAFORMAS (Checkboxes) --}}
-        @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
-        <div class="ld-section">
-            <div class="ld-section-header">
-                <h2 class="ld-section-title">ðŸŽ° PLATAFORMAS</h2>
-            </div>
-            <p class="section-desc">Activa o desactiva las plataformas disponibles para esta lÃ­nea.</p>
-            <div class="platforms-toggle-grid">
-                @foreach($availablePlatforms as $platform)
-                @php $isActive = $line->activePlatforms()->where('platform_id', $platform->id)->exists(); @endphp
-                <div class="platform-toggle-card {{ $isActive ? 'active' : '' }}" wire:click="togglePlatformActivation({{ $platform->id }})">
-                    <div class="platform-toggle-header">
-                        @if($platform->logo_url)
-                        <img src="{{ $platform->logo_url }}" class="platform-toggle-logo">
-                        @else
-                        <div class="platform-toggle-icon">ðŸŽ®</div>
-                        @endif
-                        <span class="platform-toggle-name">{{ $platform->name }}</span>
-                    </div>
-                    <label class="switch-container">
-                        <input type="checkbox" {{ $isActive ? 'checked' : '' }} wire:change="togglePlatformActivation({{ $platform->id }})">
-                        <span class="switch-slider"></span>
-                    </label>
+    {{-- ── TAB: CANALES ────────────────────────────────────────────────────── --}}
+    <div x-show="tab==='canales'" x-cloak>
+        @if(empty($contactLinks))
+        <div class="empty-state">
+            <i class="fa-solid fa-comment-slash" style="font-size:32px;opacity:.3;margin-bottom:12px"></i>
+            <div>Sin canales configurados</div>
+        </div>
+        @else
+        <div class="channels-grid">
+            @foreach($contactLinks as $link)
+            @if(!empty($link['value']))
+            @php
+                $t = $link['type'] ?? '';
+                $icon = match($t) {
+                    'whatsapp'  => 'fa-brands fa-whatsapp',
+                    'telegram'  => 'fa-brands fa-telegram',
+                    'instagram' => 'fa-brands fa-instagram',
+                    'facebook'  => 'fa-brands fa-facebook',
+                    'phone'     => 'fa-solid fa-phone',
+                    default     => 'fa-solid fa-link',
+                };
+                $color = match($t) {
+                    'whatsapp'  => '#25d366',
+                    'telegram'  => '#2aabee',
+                    'instagram' => '#e1306c',
+                    'facebook'  => '#1877f2',
+                    'phone'     => 'var(--good)',
+                    default     => 'var(--orange)',
+                };
+            @endphp
+            <a href="{{ $link['value'] }}" target="_blank" rel="noopener" class="channel-card">
+                <div class="channel-icon" style="color:{{ $color }}">
+                    <i class="{{ $icon }}"></i>
                 </div>
-                @endforeach
-            </div>
+                <div class="channel-info">
+                    <div class="channel-type">{{ ucfirst($t) }}</div>
+                    <div class="channel-val">{{ $link['value'] }}</div>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--muted);font-size:11px;flex-shrink:0"></i>
+            </a>
+            @endif
+            @endforeach
         </div>
         @endif
+    </div>
 
-        {{-- AGENTES --}}
-        <div class="ld-section">
-            <div class="ld-section-header">
-                <h2 class="ld-section-title">ðŸ‘¥ AGENTES ASIGNADOS</h2>
-                @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
-                <button type="button" class="btn-add-agent" wire:click="openAssignModal">+ Agregar agente</button>
+    {{-- ── TAB: PLATAFORMAS ───────────────────────────────────────────────── --}}
+    <div x-show="tab==='plataformas'" x-cloak>
+        @if($linePlatforms->isEmpty())
+        <div class="empty-state">
+            <i class="fa-solid fa-server" style="font-size:32px;opacity:.3;margin-bottom:12px"></i>
+            <div>Sin plataformas asignadas</div>
+        </div>
+        @else
+        <div class="platforms-grid">
+            @foreach($linePlatforms as $plat)
+            <div class="plat-card">
+                @if($plat->logo_url)
+                    <img src="{{ $plat->logo_url }}" class="plat-logo" alt="{{ $plat->name }}">
+                @else
+                    <div class="plat-icon"><i class="fa-solid fa-gamepad"></i></div>
+                @endif
+                <div class="plat-name">{{ $plat->name }}</div>
+                @if($plat->website_url)
+                    <a href="{{ $plat->website_url }}" target="_blank" class="plat-link">
+                        <i class="fa-solid fa-globe"></i> Sitio web
+                    </a>
                 @endif
             </div>
-
-            @if($line->lineAgents && $line->lineAgents->count() > 0)
-            <div class="agents-grid">
-                @foreach($line->lineAgents as $la)
-                <div class="agent-card {{ $la->is_active ? '' : 'inactive' }}">
-                    <div class="agent-card-header">
-                        <div class="agent-avatar">{{ strtoupper(substr($la->agent->name, 0, 1)) }}</div>
-                        <div class="agent-info">
-                            <div class="agent-name">{{ $la->agent->name }}</div>
-                            <div class="agent-email">{{ $la->agent->email }}</div>
-                        </div>
-                        <div class="agent-role-badge {{ $la->role }}">
-                            {{ $la->role === 'manager' ? 'Encargado' : 'Agente' }}
-                        </div>
-                    </div>
-                    <div class="agent-card-actions">
-                        <label class="agent-toggle">
-                            <input type="checkbox" {{ $la->is_active ? 'checked' : '' }} wire:change="toggleAgentActive({{ $la->agent->id }})">
-                            <span>{{ $la->is_active ? 'Activo' : 'Inactivo' }}</span>
-                        </label>
-                        @if($this->hasLinePermission(\App\Support\Permissions::AGENT_PERMISSIONS))
-                        <button type="button" class="btn-perms" wire:click="openPermissions({{ $la->agent->id }})">âœŽ Permisos</button>
-                        @endif
-                        @if($this->hasLinePermission(\App\Support\Permissions::AGENT_ASSIGN))
-                        <button type="button" class="btn-remove-agent" wire:click="removeAgent({{ $la->agent->id }})" wire:confirm="Â¿Remover este agente de la lÃ­nea?">âœ•</button>
-                        @endif
-                    </div>
-                    @if($isEditing)
-                    <div class="agent-percentage" style="margin-top: 8px;">
-                        <label style="font-size:11px;color:var(--muted);">% Ganancia</label>
-                        <input type="number" wire:model="line.porcentaje_encargado" class="edit-field" step="0.01" min="0" max="100" placeholder="%">
-                    </div>
-                    @endif
-                </div>
-                @endforeach
-            </div>
-            @else
-            <div class="ld-empty">No hay agentes asignados a esta lÃ­nea</div>
-            @endif
+            @endforeach
         </div>
+        @endif
+    </div>
 
-        {{-- PERMISOS DE LÃNEA --}}
-        <div class="ld-section" x-data="{ permissionsOpen: false }">
-            <div class="ld-section-header">
-                <h2 class="ld-section-title">PERMISOS DE LA LINEA</h2>
-                <button type="button" class="btn-perms" x-on:click="permissionsOpen = true" x-show="!permissionsOpen">Setear permisos</button>
+    {{-- ── TAB: PERMISOS ──────────────────────────────────────────────────── --}}
+    <div x-show="tab==='permisos'" x-cloak>
+        @php
+        $permLabels = [
+            \App\Support\Permissions::NEWS_READ        => ['fa-solid fa-newspaper',      'Ver novedades'],
+            \App\Support\Permissions::NEWS_CREATE      => ['fa-solid fa-file-circle-plus','Crear novedades'],
+            \App\Support\Permissions::NEWS_UPDATE      => ['fa-solid fa-pen-to-square',   'Editar novedades'],
+            \App\Support\Permissions::TICKET_READ      => ['fa-solid fa-ticket',          'Ver tickets'],
+            \App\Support\Permissions::TICKET_UPDATE    => ['fa-solid fa-ticket-simple',   'Editar tickets'],
+            \App\Support\Permissions::BONO_READ        => ['fa-solid fa-gift',            'Ver bonos'],
+            \App\Support\Permissions::SORTEO_READ      => ['fa-solid fa-dice',            'Ver sorteos'],
+            \App\Support\Permissions::LINE_EDIT        => ['fa-solid fa-sliders',         'Editar línea'],
+            \App\Support\Permissions::AGENT_ASSIGN     => ['fa-solid fa-user-plus',       'Asignar agentes'],
+            \App\Support\Permissions::AGENT_PERMISSIONS=> ['fa-solid fa-shield-halved',   'Gestionar permisos'],
+        ];
+        @endphp
+        <div class="perms-grid">
+            @foreach($permLabels as $perm => [$icon, $label])
+            @php $active = in_array($perm, $linePermissionsList ?? []); @endphp
+            <div class="perm-chip {{ $active ? 'perm-chip-on' : 'perm-chip-off' }}">
+                <i class="{{ $icon }}"></i>
+                <span>{{ $label }}</span>
+                @if($active)
+                    <i class="fa-solid fa-check perm-check-icon"></i>
+                @endif
             </div>
-            <div x-show="permissionsOpen">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;">
-                    <p class="section-desc" style="margin:0;">Define que operaciones permite esta linea.</p>
-                    <button type="button" class="btn-ghost" x-on:click="permissionsOpen = false" style="padding:7px 14px;">Cerrar</button>
-                </div>
-
-                <div class="line-perms-grid">
-                    @php
-                    $linePermissions = [
-                        \App\Support\Permissions::NEWS_READ => 'Ver novedades',
-                        \App\Support\Permissions::NEWS_CREATE => 'Crear novedades',
-                        \App\Support\Permissions::NEWS_UPDATE => 'Editar novedades',
-                        \App\Support\Permissions::TICKET_READ => 'Ver tickets',
-                        \App\Support\Permissions::TICKET_UPDATE => 'Editar tickets',
-                        \App\Support\Permissions::BONO_READ => 'Ver bonos',
-                        \App\Support\Permissions::SORTEO_READ => 'Ver sorteos',
-                        \App\Support\Permissions::LINE_EDIT => 'Editar linea',
-                        \App\Support\Permissions::AGENT_ASSIGN => 'Asignar agentes',
-                        \App\Support\Permissions::AGENT_PERMISSIONS => 'Gestionar permisos',
-                    ];
-                    @endphp
-                    @foreach($linePermissions as $perm => $label)
-                    <label class="perm-check {{ in_array($perm, $linePermissionsList ?? []) ? 'active' : '' }}">
-                        <input type="checkbox" wire:change="toggleLinePermission('{{ $perm }}')" {{ in_array($perm, $linePermissionsList ?? []) ? 'checked' : '' }}>
+            @endforeach
+        </div>
+        @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
+        <div x-data="{ open: false }" style="margin-top:20px">
+            <button type="button" class="btn-outline" @click="open=!open">
+                <i class="fa-solid fa-sliders"></i> Modificar permisos
+            </button>
+            <div x-show="open" x-cloak style="margin-top:16px">
+                <div class="perms-grid">
+                    @foreach($permLabels as $perm => [$icon, $label])
+                    <label class="perm-chip perm-chip-edit {{ in_array($perm, $linePermissionsList ?? []) ? 'perm-chip-on' : 'perm-chip-off' }}">
+                        <input type="checkbox" wire:change="toggleLinePermission('{{ $perm }}')"
+                               {{ in_array($perm, $linePermissionsList ?? []) ? 'checked' : '' }}
+                               style="display:none">
+                        <i class="{{ $icon }}"></i>
                         <span>{{ $label }}</span>
                     </label>
                     @endforeach
                 </div>
             </div>
         </div>
-
-        {{-- ðŸ“Š ESTADISTICAS DESDE VENTAS --}}
-        <div class="ld-section stats-section">
-            <div class="ld-section-header">
-                <h2 class="ld-section-title">ðŸ“Š ESTADISTICAS DESDE VENTAS</h2>
-                <span style="font-size:11px;color:var(--muted);">Calculado desde ventas registradas</span>
-            </div>
-
-@php
-            $bestMonth = $this->getBestMonth();
-            $bestPlatform = $this->getBestPlatformThisMonth();
-            $totalThisMonth = $this->getTotalSalesThisMonth();
-            $last3Months = $this->getTotalSalesLast3Months();
-            $encargadoEarnings = $this->getEncargadoEarningsThisMonth();
-            $maxSales = max(array_column($last3Months, 'total'), 1);
-            @endphp
-
-            {{-- KPIs --}}
-            <div class="sales-kpis">
-                <div class="kpi-card kpi-gold">
-                    <div class="kpi-icon">TROFEO</div>
-                    <div class="kpi-label">Mejor Mes</div>
-                    @if($bestMonth)
-                    <div class="kpi-value">{{ $bestMonth['nombre'] }} {{ $bestMonth['anio'] }}</div>
-                    <div class="kpi-amount">${{ number_format($bestMonth['total'], 2) }}</div>
-                    @else
-                    <div class="kpi-empty">Sin datos</div>
-                    @endif
-                </div>
-                <div class="kpi-card kpi-purple">
-                    <div class="kpi-icon">PLATAFORMA</div>
-                    <div class="kpi-label">Top Plataforma</div>
-                    @if($bestPlatform)
-                    <div class="kpi-value">{{ $bestPlatform['platform'] }}</div>
-                    <div class="kpi-amount">${{ number_format($bestPlatform['total'], 2) }}</div>
-                    @else
-                    <div class="kpi-empty">Sin datos</div>
-                    @endif
-                </div>
-                <div class="kpi-card kpi-blue">
-                    <div class="kpi-icon">CALENDARIO</div>
-                    <div class="kpi-label">Este Mes</div>
-                    <div class="kpi-amount" style="color: var(--good);">${{ number_format($totalThisMonth, 2) }}</div>
-                </div>
-                <div class="kpi-card kpi-green">
-                    <div class="kpi-icon">DINERO</div>
-                    <div class="kpi-label">Ganancia Encargado</div>
-                    @if(count($encargadoEarnings) > 0)
-                        @foreach($encargadoEarnings as $earning)
-                        <div class="kpi-value" style="font-size: 14px;">{{ $earning['agent']->name }} - {{ $earning['porcentaje'] }}%</div>
-                        <div class="kpi-amount">${{ number_format($earning['ganancia'], 2) }}</div>
-                        @endforeach
-                    @else
-                    <div class="kpi-empty">Sin encargado</div>
-                    @endif
-                </div>
-</div>
-
-            {{-- Ãšltimos 3 Meses --}}
-            <div class="months-grid">
-                @foreach($last3Months as $index => $month)
-                <div class="month-card">
-                    <div class="month-name">@if($index === 0) Mes Actual @elseif($index === 1) Mes Pasado @else Mes Anterior @endif</div>
-                    <div class="month-total">${{ number_format($month['total'], 2) }}</div>
-                    <div class="month-bar">
-                        <div class="month-bar-fill" style="width: {{ ($month['total'] / $maxSales * 100) }}%"></div>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        </div>
+        @endif
     </div>
-</form>
 
-{{-- MODALS --}}
+</div>{{-- /ld-tab-body --}}
+
+{{-- ── MODAL: ASIGNAR AGENTE ──────────────────────────────────────────────── --}}
 @if($showAssignModal)
 <div class="modal-overlay" wire:click="closeAssignModal">
-    <div class="modal-content" wire:click.stop>
-        <div class="modal-header">
-            <h3>ASIGNAR AGENTE</h3>
-            <button class="modal-close" wire:click="closeAssignModal">âœ•</button>
+    <div class="modal-panel" wire:click.stop>
+        <div class="modal-head">
+            <h3><i class="fa-solid fa-user-plus"></i> Asignar agente</h3>
+            <button type="button" class="modal-close" wire:click="closeAssignModal">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
-        <div class="modal-form">
+        <div class="modal-body">
             <div class="form-group">
-                <label>Buscar agente</label>
+                <label class="form-label">Buscar agente</label>
                 <input type="text" wire:model.live="assignAgentSearch" class="form-input" placeholder="Nombre o email...">
             </div>
             @if($this->searchAgents && $this->searchAgents->count() > 0)
-            <div class="agent-search-results">
-                @foreach($this->searchAgents as $agent)
-                <div class="agent-result" wire:click="selectAssignAgent({{ $agent->id }})">
-                    <div class="agent-avatar-sm">{{ strtoupper(substr($agent->name, 0, 1)) }}</div>
+            <div class="search-results">
+                @foreach($this->searchAgents as $ag)
+                <div class="search-result-row" wire:click="selectAssignAgent({{ $ag->id }})">
+                    <div class="result-avatar">{{ strtoupper(mb_substr($ag->name, 0, 2)) }}</div>
                     <div>
-                        <div style="font-weight:600;color:var(--white);">{{ $agent->name }}</div>
-                        <div style="font-size:11px;color:var(--muted);">{{ $agent->email }}</div>
+                        <div style="font-weight:700;font-size:13px">{{ $ag->name }}</div>
+                        <div style="font-size:11px;color:var(--muted)">{{ $ag->email }}</div>
                     </div>
                 </div>
                 @endforeach
             </div>
             @endif
             @if($assignAgentId)
-            <div class="form-group">
-                <label>Rol</label>
-                <select wire:model="assignRole" class="form-select">
+            <div class="form-group" style="margin-top:16px">
+                <label class="form-label">Rol</label>
+                <select wire:model="assignRole" class="form-input">
                     <option value="miembro">Agente</option>
                     <option value="encargado">Encargado</option>
                 </select>
             </div>
-            <div class="modal-actions">
-                <button type="button" wire:click="closeAssignModal" class="btn-ghost">Cancelar</button>
-                <button type="button" wire:click="confirmAssign" class="btn-primary">Asignar</button>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+                <button type="button" class="btn-ghost" wire:click="closeAssignModal">Cancelar</button>
+                <button type="button" class="btn-primary" wire:click="confirmAssign">
+                    <i class="fa-solid fa-check"></i> Asignar
+                </button>
             </div>
             @endif
         </div>
@@ -450,219 +475,205 @@
 </div>
 @endif
 
-{{-- Permisos por Agente Panel --}}
+{{-- ── MODAL: PERMISOS DE AGENTE ───────────────────────────────────────────── --}}
 @if($editingPermAgentId)
-<div class="perm-panel-overlay" wire:click="closePermissions">
-    <div class="perm-panel" wire:click.stop>
-        <div class="perm-panel-header">
-            <h3>PERMISOS DE AGENTE</h3>
-            <button class="perm-panel-close" wire:click="closePermissions">âœ•</button>
+<div class="modal-overlay" wire:click="closePermissions">
+    <div class="modal-panel" wire:click.stop>
+        <div class="modal-head">
+            <h3><i class="fa-solid fa-shield-halved"></i> Permisos de agente</h3>
+            <button type="button" class="modal-close" wire:click="closePermissions">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
-        <p class="perm-panel-desc">Selecciona los permisos para este agente.</p>
-
-        <div class="perm-panel-grid">
-            @php
-            $agentPerms = [
-                \App\Support\Permissions::NEWS_READ => 'Ver novedades',
-                \App\Support\Permissions::NEWS_CREATE => 'Crear novedades',
-                \App\Support\Permissions::TICKET_READ => 'Ver tickets',
-                \App\Support\Permissions::TICKET_UPDATE => 'Editar tickets',
-                \App\Support\Permissions::BONO_READ => 'Ver bonos',
-                \App\Support\Permissions::SORTEO_READ => 'Ver sorteos',
-            ];
-            @endphp
-            @foreach($agentPerms as $perm => $label)
-            <label class="perm-check {{ $editingPerms[$perm] ?? false ? 'active' : '' }}">
-                <input type="checkbox" wire:model="editingPerms.{{ $perm }}">
-                <span>{{ $label }}</span>
-            </label>
-            @endforeach
-        </div>
-
-        <div class="perm-panel-actions">
-            <button class="btn-ghost" wire:click="closePermissions">Cancelar</button>
-            <button class="btn-primary" wire:click="savePermissions">Guardar permisos</button>
+        <div class="modal-body">
+            <p style="font-size:12px;color:var(--muted);margin:0 0 16px">Solo se muestran los permisos habilitados en la línea.</p>
+            <div class="perms-grid">
+                @foreach($editingPerms as $perm => $checked)
+                @php $info = $permLabels[$perm] ?? ['fa-solid fa-key', $perm]; @endphp
+                <label class="perm-chip perm-chip-edit {{ $checked ? 'perm-chip-on' : 'perm-chip-off' }}">
+                    <input type="checkbox" wire:model="editingPerms.{{ $perm }}" style="display:none">
+                    <i class="{{ $info[0] }}"></i>
+                    <span>{{ $info[1] }}</span>
+                </label>
+                @endforeach
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)">
+                <button type="button" class="btn-ghost" wire:click="closePermissions">Cancelar</button>
+                <button type="button" class="btn-primary" wire:click="savePermissions">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar
+                </button>
+            </div>
         </div>
     </div>
 </div>
 @endif
 
-    <style>
-    .ld-page { min-height: 100%; }
-    .ld-form { margin: 0; padding: 0; min-height: calc(100vh - 132px); }
-    .ld-page.is-editing .ld-form { display: flex; flex-direction: column; }
-    .ld-page.is-editing .ld-body { flex: 1; padding-bottom: 24px; }
-    .ld-back { font-size: 12px; color: var(--muted); text-decoration: none; }
-    .ld-back:hover { color: var(--orange); }
-    .ld-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.06em; }
-    .badge-active { background: rgba(37,196,107,0.15); color: var(--good); border: 1px solid rgba(37,196,107,0.3); }
-    .badge-inactive { background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--line); }
-    .ld-badge-type { font-size: 10px; font-weight: 800; color: var(--orange); letter-spacing: 0.1em; }
-    .ld-contact { font-size: 12px; color: var(--muted); font-family: var(--font-mono); }
+<style>
+[x-cloak] { display: none !important; }
 
-    .ld-flash { margin: 14px 28px 0; padding: 10px 16px; background: var(--good); color: #000; border-radius: 8px; font-weight: 700; font-size: 13px; }
+/* ── Layout ──────────────────────────────────────────────────── */
+.ld-root { min-height: 100%; }
 
-    .ld-body { padding: 20px 28px 40px; display: flex; flex-direction: column; gap: 20px; }
+/* ── Hero ────────────────────────────────────────────────────── */
+.ld-hero { margin-bottom: 0; }
+.ld-cover { height: 200px; background: linear-gradient(135deg,rgba(255,106,26,.22),rgba(255,255,255,.04)); position: relative; overflow: hidden; border-radius: 10px 10px 0 0; border: 1px solid var(--line); border-bottom: 0; }
+.ld-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ld-avatar { position: absolute; left: 24px; bottom: -32px; width: 90px; height: 90px; border-radius: 10px; border: 3px solid rgba(255,255,255,.8); background: #210f0f; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,.5); z-index: 2; }
+.ld-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.ld-avatar span { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 36px; color: var(--orange); }
+.ld-hero-meta { background: linear-gradient(180deg,#1c0e0e,#120909); padding: 44px 24px 20px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border: 1px solid var(--line); border-top: 0; }
+.ld-back { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); text-decoration: none; margin-bottom: 8px; }
+.ld-back:hover { color: var(--orange); }
+.ld-hero-name { font-family: var(--font-display); font-size: 34px; line-height: 1; letter-spacing: .03em; }
+.ld-hero-sub { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.ld-mono { font-family: var(--font-mono); font-size: 11px; color: var(--muted-2); }
+.ld-desc-inline { font-size: 12px; color: var(--muted); }
+.btn-edit-hero { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 16px; background: rgba(255,106,26,.15); border: 1px solid rgba(255,106,26,.5); border-radius: 8px; color: var(--orange); font-size: 12px; font-weight: 800; text-decoration: none; transition: all .15s; cursor: pointer; }
+.btn-edit-hero:hover { background: rgba(255,106,26,.25); }
 
-    .ld-section { background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 14px; padding: 20px; }
-    .ld-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .ld-section-title { font-family: var(--font-display); font-size: 22px; margin: 0; }
+/* ── Pills ───────────────────────────────────────────────────── */
+.status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 10px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.pill-active { background: rgba(37,196,107,.12); color: var(--good); border: 1px solid rgba(37,196,107,.3); }
+.pill-inactive { background: rgba(255,71,87,.1); color: #ff4757; border: 1px solid rgba(255,71,87,.25); }
+.pct-badge { background: rgba(255,106,26,.15); color: var(--orange); border: 1px solid rgba(255,106,26,.3); border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 800; margin-left: 4px; }
 
-    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-    .info-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
-    .info-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
-    .info-value { font-size: 14px; color: var(--white); }
+/* ── Flash ───────────────────────────────────────────────────── */
+.ld-flash { margin: 12px 0; padding: 11px 16px; background: rgba(37,196,107,.12); border: 1px solid rgba(37,196,107,.35); color: var(--good); border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 
-    .edit-section { background: rgba(255,106,26,0.05); border: 1px solid rgba(255,106,26,0.2); border-radius: 10px; padding: 16px; }
-    .edit-section-title { font-size: 12px; color: var(--orange); font-weight: 700; margin-bottom: 12px; letter-spacing: 0.05em; }
-    .edit-field { width: 100%; background: linear-gradient(180deg,#1c0d0a,#120909); border: 1px solid var(--line-warm); border-radius: 8px; padding: 8px 12px; color: var(--white); font-size: 13px; }
-    .edit-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+/* ── Tabs ────────────────────────────────────────────────────── */
+.ld-tabs { display: flex; gap: 2px; background: linear-gradient(180deg,#1c0e0e,#120909); border: 1px solid var(--line); border-top: 0; padding: 0 20px; overflow-x: auto; }
+.ld-tab { padding: 12px 16px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: color .15s, border-color .15s; white-space: nowrap; flex-shrink: 0; }
+.ld-tab:hover { color: var(--white); }
+.ld-tab-active { color: var(--orange) !important; border-bottom-color: var(--orange) !important; }
+.ld-tab-body { background: linear-gradient(180deg,#1c0e0e,#120909); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px; padding: 26px; }
 
-    .title-input-edit { font-family: var(--font-display); font-size: 36px; color: var(--white); background: transparent; border: none; border-bottom: 2px solid var(--orange); padding: 0; width: 100%; }
-    .status-select-edit, .type-select-edit, .icon-input-edit { background: linear-gradient(180deg,#1c0d0a,#120909); border: 1px solid var(--line-warm); border-radius: 6px; padding: 6px 10px; color: var(--white); font-size: 12px; }
+/* ── Info tab ────────────────────────────────────────────────── */
+.info-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
+.info-box { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: rgba(255,255,255,.03); }
+.info-box-label { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.info-box-value { font-size: 14px; font-weight: 700; }
+.desc-box { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: rgba(255,255,255,.03); margin-bottom: 16px; }
+.images-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.img-preview-box { min-width: 0; }
+.img-portada { width: 100%; height: 110px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); display: block; }
+.img-perfil { width: 90px; height: 90px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); display: block; }
 
-    .edit-actions { display: flex; gap: 8px; }
-    .btn-cancel { background: rgba(255,255,255,0.06); border: 1px solid var(--line); color: var(--muted); padding: 8px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; }
-    .btn-save { background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; border: none; padding: 8px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+/* ── Encargado hero ──────────────────────────────────────────── */
+.agent-hero-card { display: flex; align-items: center; gap: 20px; border: 1px solid rgba(255,106,26,.25); border-radius: 12px; background: rgba(255,106,26,.05); padding: 20px; flex-wrap: wrap; }
+.agent-hero-avatar { width: 72px; height: 72px; border-radius: 12px; background: rgba(255,106,26,.2); border: 2px solid rgba(255,106,26,.4); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 26px; color: var(--orange); flex-shrink: 0; }
+.agent-hero-info { flex: 1; min-width: 0; }
+.agent-hero-name { font-size: 20px; font-weight: 800; font-family: var(--font-display); }
+.agent-hero-email { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.agent-hero-stat { text-align: right; flex-shrink: 0; }
+.role-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 3px 10px; font-size: 10px; font-weight: 800; }
+.role-enc { background: rgba(255,106,26,.15); color: var(--orange); border: 1px solid rgba(255,106,26,.3); }
+.role-age { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--line); }
+.role-pct { background: rgba(37,196,107,.12); color: var(--good); border: 1px solid rgba(37,196,107,.3); }
 
-    .section-desc { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+/* ── Agents list ─────────────────────────────────────────────── */
+.agents-list { display: flex; flex-direction: column; gap: 10px; }
+.agent-row { display: flex; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); padding: 13px 16px; }
+.agent-row-inactive { opacity: .55; }
+.agent-row-avatar { width: 42px; height: 42px; border-radius: 10px; background: rgba(255,106,26,.15); border: 1px solid rgba(255,106,26,.3); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 16px; color: var(--orange); flex-shrink: 0; }
+.agent-row-info { flex: 1; min-width: 0; }
+.agent-row-name { font-size: 14px; font-weight: 700; }
+.agent-row-meta { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.agent-row-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.agent-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-active { background: var(--good); box-shadow: 0 0 6px rgba(37,196,107,.5); }
+.dot-inactive { background: var(--muted); }
+.btn-icon-sm { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.03); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all .15s; }
+.btn-icon-sm:hover { border-color: var(--orange); color: var(--orange); }
+.btn-danger-sm:hover { border-color: #ff4757 !important; color: #ff4757 !important; }
 
-    .links-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
-    .link-card { background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: flex; gap: 10px; align-items: center; }
-    .link-icon { font-size: 20px; }
-    .link-info { flex: 1; }
-    .link-type { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
-    .link-value { font-size: 13px; color: var(--white); font-family: var(--font-mono); }
+/* ── KPIs ────────────────────────────────────────────────────── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+.kpi-card { background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 12px; padding: 18px 16px; text-align: center; }
+.kpi-card.kpi-gold   { border-color: rgba(255,215,0,.3);   }
+.kpi-card.kpi-purple { border-color: rgba(147,112,219,.3); }
+.kpi-card.kpi-blue   { border-color: rgba(70,130,255,.3);  }
+.kpi-card.kpi-green  { border-color: rgba(37,196,107,.3);  }
+.kpi-icon-fa { font-size: 26px; margin-bottom: 10px; opacity: .85; }
+.kpi-gold   .kpi-icon-fa { color: #ffd700; }
+.kpi-purple .kpi-icon-fa { color: #9370db; }
+.kpi-blue   .kpi-icon-fa { color: #4682ff; }
+.kpi-green  .kpi-icon-fa { color: var(--good); }
+.kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; font-weight: 800; margin-bottom: 6px; }
+.kpi-val { font-size: 15px; color: var(--white); font-weight: 700; margin-bottom: 4px; }
+.kpi-amt { font-size: 22px; color: var(--orange); font-weight: 800; font-family: var(--font-display); }
+.kpi-empty { font-size: 12px; color: var(--muted-2); padding: 10px 0; }
 
-    .contact-edit-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .contact-type-edit { width: 150px; background: linear-gradient(180deg,#1c0d0a,#120909); border: 1px solid var(--line-warm); border-radius: 6px; padding: 8px; color: var(--white); font-size: 12px; }
-    .contact-value-edit { flex: 1; background: linear-gradient(180deg,#1c0d0a,#120909); border: 1px solid var(--line-warm); border-radius: 6px; padding: 8px; color: var(--white); font-size: 12px; }
-    .contact-remove { width: 30px; height: 30px; background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.4); color: #ff4757; border-radius: 6px; cursor: pointer; }
-    .btn-add-contact { margin-top: 8px; padding: 8px 14px; background: rgba(255,106,26,0.12); border: 1px solid rgba(255,106,26,0.35); color: var(--orange); border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; }
+/* ── Months ──────────────────────────────────────────────────── */
+.months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.month-card { background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.month-label { font-size: 10px; color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.month-name-sm { font-size: 12px; color: var(--muted-2); margin-bottom: 8px; }
+.month-total { font-size: 22px; color: var(--white); font-weight: 800; font-family: var(--font-display); margin-bottom: 10px; }
+.month-bar { height: 6px; background: rgba(255,255,255,.06); border-radius: 4px; overflow: hidden; }
+.month-bar-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--amber)); border-radius: 4px; transition: width .5s; }
 
-    .platforms-toggle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-    .platform-toggle-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
-    .platform-toggle-card.active { border-color: var(--orange); background: rgba(255,106,26,0.08); }
-    .platform-toggle-header { display: flex; align-items: center; gap: 10px; }
-    .platform-toggle-logo { width: 28px; height: 28px; border-radius: 6px; object-fit: contain; }
-    .platform-toggle-icon { font-size: 20px; }
-    .platform-toggle-name { font-size: 13px; color: var(--white); font-weight: 600; }
+/* ── Channels ────────────────────────────────────────────────── */
+.channels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.channel-card { display: flex; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); padding: 14px 16px; text-decoration: none; color: var(--white); transition: border-color .15s, background .15s; }
+.channel-card:hover { border-color: var(--orange); background: rgba(255,106,26,.06); }
+.channel-icon { font-size: 26px; flex-shrink: 0; width: 42px; text-align: center; }
+.channel-info { flex: 1; min-width: 0; }
+.channel-type { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 3px; }
+.channel-val { font-size: 13px; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .switch-container { position: relative; width: 40px; height: 22px; }
-    .switch-container input { opacity: 0; width: 0; height: 0; }
-    .switch-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--line); border-radius: 22px; transition: 0.2s; }
-    .switch-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background: var(--white); border-radius: 50%; transition: 0.2s; }
-    .switch-container input:checked + .switch-slider { background: var(--orange); }
-    .switch-container input:checked + .switch-slider:before { transform: translateX(18px); }
+/* ── Platforms ───────────────────────────────────────────────── */
+.platforms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.plat-card { border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.03); padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.plat-logo { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; }
+.plat-icon { font-size: 32px; color: var(--orange); }
+.plat-name { font-size: 13px; font-weight: 700; }
+.plat-link { font-size: 11px; color: var(--orange); text-decoration: none; display: flex; align-items: center; gap: 5px; }
+.plat-link:hover { text-decoration: underline; }
 
-    .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-    .agent-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
-    .agent-card.inactive { opacity: 0.5; }
-    .agent-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .agent-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--orange); color: #190702; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
-    .agent-info { flex: 1; min-width: 0; }
-    .agent-name { font-weight: 700; font-size: 14px; color: var(--white); }
-    .agent-email { font-size: 11px; color: var(--muted); }
-    .agent-role-badge { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; }
-    .agent-role-badge.manager { background: rgba(255,106,26,0.2); color: var(--orange); }
-    .agent-role-badge.agent { background: rgba(255,255,255,0.1); color: var(--muted); }
-    .agent-card-actions { display: flex; gap: 8px; align-items: center; }
-    .agent-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); cursor: pointer; }
-    .agent-toggle input { accent-color: var(--orange); }
-    .btn-perms { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--white); font-size: 11px; cursor: pointer; }
-    .btn-perms:hover { border-color: var(--orange); color: var(--orange); }
-    .btn-remove-agent { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; }
-    .btn-remove-agent:hover { border-color: #ff4757; color: #ff4757; }
+/* ── Permissions ─────────────────────────────────────────────── */
+.perms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.perm-chip { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; border: 1px solid transparent; }
+.perm-chip-on  { background: rgba(255,106,26,.12); border-color: rgba(255,106,26,.35); color: var(--orange); }
+.perm-chip-off { background: rgba(255,255,255,.03); border-color: var(--line); color: var(--muted); }
+.perm-chip-edit { cursor: pointer; transition: all .15s; }
+.perm-chip-edit:hover { border-color: var(--orange); }
+.perm-check-icon { margin-left: auto; font-size: 10px; }
 
-    .btn-add-agent { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--orange); background: transparent; color: var(--orange); font-size: 12px; font-weight: 700; cursor: pointer; }
-    .btn-add-agent:hover { background: rgba(255,106,26,0.1); }
+/* ── Empty state ─────────────────────────────────────────────── */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; border: 1px dashed var(--line-2); border-radius: 10px; color: var(--muted-2); font-size: 13px; text-align: center; }
 
-    .line-perms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
-    .perm-check { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.2s; }
-    .perm-check:hover { border-color: var(--orange); }
-    .perm-check.active { background: rgba(255,106,26,0.15); border-color: var(--orange); color: var(--orange); }
-    .perm-check input { display: none; }
+/* ── Buttons ─────────────────────────────────────────────────── */
+.btn-primary { background: linear-gradient(135deg, var(--orange), var(--amber)); color: #190702; border: none; padding: 9px 20px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.btn-outline { background: transparent; color: var(--orange); border: 1px solid rgba(255,106,26,.5); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: all .15s; }
+.btn-outline:hover { background: rgba(255,106,26,.1); }
+.btn-ghost { background: rgba(255,255,255,.04); color: var(--muted); border: 1px solid var(--line); padding: 9px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
 
-    .stats-section { border-color: rgba(255,106,26,0.3); }
+/* ── Modal ───────────────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.78); }
+.modal-panel { width: min(520px,100%); max-height: 90vh; overflow-y: auto; border: 1px solid var(--line-2); border-radius: 12px; background: linear-gradient(180deg,#1c0e0e,#120909); }
+.modal-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+.modal-head h3 { margin: 0; font-family: var(--font-display); font-size: 20px; display: flex; align-items: center; gap: 10px; }
+.modal-close { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.03); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.modal-body { padding: 22px; }
+.form-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.form-input { width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; color: var(--white); font-size: 13px; }
+.form-group { margin-bottom: 14px; }
+.search-results { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; margin-top: 8px; }
+.search-result-row { display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; transition: border-color .15s; }
+.search-result-row:hover { border-color: var(--orange); }
+.result-avatar { width: 34px; height: 34px; border-radius: 8px; background: rgba(255,106,26,.2); color: var(--orange); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; flex-shrink: 0; }
 
-    .sales-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-    .kpi-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 12px; padding: 16px; text-align: center; }
-    .kpi-card.kpi-gold { border-color: rgba(255,215,0,0.3); }
-    .kpi-card.kpi-purple { border-color: rgba(147,112,219,0.3); }
-    .kpi-card.kpi-blue { border-color: rgba(70,130,255,0.3); }
-    .kpi-card.kpi-green { border-color: rgba(37,196,107,0.3); }
-    .kpi-icon { font-size: 28px; margin-bottom: 8px; }
-    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 4px; }
-    .kpi-value { font-size: 16px; color: var(--white); font-weight: 700; margin-bottom: 4px; }
-    .kpi-amount { font-size: 20px; color: var(--orange); font-weight: 800; }
-    .kpi-empty { font-size: 13px; color: var(--muted); padding: 20px; }
-
-    .months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .month-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
-    .month-name { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 8px; }
-    .month-total { font-size: 18px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
-    .month-bar { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
-    .month-bar-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--amber)); border-radius: 4px; transition: width 0.5s; }
-
-    .stats-edit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-
-    .ld-empty { text-align: center; color: var(--muted); padding: 20px; font-size: 12px; }
-
-    .btn-primary {
-        background: linear-gradient(135deg, var(--orange), var(--amber));
-        color: #190702; border: none; padding: 10px 20px;
-        border-radius: 999px; font-size: 12px; font-weight: 800;
-        cursor: pointer; transition: all 0.2s;
-    }
-    .btn-ghost {
-        background: transparent; color: var(--muted);
-        border: 1px solid var(--line-2); padding: 10px 20px;
-        border-radius: 999px; font-size: 12px; font-weight: 700;
-        cursor: pointer; transition: all 0.2s;
-    }
-    .btn-ghost:hover { border-color: var(--orange); color: var(--orange); }
-
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.8); display: flex;
-        align-items: center; justify-content: center; z-index: 1000; padding: 20px;
-    }
-    .modal-content {
-        background: linear-gradient(180deg, #1a0d0d 0%, #120909 100%);
-        border: 1px solid var(--line); border-radius: 20px;
-        width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
-    }
-    .modal-header {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 20px 24px; border-bottom: 1px solid var(--line);
-    }
-    .modal-header h3 { font-family: var(--font-display); font-size: 22px; margin: 0; color: var(--white); }
-    .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
-    .modal-form { padding: 24px; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-    .form-input { width: 100%; background: linear-gradient(180deg,#1c0d0a,#120909); border: 1px solid var(--line-warm); border-radius: 10px; padding: 12px 16px; color: var(--white); font-size: 14px; }
-    .form-select { width: 100%; background: linear-gradient(180deg,#1c0d0a,#120909); border: 1px solid var(--line-warm); border-radius: 10px; padding: 12px 16px; color: var(--white); font-size: 14px; }
-    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
-
-    .agent-search-results { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
-    .agent-result { display: flex; align-items: center; gap: 10px; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-    .agent-result:hover { border-color: var(--orange); }
-    .agent-avatar-sm { width: 32px; height: 32px; border-radius: 50%; background: var(--orange); color: #190702; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
-
-    .perm-panel-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .perm-panel { background: linear-gradient(180deg, #1a0d0d 0%, #120909 100%); border: 1px solid var(--line); border-radius: 20px; width: 100%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
-    .perm-panel-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line); }
-    .perm-panel-header h3 { font-family: var(--font-display); font-size: 18px; margin: 0; color: var(--white); }
-    .perm-panel-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
-    .perm-panel-desc { font-size: 12px; color: var(--muted); padding: 16px 24px; margin: 0; }
-    .perm-panel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; padding: 0 24px; }
-    .perm-panel-actions { display: flex; gap: 12px; justify-content: flex-end; padding: 20px 24px; border-top: 1px solid var(--line); margin-top: 16px; }
-
-    @media (max-width: 768px) {
-        .sales-kpis { grid-template-columns: repeat(2, 1fr); }
-        .months-grid { grid-template-columns: 1fr; }
-        .stats-edit-grid { grid-template-columns: 1fr; }
+@media (max-width: 900px) {
+    .info-grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .kpi-grid    { grid-template-columns: repeat(2, 1fr); }
+    .months-grid { grid-template-columns: 1fr; }
 }
-    </style>
+@media (max-width: 600px) {
+    .info-grid-4 { grid-template-columns: 1fr; }
+    .kpi-grid    { grid-template-columns: 1fr; }
+    .agent-hero-card { flex-direction: column; text-align: center; }
+    .agent-hero-stat { text-align: center; }
+}
+</style>
+
 </div>

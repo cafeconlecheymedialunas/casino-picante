@@ -1,5 +1,9 @@
 <div class="page-container">
     <style>
+        .ag-perm-chip { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid transparent; cursor:pointer; transition:all .15s; }
+        .ag-perm-chip:hover { border-color:var(--orange) !important; }
+        .ag-perm-on  { background:rgba(255,106,26,.12); border-color:rgba(255,106,26,.35) !important; color:var(--orange); }
+        .ag-perm-off { background:rgba(255,255,255,.03); border-color:var(--line) !important; color:var(--muted); }
         .agents-page { display: flex; flex-direction: column; gap: 18px; }
         .header-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .search-input, .filter-select, .form-input {
@@ -334,46 +338,60 @@
                                 @endif
                             </div>
 
+                            @php
+                            $permChipMeta = [
+                                \App\Support\Permissions::NEWS_READ         => ['fa-solid fa-newspaper',        'Ver novedades'],
+                                \App\Support\Permissions::NEWS_CREATE       => ['fa-solid fa-file-circle-plus', 'Crear novedades'],
+                                \App\Support\Permissions::NEWS_UPDATE       => ['fa-solid fa-pen-to-square',    'Editar novedades'],
+                                \App\Support\Permissions::TICKET_READ       => ['fa-solid fa-ticket',           'Ver tickets'],
+                                \App\Support\Permissions::TICKET_UPDATE     => ['fa-solid fa-ticket-simple',    'Editar tickets'],
+                                \App\Support\Permissions::BONO_READ         => ['fa-solid fa-gift',             'Ver bonos'],
+                                \App\Support\Permissions::SORTEO_READ       => ['fa-solid fa-dice',             'Ver sorteos'],
+                                \App\Support\Permissions::LINE_EDIT         => ['fa-solid fa-sliders',          'Editar línea'],
+                                \App\Support\Permissions::AGENT_ASSIGN      => ['fa-solid fa-user-plus',        'Asignar agentes'],
+                                \App\Support\Permissions::AGENT_PERMISSIONS => ['fa-solid fa-shield-halved',    'Gestionar permisos'],
+                            ];
+                            @endphp
                             @if($permEditAgentId === $detailAgent->id && $permEditLineId === $assignedLine->id)
                                 @if(empty($permEditAvailable))
-                                    <div style="color: var(--muted-2); font-size: 12px; padding: 6px 0;">Esta linea no tiene permisos configurados. Configuralos en la seccion Lineas.</div>
+                                    <div style="color:var(--muted-2);font-size:12px;padding:6px 0">Esta línea no tiene permisos configurados. Configuralos en la sección Líneas.</div>
                                 @else
-                                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px;">
-                                        @foreach($permissionCatalog as $resource => $actions)
-                                            @php
-                                                $intersect = array_values(array_intersect($actions, $permEditAvailable));
-                                            @endphp
-                                            @if(!empty($intersect))
-                                                <div>
-                                                    <div style="font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--muted-2); text-transform: uppercase; margin-bottom: 5px;">{{ $resource }}</div>
-                                                    <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                                                        @foreach($intersect as $perm)
-                                                            @php $action = substr(strrchr($perm, '.'), 1); @endphp
-                                                            <label style="display: flex; align-items: center; gap: 5px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 5px; cursor: pointer; font-size: 11px; background: rgba(255,255,255,.03);">
-                                                                <input type="checkbox" wire:model="permEditSelected" value="{{ $perm }}" style="accent-color: var(--orange);">
-                                                                {{ $action }}
-                                                            </label>
-                                                        @endforeach
-                                                    </div>
-                                                </div>
+                                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:10px">
+                                        @foreach($permChipMeta as $perm => [$icon, $label])
+                                            @if(in_array($perm, $permEditAvailable))
+                                            @php $on = in_array($perm, $permEditSelected ?? []); @endphp
+                                            <label class="ag-perm-chip {{ $on ? 'ag-perm-on' : 'ag-perm-off' }}">
+                                                <input type="checkbox" wire:model="permEditSelected" value="{{ $perm }}" style="display:none">
+                                                <i class="{{ $icon }}"></i>
+                                                <span>{{ $label }}</span>
+                                                @if($on)<i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>@endif
+                                            </label>
                                             @endif
                                         @endforeach
                                     </div>
-                                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
-                                        <button wire:click="closePermissions" class="btn-ghost" style="font-size: 12px;">Cancelar</button>
-                                        <button wire:click="savePermissions" class="btn-primary" style="font-size: 12px;">Guardar permisos</button>
+                                    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                                        <button wire:click="closePermissions" class="btn-ghost" style="font-size:12px">Cancelar</button>
+                                        <button wire:click="savePermissions" class="btn-primary" style="font-size:12px">
+                                            <i class="fa-solid fa-floppy-disk"></i> Guardar
+                                        </button>
                                     </div>
                                 @endif
                             @else
                                 @php $agentLinePerms = $detailAgent->linePermissionsFor($assignedLine->id); @endphp
                                 @if(!empty($agentLinePerms))
-                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                        @foreach($agentLinePerms as $perm)
-                                            <span style="padding: 2px 8px; background: rgba(255,106,26,.12); color: var(--orange); border-radius: 4px; font-size: 10px; font-weight: 700;">{{ $perm }}</span>
+                                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-top:6px">
+                                        @foreach($permChipMeta as $perm => [$icon, $label])
+                                            @if(in_array($perm, $agentLinePerms))
+                                            <div class="ag-perm-chip ag-perm-on">
+                                                <i class="{{ $icon }}"></i>
+                                                <span>{{ $label }}</span>
+                                                <i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>
+                                            </div>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @else
-                                    <div style="color: var(--muted-2); font-size: 11px;">Sin permisos asignados</div>
+                                    <div style="color:var(--muted-2);font-size:11px;padding:4px 0">Sin permisos asignados</div>
                                 @endif
                             @endif
                         </div>
