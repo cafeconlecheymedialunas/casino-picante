@@ -48,6 +48,12 @@
         textarea.form-input { resize:vertical; min-height:84px; }
         .form-error { margin-top:4px; color:#ff4757; font-size:11px; }
         .check-row { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; font-weight:700; margin-top:8px; }
+        .form-section-title { font-size:10px; font-weight:800; color:var(--orange); letter-spacing:.1em; text-transform:uppercase; margin:18px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+        .type-btn { flex:1; height:36px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; background:rgba(255,255,255,.04); border:1px solid var(--line-2); color:var(--muted); transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px; }
+        .type-btn.active { background:rgba(255,106,26,.15); color:var(--orange); border-color:rgba(255,106,26,.5); }
+        .input-suffix-wrap { position:relative; }
+        .input-suffix-wrap .form-input { padding-right:36px; }
+        .input-suffix { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:13px; font-weight:700; color:var(--muted); pointer-events:none; }
         .assignments { grid-column:1 / -1; padding:10px 18px 14px; background:rgba(0,0,0,.18); border-bottom:1px solid var(--line); }
         .assignment-row { display:grid; grid-template-columns:1fr 130px 120px; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:12px; }
         @media (max-width:900px) { .stats-grid,.form-grid{grid-template-columns:1fr;} .search-input{width:100%;} .assignment-row{grid-template-columns:1fr;} }
@@ -205,31 +211,80 @@
                     </div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Linea disponible</label>
-                            <select wire:model="lineId" class="form-input">
-                                <option value="">Elegir linea</option>
-                                @foreach($lines as $line)
-                                    <option value="{{ $line->id }}">{{ $line->name }}</option>
+                            <label class="form-label">Plataforma</label>
+                            <select wire:model="platformId" class="form-input">
+                                <option value="">Todas las plataformas</option>
+                                @foreach($platforms as $platform)
+                                    <option value="{{ $platform->id }}">{{ $platform->name }}</option>
                                 @endforeach
                             </select>
-                            @error('lineId') <div class="form-error">{{ $message }}</div> @enderror
+                            @error('platformId') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group">
                             <label class="form-label">Estado</label>
                             <div class="form-input" style="color:var(--muted);">
-                                Se calcula por fecha: activo, proximo o vencido.
+                                Se calcula por fecha: activo, próximo o vencido.
                             </div>
                         </div>
                     </div>
+                    {{-- Tipo de bono --}}
+                    <div class="form-group">
+                        <label class="form-label">Tipo</label>
+                        <div x-data style="display:flex;gap:6px;">
+                            <button type="button"
+                                wire:click="$set('bonusType','general')"
+                                class="type-btn {{ $bonusType === 'general' ? 'active' : '' }}">
+                                <i class="fa-solid fa-globe"></i> General
+                            </button>
+                            <button type="button"
+                                wire:click="$set('bonusType','specific')"
+                                class="type-btn {{ $bonusType === 'specific' ? 'active' : '' }}">
+                                <i class="fa-solid fa-user"></i> Específico
+                            </button>
+                        </div>
+                    </div>
+                    @if($bonusType === 'specific')
+                    <div class="form-group">
+                        <label class="form-label">Usuario</label>
+                        <input type="text" wire:model="specificUsername" class="form-input" placeholder="Email o username del cliente">
+                        @error('specificUsername') <div class="form-error">{{ $message }}</div> @enderror
+                    </div>
+                    @endif
+
+                    {{-- Valor del bono --}}
+                    <div class="form-section-title">Valor del bono</div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">% de bonificación</label>
+                            <div class="input-suffix-wrap">
+                                <input type="number" wire:model="bonusPercent" class="form-input" placeholder="Ej: 100" min="0" max="100" step="0.01">
+                                <span class="input-suffix">%</span>
+                            </div>
+                            @error('bonusPercent') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Depósito mínimo</label>
+                            <input type="number" wire:model="minDeposit" class="form-input" placeholder="0.00" min="0" step="0.01">
+                            @error('minDeposit') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Bonus máximo</label>
+                            <input type="number" wire:model="maxBonus" class="form-input" placeholder="0.00 (sin límite)" min="0" step="0.01">
+                            @error('maxBonus') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+
+                    {{-- Cantidades --}}
+                    <div class="form-section-title">Disponibilidad</div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label">Cant. bonos disponibles</label>
-                            <input type="number" wire:model="totalQuantity" class="form-input" placeholder="Monto">
+                            <input type="number" wire:model="totalQuantity" class="form-input" placeholder="Cantidad" @disabled($unlimitedQuantity)>
                             <label class="check-row"><input type="checkbox" wire:model.live="unlimitedQuantity"> Ilimitados</label>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Veces por cliente</label>
-                            <input type="number" wire:model="perUserLimit" class="form-input" placeholder="Monto">
+                            <input type="number" wire:model="perUserLimit" class="form-input" placeholder="1" @disabled($unlimitedPerUser)>
                             <label class="check-row"><input type="checkbox" wire:model.live="unlimitedPerUser"> Ilimitado por cliente</label>
                         </div>
                     </div>
@@ -257,13 +312,8 @@
                             @error('assignUsername') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Linea que otorga</label>
-                            <select wire:model="assignLineId" class="form-input">
-                                @foreach($lines as $line)
-                                    <option value="{{ $line->id }}">{{ $line->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('assignLineId') <div class="form-error">{{ $message }}</div> @enderror
+                            <label class="form-label">Línea que otorga</label>
+                            <div class="form-input" style="color:var(--muted);">{{ $selectedBonus->line->name ?? '—' }}</div>
                         </div>
                     </div>
                     <div class="flash-message">Bono: {{ $selectedBonus->code }} - {{ $selectedBonus->title }}</div>

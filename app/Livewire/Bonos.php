@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Bonus;
 use App\Models\BonusAssignment;
 use App\Models\Line;
+use App\Models\Platform;
 use App\Models\User;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
@@ -55,6 +56,18 @@ class Bonos extends Component
 
     public string $perUserLimit = '1';
 
+    public string $platformId = '';
+
+    public string $bonusType = 'general';
+
+    public string $specificUsername = '';
+
+    public string $bonusPercent = '';
+
+    public string $minDeposit = '';
+
+    public string $maxBonus = '';
+
     public string $assignUsername = '';
 
     public string $assignLineId = '';
@@ -73,6 +86,12 @@ class Bonos extends Component
             'lineId' => 'required|integer|exists:lines,id',
             'totalQuantity' => 'nullable|integer|min:0',
             'perUserLimit' => 'nullable|integer|min:1',
+            'platformId' => 'nullable|integer|exists:platforms,id',
+            'bonusType' => 'required|in:general,specific',
+            'specificUsername' => 'nullable|required_if:bonusType,specific',
+            'bonusPercent' => 'nullable|numeric|min:0|max:100',
+            'minDeposit' => 'nullable|numeric|min:0',
+            'maxBonus' => 'nullable|numeric|min:0',
         ];
     }
 
@@ -101,6 +120,12 @@ class Bonos extends Component
         $this->endTime = $bonus->end_date?->format('H:i') ?? '23:59';
         $this->status = Bonus::statusForPeriod($bonus->start_date, $bonus->end_date);
         $this->lineId = (string) $bonus->line_id;
+        $this->platformId = (string) ($bonus->platform_id ?? '');
+        $this->bonusType = $bonus->type ?? 'general';
+        $this->specificUsername = $bonus->user?->username ?? $bonus->user?->email ?? '';
+        $this->bonusPercent = $bonus->bonus_percent > 0 ? (string) $bonus->bonus_percent : '';
+        $this->minDeposit = $bonus->min_deposit > 0 ? (string) $bonus->min_deposit : '';
+        $this->maxBonus = $bonus->max_bonus > 0 ? (string) $bonus->max_bonus : '';
         $this->unlimitedQuantity = $bonus->total_quantity === null;
         $this->totalQuantity = $bonus->total_quantity === null ? '' : (string) $bonus->total_quantity;
         $this->unlimitedPerUser = $bonus->per_user_limit === null;
@@ -142,6 +167,12 @@ class Bonos extends Component
             'end_date' => $end,
             'status' => Bonus::statusForPeriod($start, $end),
             'line_id' => (int) $this->lineId,
+            'platform_id' => $this->platformId ? (int) $this->platformId : null,
+            'type' => $this->bonusType,
+            'user_id' => $this->bonusType === 'specific' ? optional(User::where('email', $this->specificUsername)->orWhere('username', $this->specificUsername)->first())->id : null,
+            'bonus_percent' => $this->bonusPercent !== '' ? (float) $this->bonusPercent : 0,
+            'min_deposit' => $this->minDeposit !== '' ? (float) $this->minDeposit : 0,
+            'max_bonus' => $this->maxBonus !== '' ? (float) $this->maxBonus : 0,
             'total_quantity' => $this->unlimitedQuantity ? null : (int) $this->totalQuantity,
             'per_user_limit' => $this->unlimitedPerUser ? null : (int) ($this->perUserLimit ?: 1),
         ];
@@ -271,8 +302,8 @@ class Bonos extends Component
         return view('livewire.bonos', [
             'bonuses' => $this->bonuses(),
             'metrics' => $this->metrics(),
-            'lines' => $this->availableLines(),
-            'selectedBonus' => $this->selectedBonusId ? Bonus::withoutGlobalScopes()->find($this->selectedBonusId) : null,
+            'platforms' => Platform::orderBy('name')->get(),
+            'selectedBonus' => $this->selectedBonusId ? Bonus::withoutGlobalScopes()->with('line')->find($this->selectedBonusId) : null,
             'canCreateBonus' => $this->hasLinePermission(Permissions::BONO_CREATE),
         ])->layout('layouts.dashboard');
     }
@@ -288,6 +319,12 @@ class Bonos extends Component
         $this->endTime = '23:59';
         $this->status = 'active';
         $this->lineId = '';
+        $this->platformId = '';
+        $this->bonusType = 'general';
+        $this->specificUsername = '';
+        $this->bonusPercent = '';
+        $this->minDeposit = '';
+        $this->maxBonus = '';
         $this->unlimitedQuantity = true;
         $this->totalQuantity = '';
         $this->unlimitedPerUser = false;
