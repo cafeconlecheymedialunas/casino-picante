@@ -70,14 +70,25 @@
                     <i class="fa-solid fa-comments" style="color:var(--orange);margin-right:8px"></i>
                     Comentarios
                 </span>
-                @php $pendingCount = $post->comments->where('is_approved', false)->count(); @endphp
+                @php $pendingCount = collect($comments)->where('is_approved', false)->count(); @endphp
                 @if($pendingCount)
                 <span class="nv-badge-pending">{{ $pendingCount }} pendiente{{ $pendingCount > 1 ? 's' : '' }}</span>
                 @endif
             </div>
 
             <div class="be-comments">
-                @forelse($post->comments as $comment)
+                <form wire:submit.prevent="addComment" class="be-new-comment">
+                    <textarea wire:model="newComment" rows="2" placeholder="Escribir comentario como staff..."
+                        class="form-input" style="resize:none;font-size:13px;"></textarea>
+                    @error('newComment') <div class="form-error">{{ $message }}</div> @enderror
+                    <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+                        <button type="submit" class="btn-primary" style="height:30px;font-size:11px;padding:0 14px;">
+                            <i class="fa-solid fa-paper-plane"></i> Comentar
+                        </button>
+                    </div>
+                </form>
+
+                @forelse($comments as $comment)
                 <div class="nv-comment {{ !$comment->is_approved ? 'pending' : '' }}">
                     <div class="nv-comment-head">
                         <div style="display:flex;align-items:center;gap:8px;">
@@ -187,5 +198,6 @@
     .nv-comment-btn.delete { background:rgba(255,71,87,.12);color:#ff4757;border:1px solid rgba(255,71,87,.3); }
     .nv-reply { margin-top:10px;margin-left:36px;padding:10px 12px;border-radius:8px;background:rgba(255,106,26,.05);border-left:2px solid rgba(255,106,26,.4); }
     .nv-reply-form { margin-top:10px;margin-left:36px; }
+    .be-new-comment { padding:12px 16px;border-bottom:1px solid var(--line);margin-bottom:4px; }
 </style>
 </div>

@@ -26,6 +26,10 @@ class BlogEdit extends Component
 
     public $replyTo = null;
     public $replyContent = '';
+    public $newComment = '';
+
+    // Loaded separately to bypass Post::comments() is_approved filter
+    public $comments = [];
 
     protected $rules = [
         'title'   => 'required|min:3',
@@ -37,17 +41,15 @@ class BlogEdit extends Component
     public function mount(int $id): void
     {
         $this->checkLinePermission(Permissions::NEWS_UPDATE);
-        $this->post = Post::with([
-            'comments' => fn($q) => $q->whereNull('parent_id')
-                ->with(['user', 'replies.user'])
-                ->orderBy('created_at'),
-        ])->findOrFail($id);
+        $this->post = Post::findOrFail($id);
 
         $this->title   = $this->post->title;
         $this->content = $this->post->content ?? '';
         $this->excerpt = $this->post->excerpt ?? '';
         $this->status  = $this->post->status;
         $this->image   = $this->post->image ?? '';
+
+        $this->refreshComments();
     }
 
     public function savePost(): void
@@ -105,6 +107,10 @@ class BlogEdit extends Component
 
     public function submitReply(): void
     {
+        if (! $this->replyTo) {
+            return;
+        }
+
         $this->checkLinePermission(Permissions::NEWS_UPDATE);
 
         $this->validate(['replyContent' => 'required|string|min:1|max:2000']);
@@ -138,13 +144,30 @@ class BlogEdit extends Component
         $this->refreshComments();
     }
 
+    public function addComment(): void
+    {
+        $this->checkLinePermission(Permissions::NEWS_UPDATE);
+
+        $this->validate(['newComment' => 'required|string|min:1|max:2000']);
+
+        Comment::create([
+            'post_id'     => $this->post->id,
+            'user_id'     => auth()->id(),
+            'content'     => $this->newComment,
+            'is_approved' => true,
+        ]);
+
+        $this->newComment = '';
+        $this->refreshComments();
+    }
+
     private function refreshComments(): void
     {
-        $this->post = $this->post->fresh([
-            'comments' => fn($q) => $q->whereNull('parent_id')
-                ->with(['user', 'replies.user'])
-                ->orderBy('created_at'),
-        ]);
+        $this->comments = Comment::where('post_id', $this->post->id)
+            ->whereNull('parent_id')
+            ->with(['user', 'replies.user'])
+            ->orderBy('created_at')
+            ->get();
     }
 
     public function render()
