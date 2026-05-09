@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bonus extends Model
 {
-    public const CLAIMED_STATUSES = ['used', 'claimed'];
+    public const CLAIMED_STATUSES = ['used'];
 
-    public const CONSUMED_STATUSES = ['active', 'used', 'claimed', 'available'];
+    public const CONSUMED_STATUSES = ['active', 'used'];
 
     protected static function booted(): void
     {
