@@ -73,8 +73,6 @@ class Sorteos extends Component
 
     public string $winner_number = '';
 
-    public array $winnerPrizes = [];
-
     public string $numbersSearch = '';
 
     public string $participantsSearch = '';
@@ -135,10 +133,6 @@ class Sorteos extends Component
             'position' => (string) ($prize['position'] ?? ''),
             'name' => $prize['name'] ?? '',
             'image' => $prize['image'] ?? '',
-            'winner_number' => $prize['winner_number'] ?? '',
-            'winner_user_id' => $prize['winner_user_id'] ?? null,
-            'winner_line_id' => $prize['winner_line_id'] ?? null,
-            'winner_participations_count' => $prize['winner_participations_count'] ?? null,
         ])->values()->toArray();
         $this->prizeUploads = [];
 
@@ -264,16 +258,6 @@ class Sorteos extends Component
         $this->participantsSearch = '';
         $this->participantsLineFilter = 'all';
         $this->selectedNumbers = [];
-    }
-
-    public function updatedWinnerPrizes(): void
-    {
-        $this->winnerPrizes = collect($this->winnerPrizes)
-            ->map(fn ($prize) => array_merge($prize, [
-                'winner_number' => trim((string) ($prize['winner_number'] ?? '')),
-            ]))
-            ->values()
-            ->toArray();
     }
 
     public function clearSelectedNumbers(): void
@@ -455,20 +439,6 @@ class Sorteos extends Component
         $this->selectedRaffleId = $raffleId;
         $this->winner_user_id = (string) ($raffle->winner_user_id ?? '');
         $this->winner_number = (string) ($raffle->winner_number ?? '');
-        $this->winnerPrizes = collect($raffle->prizes ?? [])
-            ->map(fn ($prize, $index) => [
-                'position' => (int) ($prize['position'] ?? $index + 1),
-                'name' => $prize['name'] ?? '',
-                'image' => $prize['image'] ?? null,
-                'winner_number' => (string) ($prize['winner_number'] ?? ''),
-            ])
-            ->values()
-            ->toArray();
-
-        if (empty($this->winnerPrizes)) {
-            $this->winnerPrizes = [['position' => 1, 'name' => 'Premio principal', 'image' => null, 'winner_number' => (string) ($raffle->winner_number ?? '')]];
-        }
-
         $this->showWinnerModal = true;
     }
 
@@ -476,58 +446,24 @@ class Sorteos extends Component
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $this->validate([
-            'winnerPrizes' => 'array',
-            'winnerPrizes.*.winner_number' => 'nullable|integer',
+            'winner_user_id' => 'nullable|exists:users,id',
+            'winner_number' => 'nullable|integer',
         ]);
 
-        $raffle = Raffle::with('numbers.user', 'numbers.line')->findOrFail($this->selectedRaffleId);
-        $numbersByValue = $raffle->numbers->keyBy('number');
-        $firstWinnerUserId = null;
-        $firstWinnerNumber = null;
-
-        $prizes = collect($raffle->prizes ?? [])
-            ->values()
-            ->map(function ($prize, $index) use ($raffle, $numbersByValue, &$firstWinnerUserId, &$firstWinnerNumber) {
-                $winnerNumber = trim((string) ($this->winnerPrizes[$index]['winner_number'] ?? ''));
-                $numberModel = $winnerNumber !== '' ? $numbersByValue->get((int) $winnerNumber) : null;
-
-                $result = [
-                    'position' => (int) ($prize['position'] ?? $index + 1),
-                    'name' => $prize['name'] ?? '',
-                    'image' => $prize['image'] ?? null,
-                    'winner_number' => $winnerNumber !== '' ? (int) $winnerNumber : null,
-                    'winner_user_id' => $numberModel?->user_id,
-                    'winner_line_id' => $numberModel?->line_id,
-                    'winner_username' => $numberModel?->user?->username,
-                    'winner_name' => $numberModel?->user?->name,
-                    'winner_line_name' => $numberModel?->line?->name,
-                    'winner_participations_count' => $numberModel
-                        ? $raffle->numbers->where('user_id', $numberModel->user_id)->count()
-                        : null,
-                    'winner_awarded_at' => $winnerNumber !== '' ? now()->toDateTimeString() : null,
-                ];
-
-                if ($numberModel && ! $firstWinnerUserId) {
-                    $firstWinnerUserId = (int) $numberModel->user_id;
-                    $firstWinnerNumber = (int) $winnerNumber;
-                }
-
-                return $result;
-            })
-            ->toArray();
-
-        $raffle->update([
-            'prizes' => $prizes,
-            'winner_user_id' => $firstWinnerUserId,
-            'winner_number' => $firstWinnerNumber,
+        Raffle::where('id', $this->selectedRaffleId)->update([
+            'winner_user_id' => $this->winner_user_id ?: null,
+            'winner_number' => $this->winner_number ?: null,
         ]);
 
         $this->showWinnerModal = false;
-        $this->winnerPrizes = [];
-        session()->flash('message', 'Resultados registrados');
+        session()->flash('message', 'Ganador registrado');
 
-        $this->notify('Resultados registrados',
-            "Se cargaron los resultados del sorteo {$raffle->title}.",
+        $raffle = Raffle::find($this->selectedRaffleId);
+        $winner = $this->winner_user_id ? User::find($this->winner_user_id) : null;
+
+        $this->notify('Ganador registrado', $winner
+            ? "{$winner->name} gano el sorteo {$raffle->title} con el numero {$this->winner_number}."
+            : "Se registro un ganador para el sorteo {$raffle->title}.",
             'raffles', '/sorteos', 'success');
     }
 
@@ -630,14 +566,6 @@ class Sorteos extends Component
                     'position' => (int) ($prize['position'] ?? $index + 1),
                     'name' => trim($prize['name'] ?? ''),
                     'image' => $image ?: null,
-                    'winner_number' => isset($prize['winner_number']) && $prize['winner_number'] !== '' ? (int) $prize['winner_number'] : null,
-                    'winner_user_id' => $prize['winner_user_id'] ?? null,
-                    'winner_line_id' => $prize['winner_line_id'] ?? null,
-                    'winner_username' => $prize['winner_username'] ?? null,
-                    'winner_name' => $prize['winner_name'] ?? null,
-                    'winner_line_name' => $prize['winner_line_name'] ?? null,
-                    'winner_participations_count' => $prize['winner_participations_count'] ?? null,
-                    'winner_awarded_at' => $prize['winner_awarded_at'] ?? null,
                 ];
             })
             ->filter(fn ($prize) => $prize['position'] > 0 && $prize['name'] !== '')
@@ -657,14 +585,6 @@ class Sorteos extends Component
                 'position' => $prize['position'] ?? '',
                 'name' => trim($prize['name'] ?? ''),
                 'image' => $prize['image'] ?? '',
-                'winner_number' => $prize['winner_number'] ?? '',
-                'winner_user_id' => $prize['winner_user_id'] ?? null,
-                'winner_line_id' => $prize['winner_line_id'] ?? null,
-                'winner_username' => $prize['winner_username'] ?? null,
-                'winner_name' => $prize['winner_name'] ?? null,
-                'winner_line_name' => $prize['winner_line_name'] ?? null,
-                'winner_participations_count' => $prize['winner_participations_count'] ?? null,
-                'winner_awarded_at' => $prize['winner_awarded_at'] ?? null,
             ];
 
             if ($normalized['name'] === '' && $normalized['image'] === '' && ! $upload) {
