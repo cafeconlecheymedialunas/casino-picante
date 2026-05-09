@@ -21,3 +21,8 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+# Local / IDE
+.claude/
+public/.user.ini
+nul
+storage/livewire-tmp-fallback/
