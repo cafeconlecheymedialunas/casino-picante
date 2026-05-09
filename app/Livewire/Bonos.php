@@ -72,6 +72,8 @@ class Bonos extends Component
 
     public string $assignLineId = '';
 
+    public array $assignUserIds = [];
+
     protected function rules(): array
     {
         return [
@@ -211,64 +213,59 @@ class Bonos extends Component
         $this->selectedBonusId = null;
         $this->assignUsername = '';
         $this->assignLineId = '';
+        $this->assignUserIds = [];
     }
 
     public function assignToUser(): void
     {
         $this->checkLinePermission(Permissions::BONO_READ);
-        $this->validate([
-            'assignUsername' => 'required|string|min:2',
-            'assignLineId' => 'required|integer|exists:lines,id',
-        ]);
+
+        if (empty($this->assignUserIds)) {
+            $this->addError('assignUserIds', 'Seleccioná al menos un usuario.');
+            return;
+        }
+
         $this->authorizeLineChoice((int) $this->assignLineId);
 
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($this->selectedBonusId);
         $bonus->updateStatus();
 
         if ($bonus->status !== 'active') {
-            $this->addError('assignUsername', 'Solo se pueden otorgar bonos activos.');
-
+            $this->addError('assignUserIds', 'Solo se pueden otorgar bonos activos.');
             return;
         }
 
-        $user = User::where('username', $this->assignUsername)
-            ->orWhere('email', $this->assignUsername)
-            ->first();
+        $assigned = [];
+        $skipped  = [];
 
-        if (! $user) {
-            $this->addError('assignUsername', 'No existe un usuario con ese username o email.');
+        foreach ($this->assignUserIds as $userId) {
+            $user = User::find($userId);
+            if (! $user) {
+                continue;
+            }
 
-            return;
+            if (! $bonus->canUserClaim($user->id)) {
+                $skipped[] = $user->username ?? $user->email;
+                continue;
+            }
+
+            BonusAssignment::create([
+                'bonus_id'    => $bonus->id,
+                'user_id'     => $user->id,
+                'status'      => 'active',
+                'assigned_at' => now(),
+            ]);
+
+            $assigned[] = $user->username ?? $user->email;
         }
 
-        if ((int) $bonus->line_id !== (int) $this->assignLineId) {
-            $this->addError('assignLineId', 'Ese bono no pertenece a la linea elegida.');
-
-            return;
+        $msg = 'Bono otorgado a ' . implode(', ', $assigned) . '.';
+        if ($skipped) {
+            $msg .= ' Omitidos (límite alcanzado): ' . implode(', ', $skipped) . '.';
         }
 
-        if (! $this->clientBelongsToLine($user, (int) $this->assignLineId)) {
-            $this->addError('assignUsername', 'El usuario no pertenece a la linea elegida.');
-
-            return;
-        }
-
-        if (! $bonus->canUserClaim($user->id)) {
-            $this->addError('assignUsername', 'El usuario ya alcanzo el limite de uso para este bono.');
-
-            return;
-        }
-
-        BonusAssignment::create([
-            'bonus_id' => $bonus->id,
-            'user_id' => $user->id,
-            'status' => 'active',
-            'assigned_at' => now(),
-        ]);
-
-        session()->flash('message', 'Bono otorgado a '.$user->username.'.');
-
-        $this->notify('Bono asignado', "El bono {$bonus->title} fue asignado a {$user->username}.", 'bonuses', '/bonos', 'success');
+        session()->flash('message', $msg);
+        $this->notify('Bono asignado', "El bono {$bonus->title} fue asignado a " . count($assigned) . ' usuario(s).', 'bonuses', '/bonos', 'success');
 
         $this->closeAssignModal();
     }
@@ -381,6 +378,20 @@ class Bonos extends Component
         if (! $this->availableLines()->pluck('id')->contains($lineId)) {
             abort(403, 'No podes operar bonos fuera de tus lineas.');
         }
+    }
+
+    public function getUsersForAssign(): array
+    {
+        $lineId = $this->selectedBonusId
+            ? (int) Bonus::withoutGlobalScopes()->find($this->selectedBonusId)?->line_id
+            : (int) session('active_line_id');
+
+        return User::where('line_id', $lineId)
+            ->orWhereHas('lines', fn($q) => $q->where('lines.id', $lineId)->wherePivot('is_active', true))
+            ->orderBy('username')
+            ->get(['id', 'username', 'email'])
+            ->map(fn($u) => ['id' => $u->id, 'label' => $u->username ?? $u->email])
+            ->toArray();
     }
 
     private function clientBelongsToLine(User $user, int $lineId): bool

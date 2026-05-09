@@ -54,6 +54,15 @@
         .input-suffix-wrap { position:relative; }
         .input-suffix-wrap .form-input { padding-right:36px; }
         .input-suffix { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:13px; font-weight:700; color:var(--muted); pointer-events:none; }
+        .ms-tags { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px; }
+        .ms-tag { display:inline-flex;align-items:center;gap:4px;background:rgba(255,106,26,.15);color:var(--orange);border:1px solid rgba(255,106,26,.4);border-radius:6px;padding:3px 8px;font-size:12px;font-weight:700; }
+        .ms-tag-remove { background:none;border:none;color:var(--orange);cursor:pointer;font-size:14px;line-height:1;padding:0 0 0 2px; }
+        .ms-dropdown { position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1c0e0e;border:1px solid var(--line-2);border-radius:10px;max-height:220px;overflow-y:auto;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,.5); }
+        .ms-option { padding:9px 14px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .15s; }
+        .ms-option:hover { background:rgba(255,255,255,.05); }
+        .ms-option.selected { background:rgba(255,106,26,.1);color:var(--orange); }
+        .ms-check { color:var(--orange);font-size:11px;width:14px; }
+        .ms-empty { padding:14px;text-align:center;color:var(--muted);font-size:13px; }
         .assignments { grid-column:1 / -1; padding:10px 18px 14px; background:rgba(0,0,0,.18); border-bottom:1px solid var(--line); }
         .assignment-row { display:grid; grid-template-columns:1fr 130px 120px; gap:10px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:12px; }
         @media (max-width:900px) { .stats-grid,.form-grid{grid-template-columns:1fr;} .search-input{width:100%;} .assignment-row{grid-template-columns:1fr;} }
@@ -299,27 +308,66 @@
 
     @if($showAssignModal && $selectedBonus)
         <div class="modal-overlay" wire:click.self="closeAssignModal">
-            <div class="modal-panel">
+            <div class="modal-panel"
+                 x-data="{
+                    search: '',
+                    open: false,
+                    users: @js($this->getUsersForAssign()),
+                    selected: @entangle('assignUserIds'),
+                    get filtered() { return this.search.length < 1 ? this.users : this.users.filter(u => u.label.toLowerCase().includes(this.search.toLowerCase())) },
+                    toggle(id) { const i = this.selected.indexOf(id); i === -1 ? this.selected.push(id) : this.selected.splice(i, 1) },
+                    isSelected(id) { return this.selected.includes(id) },
+                    labelFor(id) { const u = this.users.find(u => u.id === id); return u ? u.label : id }
+                 }"
+                 @click.outside="open = false">
                 <div class="modal-head">
                     <h3>OTORGAR BONO</h3>
                     <button class="modal-close" wire:click="closeAssignModal">x</button>
                 </div>
                 <form class="modal-form" wire:submit.prevent="assignToUser">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Username</label>
-                            <input type="text" wire:model="assignUsername" class="form-input" placeholder="username o email">
-                            @error('assignUsername') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Línea que otorga</label>
-                            <div class="form-input" style="color:var(--muted);">{{ $selectedBonus->line->name ?? '—' }}</div>
-                        </div>
+                    <div class="flash-message" style="margin-bottom:16px;">
+                        <i class="fa-solid fa-ticket" style="color:var(--orange);margin-right:6px"></i>
+                        {{ $selectedBonus->code }} — {{ $selectedBonus->title }}
+                        <span style="color:var(--muted);font-size:11px;margin-left:8px;">{{ $selectedBonus->line->name ?? '' }}</span>
                     </div>
-                    <div class="flash-message">Bono: {{ $selectedBonus->code }} - {{ $selectedBonus->title }}</div>
+
+                    <div class="form-group">
+                        <label class="form-label">Usuarios <span x-show="selected.length" x-text="'(' + selected.length + ' seleccionados)'" style="color:var(--orange)"></span></label>
+
+                        {{-- Tags de seleccionados --}}
+                        <div class="ms-tags" x-show="selected.length > 0">
+                            <template x-for="id in selected" :key="id">
+                                <span class="ms-tag">
+                                    <span x-text="labelFor(id)"></span>
+                                    <button type="button" @click="toggle(id)" class="ms-tag-remove">×</button>
+                                </span>
+                            </template>
+                        </div>
+
+                        {{-- Input buscador + dropdown --}}
+                        <div style="position:relative;">
+                            <input type="text" x-model="search" @focus="open = true" @click="open = true"
+                                placeholder="Buscar usuario..." class="form-input" autocomplete="off">
+                            <div class="ms-dropdown" x-show="open" x-transition>
+                                <template x-if="filtered.length === 0">
+                                    <div class="ms-empty">Sin resultados</div>
+                                </template>
+                                <template x-for="user in filtered" :key="user.id">
+                                    <div class="ms-option" :class="{ selected: isSelected(user.id) }" @click="toggle(user.id)">
+                                        <span class="ms-check" x-show="isSelected(user.id)"><i class="fa-solid fa-check"></i></span>
+                                        <span x-text="user.label"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        @error('assignUserIds') <div class="form-error">{{ $message }}</div> @enderror
+                    </div>
+
                     <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;">
                         <button type="button" wire:click="closeAssignModal" class="btn-soft">Cancelar</button>
-                        <button type="submit" class="btn-primary">Otorgar bono</button>
+                        <button type="submit" class="btn-primary" :disabled="selected.length === 0">
+                            Otorgar a <span x-text="selected.length || ''"></span> usuario<span x-show="selected.length !== 1">s</span>
+                        </button>
                     </div>
                 </form>
             </div>
