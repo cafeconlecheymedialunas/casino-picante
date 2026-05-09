@@ -23,7 +23,19 @@ class TemporaryUploadedFile extends UploadedFile
 
         $tmpFile = tmpfile();
 
-        parent::__construct(stream_get_meta_data($tmpFile)['uri'], $this->path);
+        if ($tmpFile === false) {
+            // tmpfile() fails on Windows when TEMP/TMP env vars aren't set (e.g. php artisan serve).
+            // Fall back to tempnam() with a known-writable directory.
+            $fallbackDir = storage_path('livewire-tmp-fallback');
+            if (!is_dir($fallbackDir)) {
+                mkdir($fallbackDir, 0755, true);
+            }
+            $tmpPath = tempnam($fallbackDir, 'lw_') ?: tempnam(getcwd(), 'lw_');
+        } else {
+            $tmpPath = stream_get_meta_data($tmpFile)['uri'];
+        }
+
+        parent::__construct($tmpPath, $this->path);
 
         // While running tests, update the last modified timestamp to the current
         // Carbon timestamp (which respects time traveling), because otherwise

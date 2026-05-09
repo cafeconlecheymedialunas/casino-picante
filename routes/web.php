@@ -98,6 +98,7 @@ Route::middleware('line.authorize')->group(function () {
     Route::get('/ventas/{line?}', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
 
     Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_READ)->name('lineas');
+    Route::get('/lineas/{id}/edit', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('lineas.edit');
     Route::get('/lineas/{id}', LineDetail::class)->middleware('line.authorize')->name('lineas.detail');
 
     Route::middleware('line.authorize:'.Permissions::PROMO_READ)->group(function () {
