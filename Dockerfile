@@ -1,7 +1,7 @@
 FROM php:8.2-fpm
 
 RUN apt-get update && apt-get install -y \
-    git curl unzip libpng-dev libonig-dev libxml2-dev libzip-dev libsqlite3-dev \
+    git curl unzip libpng-dev libonig-dev libxml2-dev libzip-dev libsqlite3-dev nodejs npm \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd
@@ -13,6 +13,8 @@ WORKDIR /var/www
 COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+
+RUN npm ci && npm run build && rm -rf node_modules
 
 RUN chmod -R 775 storage bootstrap/cache && chown -R www-data:www-data storage bootstrap/cache database
 
