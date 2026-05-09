@@ -478,48 +478,16 @@
                 </div>
 
                 {{-- Images --}}
-                @php
-                    try { $portadaPreview = $portadaUpload ? $portadaUpload->temporaryUrl() : $portada_url; } catch(\Throwable $e) { $portadaPreview = $portada_url; }
-                    try { $perfilPreview  = $perfilUpload  ? $perfilUpload->temporaryUrl()  : $perfil_url;  } catch(\Throwable $e) { $perfilPreview  = $perfil_url;  }
-                @endphp
                 <div class="preview-grid" style="margin-bottom:14px">
                     <div class="form-group">
-                        <label class="form-label">Portada <span style="color:var(--muted-2);font-size:10px;font-weight:400;text-transform:none">851×315 px</span></label>
-                        <label style="display:block;cursor:pointer;border:1px dashed var(--line-2);border-radius:8px;overflow:hidden;aspect-ratio:851/315;background:rgba(255,255,255,.03);transition:border-color .15s" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor=''">
-                            @if($portadaPreview)
-                                <img src="{{ $portadaPreview }}" style="width:100%;height:100%;object-fit:cover;display:block">
-                            @else
-                                <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted-2);font-size:12px;padding:16px">
-                                    <svg style="width:24px;height:24px;opacity:.4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 16.5l4.5-4.5 3 3 4-5 4 6.5"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                                    Clic para seleccionar portada
-                                </div>
-                            @endif
-                            <input type="file" wire:model="portadaUpload" accept="image/png,image/jpeg,image/webp,image/gif" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
-                        </label>
-                        <div wire:loading wire:target="portadaUpload" style="color:var(--orange);font-size:11px;margin-top:4px;font-weight:700">Subiendo...</div>
-                        @if($portada_url && !$portadaUpload)
-                            <button type="button" class="btn-soft btn-danger" wire:click="deleteImage('portada')" style="margin-top:4px;font-size:10px">Borrar portada</button>
-                        @endif
-                        @error('portadaUpload') <div class="form-error">{{ $message }}</div> @enderror
+                        <x-upload-image label="Portada" model="portadaUpload" :value="$portada_url" remove-action="deleteImage('portada')" aspect="851/315" hint="851×315 px">
+                            @error('portadaUpload') <div class="form-error">{{ $message }}</div> @enderror
+                        </x-upload-image>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Perfil <span style="color:var(--muted-2);font-size:10px;font-weight:400;text-transform:none">800×800 px</span></label>
-                        <label style="display:block;cursor:pointer;border:1px dashed var(--line-2);border-radius:8px;overflow:hidden;aspect-ratio:1;background:rgba(255,255,255,.03);transition:border-color .15s" onmouseover="this.style.borderColor='var(--orange)'" onmouseout="this.style.borderColor=''">
-                            @if($perfilPreview)
-                                <img src="{{ $perfilPreview }}" style="width:100%;height:100%;object-fit:cover;display:block">
-                            @else
-                                <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted-2);font-size:12px;padding:16px">
-                                    <svg style="width:24px;height:24px;opacity:.4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 16.5l4.5-4.5 3 3 4-5 4 6.5"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                                    Clic para seleccionar perfil
-                                </div>
-                            @endif
-                            <input type="file" wire:model="perfilUpload" accept="image/png,image/jpeg,image/webp,image/gif" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
-                        </label>
-                        <div wire:loading wire:target="perfilUpload" style="color:var(--orange);font-size:11px;margin-top:4px;font-weight:700">Subiendo...</div>
-                        @if($perfil_url && !$perfilUpload)
-                            <button type="button" class="btn-soft btn-danger" wire:click="deleteImage('perfil')" style="margin-top:4px;font-size:10px">Borrar perfil</button>
-                        @endif
-                        @error('perfilUpload') <div class="form-error">{{ $message }}</div> @enderror
+                        <x-upload-image label="Perfil" model="perfilUpload" :value="$perfil_url" remove-action="deleteImage('perfil')" aspect="1" icon="fa-solid fa-circle-user" hint="800×800 px">
+                            @error('perfilUpload') <div class="form-error">{{ $message }}</div> @enderror
+                        </x-upload-image>
                     </div>
                 </div>
 

@@ -50,7 +50,7 @@
             </div>
         </div>
         @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
-        <a href="{{ route('lineas') }}?edit={{ $line->id }}" class="btn-edit-hero">
+        <a href="{{ route('lineas.edit', $line->id) }}" class="btn-edit-hero">
             <i class="fa-solid fa-pen-to-square"></i> Editar línea
         </a>
         @endif

@@ -104,12 +104,13 @@ class Lineas extends Component
         ];
     }
 
-    public function mount(): void
+    public function mount(int $id = 0): void
     {
-        if ($editId = request()->query('edit')) {
-            $line = Line::find((int) $editId);
+        $editId = $id ?: (int) request()->query('edit');
+        if ($editId) {
+            $line = Line::find($editId);
             if ($line && $this->canManageLine($line)) {
-                $this->openEditModal((int) $editId);
+                $this->openEditModal($editId);
             }
         }
     }
@@ -133,11 +134,16 @@ class Lineas extends Component
 
     public function closeModal(): void
     {
+        $lineId = $this->editingLineId;
         $this->showModal = false;
         $this->editingLineId = null;
         $this->activeLineId = null;
         $this->closeAgentPermissions();
         $this->resetForm();
+
+        if ($lineId && request()->routeIs('lineas.edit')) {
+            $this->redirect(route('lineas.detail', $lineId));
+        }
     }
 
     public function switchTab(string $tab): void
