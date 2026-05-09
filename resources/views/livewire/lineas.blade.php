@@ -119,11 +119,31 @@
         .perm-check:has(input:checked) { border-color:var(--orange); background:rgba(255,106,26,.12); color:var(--orange); }
         .perm-check input { accent-color:var(--orange); }
 
+        .sales-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .kpi-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 12px; padding: 16px; text-align: center; }
+        .kpi-card.kpi-gold { border-color: rgba(255,215,0,0.3); }
+        .kpi-card.kpi-purple { border-color: rgba(147,112,219,0.3); }
+        .kpi-card.kpi-blue { border-color: rgba(70,130,255,0.3); }
+        .kpi-card.kpi-green { border-color: rgba(37,196,107,0.3); }
+        .kpi-icon { font-size: 28px; margin-bottom: 8px; }
+        .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 4px; }
+        .kpi-value { font-size: 16px; color: var(--white); font-weight: 700; margin-bottom: 4px; }
+        .kpi-amount { font-size: 20px; color: var(--orange); font-weight: 800; }
+        .kpi-empty { font-size: 13px; color: var(--muted); padding: 20px; }
+        .months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .month-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+        .month-name { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 8px; }
+        .month-total { font-size: 18px; color: var(--white); font-weight: 700; margin-bottom: 8px; }
+        .month-bar { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+        .month-bar-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--amber)); border-radius: 4px; transition: width 0.5s; }
+
         @media (max-width:1000px){
             .line-grid,.form-grid,.preview-grid,.stat-grid{ grid-template-columns:1fr; }
             .info-grid{ grid-template-columns:1fr 1fr; }
             .repeat-row,.sales-row{ grid-template-columns:1fr; }
             .search-input{ width:100%; }
+            .sales-kpis { grid-template-columns: repeat(2, 1fr); }
+            .months-grid { grid-template-columns: 1fr; }
         }
     </style>
 
@@ -703,85 +723,74 @@
         {{-- ── TAB: VENTAS ─────────────────────────────────────────────────── --}}
         @if($editTab === 'ventas' && $editingLineId)
         @php
-            $editPlatforms = $editSalesLine
-                ? ($editSalesLine->relationLoaded('platforms') ? $editSalesLine->getRelation('platforms') : $editSalesLine->platforms()->get())
-                : collect();
+            $editLine = Line::find($editingLineId);
+            if ($editLine) {
+                $bestMonth = \App\Services\SalesStats::bestMonthForLine($editLine);
+                $bestPlatform = \App\Services\SalesStats::bestPlatformForLineThisMonth($editLine);
+                $totalThisMonth = \App\Services\SalesStats::totalSalesForLineThisMonth($editLine);
+                $last3Months = \App\Services\SalesStats::last3MonthsSalesForLine($editLine);
+                $encargadoEarnings = \App\Services\SalesStats::encargadoEarningsForLineThisMonth($editLine);
+                $maxSales = max(array_column($last3Months, 'total'), 1);
+            }
         @endphp
         <div class="tab-content">
 
-            <form wire:submit.prevent="saveSale">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-                    <label class="form-label" style="margin:0;font-size:13px">{{ $editingSaleId ? 'Editando venta' : 'Registrar nueva venta' }}</label>
-                    @if($editingSaleId)
-                        <button type="button" class="btn-soft" wire:click="resetSalesForm">Cancelar</button>
+            @if($editLine)
+            <div class="sales-kpis">
+                <div class="kpi-card kpi-gold">
+                    <div class="kpi-icon">TROFEO</div>
+                    <div class="kpi-label">Mejor Mes</div>
+                    @if($bestMonth)
+                    <div class="kpi-value">{{ $bestMonth['nombre'] }} {{ $bestMonth['anio'] }}</div>
+                    <div class="kpi-amount">${{ number_format($bestMonth['total'], 2) }}</div>
+                    @else
+                    <div class="kpi-empty">Sin datos</div>
                     @endif
                 </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label">Plataforma <span style="color:var(--orange)">*</span></label>
-                        <select wire:model="salePlatformId" class="form-input">
-                            <option value="0">Elegir plataforma</option>
-                            @foreach($editPlatforms as $platform)
-                                <option value="{{ $platform->id }}">{{ $platform->name }}</option>
-                            @endforeach
-                        </select>
-                        @if($editPlatforms->isEmpty())
-                            <div style="margin-top:4px;color:var(--muted-2);font-size:11px">Seleccioná plataformas en la pestaña "Plataformas" primero.</div>
-                        @endif
-                        @error('salePlatformId') <div class="form-error">{{ $message }}</div> @enderror
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Fecha <span style="color:var(--orange)">*</span></label>
-                        <input type="date" wire:model="saleDate" class="form-input">
-                        @error('saleDate') <div class="form-error">{{ $message }}</div> @enderror
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Descripción <span style="color:var(--muted-2);font-size:10px;font-weight:400;text-transform:none">(opcional)</span></label>
-                    <input type="text" wire:model="saleDescripcion" class="form-input" placeholder="Ej: Recarga fichas mayo, bono bienvenida...">
-                    @error('saleDescripcion') <div class="form-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Cantidad <span style="color:var(--orange)">*</span></label>
-                    <input type="number" step="0.01" min="0" wire:model="saleMontoFichas" class="form-input" placeholder="0.00">
-                    @error('saleMontoFichas') <div class="form-error">{{ $message }}</div> @enderror
-                </div>
-
-                <div style="display:flex;justify-content:flex-end;padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid var(--line)">
-                    <button type="submit" class="btn-primary">{{ $editingSaleId ? 'Actualizar venta' : 'Registrar venta' }}</button>
-                </div>
-            </form>
-
-            <div>
-                <div class="form-label" style="margin-bottom:10px">Historial de ventas</div>
-                <div class="sales-table">
-                    @if($editSalesLine)
-                        @forelse($editSalesLine->sales()->with('platform')->orderByDesc('fecha')->get() as $sale)
-                            <div class="sales-row">
-                                <div style="color:var(--muted-2);font-family:var(--font-mono);font-size:11px">{{ $sale->fecha->format('d/m/Y') }}</div>
-                                <div>{{ $sale->platform?->name ?? '—' }}</div>
-                                <div style="color:var(--muted-2);font-size:11px">{{ $sale->descripcion ?? '—' }}</div>
-                                <div style="font-weight:700">${{ number_format((float)$sale->monto_fichas,2) }}</div>
-                                <div class="line-actions">
-                                    <button class="btn-icon" wire:click="openEditSaleInModal({{ $sale->id }})" title="Editar">
-                                        <svg class="mini-icon" viewBox="0 0 15 15"><path d="M10.5 2.5l2 2-8.5 8.5H2.5v-2l8.5-8.5z"/></svg>
-                                    </button>
-                                    <button class="btn-icon btn-danger" wire:click="deleteSale({{ $sale->id }})" wire:confirm="¿Eliminar esta venta?">
-                                        <svg class="mini-icon" viewBox="0 0 15 15"><path d="M3 3l9 9M12 3l-9 9"/></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-state">Todavía no hay ventas cargadas.</div>
-                        @endforelse
+                <div class="kpi-card kpi-purple">
+                    <div class="kpi-icon">PLATAFORMA</div>
+                    <div class="kpi-label">Top Plataforma</div>
+                    @if($bestPlatform)
+                    <div class="kpi-value">{{ $bestPlatform['platform'] }}</div>
+                    <div class="kpi-amount">${{ number_format($bestPlatform['total'], 2) }}</div>
                     @else
-                        <div class="empty-state">Guarda la línea primero para registrar ventas.</div>
+                    <div class="kpi-empty">Sin datos</div>
+                    @endif
+                </div>
+                <div class="kpi-card kpi-blue">
+                    <div class="kpi-icon">CALENDARIO</div>
+                    <div class="kpi-label">Este Mes</div>
+                    <div class="kpi-amount" style="color: var(--good);">${{ number_format($totalThisMonth, 2) }}</div>
+                </div>
+                <div class="kpi-card kpi-green">
+                    <div class="kpi-icon">DINERO</div>
+                    <div class="kpi-label">Ganancia Encargado</div>
+                    @if(count($encargadoEarnings) > 0)
+                        @foreach($encargadoEarnings as $earning)
+                        <div class="kpi-value" style="font-size: 14px;">{{ $earning['agent']->name }} - {{ $earning['porcentaje'] }}%</div>
+                        <div class="kpi-amount">${{ number_format($earning['ganancia'], 2) }}</div>
+                        @endforeach
+                    @else
+                    <div class="kpi-empty">Sin encargado</div>
                     @endif
                 </div>
             </div>
+
+            {{-- Últimos 3 Meses --}}
+            <div class="months-grid">
+                @foreach($last3Months as $index => $month)
+                <div class="month-card">
+                    <div class="month-name">@if($index === 0) Mes Actual @elseif($index === 1) Mes Pasado @else Mes Anterior @endif</div>
+                    <div class="month-total">${{ number_format($month['total'], 2) }}</div>
+                    <div class="month-bar">
+                        <div class="month-bar-fill" style="width: {{ ($month['total'] / $maxSales * 100) }}%"></div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @else
+            <div class="empty-state">Guarda la línea primero para ver estadísticas de ventas.</div>
+            @endif
 
         </div>
         @endif
@@ -851,74 +860,6 @@
     @endif{{-- /state switch --}}
 
 
-    {{-- ════════════════════════════════════════════════════════════════════════
-         MODAL: Ventas rápidas desde la tarjeta
-         ════════════════════════════════════════════════════════════════════════ --}}
-    @if($showSalesModal && $salesLine)
-        <div class="modal-overlay" wire:click.self="closeSalesModal">
-            <div class="modal-panel">
-                <div class="modal-head">
-                    <h3>VENTAS — {{ strtoupper($salesLine->name) }}</h3>
-                    <button class="modal-close" wire:click="closeSalesModal">
-                        <svg class="mini-icon" viewBox="0 0 15 15"><path d="M3 3l9 9M12 3l-9 9"/></svg>
-                    </button>
-                </div>
-                <form class="modal-form" wire:submit.prevent="saveSale">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label class="form-label">Plataforma</label>
-                            <select wire:model="salePlatformId" class="form-input">
-                                <option value="0">Elegir plataforma</option>
-                                @foreach(($salesLine->relationLoaded('platforms') ? $salesLine->getRelation('platforms') : $salesLine->platforms()->get()) as $platform)
-                                    <option value="{{ $platform->id }}">{{ $platform->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('salePlatformId') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" wire:model="saleDate" class="form-input">
-                            @error('saleDate') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Descripción <span style="color:var(--muted-2);font-size:10px;font-weight:400;text-transform:none">(opcional)</span></label>
-                        <input type="text" wire:model="saleDescripcion" class="form-input" placeholder="Ej: Recarga fichas, bono...">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Cantidad</label>
-                        <input type="number" step="0.01" min="0" wire:model="saleMontoFichas" class="form-input" placeholder="0.00">
-                        @error('saleMontoFichas') <div class="form-error">{{ $message }}</div> @enderror
-                    </div>
-                    <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;">
-                        <button type="button" wire:click="closeSalesModal" class="btn-soft">Cancelar</button>
-                        <button type="submit" class="btn-primary">Guardar venta</button>
-                    </div>
-                </form>
-                <div class="modal-body" style="padding-top:0">
-                    <div class="sales-table">
-                        @forelse($salesLine->sales()->with('platform')->orderByDesc('fecha')->get() as $sale)
-                            <div class="sales-row">
-                                <div style="color:var(--muted-2);font-family:var(--font-mono);font-size:11px">{{ $sale->fecha->format('d/m/Y') }}</div>
-                                <div>{{ $sale->platform?->name ?? '—' }}</div>
-                                <div style="color:var(--muted-2);font-size:11px">{{ $sale->descripcion ?? '—' }}</div>
-                                <div style="font-weight:700">${{ number_format((float)$sale->monto_fichas,2) }}</div>
-                                <div class="line-actions">
-                                    <button class="btn-icon" wire:click="openSalesModal({{ $salesLine->id }}, {{ $sale->id }})">
-                                        <svg class="mini-icon" viewBox="0 0 15 15"><path d="M10.5 2.5l2 2-8.5 8.5H2.5v-2l8.5-8.5z"/></svg>
-                                    </button>
-                                    <button class="btn-icon btn-danger" wire:click="deleteSale({{ $sale->id }})">
-                                        <svg class="mini-icon" viewBox="0 0 15 15"><path d="M3 3l9 9M12 3l-9 9"/></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="empty-state">Todavía no hay ventas cargadas.</div>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
+
 
 </div>

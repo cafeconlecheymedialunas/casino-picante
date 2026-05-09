@@ -9,6 +9,8 @@ class Sale extends Model
 {
     protected $fillable = [
         'line_id',
+        'agent_id',
+        'client_id',
         'platform_id',
         'fecha',
         'descripcion',
@@ -48,5 +50,15 @@ class Sale extends Model
     public function platform(): BelongsTo
     {
         return $this->belongsTo(Platform::class);
+    }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(Agent::class);
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'client_id');
     }
 }

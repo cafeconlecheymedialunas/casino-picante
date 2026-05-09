@@ -7,7 +7,6 @@ use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
 use App\Models\Platform;
-use App\Models\Sale;
 use App\Services\SalesStats;
 use App\Support\ImageStorage;
 use App\Support\LineRoles;
@@ -28,7 +27,7 @@ class Lineas extends Component
 
     public bool $showModal = false;
 
-    public bool $showSalesModal = false;
+
 
     public bool $showDetailsModal = false;
 
@@ -75,9 +74,7 @@ class Lineas extends Component
 
     public string $bestPlatformTotal = '';
 
-    public string $salesMonthCurrent = '';
 
-    public string $salesMonthPast = '';
 
     // Agent permission editor
     public ?int $editingAgentPermissionsId = null;
@@ -138,11 +135,6 @@ class Lineas extends Component
         $this->editTab = $tab;
         $this->closeAgentPermissions();
         $this->showLinePermissionsEditor = false;
-
-        if ($tab === 'ventas' && $this->editingLineId) {
-            $this->activeLineId = $this->editingLineId;
-            $this->resetSalesForm();
-        }
     }
 
     public function openLinePermissionsEditor(): void
@@ -386,33 +378,7 @@ class Lineas extends Component
         $this->closeAgentPermissions();
     }
 
-    // ── Sales (quick-access modal from card) ───────────────────────────────────
 
-    public function openSalesModal(int $lineId, ?int $saleId = null): void
-    {
-        $line = Line::with('platforms')->findOrFail($lineId);
-        $this->authorizeLineEdit($line);
-
-        $this->activeLineId = $line->id;
-        $this->resetSalesForm();
-
-        if ($saleId) {
-            $sale = Sale::where('line_id', $line->id)->findOrFail($saleId);
-            $this->editingSaleId = $sale->id;
-            $this->salePlatformId = $sale->platform_id;
-            $this->saleDate = $sale->fecha->format('Y-m-d');
-            $this->saleDescripcion = $sale->descripcion ?? '';
-            $this->saleMontoFichas = (string) $sale->monto_fichas;
-        }
-
-        $this->showSalesModal = true;
-    }
-
-    public function closeSalesModal(): void
-    {
-        $this->showSalesModal = false;
-        $this->resetSalesForm();
-    }
 
     public function openEditSaleInModal(int $saleId): void
     {
@@ -551,13 +517,7 @@ class Lineas extends Component
             ? Line::with(['lineAgents.agent', 'platforms', 'sales.platform'])->find($this->activeLineId)
             : null;
 
-        $salesLine = ($this->activeLineId && $this->showSalesModal)
-            ? Line::with(['platforms', 'sales.platform'])->find($this->activeLineId)
-            : null;
 
-        $editSalesLine = ($this->editingLineId && $this->editTab === 'ventas')
-            ? Line::with(['platforms', 'sales.platform'])->find($this->editingLineId)
-            : null;
 
         $editLineAgents = ($this->editingLineId && $this->editTab === 'agentes')
             ? LineAgent::with('agent')
@@ -583,8 +543,6 @@ class Lineas extends Component
             'availableEncargados' => $this->availableEncargados(),
             'allPlatforms' => Platform::where('is_active', true)->orderBy('name')->get(),
             'detailLine' => $detailLine,
-            'salesLine' => $salesLine,
-            'editSalesLine' => $editSalesLine,
             'editLineAgents' => $editLineAgents,
             'availableAgents' => $availableAgents,
             'permissionCatalog' => Permissions::catalog(),
@@ -620,16 +578,7 @@ class Lineas extends Component
         $this->resetValidation();
     }
 
-    public function resetSalesForm(): void
-    {
-        $this->editingSaleId = null;
-        $this->salePlatformId = 0;
-        $this->saleDate = now()->format('Y-m-d');
-        $this->saleDescripcion = '';
-        $this->saleMontoFichas = '';
 
-        $this->resetValidation();
-    }
 
     private function fillForm(Line $line): void
     {

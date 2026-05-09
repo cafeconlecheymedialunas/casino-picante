@@ -95,7 +95,7 @@ Route::middleware('line.authorize')->group(function () {
         Permissions::USER_READ,
     ]))->name('chats');
     Route::get('/platforms', PlatformsMaster::class)->middleware('admin')->name('platforms.master');
-    Route::get('/ventas', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
+    Route::get('/ventas/{line?}', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
 
     Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_READ)->name('lineas');
     Route::get('/lineas/{id}', LineDetail::class)->middleware('line.authorize')->name('lineas.detail');

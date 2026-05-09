@@ -41,21 +41,35 @@
 @endsection
 
 <div class="module-top-bar">
-    <button type="button" class="btn-primary" wire:click="openCreateModal">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-        Cargar venta
-    </button>
+    @if($lineFilter !== 'all')
+        <button type="button" class="btn-primary" wire:click="openCreateModal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Cargar venta
+        </button>
+    @else
+        <button type="button" class="btn-primary" style="opacity: 0.5; cursor: not-allowed;" title="Seleccione una linea primero">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Cargar venta
+        </button>
+    @endif
 </div>
 
 <div class="sales-page">
         <div style="margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
             <input type="text" wire:model.live.debounce.300ms="search" class="input" placeholder="Buscar linea o plataforma">
-            <select wire:model.live="lineFilter" class="select">
-                <option value="all">Todas las lineas</option>
-                @foreach($lines as $line)
-                    <option value="{{ $line->id }}">{{ $line->name }}</option>
-                @endforeach
-            </select>
+            @if($lineFilter !== 'all')
+                <div class="input" style="background: rgba(255,106,26,0.1); border-color: var(--orange);">
+                    <strong>{{ $lines->find($lineFilter)?->name ?? 'Línea seleccionada' }}</strong>
+                    <button type="button" wire:click="$set('lineFilter', 'all')" style="margin-left: 10px; color: var(--muted); font-size: 12px;">×</button>
+                </div>
+            @else
+                <select wire:model.live="lineFilter" class="select">
+                    <option value="all">Todas las lineas</option>
+                    @foreach($lines as $line)
+                        <option value="{{ $line->id }}">{{ $line->name }}</option>
+                    @endforeach
+                </select>
+            @endif
             <select wire:model.live="monthFilter" class="select">
                 @foreach($months as $num => $label)
                     <option value="{{ $num }}">{{ $label }}</option>
@@ -94,6 +108,8 @@
         <div class="sales-table">
             <div class="sales-row head">
                 <div>Linea</div>
+                <div>Agente</div>
+                <div>Cliente</div>
                 <div>Plataforma</div>
                 <div>Periodo</div>
                 <div>Monto fichas</div>
@@ -105,6 +121,8 @@
                         <strong>{{ $sale->line?->name ?? '-' }}</strong>
                         <div class="line-meta">#{{ str_pad($sale->line_id, 4, '0', STR_PAD_LEFT) }}</div>
                     </div>
+                    <div>{{ $sale->agent?->name ?? '-' }}</div>
+                    <div>{{ $sale->client?->name ?? '-' }}</div>
                     <div>{{ $sale->platform?->name ?? '-' }}</div>
                     <div>
                         {{ $this->monthLabel($sale->fecha->month, $sale->fecha->year) }}
@@ -134,15 +152,31 @@
                 </div>
                 <form class="modal-form" wire:submit.prevent="saveSale">
                     <div class="form-grid">
+                        <!-- Line selector removed - line comes from global filter -->
+                        <input type="hidden" wire:model="saleLineId" value="{{ $lineFilter }}">
                         <div class="form-group">
                             <label class="form-label">Linea</label>
-                            <select wire:model.live="saleLineId" class="select" style="width:100%">
-                                <option value="">Elegir linea</option>
-                                @foreach($lines as $line)
-                                    <option value="{{ $line->id }}">{{ $line->name }}</option>
+                            <div class="input" style="background: rgba(255,106,26,0.1); border-color: var(--orange); width:100%">
+                                <strong>{{ $lines->find($lineFilter)?->name ?? 'Línea seleccionada' }}</strong>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Agente</label>
+                            <select wire:model.live="saleAgentId" class="select" style="width:100%">
+                                <option value="">Elegir agente</option>
+                                @foreach($formAgents as $lineAgent)
+                                    <option value="{{ $lineAgent->agent_id }}">{{ $lineAgent->agent->name }}</option>
                                 @endforeach
                             </select>
-                            @error('saleLineId') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cliente</label>
+                            <select wire:model.live="saleClientId" class="select" style="width:100%">
+                                <option value="">Elegir cliente</option>
+                                @foreach($formClients as $client)
+                                    <option value="{{ $client->id }}">{{ $client->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Plataforma</label>
@@ -158,20 +192,8 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Mes de reporte</label>
-                            <select wire:model.live="saleMes" class="select" style="width:100%">
-                                @foreach($months as $num => $label)
-                                    <option value="{{ $num }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Anio</label>
-                            <input type="number" wire:model.live="saleAnio" class="input" style="width:100%">
-                        </div>
-                        <div class="form-group">
                             <label class="form-label">Fecha</label>
-                            <input type="date" wire:model="saleFecha" class="input" style="width:100%">
+                            <input type="date" wire:model.live="saleFecha" class="input" style="width:100%">
                             @error('saleFecha') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group">

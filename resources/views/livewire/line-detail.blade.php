@@ -337,7 +337,10 @@
         <div class="ld-section stats-section">
             <div class="ld-section-header">
                 <h2 class="ld-section-title">ðŸ“Š ESTADISTICAS DESDE VENTAS</h2>
-                @php
+                <span style="font-size:11px;color:var(--muted);">Calculado desde ventas registradas</span>
+            </div>
+
+@php
             $bestMonth = $this->getBestMonth();
             $bestPlatform = $this->getBestPlatformThisMonth();
             $totalThisMonth = $this->getTotalSalesThisMonth();
@@ -346,7 +349,8 @@
             $maxSales = max(array_column($last3Months, 'total'), 1);
             @endphp
 
-<div class="sales-kpis">
+            {{-- KPIs --}}
+            <div class="sales-kpis">
                 <div class="kpi-card kpi-gold">
                     <div class="kpi-icon">TROFEO</div>
                     <div class="kpi-label">Mejor Mes</div>
@@ -384,29 +388,7 @@
                     <div class="kpi-empty">Sin encargado</div>
                     @endif
                 </div>
-            </div>
-                <div class="kpi-card kpi-purple">
-                    <div class="kpi-icon">ðŸŽ¯</div>
-                    <div class="kpi-label">Top Plataforma</div>
-                    @if($line->mejor_plataforma)
-                    <div class="kpi-value">{{ $line->mejor_plataforma }}</div>
-                    <div class="kpi-amount">${{ number_format($line->mejor_plataforma_total ?? 0, 2) }}</div>
-                    @else
-                    <div class="kpi-empty">Sin datos</div>
-                    @endif
-                </div>
-                <div class="kpi-card kpi-blue">
-                    <div class="kpi-icon">ðŸ“…</div>
-                    <div class="kpi-label">Este Mes</div>
-                    <div class="kpi-amount" style="color: var(--good);">${{ number_format($line->ventas_mes_actual ?? 0, 2) }}</div>
-                </div>
-                <div class="kpi-card kpi-green">
-                    <div class="kpi-icon">ðŸ’µ</div>
-                    <div class="kpi-label">Ganancia Encargado</div>
-                    <div class="kpi-value" style="font-size: 14px;">{{ $line->porcentaje_encargado ?? 0 }}%</div>
-                    <div class="kpi-amount">${{ number_format($line->ganancia_encargado ?? 0, 2) }}</div>
-                </div>
-            </div>
+</div>
 
             {{-- Ãšltimos 3 Meses --}}
             <div class="months-grid">
@@ -420,8 +402,6 @@
                 </div>
                 @endforeach
             </div>
-
-
         </div>
     </div>
 </form>
