@@ -11,7 +11,8 @@
       "PowerShell($env:TEMP; $env:TMP; [System.IO.Path]::GetTempPath\\(\\))",
       "PowerShell(\\(Get-ChildItem \"C:\\\\Users\\\\dex360\\\\AppData\\\\Local\\\\Temp\" -Force -ErrorAction SilentlyContinue | Measure-Object\\).Count)",
       "Bash(git commit -m ' *)",
-      "Bash(grep -n '$lines' resources/views/livewire/bonos.blade.php)"
+      "Bash(grep -n '$lines' resources/views/livewire/bonos.blade.php)",
+      "Bash(git commit *)"
     ]
   }
 }

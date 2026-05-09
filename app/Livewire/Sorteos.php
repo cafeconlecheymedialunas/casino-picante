@@ -401,6 +401,37 @@ class Sorteos extends Component
         session()->flash('info', 'No habia numeros asignados dentro de la seleccion.');
     }
 
+    public function addConsecutiveNumbers(int $qty): void
+    {
+        $this->checkLinePermission(Permissions::SORTEO_READ);
+
+        if (! $this->selectedRaffleId) {
+            return;
+        }
+
+        $raffle = Raffle::with('numbers')->findOrFail($this->selectedRaffleId);
+        $end = $this->boardEndNumber($raffle);
+        $taken = $raffle->numbers->pluck('number')->map(fn ($n) => (int) $n)->flip();
+        $alreadySelected = collect($this->selectedNumbers)->map(fn ($n) => (int) $n)->flip();
+
+        $added = 0;
+        for ($n = (int) $raffle->start_number; $n <= $end && $added < $qty; $n++) {
+            if ($taken->has($n) || $alreadySelected->has($n)) {
+                continue;
+            }
+            $this->selectedNumbers[] = $n;
+            $alreadySelected->put($n, true);
+            $added++;
+        }
+
+        $this->selectedNumbers = collect($this->selectedNumbers)
+            ->map(fn ($n) => (int) $n)
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+    }
+
     public function toggleNumber(int $number): void
     {
         $this->checkLinePermission(Permissions::SORTEO_READ);

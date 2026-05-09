@@ -286,6 +286,12 @@
                                 </div>
                             </div>
 
+                            <div class="assign-controls" style="margin-bottom:6px;">
+                                <span style="color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.06em;">AGREGAR CONSECUTIVOS:</span>
+                                @foreach([1,5,10,20] as $qty)
+                                    <button type="button" wire:click="addConsecutiveNumbers({{ $qty }})" class="qty-btn">+{{ $qty }}</button>
+                                @endforeach
+                            </div>
                             <div class="assign-controls" style="margin-bottom:10px;">
                                 <button type="button" wire:click="saveSelectedNumbers" class="btn-primary">
                                     Guardar seleccion ({{ $selectedCollection->count() }})
