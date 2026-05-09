@@ -109,6 +109,10 @@ Route::middleware('line.authorize')->group(function () {
         Route::get('/novedades', Novedades::class)->name('novedades');
     });
 
+    Route::middleware('line.authorize:'.Permissions::NEWS_UPDATE)->group(function () {
+        Route::get('/blog/{id}/edit', \App\Livewire\BlogEdit::class)->name('blog.edit');
+    });
+
     Route::middleware('line.authorize:'.Permissions::BONO_READ)->group(function () {
         Route::get('/bonos', Bonos::class)->name('bonos');
     });
