@@ -4,7 +4,6 @@ use App\Http\Controllers\PerfilController;
 use App\Livewire\Agentes;
 use App\Livewire\Auth\ClientLogin;
 use App\Livewire\Auth\Login;
-use App\Livewire\Banners;
 use App\Livewire\Bonos;
 use App\Livewire\Chats;
 use App\Livewire\EditorHome;
@@ -124,8 +123,6 @@ Route::middleware('line.authorize')->group(function () {
     Route::middleware('line.authorize:'.Permissions::SORTEO_READ)->group(function () {
         Route::get('/sorteos', Sorteos::class)->name('sorteos');
     });
-
-    Route::get('/banners', Banners::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('banners');
 
     // Settings – admin only
     Route::get('/settings', Settings::class)->middleware('admin')->name('settings');

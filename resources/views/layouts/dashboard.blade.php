@@ -427,12 +427,6 @@
             </a>
             @endif
 
-            @if($sidebarCan([\App\Support\Permissions::LINE_EDIT]))
-            <a href="{{ route('banners') }}" wire:navigate class="sidebar-item {{ request()->routeIs('banners') ? 'active' : '' }}">
-                <span class="sidebar-item-icon"><i class="fa-solid fa-photo-film"></i></span> Banners & Notif.
-            </a>
-            @endif
-
             <div class="sidebar-section">OPERACION</div>
 
             @if($sidebarCan([\App\Support\Permissions::BONO_READ, \App\Support\Permissions::BONO_CREATE, \App\Support\Permissions::BONO_UPDATE, \App\Support\Permissions::BONO_DELETE]))
