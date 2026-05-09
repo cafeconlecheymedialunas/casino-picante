@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Agent;
 use App\Models\Bonus;
 use App\Models\BonusAssignment;
+use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Post;
 use App\Models\Promotion;
@@ -258,6 +259,8 @@ class Overview extends Component
     {
         $this->ensureAdmin();
 
+        $lines = Line::where('status', 'active')->get();
+
         return view('livewire.overview', [
             'alerts' => $this->getAlerts(),
             'users' => $this->getUserStats(),
@@ -277,7 +280,31 @@ class Overview extends Component
             'rafflesByLineCount' => $this->getRafflesByLineCount(),
             'bestSellingLine' => $this->getBestSellingLineOfMonth(),
             'last10Users' => $this->getLast10RegisteredUsers(),
+            'totalSales' => SalesStats::globalTotalSales($lines),
+            'monthlyGrowth' => SalesStats::globalMonthlyGrowth($lines),
+            'topPlatform' => SalesStats::globalTopPlatform($lines),
+            'topBuyer' => SalesStats::globalTopBuyer($lines),
+            'topAgent' => SalesStats::globalTopAgent($lines),
+            'salesSummary' => SalesStats::globalSalesSummary($lines),
+            'dailySales' => SalesStats::globalDailySales(30, $lines),
+            'platformComparison' => SalesStats::globalPlatformComparison($lines),
+            'lineComparison' => SalesStats::globalLineComparison($lines),
+            'dailyRegistrations' => $this->getDailyRegistrations(),
         ]);
+    }
+
+    public function getDailyRegistrations(): array
+    {
+        $days = 15;
+        $labels = [];
+        $data = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $labels[] = now()->subDays($i)->format('d M');
+            $data[] = $this->clientUsersQuery()->whereDate('created_at', $date)->count();
+        }
+
+        return ['labels' => $labels, 'data' => $data];
     }
 
     private function ensureAdmin(): void

@@ -96,6 +96,16 @@
     .t-subject { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .t-user { font-size: 10px; color: var(--muted-2); }
     .empty-state { padding: 22px 16px; font-size: 12px; color: var(--muted-2); text-align: center; }
+    .chart-container { position: relative; height: 140px; margin-top: 12px; }
+    .growth-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; margin-left: 8px; }
+    .growth-badge.up { background: rgba(37,196,107,0.15); color: var(--good); }
+    .growth-badge.down { background: rgba(255,71,87,0.15); color: #ff4757; }
+    .growth-badge.neutral { background: rgba(255,255,255,0.08); color: var(--muted-2); }
+    .kpi-huge { font-family: var(--font-display); font-size: 42px; line-height: 1; }
+    .priority-section { border-left: 3px solid var(--orange); padding-left: 12px; margin-bottom: 16px; }
+    .priority-section.critical { border-left-color: #ff4757; }
+    .priority-section.high { border-left-color: var(--orange); }
+    .priority-section.medium { border-left-color: var(--warn); }
 </style>
 
 {{-- ALERTS --}}
@@ -110,9 +120,132 @@
 </div>
 @endif
 
-{{-- ── USUARIOS ── --}}
+{{-- ── VENTAS ── --}}
 <div class="mod-section">
-    <span class="mod-section-label">USUARIOS</span>
+    <span class="mod-section-label">💰 VENTAS DEL MES</span>
+    <div class="mod-section-line"></div>
+    <a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver detalle →</a>
+</div>
+<div class="kpi-grid-4">
+    <div class="kpi kpi-good">
+        <span class="kpi-mod">ventas</span>
+        <div class="kpi-label">Total ventas</div>
+        <div class="kpi-value c-green">${{ number_format((float)$totalSales, 2) }}</div>
+        <div class="kpi-desc">
+            @if($monthlyGrowth['direction'] === 'up')
+                <span class="up">▲ {{ $monthlyGrowth['percent'] }}%</span> vs mes anterior
+            @elseif($monthlyGrowth['direction'] === 'down')
+                <span class="down">▼ {{ $monthlyGrowth['percent'] }}%</span> vs mes anterior
+            @else
+                <span class="hi">— 0%</span> sin cambio
+            @endif
+        </div>
+    </div>
+
+    @if($topPlatform)
+    <div class="kpi">
+        <span class="kpi-mod">ventas</span>
+        <div class="kpi-label">📱 Plataforma #1</div>
+        <div class="kpi-value c-orange">{{ $topPlatform['name'] }}</div>
+        <div class="kpi-desc">${{ number_format((float)$topPlatform['total'], 2) }}</div>
+    </div>
+    @else
+    <div class="kpi">
+        <span class="kpi-mod">ventas</span>
+        <div class="kpi-label">📱 Plataforma #1</div>
+        <div class="kpi-value c-muted">—</div>
+    </div>
+    @endif
+
+    @if($bestSellingLine)
+    <div class="kpi kpi-good">
+        <span class="kpi-mod">ventas</span>
+        <div class="kpi-label">🏆 Línea #1</div>
+        <div class="kpi-value c-green">{{ $bestSellingLine['icon'] }} {{ $bestSellingLine['name'] }}</div>
+        <div class="kpi-desc">${{ number_format((float)$bestSellingLine['best_sales'], 2) }}</div>
+    </div>
+    @else
+    <div class="kpi">
+        <span class="kpi-mod">ventas</span>
+        <div class="kpi-label">🏆 Línea #1</div>
+        <div class="kpi-value c-muted">—</div>
+    </div>
+    @endif
+
+    <div class="kpi">
+        <span class="kpi-mod">ventas</span>
+        <div class="kpi-label">💵 Promedio ticket</div>
+        <div class="kpi-value c-orange">${{ number_format((float)($salesSummary['avg_ticket'] ?? 0), 2) }}</div>
+        <div class="kpi-desc">{{ $salesSummary['transactions'] ?? 0 }} transacciones</div>
+    </div>
+</div>
+
+{{-- Rankings Ventas + Gráficos --}}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 10px;">
+    <div>
+        <div class="kpi-grid-4">
+            @if($topBuyer)
+            <div class="kpi kpi-good">
+                <span class="kpi-mod">cliente</span>
+                <div class="kpi-label">👤 Cliente top</div>
+                <div class="kpi-value c-green">{{ $topBuyer['username'] ?? $topBuyer['name'] }}</div>
+                <div class="kpi-desc">${{ number_format((float)$topBuyer['total'], 2) }}</div>
+            </div>
+            @else
+            <div class="kpi"><span class="kpi-mod">cliente</span><div class="kpi-label">👤 Cliente top</div><div class="kpi-value c-muted">—</div></div>
+            @endif
+
+            @if($topAgent)
+            <div class="kpi kpi-good">
+                <span class="kpi-mod">agente</span>
+                <div class="kpi-label">👨‍💼 Agente top</div>
+                <div class="kpi-value c-green">{{ $topAgent['username'] ?? $topAgent['name'] }}</div>
+                <div class="kpi-desc">${{ number_format((float)$topAgent['total'], 2) }}</div>
+            </div>
+            @else
+            <div class="kpi"><span class="kpi-mod">agente</span><div class="kpi-label">👨‍💼 Agente top</div><div class="kpi-value c-muted">—</div></div>
+            @endif
+
+            <div class="kpi">
+                <span class="kpi-mod">clientes</span>
+                <div class="kpi-label">👥 Clientes únicos</div>
+                <div class="kpi-value">{{ $salesSummary['unique_clients'] ?? 0 }}</div>
+                <div class="kpi-desc">compraron este mes</div>
+            </div>
+
+            <div class="kpi">
+                <span class="kpi-mod">transacciones</span>
+                <div class="kpi-label">📊 Transacciones</div>
+                <div class="kpi-value c-orange">{{ $salesSummary['transactions'] ?? 0 }}</div>
+                <div class="kpi-desc">ventas registradas</div>
+            </div>
+        </div>
+    </div>
+    <div class="ov-card">
+        <div class="ov-card-head">
+            <span class="ov-card-title">PLATAFORMAS</span>
+            <span class="ov-card-mod">ranking</span>
+        </div>
+        <div style="padding: 12px; height: 120px;">
+            <canvas id="platformChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{{-- Gráfico Principal Ventas --}}
+<div class="ov-card" style="margin-top: 12px;">
+    <div class="ov-card-head">
+        <span class="ov-card-title">📈 TENDENCIA VENTAS 30 DÍAS</span>
+        <span class="ov-card-mod">diario</span>
+    </div>
+    <div style="padding: 16px; height: 180px;">
+        <canvas id="salesChart"></canvas>
+    </div>
+</div>
+
+{{-- ── CLIENTES ── --}}
+<div class="mod-section">
+    <span class="mod-section-label">CLIENTES</span>
     <div class="mod-section-line"></div>
     <a href="{{ route('users.index') }}" wire:navigate class="mod-section-link">Ir al módulo →</a>
 </div>
@@ -124,12 +257,12 @@
         <div class="kpi-desc">
             @if($users['vsYesterday'] > 0)
                 <span class="up">▲ {{ $users['vsYesterday'] }}%</span> más que ayer
-                (<span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos usuarios ayer)
+                (<span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos clientes ayer)
             @elseif($users['vsYesterday'] < 0)
                 <span class="down">▼ {{ abs($users['vsYesterday']) }}%</span> menos que ayer
-                (<span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos usuarios ayer)
+                (<span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos clientes ayer)
             @else
-                Igual que ayer — <span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos usuarios
+                Igual que ayer — <span class="hi">{{ $users['yesterdayNew'] }}</span> nuevos clientes
             @endif
         </div>
     </div>
@@ -139,7 +272,7 @@
         <div class="kpi-label">Nuevos esta semana</div>
         <div class="kpi-value c-orange">{{ $users['weekNew'] }}</div>
         <div class="kpi-desc">
-            <span class="hi">{{ $users['weekNew'] }}</span> nuevos usuarios esta semana ·
+            <span class="hi">{{ $users['weekNew'] }}</span> nuevos clientes esta semana ·
             <span class="hi">{{ $users['monthNew'] }}</span> este mes
             @if($users['vsLastMonth'] > 0)
                 (<span class="up">▲ {{ $users['vsLastMonth'] }}%</span> vs mes anterior)
@@ -151,21 +284,43 @@
 
     <div class="kpi">
         <span class="kpi-mod">users</span>
-        <div class="kpi-label">Usuarios activos</div>
+        <div class="kpi-label">Clientes activos</div>
         <div class="kpi-value c-green">{{ number_format($users['active']) }}</div>
         <div class="kpi-desc">
-            <span class="hi">{{ number_format($users['active']) }}</span> usuarios activos
+            <span class="hi">{{ number_format($users['active']) }}</span> clientes activos
             de <span class="hi">{{ number_format($users['total']) }}</span> registrados en total
         </div>
     </div>
 
     <div class="kpi {{ $users['blocked'] > 0 ? 'kpi-urgent' : '' }}">
         <span class="kpi-mod">users</span>
-        <div class="kpi-label">Usuarios bloqueados</div>
+        <div class="kpi-label">Clientes bloqueados</div>
         <div class="kpi-value {{ $users['blocked'] > 0 ? 'c-red' : 'c-muted' }}">{{ $users['blocked'] }}</div>
         <div class="kpi-desc">
-            <span class="{{ $users['blocked'] > 0 ? 'down' : 'neu' }}">{{ $users['blocked'] }}</span> usuarios bloqueados ·
+            <span class="{{ $users['blocked'] > 0 ? 'down' : 'neu' }}">{{ $users['blocked'] }}</span> clientes bloqueados ·
             <span class="up">{{ number_format($users['active']) }}</span> activos de <span class="hi">{{ number_format($users['total']) }}</span> totales
+        </div>
+    </div>
+</div>
+
+{{-- Gráfico Clientes --}}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+    <div class="ov-card">
+        <div class="ov-card-head">
+            <span class="ov-card-title">📊 REGISTROS 15 DÍAS</span>
+            <span class="ov-card-mod">diario</span>
+        </div>
+        <div style="padding: 12px; height: 140px;">
+            <canvas id="usersChart"></canvas>
+        </div>
+    </div>
+    <div class="ov-card">
+        <div class="ov-card-head">
+            <span class="ov-card-title">👥 ESTADO CLIENTES</span>
+            <span class="ov-card-mod">distribución</span>
+        </div>
+        <div style="padding: 12px; height: 140px;">
+            <canvas id="clientsStatusChart"></canvas>
         </div>
     </div>
 </div>
@@ -223,157 +378,110 @@
     </div>
 </div>
 
-{{-- ── BONOS & SORTEOS ── --}}
+{{-- Gráfico Tickets --}}
+<div class="ov-card" style="margin-top: 10px;">
+    <div class="ov-card-head">
+        <span class="ov-card-title">📊 ESTADO DE TICKETS</span>
+        <span class="ov-card-mod">distribución</span>
+    </div>
+    <div style="padding: 16px; height: 150px;">
+        <canvas id="ticketsChart"></canvas>
+    </div>
+</div>
+
+{{-- ── BONOS ── --}}
 <div class="mod-section">
-    <span class="mod-section-label">BONOS Y SORTEOS</span>
+    <span class="mod-section-label">🎁 BONOS</span>
     <div class="mod-section-line"></div>
     <a href="{{ route('bonos') }}" wire:navigate class="mod-section-link">Ir a bonos →</a>
 </div>
-<div class="kpi-grid-4">
-    <div class="kpi {{ $bonuses['activeBonuses'] > 0 ? 'kpi-good' : '' }}">
-        <span class="kpi-mod">bonuses</span>
-        <div class="kpi-label">Bonos vigentes</div>
-        <div class="kpi-value {{ $bonuses['activeBonuses'] > 0 ? 'c-green' : 'c-muted' }}">{{ $bonuses['activeBonuses'] }}</div>
-        <div class="kpi-desc">
-            <span class="hi">{{ $bonuses['activeBonuses'] }}</span> bonos activos vigentes ·
-            <span class="hi">{{ $bonuses['pausedBonuses'] }}</span> pausados ·
-            <span class="hi">{{ $bonuses['totalBonuses'] }}</span> en total
+<div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
+    <div class="kpi-grid-3">
+        <div class="kpi {{ $bonuses['activeBonuses'] > 0 ? 'kpi-good' : '' }}">
+            <span class="kpi-mod">bonuses</span>
+            <div class="kpi-label">Bonos vigentes</div>
+            <div class="kpi-value {{ $bonuses['activeBonuses'] > 0 ? 'c-green' : 'c-muted' }}">{{ $bonuses['activeBonuses'] }}</div>
+            <div class="kpi-desc">
+                <span class="hi">{{ $bonuses['totalBonuses'] }}</span> total · <span class="hi">{{ $bonuses['pausedBonuses'] }}</span> pausados
+            </div>
+        </div>
+
+        <div class="kpi">
+            <span class="kpi-mod">bonus_assignments</span>
+            <div class="kpi-label">Asignaciones activas</div>
+            <div class="kpi-value c-orange">{{ $bonuses['activeAssign'] }}</div>
+            <div class="kpi-desc">
+                <span class="up">{{ $bonuses['usedAssign'] }}</span> usados · <span class="down">{{ $bonuses['expiredAssign'] }}</span> expirados
+            </div>
+        </div>
+
+        <div class="kpi {{ $bonuses['conversionRate'] >= 50 ? 'kpi-good' : 'kpi-warn' }}">
+            <span class="kpi-mod">bonus_assignments</span>
+            <div class="kpi-label">Conversión</div>
+            <div class="kpi-value {{ $bonuses['conversionRate'] >= 50 ? 'c-green' : 'c-warn' }}">
+                {{ $bonuses['conversionRate'] }}<span style="font-size:18px;color:var(--muted-2);">%</span>
+            </div>
+            <div class="kpi-desc">
+                <span class="hi">{{ $bonuses['usedMonth'] }}</span> canjeados este mes
+            </div>
         </div>
     </div>
-
-    <div class="kpi">
-        <span class="kpi-mod">bonus_assignments</span>
-        <div class="kpi-label">Asignaciones activas</div>
-        <div class="kpi-value c-orange">{{ $bonuses['activeAssign'] }}</div>
-        <div class="kpi-desc">
-            <span class="hi">{{ $bonuses['activeAssign'] }}</span> usuarios con bono activo ·
-            <span class="up">{{ $bonuses['usedAssign'] }}</span> usados ·
-            <span class="down">{{ $bonuses['expiredAssign'] }}</span> expirados
+    <div class="ov-card">
+        <div class="ov-card-head">
+            <span class="ov-card-title">🎯 ESTADO BONOS</span>
+            <span class="ov-card-mod">distribución</span>
         </div>
-    </div>
-
-    <div class="kpi {{ $bonuses['conversionRate'] >= 50 ? 'kpi-good' : 'kpi-warn' }}">
-        <span class="kpi-mod">bonus_assignments</span>
-        <div class="kpi-label">Conversión de bonos (mes)</div>
-        <div class="kpi-value {{ $bonuses['conversionRate'] >= 50 ? 'c-green' : 'c-warn' }}">
-            {{ $bonuses['conversionRate'] }}<span style="font-size:20px;color:var(--muted-2);">%</span>
-        </div>
-        <div class="kpi-desc">
-            <span class="hi">{{ $bonuses['usedMonth'] }}</span> bonos canjeados este mes
-            (de los que vencieron o fueron usados)
-        </div>
-    </div>
-
-    <div class="kpi {{ $raffles['active'] > 0 ? 'kpi-good' : '' }}">
-        <span class="kpi-mod">raffles</span>
-        <div class="kpi-label">Sorteos</div>
-        <div class="kpi-value {{ $raffles['active'] > 0 ? 'c-green' : 'c-muted' }}">{{ $raffles['active'] + $raffles['upcoming'] }}</div>
-        <div class="kpi-desc">
-            <span class="{{ $raffles['active'] > 0 ? 'up' : 'hi' }}">{{ $raffles['active'] }}</span> sorteo{{ $raffles['active'] != 1 ? 's' : '' }} activo{{ $raffles['active'] != 1 ? 's' : '' }} ahora ·
-            <span class="hi">{{ $raffles['upcoming'] }}</span> próximos ·
-            <span class="hi">{{ $raffles['numbersActive'] }}</span> números asignados en sorteo activo
+        <div style="padding: 10px; height: 100px;">
+            <canvas id="bonosChart"></canvas>
         </div>
     </div>
 </div>
 
-
-<div class="kpi-grid-4">
-    
-
-  
-
-    <div class="kpi">
-        <span class="kpi-mod">posts</span>
-        <div class="kpi-label">Publicaciones activas</div>
-        <div class="kpi-value c-orange">{{ $content['published'] }}</div>
-        <div class="kpi-desc">
-            <span class="hi">{{ $content['novedades'] }}</span> novedades ·
-            <span class="hi">{{ $content['carrusel'] }}</span> carrusel ·
-            <span class="hi">{{ $content['blog'] }}</span> blog publicados
-        </div>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-mod">agents</span>
-        <div class="kpi-label">Equipo de agentes</div>
-        <div class="kpi-value">{{ $agents['total'] }}</div>
-        <div class="kpi-desc">
-            <span class="up">{{ $agents['active'] }}</span> agentes activos ·
-            <span class="hi">{{ $agents['parents'] }}</span> principales ·
-            <span class="hi">{{ $agents['children'] }}</span> subordinados
-        </div>
-    </div>
-</div>
-
-{{-- ── ESTADÍSTICAS GENERALES ── --}}
+{{-- ── SORTEOS ── --}}
 <div class="mod-section">
-    <span class="mod-section-label">ESTADÍSTICAS GENERALES</span>
+    <span class="mod-section-label">🎰 SORTEOS</span>
     <div class="mod-section-line"></div>
+    <a href="{{ route('sorteos') }}" wire:navigate class="mod-section-link">Ir a sorteos →</a>
 </div>
-<div class="kpi-grid-4">
-    <div class="kpi">
-        <span class="kpi-mod">usuarios</span>
-        <div class="kpi-label">Usuarios registrados</div>
-        <div class="kpi-value c-orange">{{ number_format($registeredUsersCount) }}</div>
-        <div class="kpi-desc">
-            Total de usuarios registrados en el sistema
+<div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
+    <div class="kpi-grid-3">
+        <div class="kpi {{ $raffles['active'] > 0 ? 'kpi-good' : '' }}">
+            <span class="kpi-mod">raffles</span>
+            <div class="kpi-label">Sorteos activos</div>
+            <div class="kpi-value {{ $raffles['active'] > 0 ? 'c-green' : 'c-muted' }}">{{ $raffles['active'] }}</div>
+            <div class="kpi-desc">
+                {{ $raffles['numbersActive'] }} números activos
+            </div>
+        </div>
+
+        <div class="kpi">
+            <span class="kpi-mod">raffles</span>
+            <div class="kpi-label">Próximos</div>
+            <div class="kpi-value c-orange">{{ $raffles['upcoming'] }}</div>
+            <div class="kpi-desc">
+                {{ $raffles['uniqueParticip'] }} participantes únicos
+            </div>
+        </div>
+
+        <div class="kpi">
+            <span class="kpi-mod">raffles</span>
+            <div class="kpi-label">Total sorteos</div>
+            <div class="kpi-value">{{ $raffles['active'] + $raffles['upcoming'] }}</div>
+            <div class="kpi-desc">
+                activos + próximos
+            </div>
         </div>
     </div>
-
-    <div class="kpi">
-        <span class="kpi-mod">agentes</span>
-        <div class="kpi-label">Agentes registrados</div>
-        <div class="kpi-value">{{ $agentsCount }}</div>
-        <div class="kpi-desc">
-            <span class="hi">{{ $agentsCountByLine }}</span> asignados a líneas
+    <div class="ov-card">
+        <div class="ov-card-head">
+            <span class="ov-card-title">🎰 ESTADO SORTEO</span>
+            <span class="ov-card-mod">distribución</span>
         </div>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-mod">agentes</span>
-        <div class="kpi-label">Encargados de línea</div>
-        <div class="kpi-value c-orange">{{ $agentsCountEncargado }}</div>
-        <div class="kpi-desc">
-            Agentes con rol de encargado
-        </div>
-    </div>
-
-    <div class="kpi {{ $activeBonosCount > 0 ? 'kpi-good' : '' }}">
-        <span class="kpi-mod">bonos</span>
-        <div class="kpi-label">Bonos activos</div>
-        <div class="kpi-value {{ $activeBonosCount > 0 ? 'c-green' : 'c-muted' }}">{{ $activeBonosCount }}</div>
-        <div class="kpi-desc">
-            Bonos activos actualmente en el sistema
-        </div>
-    </div>
-
-    <div class="kpi">
-        <span class="kpi-mod">sorteos</span>
-        <div class="kpi-label">Sorteos de líneas</div>
-        <div class="kpi-value c-orange">{{ $rafflesByLineCount }}</div>
-        <div class="kpi-desc">
-            Total de sorteos registrados por líneas
+        <div style="padding: 10px; height: 100px;">
+            <canvas id="sorteosChart"></canvas>
         </div>
     </div>
 </div>
-
-{{-- ── LÍNEA CON MEJOR VENTA ── --}}
-@if($bestSellingLine)
-<div class="mod-section">
-    <span class="mod-section-label">LÍNEA CON MEJOR VENTA DEL MES</span>
-    <div class="mod-section-line"></div>
-</div>
-<div class="kpi-grid-3">
-    <div class="kpi kpi-good">
-        <span class="kpi-mod">ventas</span>
-        <div class="kpi-label">{{ $bestSellingLine['icon'] }} {{ $bestSellingLine['name'] }}</div>
-        <div class="kpi-value c-green">${{ number_format($bestSellingLine['best_sales'], 2) }}</div>
-        <div class="kpi-desc">
-            Línea con mayor venta del mes · Moneda local
-        </div>
-    </div>
-</div>
-@endif
 
 {{-- ── TABLAS ── --}}
 <div class="mod-section">
@@ -383,7 +491,7 @@
 <div class="tables-row">
     <div class="ov-card">
         <div class="ov-card-head">
-            <span class="ov-card-title">ÚLTIMOS 10 REGISTROS DE USUARIOS</span>
+            <span class="ov-card-title">ÚLTIMOS 10 REGISTROS DE CLIENTES</span>
             <span class="ov-card-mod">users</span>
             <a href="{{ route('users.index') }}" wire:navigate class="ov-card-link">Ver todos →</a>
         </div>
@@ -406,7 +514,7 @@
             </div>
         </div>
         @empty
-        <div class="empty-state">Sin registros de usuarios aún</div>
+        <div class="empty-state">Sin registros de clientes aún</div>
         @endforelse
     </div>
 
@@ -435,3 +543,185 @@
         @endforelse
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 📈 Ventas - Línea principal
+    const salesCtx = document.getElementById('salesChart');
+    if (salesCtx) {
+        new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: @json($dailySales['labels']),
+                datasets: [{
+                    label: 'Ventas ($)',
+                    data: @json($dailySales['data']),
+                    borderColor: '#ff6a1a',
+                    backgroundColor: 'rgba(255, 106, 26, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.42)', font: { size: 9 } } },
+                    y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: 'rgba(255,255,255,0.42)', font: { size: 9 }, callback: function(value) { return '$' + (value/1000).toFixed(0) + 'k'; } } }
+                }
+            }
+        });
+    }
+
+    // 📊 Plataformas - Barras
+    const platformCtx = document.getElementById('platformChart');
+    if (platformCtx) {
+        new Chart(platformCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($platformComparison['labels']),
+                datasets: [{
+                    label: 'Ventas',
+                    data: @json($platformComparison['data']),
+                    backgroundColor: ['#ff6a1a', '#ff8a3d', '#ffb347', '#25c46b', '#6366f1'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: 'rgba(255,255,255,0.42)', font: { size: 9 }, callback: function(value) { return '$' + (value/1000).toFixed(0) + 'k'; } } },
+                    y: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.6)', font: { size: 10 } } }
+                }
+            }
+        });
+    }
+
+    // 👥 Clientes - Registros 15 días
+    const usersCtx = document.getElementById('usersChart');
+    if (usersCtx) {
+        new Chart(usersCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($dailyRegistrations['labels']),
+                datasets: [{
+                    label: 'Registros',
+                    data: @json($dailyRegistrations['data']),
+                    backgroundColor: 'rgba(37, 196, 107, 0.7)',
+                    borderColor: '#25c46b',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.42)', font: { size: 8 } } },
+                    y: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: 'rgba(255,255,255,0.42)', font: { size: 9 }, stepSize: 1 }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // 👥 Estado clientes - Doughnut
+    const clientsStatusCtx = document.getElementById('clientsStatusChart');
+    if (clientsStatusCtx) {
+        new Chart(clientsStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Activos', 'Bloqueados', 'Pendientes'],
+                datasets: [{
+                    data: [{{ $users['active'] }}, {{ $users['blocked'] }}, {{ $users['total'] - $users['active'] - $users['blocked'] }}],
+                    backgroundColor: ['#25c46b', '#ff4757', '#ffb347'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)', font: { size: 10 }, boxWidth: 12 } } }
+            }
+        });
+    }
+
+    // 🎫 Tickets - Doughnut
+    const ticketsCtx = document.getElementById('ticketsChart');
+    if (ticketsCtx) {
+        new Chart(ticketsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Abiertos', 'En proceso', 'Cerrados'],
+                datasets: [{
+                    data: [{{ $tickets['open'] }}, {{ $tickets['progress'] }}, {{ $tickets['closed'] }}],
+                    backgroundColor: ['#ff6a1a', '#ffb347', '#25c46b'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)', font: { size: 10 }, boxWidth: 12 } } }
+            }
+        });
+    }
+
+    // 🎁 Bonos - Doughnut
+    const bonosCtx = document.getElementById('bonosChart');
+    if (bonosCtx) {
+        new Chart(bonosCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Activos', 'Usados', 'Expirados', 'Pausados'],
+                datasets: [{
+                    data: [
+                        {{ $bonuses['activeAssign'] }},
+                        {{ $bonuses['usedAssign'] }},
+                        {{ $bonuses['expiredAssign'] }},
+                        {{ $bonuses['pausedBonuses'] }}
+                    ],
+                    backgroundColor: ['#25c46b', '#ff6a1a', '#ff4757', '#ffb347'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)', font: { size: 10 }, boxWidth: 12 } } }
+            }
+        });
+    }
+
+    // 🎰 Sorteos - Doughnut
+    const sorteosCtx = document.getElementById('sorteosChart');
+    if (sorteosCtx) {
+        new Chart(sorteosCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Activos', 'Próximos', 'Cerrados'],
+                datasets: [{
+                    data: [
+                        {{ $raffles['active'] }},
+                        {{ $raffles['upcoming'] }},
+                        {{ $rafflesByLineCount - $raffles['active'] - $raffles['upcoming'] }}
+                    ],
+                    backgroundColor: ['#25c46b', '#ff6a1a', '#6366f1'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right', labels: { color: 'rgba(255,255,255,0.7)', font: { size: 10 }, boxWidth: 12 } } }
+            }
+        });
+    }
+});
+</script>

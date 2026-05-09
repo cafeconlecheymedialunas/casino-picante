@@ -159,7 +159,7 @@
             padding: 0;
         }
         .page-container {
-            padding: 0;
+            padding:0 0 20px 0;
             min-height: 100%;
         }
         
