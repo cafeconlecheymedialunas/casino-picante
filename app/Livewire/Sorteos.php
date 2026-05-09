@@ -69,9 +69,7 @@ class Sorteos extends Component
 
     public bool $showWinnerModal = false;
 
-    public string $winner_user_id = '';
-
-    public string $winner_number = '';
+    public array $winnerPrizes = [];
 
     public string $numbersSearch = '';
 
@@ -437,8 +435,20 @@ class Sorteos extends Component
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $raffle = Raffle::findOrFail($raffleId);
         $this->selectedRaffleId = $raffleId;
-        $this->winner_user_id = (string) ($raffle->winner_user_id ?? '');
-        $this->winner_number = (string) ($raffle->winner_number ?? '');
+        $this->winnerPrizes = collect($raffle->prizes ?? [])
+            ->map(fn ($prize, $i) => [
+                'position'    => (int) ($prize['position'] ?? $i + 1),
+                'name'        => $prize['name'] ?? '',
+                'image'       => $prize['image'] ?? null,
+                'winner_number' => (string) ($prize['winner_number'] ?? ''),
+            ])
+            ->values()
+            ->toArray();
+
+        if (empty($this->winnerPrizes)) {
+            $this->winnerPrizes = [['position' => 1, 'name' => 'Premio principal', 'image' => null, 'winner_number' => '']];
+        }
+
         $this->showWinnerModal = true;
     }
 
@@ -446,25 +456,52 @@ class Sorteos extends Component
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $this->validate([
-            'winner_user_id' => 'nullable|exists:users,id',
-            'winner_number' => 'nullable|integer',
+            'winnerPrizes'                   => 'array',
+            'winnerPrizes.*.winner_number'   => 'nullable|integer',
         ]);
 
-        Raffle::where('id', $this->selectedRaffleId)->update([
-            'winner_user_id' => $this->winner_user_id ?: null,
-            'winner_number' => $this->winner_number ?: null,
+        $raffle = Raffle::with('numbers.user', 'numbers.line')->findOrFail($this->selectedRaffleId);
+        $numbersByValue = $raffle->numbers->keyBy('number');
+
+        $firstWinnerUserId = null;
+        $firstWinnerNumber = null;
+
+        $prizes = collect($raffle->prizes ?? [])
+            ->values()
+            ->map(function ($prize, $index) use ($raffle, $numbersByValue, &$firstWinnerUserId, &$firstWinnerNumber) {
+                $raw = trim((string) ($this->winnerPrizes[$index]['winner_number'] ?? ''));
+                $numberModel = $raw !== '' ? $numbersByValue->get((int) $raw) : null;
+
+                if ($numberModel && ! $firstWinnerUserId) {
+                    $firstWinnerUserId = (int) $numberModel->user_id;
+                    $firstWinnerNumber = (int) $raw;
+                }
+
+                return array_merge($prize, [
+                    'winner_number'               => $raw !== '' ? (int) $raw : null,
+                    'winner_user_id'              => $numberModel?->user_id,
+                    'winner_line_id'              => $numberModel?->line_id,
+                    'winner_username'             => $numberModel?->user?->username,
+                    'winner_name'                 => $numberModel?->user?->name,
+                    'winner_line_name'            => $numberModel?->line?->name,
+                    'winner_participations_count' => $numberModel
+                        ? $raffle->numbers->where('user_id', $numberModel->user_id)->count()
+                        : null,
+                    'winner_awarded_at'           => $raw !== '' ? now()->toDateTimeString() : null,
+                ]);
+            })
+            ->toArray();
+
+        $raffle->update([
+            'prizes'         => $prizes,
+            'winner_user_id' => $firstWinnerUserId,
+            'winner_number'  => $firstWinnerNumber,
         ]);
 
         $this->showWinnerModal = false;
-        session()->flash('message', 'Ganador registrado');
-
-        $raffle = Raffle::find($this->selectedRaffleId);
-        $winner = $this->winner_user_id ? User::find($this->winner_user_id) : null;
-
-        $this->notify('Ganador registrado', $winner
-            ? "{$winner->name} gano el sorteo {$raffle->title} con el numero {$this->winner_number}."
-            : "Se registro un ganador para el sorteo {$raffle->title}.",
-            'raffles', '/sorteos', 'success');
+        $this->winnerPrizes = [];
+        session()->flash('message', 'Resultados registrados');
+        $this->notify('Resultados registrados', "Se cargaron los resultados del sorteo {$raffle->title}.", 'raffles', '/sorteos', 'success');
     }
 
     public function toggleStatus(int $id): void
@@ -554,18 +591,31 @@ class Sorteos extends Component
 
     private function normalizedPrizes(): array
     {
+        $existingPrizes = collect($this->editingRaffle?->prizes ?? [])->keyBy('position');
+
         return collect($this->prizes)
-            ->map(function ($prize, $index) {
+            ->map(function ($prize, $index) use ($existingPrizes) {
                 $image = $prize['image'] ?? '';
 
                 if (isset($this->prizeUploads[$index]) && $this->prizeUploads[$index]) {
                     $image = ImageStorage::store($this->prizeUploads[$index], 'sorteos/premios', $image ?: null);
                 }
 
+                $position = (int) ($prize['position'] ?? $index + 1);
+                $existing = $existingPrizes->get($position, []);
+
                 return [
-                    'position' => (int) ($prize['position'] ?? $index + 1),
-                    'name' => trim($prize['name'] ?? ''),
-                    'image' => $image ?: null,
+                    'position'                    => $position,
+                    'name'                        => trim($prize['name'] ?? ''),
+                    'image'                       => $image ?: null,
+                    'winner_number'               => $existing['winner_number'] ?? null,
+                    'winner_user_id'              => $existing['winner_user_id'] ?? null,
+                    'winner_line_id'              => $existing['winner_line_id'] ?? null,
+                    'winner_username'             => $existing['winner_username'] ?? null,
+                    'winner_name'                 => $existing['winner_name'] ?? null,
+                    'winner_line_name'            => $existing['winner_line_name'] ?? null,
+                    'winner_participations_count' => $existing['winner_participations_count'] ?? null,
+                    'winner_awarded_at'           => $existing['winner_awarded_at'] ?? null,
                 ];
             })
             ->filter(fn ($prize) => $prize['position'] > 0 && $prize['name'] !== '')
