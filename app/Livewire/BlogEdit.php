@@ -166,7 +166,7 @@ class BlogEdit extends Component
         $this->comments = Comment::where('post_id', $this->post->id)
             ->whereNull('parent_id')
             ->with(['user', 'replies.user'])
-            ->orderBy('created_at')
+            ->orderBy('created_at', 'desc')
             ->get();
     }
 

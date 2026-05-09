@@ -76,9 +76,15 @@
                 @endif
             </div>
 
-            <div class="be-comments">
-                <form wire:submit.prevent="addComment" class="be-new-comment">
-                    <textarea wire:model="newComment" rows="2" placeholder="Escribir comentario como staff..."
+            <div class="be-comments" x-data="{ open: false }">
+                <div style="padding:10px 16px;border-bottom:1px solid var(--line);">
+                    <button type="button" @click="open = !open" class="btn-ghost" style="height:30px;font-size:11px;padding:0 14px;width:100%;justify-content:center;gap:6px;">
+                        <i class="fa-solid" :class="open ? 'fa-xmark' : 'fa-plus'"></i>
+                        <span x-text="open ? 'Cancelar' : 'Agregar comentario'"></span>
+                    </button>
+                </div>
+                <form wire:submit.prevent="addComment" class="be-new-comment" x-show="open" x-transition @submit.prevent="$wire.addComment().then(() => open = false)">
+                    <textarea wire:model="newComment" rows="3" placeholder="Escribir comentario como staff..."
                         class="form-input" style="resize:none;font-size:13px;"></textarea>
                     @error('newComment') <div class="form-error">{{ $message }}</div> @enderror
                     <div style="display:flex;justify-content:flex-end;margin-top:6px;">

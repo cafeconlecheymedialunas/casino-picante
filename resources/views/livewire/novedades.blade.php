@@ -98,6 +98,7 @@
                 @endif
             </span>
             <div class="nv-actions">
+                <span class="nv-action-btn" title="Editar"><i class="fa-solid fa-pen"></i></span>
                 @if($canDelete)
                 <button class="nv-action-btn danger"
                     wire:click.prevent.stop="deletePost({{ $post->id }})"
