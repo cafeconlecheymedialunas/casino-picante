@@ -1,53 +1,61 @@
 <div>
 @section('header')
-    <x-livewire.components.page-header title="NOVEDADES" />
+    <x-livewire.components.page-header title="BLOG" />
 @endsection
 
     @if($showModal)
-    <div class="modal-overlay" wire:click="closeModal">
-        <div class="modal-content" wire:click.stop>
-            <div class="modal-header">
-                <h3>{{ $editingPost ? 'EDITAR CONTENIDO' : 'NUEVO CONTENIDO' }}</h3>
-                <button class="modal-close" wire:click="closeModal">✕</button>
+    <div class="nv-modal-overlay" wire:click="closeModal">
+        <div class="modal-panel" wire:click.stop>
+            <div class="modal-head">
+                <h3><i class="fa-solid {{ $editingPost ? 'fa-pen-to-square' : 'fa-newspaper' }}" style="color:var(--orange);margin-right:8px"></i>{{ $editingPost ? 'Editar post' : 'Nuevo post' }}</h3>
+                <button class="modal-close" wire:click="closeModal"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form class="modal-form" wire:submit.prevent="savePost">
+
                 <div class="form-group">
-                    <label>Título</label>
-                    <input type="text" placeholder="Título del contenido" wire:model="title">
+                    <label class="form-label">Título</label>
+                    <input type="text" wire:model="title" class="form-input" placeholder="Título del post">
+                    @error('title') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
+
                 <div class="form-group">
-                    <label>Tipo</label>
-                    <select wire:model="type" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
-                        <option value="novedad">Novedad</option>
-                        <option value="blog">Blog</option>
-                        <option value="aviso">Aviso</option>
-                        <option value="carrusel">Carrusel</option>
-                    </select>
+                    <label class="form-label">Resumen breve</label>
+                    <input type="text" wire:model="excerpt" class="form-input" placeholder="Breve descripción...">
                 </div>
+
                 <div class="form-group">
-                    <label>Resumen breve</label>
-                    <input type="text" placeholder="Breve descripción..." wire:model="excerpt">
+                    <label class="form-label">Contenido</label>
+                    <textarea wire:model="content" rows="4" class="form-input" style="resize:vertical" placeholder="Contenido completo..."></textarea>
                 </div>
+
                 <div class="form-group">
-                    <label>Contenido</label>
-                    <textarea placeholder="Contenido completo..." wire:model="content" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;min-height:120px;"></textarea>
+                    <x-upload-image label="Imagen destacada" model="imageUpload" :value="$image" remove-action="removeImage" aspect="16/9">
+                        @error('imageUpload') <div class="form-error">{{ $message }}</div> @enderror
+                    </x-upload-image>
                 </div>
+
                 <div class="form-group">
-                    <x-image-uploader label="Imagen destacada" model="imageUpload" :upload="$imageUpload" :value="$image" remove-action="removeImage" variant="wide">
-                        @error('imageUpload') <span class="form-error">{{ $message }}</span> @enderror
-                    </x-image-uploader>
-                </div>
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select wire:model="status" style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:10px;padding:12px 16px;color:var(--white);font-size:14px;">
+                    <label class="form-label">Estado</label>
+                    <select wire:model="status" class="form-input">
                         <option value="draft">Borrador</option>
                         <option value="published">Publicado</option>
                         <option value="hidden">Oculto</option>
                     </select>
                 </div>
+
                 <div class="modal-actions">
+                    @if($editingPost)
+                    <button type="button" class="btn-ghost" style="color:#ff4757;border-color:rgba(255,71,87,.4);margin-right:auto"
+                        wire:click="deletePost({{ $editingPost->id }})"
+                        wire:confirm="¿Eliminar esta novedad?">
+                        <i class="fa-solid fa-trash"></i> Eliminar
+                    </button>
+                    @endif
                     <button type="button" wire:click="closeModal" class="btn-ghost">Cancelar</button>
-                    <button type="submit" class="btn-primary">{{ $editingPost ? 'Guardar' : 'Crear' }}</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        {{ $editingPost ? 'Guardar cambios' : 'Publicar post' }}
+                    </button>
                 </div>
             </form>
         </div>
@@ -64,20 +72,13 @@
     <div class="module-top-bar">
         <button type="button" class="btn-primary" wire:click="openCreateModal()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            Nueva novedad
+            Nuevo post
         </button>
     </div>
     @endif
 
     <div class="content-grid">
         <div>
-            <div class="tab-bar">
-                <div class="tabs">
-                    <button class="tab {{ $tab === 'novedad' ? 'active' : '' }}" wire:click="setTab('novedad')">Novedades</button>
-                    <button class="tab {{ $tab === 'blog' ? 'active' : '' }}" wire:click="setTab('blog')">Blog</button>
-                    <button class="tab {{ $tab === 'carrusel' ? 'active' : '' }}" wire:click="setTab('carrusel')">Carrusel</button>
-                </div>
-            </div>
             <div class="filter-row">
                 <div class="filter-box">
                     <input type="text" placeholder="Buscar..." wire:model="search" class="search-input" style="width:100%;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--line-2);font-size:12px;color:var(--muted);">
@@ -285,15 +286,23 @@
         
         .empty-state { text-align: center; color: var(--muted); padding: 40px; }
         
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: linear-gradient(180deg, #1a0d0d 0%, #120909 100%); border: 1px solid var(--line); border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--line); }
-        .modal-header h3 { font-family: var(--font-display); font-size: 22px; margin: 0; }
-        .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
-        .modal-form { padding: 24px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; background: linear-gradient(180deg, #1c0d0a, #120909); border: 1px solid var(--line-warm); border-radius: 10px; padding: 12px 16px; color: #fff; font-size: 14px; }
-        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+        /* ── Modal ───────────────────────────────────────────────────── */
+        .nv-modal-overlay { position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.78); }
+        .modal-panel { width:min(580px,100%);max-height:92vh;overflow-y:auto;border:1px solid var(--line-2);border-radius:8px;background:linear-gradient(180deg,#1c0e0e,#120909); }
+        .modal-head { display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#1c0e0e;z-index:1; }
+        .modal-head h3 { margin:0;font-family:var(--font-display);font-size:22px;letter-spacing:.03em;display:flex;align-items:center; }
+        .modal-close { width:32px;height:32px;border:1px solid var(--line);border-radius:7px;background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px; }
+        .modal-close:hover { border-color:var(--orange);color:var(--orange); }
+        .modal-form { padding:22px; }
+        .modal-actions { display:flex;gap:10px;justify-content:flex-end;margin-top:24px;flex-wrap:wrap; }
+        /* ── Form ────────────────────────────────────────────────────── */
+        .nv-form-row { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+        .form-group { margin-bottom:16px; }
+        .form-label { display:block;margin-bottom:6px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase; }
+        .form-input { width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:7px;padding:9px 12px;color:var(--white);font-size:13px;font-family:var(--font-body); }
+        .form-input:focus { outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,106,26,.12); }
+        textarea.form-input { resize:vertical; }
+        select.form-input { cursor:pointer; }
+        .form-error { margin-top:4px;color:#ff4757;font-size:11px; }
     </style>
 </div>

@@ -15,8 +15,6 @@ class Novedades extends Component
 {
     use HasLinePermissions, SendsNotifications, WithFileUploads;
 
-    public $tab = 'novedad';
-
     public $statusFilter = 'all';
 
     public $selectedPost = null;
@@ -35,8 +33,6 @@ class Novedades extends Component
 
     public $status = 'draft';
 
-    public $type = 'novedad';
-
     public $image = '';
 
     public $imageUpload = null;
@@ -46,7 +42,6 @@ class Novedades extends Component
         'content' => 'nullable',
         'excerpt' => 'nullable',
         'status' => 'required|in:draft,published,hidden',
-        'type' => 'required|in:novedad,blog,carrusel',
     ];
 
     public function canCreate(): bool
@@ -84,7 +79,6 @@ class Novedades extends Component
     {
         $this->checkLinePermission(Permissions::NEWS_CREATE);
         $this->resetForm();
-        $this->type = $this->tab;
         $this->showModal = true;
     }
 
@@ -97,7 +91,6 @@ class Novedades extends Component
         $this->content = $post->content ?? '';
         $this->excerpt = $post->excerpt ?? '';
         $this->status = $post->status;
-        $this->type = $post->type;
         $this->image = $post->image ?? '';
         $this->imageUpload = null;
         $this->showModal = true;
@@ -138,12 +131,13 @@ class Novedades extends Component
         }
 
         $data = [
-            'title' => $this->title,
+            'title'   => $this->title,
+            'slug'    => \Illuminate\Support\Str::slug($this->title) . '-' . uniqid(),
             'content' => $this->content,
             'excerpt' => $this->excerpt,
-            'status' => $this->status,
-            'type' => $this->type,
-            'image' => $imagePath ?: null,
+            'status'  => $this->status,
+            'type'    => 'blog',
+            'image'   => $imagePath ?: null,
         ];
 
         if ($this->editingPost) {
@@ -265,10 +259,6 @@ class Novedades extends Component
 
         if ($lineIds !== null) {
             $query->whereIn('line_id', $lineIds);
-        }
-
-        if ($this->tab !== 'all') {
-            $query->where('type', $this->tab);
         }
 
         if ($this->statusFilter !== 'all') {

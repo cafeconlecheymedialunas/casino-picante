@@ -408,7 +408,7 @@
 
             @if($sidebarCan([\App\Support\Permissions::NEWS_READ, \App\Support\Permissions::NEWS_CREATE, \App\Support\Permissions::NEWS_UPDATE, \App\Support\Permissions::NEWS_DELETE]))
             <a href="{{ route('novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('novedades') ? 'active' : '' }}">
-                <span class="sidebar-item-icon"><i class="fa-solid fa-newspaper"></i></span> Novedades
+                <span class="sidebar-item-icon"><i class="fa-solid fa-newspaper"></i></span> Blog
             </a>
             @endif
 
