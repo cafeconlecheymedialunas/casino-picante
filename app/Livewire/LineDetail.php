@@ -1012,7 +1012,6 @@ class LineDetail extends Component
 
         if (
             ! $lineAgent->hasPermission(Permissions::LINE_READ)
-            && ! $lineAgent->hasPermission(Permissions::LINE_VIEW)
             && ! $lineAgent->hasPermission(Permissions::LINE_EDIT)
         ) {
             abort(403, 'Sin permiso para ver esta linea.');

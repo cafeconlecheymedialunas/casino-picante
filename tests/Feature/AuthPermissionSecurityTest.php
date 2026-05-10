@@ -148,7 +148,7 @@ class AuthPermissionSecurityTest extends TestCase
 
     public function test_agent_cannot_open_detail_for_unassigned_line(): void
     {
-        [$user, $agent, $line] = $this->agentWithLine([Permissions::LINE_VIEW]);
+        [$user, $agent, $line] = $this->agentWithLine([Permissions::LINE_READ]);
         $otherLine = Line::create(['name' => 'Linea Ajena', 'status' => 'active']);
 
         $this->actingAs($user)

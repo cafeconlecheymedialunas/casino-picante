@@ -14,8 +14,6 @@ final class Permissions
     public const TICKET_CLOSE = 'ticket.close';
 
     public const LINE_READ = 'line.read';
-    public const LINE_VIEW = 'line.view';
-    public const LINE_CREATE = 'line.create';
     public const LINE_EDIT = 'line.edit';
 
     public const AGENT_CREATE = 'agent.create';
@@ -66,7 +64,6 @@ final class Permissions
             self::TICKET_CLOSE      => ['fa-solid fa-circle-xmark',     'Cerrar tickets'],
             // Líneas
             self::LINE_READ         => ['fa-solid fa-list',             'Ver línea'],
-            self::LINE_VIEW         => ['fa-solid fa-eye',              'Vista pública línea'],
             self::LINE_EDIT         => ['fa-solid fa-sliders',          'Editar línea'],
             // Agentes
             self::AGENT_CREATE      => ['fa-solid fa-user-plus',        'Crear agentes'],
@@ -102,7 +99,7 @@ final class Permissions
         return [
             'promo' => [self::PROMO_READ, self::PROMO_CREATE, self::PROMO_UPDATE, self::PROMO_DELETE],
             'ticket' => [self::TICKET_READ, self::TICKET_UPDATE, self::TICKET_CLOSE],
-            'line' => [self::LINE_READ, self::LINE_VIEW, self::LINE_EDIT],
+            'line' => [self::LINE_READ, self::LINE_EDIT],
             'agent' => [self::AGENT_CREATE, self::AGENT_ASSIGN, self::AGENT_UPDATE, self::AGENT_PERMISSIONS],
             'bono' => [self::BONO_READ, self::BONO_CREATE, self::BONO_UPDATE, self::BONO_DELETE],
             'sorteo' => [self::SORTEO_READ, self::SORTEO_CREATE, self::SORTEO_UPDATE, self::SORTEO_DELETE],
