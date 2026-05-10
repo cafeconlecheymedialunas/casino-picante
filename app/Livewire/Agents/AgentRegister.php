@@ -5,6 +5,8 @@ namespace App\Livewire\Agents;
 use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
+use App\Models\LineAgentPermission;
+use App\Models\Notification;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\AvatarLibrary;
@@ -45,10 +47,23 @@ class AgentRegister extends Component
             'username' => 'nullable|min:3|max:60|alpha_dash',
             'password' => 'required|min:6|confirmed',
             'phone' => 'nullable|max:30',
-            'selectedLines' => 'array',
+            'selectedLines' => 'required|array|min:1',
             'selectedLines.*' => 'integer|exists:lines,id',
         ];
     }
+
+    protected $messages = [
+        'name.required' => 'El nombre es obligatorio.',
+        'name.min' => 'El nombre debe tener al menos 2 caracteres.',
+        'email.required' => 'El email es obligatorio.',
+        'email.email' => 'Ingresá un email válido.',
+        'username.alpha_dash' => 'Solo letras, números, guiones y guion bajo.',
+        'username.min' => 'El username debe tener al menos 3 caracteres.',
+        'password.required' => 'La contraseña es obligatoria.',
+        'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
+        'password.confirmed' => 'Las contraseñas no coinciden.',
+        'selectedLines.required' => 'Tenés que seleccionar al menos una línea.',
+    ];
 
     public function mount()
     {
@@ -85,7 +100,7 @@ class AgentRegister extends Component
             'password' => Hash::make($this->password),
             'phone' => trim($this->phone) ?: null,
             'avatar' => $this->avatar,
-            'status' => 'inactive',
+            'status' => 'active',
             'cargo' => 'agente',
         ]);
 
@@ -97,21 +112,71 @@ class AgentRegister extends Component
             'username' => $username,
             'password' => Hash::make($this->password),
             'avatar' => $this->avatar,
-            'status' => 'inactive',
+            'status' => 'active',
         ]);
 
         $agent->update(['user_id' => $user->id]);
 
-        foreach (collect($this->selectedLines)->map(fn ($id) => (int) $id)->unique() as $lineId) {
-            LineAgent::create([
+        $lineIds = collect($this->selectedLines)->map(fn ($id) => (int) $id)->unique();
+
+        foreach ($lineIds as $lineId) {
+            $line = Line::find($lineId);
+            $linePermissions = $line->permissions ?? [];
+
+            $lineAgent = LineAgent::create([
                 'line_id' => $lineId,
                 'agent_id' => $agent->id,
                 'role' => LineRoles::MIEMBRO,
-                'is_active' => false,
+                'is_active' => true,
             ]);
+
+            foreach ($linePermissions as $perm) {
+                LineAgentPermission::create([
+                    'line_id' => $lineId,
+                    'agent_id' => $agent->id,
+                    'permission' => $perm,
+                ]);
+            }
+
+            $this->notifyEncargadosLinea($line, $agent);
         }
 
         $this->registered = true;
+    }
+
+    private function notifyEncargadosLinea(Line $line, Agent $agent): void
+    {
+        $encargados = Agent::where('encargado_id', $line->encargado_id)
+            ->where('id', '!=', $agent->id)
+            ->where('status', 'active')
+            ->where('cargo', 'super_agente')
+            ->get();
+
+        $displayName = trim($agent->name.' '.($agent->apellido ?? ''));
+        $msg = "Nuevo agente registrado en \"{$line->name}\": {$displayName}";
+
+        foreach ($encargados as $encargado) {
+            $this->notifyAgent(
+                (int) $encargado->id,
+                'Nuevo agente registrado',
+                $msg,
+                'agents',
+                '/agentes',
+                'success'
+            );
+        }
+    }
+
+    private function notifyAgent(int $agentId, string $title, string $message, string $icon, string $url, string $type = 'info'): void
+    {
+        Notification::create([
+            'agent_id' => $agentId,
+            'title' => $title,
+            'message' => $message,
+            'icon' => $icon,
+            'url' => $url,
+            'type' => $type,
+        ]);
     }
 
     private function resolveUsername(): string
@@ -139,8 +204,8 @@ class AgentRegister extends Component
 
     public function render()
     {
-        $lines = Line::where('status', 'active')->orderBy('name')->get(['id', 'name']);
+        $lines = Line::orderBy('name')->get(['id', 'name']);
 
-        return view('livewire.agents.agent-register', compact('lines'))->layout('layouts.dashboard');
+        return view('livewire.agents.agent-register', compact('lines'))->layout('layouts.auth');
     }
 }

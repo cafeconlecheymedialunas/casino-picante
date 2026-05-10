@@ -9,9 +9,7 @@ class AdminPasswordReset extends Notification
 {
     use Queueable;
 
-    public function __construct(
-        public string $resetUrl
-    ) {}
+    public function __construct(public string $resetUrl) {}
 
     public function via(object $notifiable): array
     {
@@ -22,14 +20,9 @@ class AdminPasswordReset extends Notification
     {
         return (new MailMessage)
             ->subject('Restablecer contraseña - Panel RED PICANTES')
-            ->line('Recibiste este email porque se solicitó un restablecimiento de contraseña.')
+            ->line('Se solicitó un restablecimiento de contraseña.')
             ->action('Restablecer contraseña', $this->resetUrl)
             ->line('Este enlace caduca en 60 minutos.')
             ->line('Si no solicitaste este cambio, ignorá este email.');
-    }
-
-    public function toArray(object $notifiable): array
-    {
-        return ['reset_url' => $this->resetUrl];
     }
 }

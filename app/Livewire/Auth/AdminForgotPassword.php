@@ -5,7 +5,6 @@ namespace App\Livewire\Auth;
 use App\Models\Agent;
 use App\Models\User;
 use App\Notifications\AdminPasswordReset;
-use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -18,9 +17,7 @@ class AdminForgotPassword extends Component
 
     public string $error = '';
 
-    protected $rules = [
-        'email' => 'required|email',
-    ];
+    protected $rules = ['email' => 'required|email'];
 
     protected $messages = [
         'email.required' => 'El email es obligatorio.',
@@ -38,9 +35,10 @@ class AdminForgotPassword extends Component
     {
         $this->error = '';
         $this->validate();
+        $email = trim(strtolower($this->email));
 
-        $agent = Agent::where('email', $this->email)->first();
-        $user = User::where('email', $this->email)->first();
+        $agent = Agent::where('email', $email)->first();
+        $user = User::where('email', $email)->first();
 
         if (! $agent && ! $user) {
             $this->addError('email', 'No existe una cuenta con este email.');
@@ -48,35 +46,20 @@ class AdminForgotPassword extends Component
             return;
         }
 
-        $email = trim(strtolower($this->email));
-
-        if ($agent && ! $user) {
-            $roleName = Roles::AGENTE;
-        } elseif ($user && ! $agent) {
-            $roleName = $user->role?->name ?? '';
-        } else {
-            $roleName = $agent ? Roles::AGENTE : ($user->role?->name ?? '');
-        }
-
         $token = Str::random(64);
-
         DB::delete('DELETE FROM password_reset_tokens WHERE email = ?', [$email]);
         DB::insert('INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, ?)', [$email, $token, now()]);
 
-        $resetUrl = url('/admin/reset-password/'.$token);
-
         try {
-            $notifiable = $agent ?? $user;
-            $notifiable->notify(new AdminPasswordReset($resetUrl));
+            ($agent ?? $user)->notify(new AdminPasswordReset(url('/admin/reset-password/'.$token)));
             $this->sent = true;
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             $this->error = 'No se pudo enviar el enlace. Intentá nuevamente.';
         }
     }
 
     public function render()
     {
-        return view('livewire.auth.admin-forgot-password')
-            ->layout('layouts.auth');
+        return view('livewire.auth.admin-forgot-password')->layout('layouts.auth');
     }
 }

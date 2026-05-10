@@ -3,10 +3,10 @@
 
         <div style="text-align:center;margin-bottom:36px;">
             <div style="font-family:var(--font-display);font-size:48px;color:var(--orange);letter-spacing:.05em;line-height:1;">RED PICANTES</div>
-            <div style="color:var(--muted-2);font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-top:6px;">{{ $heading ?? 'Panel de administracion' }}</div>
+            <div style="color:rgba(255,255,255,0.42);font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-top:6px;">{{ $heading ?? 'Panel de administracion' }}</div>
         </div>
 
-        <div style="background:linear-gradient(180deg,#1c0e0e,#120909);border:1px solid var(--line-2);border-radius:14px;padding:32px 28px;position:relative;overflow:hidden;">
+        <div style="background:linear-gradient(180deg,#1c0e0e,#120909);border:1px solid rgba(255,255,255,0.14);border-radius:14px;padding:32px 28px;position:relative;overflow:hidden;">
             <div style="position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,var(--orange),var(--amber));"></div>
 
             <form wire:submit="login">
@@ -18,38 +18,37 @@
                 @endif
 
                 <div style="margin-bottom:18px;">
-                    <label style="display:block;margin-bottom:7px;color:var(--muted-2);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Usuario</label>
+                    <label style="display:block;margin-bottom:7px;color:rgba(255,255,255,0.62);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Usuario</label>
                     <input
                         type="text"
                         wire:model.blur="username"
                         placeholder="Username o email"
                         autocomplete="username"
                         autofocus
-                        style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:var(--font-body);outline:none;transition:border-color .15s;"
+                        style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid rgba(255,120,50,0.22);border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-body);outline:none;transition:border-color .15s;"
                         onfocus="this.style.borderColor='var(--orange)';this.style.boxShadow='0 0 0 3px rgba(255,106,26,.12)'"
-                        onblur="this.style.borderColor='var(--line-2)';this.style.boxShadow='none'"
+                        onblur="this.style.borderColor='rgba(255,120,50,0.22)';this.style.boxShadow='none'"
                     >
                 </div>
 
                 <div style="margin-bottom:26px;">
-                    <label style="display:block;margin-bottom:7px;color:var(--muted-2);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Contraseña</label>
+                    <label style="display:block;margin-bottom:7px;color:rgba(255,255,255,0.62);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Contraseña</label>
                     <input
                         type="password"
                         wire:model.blur="password"
                         placeholder="••••••••"
                         autocomplete="current-password"
-                        style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:8px;padding:11px 14px;color:var(--white);font-size:14px;font-family:var(--font-body);outline:none;transition:border-color .15s;"
+                        style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid rgba(255,120,50,0.22);border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-body);outline:none;transition:border-color .15s;"
                         onfocus="this.style.borderColor='var(--orange)';this.style.boxShadow='0 0 0 3px rgba(255,106,26,.12)'"
-                        onblur="this.style.borderColor='var(--line-2)';this.style.boxShadow='none'"
+                        onblur="this.style.borderColor='rgba(255,120,50,0.22)';this.style.boxShadow='none'"
                     >
                 </div>
 
                 <button
                     type="submit"
                     wire:loading.attr="disabled"
-                    style="width:100%;height:46px;background:linear-gradient(135deg,var(--orange),var(--orange-deep,#e6580f));border:none;border-radius:9px;color:#fff;font-family:var(--font-display);font-size:20px;letter-spacing:.06em;cursor:pointer;transition:opacity .15s;"
-                    onmouseover="this.style.opacity='.88'"
-                    onmouseout="this.style.opacity='1'"
+                    class="btn-primary"
+                    style="width:100%;justify-content:center;height:46px;font-family:var(--font-display);font-size:20px;letter-spacing:.06em;"
                 >
                     <span wire:loading.remove>{{ $submitLabel ?? 'INGRESAR' }}</span>
                     <span wire:loading style="font-size:13px;font-family:var(--font-body);letter-spacing:0;">Verificando...</span>
@@ -58,7 +57,13 @@
             </form>
         </div>
 
-        <div style="text-align:center;margin-top:20px;color:var(--muted-2);font-size:11px;">
+        <div style="text-align:center;margin-top:18px;color:rgba(255,255,255,0.42);font-size:11px;">
+            <a href="{{ route('admin.password.request') }}" wire:navigate style="color:var(--orange);text-decoration:none;font-weight:700;">¿Olvidaste tu contraseña?</a>
+        </div>
+        <div style="text-align:center;margin-top:14px;color:rgba(255,255,255,0.42);font-size:12px;">
+            ¿No tenés cuenta? <a href="{{ route('agent.register') }}" wire:navigate style="color:var(--orange);text-decoration:none;font-weight:700;">Registrate como agente</a>
+        </div>
+        <div style="text-align:center;margin-top:20px;color:rgba(255,255,255,0.25);font-size:10px;">
             RED PICANTES &copy; {{ date('Y') }}
         </div>
     </div>

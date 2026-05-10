@@ -39,11 +39,9 @@ class AdminResetPassword extends Component
     public function mount(string $token = '')
     {
         $this->token = $token;
-
         if (auth()->check()) {
             $this->redirect('/dashboard', navigate: true);
         }
-
         if (empty($token)) {
             $this->error = 'Token inválido.';
         }
@@ -53,9 +51,10 @@ class AdminResetPassword extends Component
     {
         $this->error = '';
         $this->validate();
+        $email = trim(strtolower($this->email));
 
         $record = DB::table('password_reset_tokens')
-            ->where('email', $this->email)
+            ->where('email', $email)
             ->where('token', $this->token)
             ->first();
 
@@ -65,31 +64,26 @@ class AdminResetPassword extends Component
             return;
         }
 
-        $createdAt = Carbon::parse($record->created_at);
-        if ($createdAt->addMinutes(60)->isPast()) {
-            DB::table('password_reset_tokens')->where('email', $this->email)->delete();
-            $this->addError('email', 'El enlace de restablecimiento expiró. Solicitá uno nuevo.');
+        if (Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            $this->addError('email', 'El enlace expiró. Solicitá uno nuevo.');
 
             return;
         }
 
-        $agent = Agent::where('email', $this->email)->first();
-        $user = User::where('email', $this->email)->first();
+        $agent = Agent::where('email', $email)->first();
+        $user = User::where('email', $email)->first();
 
-        if ($agent) {
-            $agent->update(['password' => Hash::make($this->password)]);
-        }
-        if ($user) {
-            $user->update(['password' => Hash::make($this->password)]);
+        foreach ([$agent, $user] as $model) {
+            $model?->update(['password' => Hash::make($this->password)]);
         }
 
-        DB::table('password_reset_tokens')->where('email', $this->email)->delete();
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
         $this->reset = true;
     }
 
     public function render()
     {
-        return view('livewire.auth.admin-reset-password')
-            ->layout('layouts.auth');
+        return view('livewire.auth.admin-reset-password')->layout('layouts.auth');
     }
 }
