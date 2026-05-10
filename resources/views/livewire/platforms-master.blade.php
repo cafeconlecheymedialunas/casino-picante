@@ -38,22 +38,6 @@
             <div class="pm-desc">{{ $platform->description }}</div>
             @endif
 
-            {{-- Contacts preview --}}
-            @if($platform->contacts && count($platform->contacts) > 0)
-            <div class="pm-contacts">
-                @foreach($platform->contacts as $contact)
-                <span class="pm-contact-badge pm-contact-{{ $contact['type'] }}">
-                    @if($contact['type'] === 'whatsapp')💬
-                    @elseif($contact['type'] === 'telegram')✈️
-                    @elseif($contact['type'] === 'instagram')📷
-                    @elseif($contact['type'] === 'facebook')📘
-                    @endif
-                    {{ $contact['value'] }}
-                </span>
-                @endforeach
-            </div>
-            @endif
-
             <div class="pm-meta">
                 @if($platform->website_url)
                 <a href="{{ $platform->website_url }}" target="_blank" class="pm-link">🌐 Sitio web</a>
@@ -134,40 +118,6 @@
                     <textarea wire:model="description" rows="2" class="form-input" style="resize:vertical"></textarea>
                 </div>
 
-                {{-- Contactos --}}
-                <div class="form-group">
-                    <label class="form-label" style="margin-bottom:10px">Contactos <span style="font-weight:400;color:var(--muted-2);text-transform:none;letter-spacing:0">· WhatsApp, Telegram, Instagram, Facebook</span></label>
-
-                    @forelse($contacts as $index => $contact)
-                    <div wire:key="contact-{{ $index }}" style="margin-bottom:8px;border:1px solid var(--line-2);border-radius:8px;overflow:hidden">
-                        <div style="display:flex;gap:8px;align-items:center;padding:8px;background:rgba(255,255,255,.025)">
-                            <select wire:model="contacts.{{ $index }}.type" class="form-input" style="width:130px;flex-shrink:0;padding:7px 10px;font-size:12px">
-                                <option value="whatsapp">WhatsApp</option>
-                                <option value="telegram">Telegram</option>
-                                <option value="instagram">Instagram</option>
-                                <option value="facebook">Facebook</option>
-                            </select>
-                            <input type="text" wire:model="contacts.{{ $index }}.value" class="form-input" style="flex:1;padding:7px 10px;font-size:12px"
-                                placeholder="{{ ($contacts[$index]['type'] ?? '') === 'whatsapp' ? '+54 9 11 ...' : (($contacts[$index]['type'] ?? '') === 'telegram' ? '@usuario' : 'URL o usuario') }}">
-                            <button type="button" wire:click="removeContact({{ $index }})" style="flex-shrink:0;width:30px;height:30px;border-radius:6px;cursor:pointer;background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.35);color:#ff4757;display:flex;align-items:center;justify-content:center;font-size:12px">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        @if(in_array($contact['type'] ?? '', ['whatsapp', 'telegram']))
-                        <div style="padding:0 8px 8px;background:rgba(255,255,255,.025)">
-                            <textarea wire:model="contacts.{{ $index }}.message" rows="2" class="form-input" style="font-size:12px;resize:none" placeholder="Mensaje automático (opcional)..."></textarea>
-                        </div>
-                        @endif
-                    </div>
-                    @empty
-                    <p style="font-size:12px;color:var(--muted-2);margin:0 0 10px;display:flex;align-items:center;gap:6px"><i class="fa-solid fa-comment-slash"></i> Sin contactos</p>
-                    @endforelse
-
-                    <button type="button" wire:click="addContact" class="btn-outline" style="font-size:12px;height:32px;padding:0 12px">
-                        <i class="fa-solid fa-plus"></i> Agregar contacto
-                    </button>
-                </div>
-
                 <div class="modal-actions">
                     @if($editingPlatform)
                     <button type="button" class="btn-ghost" style="color:#ff4757;border-color:rgba(255,71,87,.4);margin-right:auto"
@@ -204,12 +154,6 @@
         .pm-actions { display:flex;gap:4px;flex-shrink:0; }
         .pm-btn { width:28px;height:28px;padding:0;font-size:12px; }
         .pm-desc { font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.4; }
-        .pm-contacts { display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px; }
-        .pm-contact-badge { font-size:10px;padding:3px 8px;border-radius:6px;font-family:var(--font-mono);background:rgba(255,255,255,0.06);color:var(--muted-2);border:1px solid var(--line); }
-        .pm-contact-badge.pm-contact-whatsapp { background:rgba(37,196,107,0.1);color:#25c46b;border-color:rgba(37,196,107,0.25); }
-        .pm-contact-badge.pm-contact-telegram { background:rgba(100,150,255,0.1);color:#6496ff;border-color:rgba(100,150,255,0.25); }
-        .pm-contact-badge.pm-contact-instagram { background:rgba(255,106,180,0.1);color:#ff6ab4;border-color:rgba(255,106,180,0.25); }
-        .pm-contact-badge.pm-contact-facebook { background:rgba(100,130,255,0.1);color:#6482ff;border-color:rgba(100,130,255,0.25); }
         .pm-meta { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
         .pm-link { font-size:11px;color:var(--orange);text-decoration:none; }
         .pm-link:hover { text-decoration:underline; }

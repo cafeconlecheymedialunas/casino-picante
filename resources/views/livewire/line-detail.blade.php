@@ -335,12 +335,15 @@
             @if(!empty($link['value']))
             @php
                 $t = $link['type'] ?? '';
+                $n = $link['name'] ?? '';
                 $icon = match($t) {
                     'whatsapp'  => 'fa-brands fa-whatsapp',
                     'telegram'  => 'fa-brands fa-telegram',
                     'instagram' => 'fa-brands fa-instagram',
                     'facebook'  => 'fa-brands fa-facebook',
                     'phone'     => 'fa-solid fa-phone',
+                    'email'     => 'fa-solid fa-envelope',
+                    'web'       => 'fa-solid fa-globe',
                     default     => 'fa-solid fa-link',
                 };
                 $color = match($t) {
@@ -358,6 +361,9 @@
                 </div>
                 <div class="channel-info">
                     <div class="channel-type">{{ ucfirst($t) }}</div>
+                    @if($n)
+                    <div class="channel-name">{{ $n }}</div>
+                    @endif
                     <div class="channel-val">{{ $link['value'] }}</div>
                 </div>
                 <i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--muted);font-size:11px;flex-shrink:0"></i>
@@ -584,6 +590,7 @@
 .channel-icon { font-size: 26px; flex-shrink: 0; width: 42px; text-align: center; }
 .channel-info { flex: 1; min-width: 0; }
 .channel-type { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 3px; }
+.channel-name { font-size: 12px; color: var(--white); margin-bottom: 2px; font-weight: 600; }
 .channel-val { font-size: 13px; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Platforms ───────────────────────────────────────────────── */

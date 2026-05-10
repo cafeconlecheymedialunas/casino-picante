@@ -34,8 +34,6 @@ class PlatformsMaster extends Component
 
     public $is_active = true;
 
-    public array $contacts = [];
-
     public function openCreateModal()
     {
         $this->ensureAdmin();
@@ -63,7 +61,6 @@ class PlatformsMaster extends Component
         $this->description = $platform->description ?? '';
         $this->website_url = $platform->website_url ?? '';
         $this->is_active = $platform->is_active;
-        $this->contacts = $platform->contacts ?? [];
         $this->showModal = true;
     }
 
@@ -83,20 +80,6 @@ class PlatformsMaster extends Component
         $this->description = '';
         $this->website_url = '';
         $this->is_active = true;
-        $this->contacts = [];
-    }
-
-    public function addContact()
-    {
-        $this->ensureAdmin();
-        $this->contacts[] = ['type' => 'whatsapp', 'value' => '', 'message' => ''];
-    }
-
-    public function removeContact(int $index)
-    {
-        $this->ensureAdmin();
-        unset($this->contacts[$index]);
-        $this->contacts = array_values($this->contacts);
     }
 
     public function savePlatform()
@@ -125,7 +108,6 @@ class PlatformsMaster extends Component
             'description' => $this->description ?: null,
             'website_url' => $this->website_url ?: null,
             'is_active' => $this->is_active,
-            'contacts' => array_values(array_filter($this->contacts, fn ($c) => ! empty($c['value']))),
         ];
 
         if ($this->editingPlatform) {

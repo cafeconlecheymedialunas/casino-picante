@@ -19,9 +19,9 @@ class ContactRepeater extends Component
         'instagram' => '📷 Instagram',
         'facebook' => '📘 Facebook',
         'phone' => '📞 Teléfono',
+        'web' => '🌐 Web',
+        'other' => '🔗 Otro',
     ];
-
-    public array $messageTypes = ['whatsapp', 'instagram', 'email'];
 
     public function mount(string $fieldName = 'contacts')
     {
@@ -33,28 +33,8 @@ class ContactRepeater extends Component
         $this->contacts[] = [
             'type' => 'whatsapp',
             'value' => '',
-            'message' => '',
+            'name' => '',
         ];
-    }
-
-    public function updatedContacts($value, $key)
-    {
-        if (str_ends_with($key, '.type')) {
-            $parts = explode('.', $key);
-            $index = null;
-
-            foreach ($parts as $part) {
-                if (is_numeric($part)) {
-                    $index = (int) $part;
-                    break;
-                }
-            }
-
-            if ($index !== null && ! in_array($value, $this->messageTypes, true)) {
-                $this->contacts[$index]['message'] = '';
-                $this->contacts = array_values($this->contacts);
-            }
-        }
     }
 
     public function removeContact(int $index)

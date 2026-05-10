@@ -27,8 +27,6 @@ class Lineas extends Component
 
     public bool $showModal = false;
 
-
-
     public bool $showDetailsModal = false;
 
     public ?int $editingLineId = null;
@@ -74,8 +72,6 @@ class Lineas extends Component
 
     public string $bestPlatformTotal = '';
 
-
-
     // Agent permission editor
     public ?int $editingAgentPermissionsId = null;
 
@@ -97,8 +93,7 @@ class Lineas extends Component
             'channels' => 'array',
             'channels.*.type' => 'nullable|string|max:40',
             'channels.*.value' => 'nullable|string|max:500',
-            'channels.*.has_message' => 'nullable|boolean',
-            'channels.*.message' => 'nullable|string|max:1000',
+            'channels.*.name' => 'nullable|string|max:100',
             'selectedPlatformIds' => 'array',
             'selectedPlatformIds.*' => 'integer|exists:platforms,id',
         ];
@@ -499,8 +494,6 @@ class Lineas extends Component
         $this->closeAgentPermissions();
     }
 
-
-
     public function openEditSaleInModal(int $saleId): void
     {
         $line = Line::findOrFail($this->editingLineId);
@@ -638,8 +631,6 @@ class Lineas extends Component
             ? Line::with(['lineAgents.agent', 'platforms', 'sales.platform'])->find($this->activeLineId)
             : null;
 
-
-
         $editLineAgents = ($this->editingLineId && $this->editTab === 'agentes')
             ? LineAgent::with('agent')
                 ->where('line_id', $this->editingLineId)
@@ -692,14 +683,12 @@ class Lineas extends Component
         $this->encargadoId = '';
         $this->encargadoPercent = '0';
 
-        $this->channels = [['type' => 'whatsapp', 'value' => '', 'has_message' => false, 'message' => '']];
+        $this->channels = [['type' => 'whatsapp', 'value' => '', 'name' => '']];
         $this->selectedPlatformIds = [];
         $this->linePermissions = LineAgentPermission::allPermissions();
 
         $this->resetValidation();
     }
-
-
 
     private function fillForm(Line $line): void
     {
@@ -719,7 +708,7 @@ class Lineas extends Component
         $this->channels = $this->mapChannels($line->contact_links ?? []);
 
         if (empty($this->channels)) {
-            $this->channels = [['type' => 'whatsapp', 'value' => '', 'has_message' => false, 'message' => '']];
+            $this->channels = [['type' => 'whatsapp', 'value' => '', 'name' => '']];
         }
 
         $this->selectedPlatformIds = $line->platforms()->pluck('platforms.id')->map(fn ($id) => (string) $id)->toArray();
@@ -772,10 +761,9 @@ class Lineas extends Component
     {
         return collect($this->channels)
             ->map(fn ($r) => [
-                'type' => trim($r['type'] ?? 'otro'),
+                'type' => trim($r['type'] ?? 'other'),
                 'value' => trim($r['value'] ?? ''),
-                'has_message' => (bool) ($r['has_message'] ?? false),
-                'message' => trim($r['message'] ?? ''),
+                'name' => trim($r['name'] ?? ''),
             ])
             ->filter(fn ($r) => $r['value'] !== '')
             ->values()
@@ -809,10 +797,9 @@ class Lineas extends Component
     {
         return collect($links)
             ->map(fn ($l) => [
-                'type' => $l['type'] ?? 'otro',
+                'type' => $l['type'] ?? 'other',
                 'value' => $l['value'] ?? $l['url'] ?? '',
-                'has_message' => (bool) ($l['has_message'] ?? false),
-                'message' => $l['message'] ?? '',
+                'name' => $l['name'] ?? '',
             ])
             ->values()
             ->toArray();

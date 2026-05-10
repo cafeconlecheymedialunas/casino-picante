@@ -196,7 +196,7 @@ class LineDetail extends Component
         $this->inlineEncargadoId = $this->line->encargado_id;
         $this->inlineContacts = $this->line->contact_links ?? [];
         if (empty($this->inlineContacts)) {
-            $this->inlineContacts = [['type' => 'whatsapp', 'value' => '', 'label' => 'WhatsApp']];
+            $this->inlineContacts = [['type' => 'whatsapp', 'value' => '', 'name' => 'WhatsApp']];
         }
     }
 
@@ -239,7 +239,7 @@ class LineDetail extends Component
         } else {
             $this->inlineContacts = $this->line->contact_links ?? [];
             if (empty($this->inlineContacts)) {
-                $this->inlineContacts = [['type' => 'whatsapp', 'value' => '', 'label' => 'WhatsApp']];
+                $this->inlineContacts = [['type' => 'whatsapp', 'value' => '', 'name' => 'WhatsApp']];
             }
         }
         $this->editingContacts = ! $this->editingContacts;
@@ -918,7 +918,7 @@ class LineDetail extends Component
 
         // Enforce hierarchical inheritance: remove any agent permissions no longer allowed by the line
         $allowed = $this->line->permissions;
-        $deleteQuery = \App\Models\LineAgentPermission::where('line_id', $this->line->id);
+        $deleteQuery = LineAgentPermission::where('line_id', $this->line->id);
         if ($allowed === null) {
             // no explicit restrictions => do not delete
         } elseif (is_array($allowed) && empty($allowed)) {
@@ -950,7 +950,7 @@ class LineDetail extends Component
 
         // Enforce hierarchical inheritance: remove any agent permissions no longer allowed by the line
         $allowed = $this->line->permissions;
-        $deleteQuery = \App\Models\LineAgentPermission::where('line_id', $this->line->id);
+        $deleteQuery = LineAgentPermission::where('line_id', $this->line->id);
         if ($allowed === null) {
             // no explicit restrictions => do not delete
         } elseif (is_array($allowed) && empty($allowed)) {
