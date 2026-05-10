@@ -2,8 +2,12 @@
 
 use App\Http\Controllers\PerfilController;
 use App\Livewire\Agentes;
+use App\Livewire\Agents\AgentRegister;
+use App\Livewire\Auth\AdminForgotPassword;
+use App\Livewire\Auth\AdminResetPassword;
 use App\Livewire\Auth\ClientLogin;
 use App\Livewire\Auth\Login;
+use App\Livewire\BlogEdit;
 use App\Livewire\Bonos;
 use App\Livewire\Chats;
 use App\Livewire\EditorHome;
@@ -26,6 +30,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/admin/login', Login::class)->name('admin.login')->middleware('guest_or_agent');
+Route::get('/admin/register', AgentRegister::class)->name('agent.register')->middleware('guest_or_agent');
+Route::get('/admin/forgot-password', AdminForgotPassword::class)->name('admin.password.request')->middleware('guest_or_agent');
+Route::get('/admin/reset-password/{token}', AdminResetPassword::class)->name('admin.password.reset')->middleware('guest_or_agent');
 Route::get('/login', ClientLogin::class)->name('login')->middleware('guest_or_agent');
 Route::get('/', function () {
     return redirect()->route('login');
@@ -109,7 +116,7 @@ Route::middleware('line.authorize')->group(function () {
     });
 
     Route::middleware('line.authorize:'.Permissions::NEWS_UPDATE)->group(function () {
-        Route::get('/blog/{id}/edit', \App\Livewire\BlogEdit::class)->name('blog.edit');
+        Route::get('/blog/{id}/edit', BlogEdit::class)->name('blog.edit');
     });
 
     Route::middleware('line.authorize:'.Permissions::BONO_READ)->group(function () {

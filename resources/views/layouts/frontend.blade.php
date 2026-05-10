@@ -149,7 +149,6 @@
                 <button type="submit" class="fe-btn-ghost" style="padding:6px 12px;font-size:11px;">Salir</button>
             </form>
             @else
-            <a href="{{ route('register') }}" wire:navigate class="fe-btn-primary" style="padding:7px 16px;font-size:12px;">Registrarse</a>
             <a href="{{ route('login') }}" wire:navigate class="fe-btn-ghost" style="padding:6px 14px;">Iniciar sesión</a>
             @endauth
         </div>
