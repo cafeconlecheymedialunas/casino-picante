@@ -2,6 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Agent;
+use App\Models\Line;
+use App\Models\LineAgent;
+use App\Models\Platform;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Roles;
@@ -14,7 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->seedRoles();
 
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'role_id' => Role::where('name', Roles::ADMIN)->first()?->id,
@@ -23,6 +27,48 @@ class DatabaseSeeder extends Seeder
                 'apellido' => 'General',
                 'password' => Hash::make('password'),
                 'status' => 'active',
+            ]
+        );
+
+        $platform = Platform::updateOrCreate(
+            ['name' => 'Platino'],
+            [
+                'slug' => 'platino',
+                'is_active' => true,
+                'description' => 'Plataforma principal',
+            ]
+        );
+
+        $line = Line::updateOrCreate(
+            ['name' => 'Línea Dorada'],
+            [
+                'description' => 'Línea principal de juego',
+                'status' => 'active',
+            ]
+        );
+
+        $line->platforms()->syncWithoutDetaching([
+            $platform->id => ['is_active' => true],
+        ]);
+
+        $agent = Agent::updateOrCreate(
+            ['user_id' => $admin->id],
+            [
+                'username' => 'admin_agent',
+                'name' => 'Admin',
+                'apellido' => 'Agente',
+                'email' => 'admin@example.com',
+                'password' => Hash::make('password'),
+                'status' => 'active',
+            ]
+        );
+
+        LineAgent::updateOrCreate(
+            ['line_id' => $line->id, 'agent_id' => $agent->id],
+            [
+                'role' => 'encargado',
+                'is_active' => true,
+                'porcentaje_ganancia' => 30,
             ]
         );
 

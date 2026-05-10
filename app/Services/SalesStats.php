@@ -143,20 +143,63 @@ class SalesStats
         ];
     }
 
+    public static function globalDateRangeStats(Collection $lines, ?string $dateInicio = null, ?string $dateFin = null): array
+    {
+        $lineIds = $lines->pluck('id')->all();
+
+        $query = Sale::whereIn('line_id', $lineIds)
+            ->when($dateInicio && $dateFin, function ($q) use ($dateInicio, $dateFin) {
+                $q->whereDate('fecha_inicio', '>=', $dateInicio)
+                    ->whereDate('fecha_fin', '<=', $dateFin);
+            });
+
+        $total = (float) (clone $query)->sum('monto_fichas');
+        $records = (clone $query)->count();
+        $lineCount = (clone $query)->distinct('line_id')->count('line_id');
+        $platformCount = (clone $query)->distinct('platform_id')->count('platform_id');
+
+        $bestLine = (clone $query)
+            ->selectRaw('line_id, SUM(monto_fichas) as total')
+            ->groupBy('line_id')
+            ->orderByDesc('total')
+            ->first();
+
+        $bestPlatform = (clone $query)
+            ->selectRaw('platform_id, SUM(monto_fichas) as total')
+            ->groupBy('platform_id')
+            ->orderByDesc('total')
+            ->first();
+
+        return [
+            'total' => $total,
+            'records' => $records,
+            'lineCount' => $lineCount,
+            'platformCount' => $platformCount,
+            'bestLine' => $bestLine ? [
+                'line' => Line::find($bestLine->line_id),
+                'total' => (float) $bestLine->total,
+            ] : null,
+            'bestPlatform' => $bestPlatform ? [
+                'platform' => Platform::find($bestPlatform->platform_id),
+                'total' => (float) $bestPlatform->total,
+            ] : null,
+        ];
+    }
+
     private static function dateFunctions(): array
     {
         $driver = DB::connection()->getDriverName();
 
         if ($driver === 'sqlite') {
-            return ["CAST(strftime('%m', fecha) AS INTEGER)", "CAST(strftime('%Y', fecha) AS INTEGER)"];
+            return ["CAST(strftime('%m', fecha_inicio) AS INTEGER)", "CAST(strftime('%Y', fecha_inicio) AS INTEGER)"];
         }
 
-        return ['MONTH(fecha)', 'YEAR(fecha)'];
+        return ['MONTH(fecha_inicio)', 'YEAR(fecha_inicio)'];
     }
 
     private static function dateFn(): string
     {
-        return DB::connection()->getDriverName() === 'sqlite' ? 'date(fecha)' : 'DATE(fecha)';
+        return DB::connection()->getDriverName() === 'sqlite' ? 'date(fecha_inicio)' : 'DATE(fecha_inicio)';
     }
 
     public static function globalTotalSales(?Collection $lines = null): float
@@ -295,7 +338,7 @@ class SalesStats
         }
 
         $startDate = now()->subDays($days)->startOfDay();
-        $dailyData = Sale::whereIn('line_id', $lineIds)->where('fecha', '>=', $startDate)
+        $dailyData = Sale::whereIn('line_id', $lineIds)->where('fecha_inicio', '>=', $startDate)
             ->selectRaw(self::dateFn().' as day, SUM(monto_fichas) as total')->groupBy('day')->orderBy('day')->get();
 
         $labels = [];

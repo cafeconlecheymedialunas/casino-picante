@@ -55,7 +55,7 @@
         .table-header-row { display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid var(--line); gap:14px; flex-wrap:wrap; }
         .table-header-left .tc-title { font-family: var(--font-display); font-size: 22px; letter-spacing: .03em; }
         .table-scroll { overflow-x:auto; }
-        .t-head, .t-row { display:grid; grid-template-columns: 1.2fr 1fr 1fr 1fr 160px 130px; gap:12px; align-items:center; min-width:1080px; padding:11px 18px; }
+        .t-head, .t-row { display:grid; grid-template-columns: 1.2fr 1fr 1fr 160px 130px; gap:12px; align-items:center; min-width:980px; padding:11px 18px; }
         .t-head { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
         .t-row { border-bottom: 1px solid var(--line); font-size: 13px; }
         .t-row:last-child { border-bottom: 0; }
@@ -117,12 +117,8 @@
                     @endforeach
                 </select>
             @endif
-            <select wire:model.live="monthFilter" class="select">
-                @foreach($months as $num => $label)
-                    <option value="{{ $num }}">{{ $label }}</option>
-                @endforeach
-            </select>
-            <input type="number" wire:model.live="yearFilter" class="input" style="width:98px">
+            <input type="date" wire:model.live="dateInicioFilter" class="input" style="width:120px">
+            <input type="date" wire:model.live="dateFinFilter" class="input" style="width:120px">
         </div>
 
         @if(session()->has('message'))
@@ -133,7 +129,7 @@
             <div class="stat-card">
                 <div class="stat-label">Total fichas vendidas</div>
                 <div class="stat-value">${{ number_format((float) $stats['total'], 2) }}</div>
-                <div class="stat-note">{{ $this->monthLabel($monthFilter, $yearFilter) }}</div>
+                <div class="stat-note">{{ $this->dateRangeLabel() }}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Linea top</div>
@@ -162,9 +158,8 @@
             <div class="table-scroll">
                 <div class="t-head">
                     <div>Linea Principal</div>
-                    <div>Agente</div>
-                    <div>Cliente</div>
                     <div>Plataforma</div>
+                    <div>Rango fechas</div>
                     <div>Monto fichas</div>
                     <div>Acciones</div>
                 </div>
@@ -172,11 +167,10 @@
                     <div class="t-row">
                         <div>
                             <strong>{{ $sale->line?->name ?? '-' }}</strong>
-                            <div class="line-meta">#{{ str_pad($sale->line_id, 4, '0', STR_PAD_LEFT) }} {{ $sale->fecha->format('d/m/Y') }}</div>
+                            <div class="line-meta">#{{ str_pad($sale->line_id, 4, '0', STR_PAD_LEFT) }}</div>
                         </div>
-                        <div>{{ $sale->agent?->name ?? '-' }}</div>
-                        <div>{{ $sale->client?->name ?? '-' }}</div>
                         <div>{{ $sale->platform?->name ?? '-' }}</div>
+                        <div>{{ $sale->fecha_inicio?->format('d/m/Y') }} - {{ $sale->fecha_fin?->format('d/m/Y') }}</div>
                         <div><strong>${{ number_format((float) $sale->monto_fichas, 2) }}</strong></div>
                         <div class="action-row">
                             <button type="button" class="btn-icon" wire:click="openEditModal({{ $sale->id }})" title="Editar">
@@ -212,24 +206,6 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Agente</label>
-                            <select wire:model.live="saleAgentId" class="select" style="width:100%">
-                                <option value="">Elegir agente</option>
-                                @foreach($formAgents as $lineAgent)
-                                    <option value="{{ $lineAgent->agent_id }}">{{ $lineAgent->agent->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Cliente</label>
-                            <select wire:model.live="saleClientId" class="select" style="width:100%">
-                                <option value="">Elegir cliente</option>
-                                @foreach($formClients as $client)
-                                    <option value="{{ $client->id }}">{{ $client->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="form-group">
                             <label class="form-label">Plataforma</label>
                             <select wire:model="salePlatformId" class="select" style="width:100%">
                                 <option value="">Elegir plataforma</option>
@@ -243,9 +219,14 @@
 
                     <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" wire:model.live="saleFecha" class="input" style="width:100%">
-                            @error('saleFecha') <div class="form-error">{{ $message }}</div> @enderror
+                            <label class="form-label">Fecha inicio</label>
+                            <input type="date" wire:model.live="saleFechaInicio" class="input" style="width:100%">
+                            @error('saleFechaInicio') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fecha fin</label>
+                            <input type="date" wire:model.live="saleFechaFin" class="input" style="width:100%">
+                            @error('saleFechaFin') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group">
                             <label class="form-label">Descripcion</label>

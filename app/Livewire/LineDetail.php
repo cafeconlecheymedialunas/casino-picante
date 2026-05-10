@@ -736,10 +736,10 @@ class LineDetail extends Component
     {
         $best = Sale::where('line_id', $this->lineId)
             ->get()
-            ->groupBy(fn (Sale $sale) => $sale->fecha->format('Y-m'))
+            ->groupBy(fn (Sale $sale) => $sale->fecha_inicio->format('Y-m'))
             ->map(fn ($sales) => [
-                'mes' => $sales->first()->fecha->month,
-                'anio' => $sales->first()->fecha->year,
+                'mes' => $sales->first()->fecha_inicio->month,
+                'anio' => $sales->first()->fecha_inicio->year,
                 'total' => $sales->sum(fn (Sale $sale) => (float) $sale->monto_fichas),
             ])
             ->sortByDesc('total')

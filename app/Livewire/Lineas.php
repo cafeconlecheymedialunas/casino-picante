@@ -502,7 +502,8 @@ class Lineas extends Component
         $sale = Sale::where('line_id', $line->id)->findOrFail($saleId);
         $this->editingSaleId = $sale->id;
         $this->salePlatformId = $sale->platform_id;
-        $this->saleDate = $sale->fecha->format('Y-m-d');
+        $this->saleFechaInicio = $sale->fecha_inicio ? $sale->fecha_inicio->format('Y-m-d') : '';
+        $this->saleFechaFin = $sale->fecha_fin ? $sale->fecha_fin->format('Y-m-d') : '';
         $this->saleDescripcion = $sale->descripcion ?? '';
         $this->saleMontoFichas = (string) $sale->monto_fichas;
     }

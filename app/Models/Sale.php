@@ -12,14 +12,16 @@ class Sale extends Model
         'agent_id',
         'client_id',
         'platform_id',
-        'fecha',
+        'fecha_inicio',
+        'fecha_fin',
         'descripcion',
         'monto_fichas',
         'ganancia_superagente',
     ];
 
     protected $casts = [
-        'fecha'                => 'date',
+        'fecha_inicio'         => 'date',
+        'fecha_fin'            => 'date',
         'monto_fichas'         => 'decimal:2',
         'ganancia_superagente' => 'decimal:2',
     ];
