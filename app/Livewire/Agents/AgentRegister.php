@@ -6,6 +6,7 @@ use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Role;
+use App\Models\User;
 use App\Support\AvatarLibrary;
 use App\Support\LineRoles;
 use App\Support\Roles;
@@ -35,8 +36,6 @@ class AgentRegister extends Component
 
     public bool $registered = false;
 
-    public string $error = '';
-
     protected function rules(): array
     {
         return [
@@ -51,20 +50,6 @@ class AgentRegister extends Component
         ];
     }
 
-    protected $messages = [
-        'name.required' => 'El nombre es obligatorio.',
-        'name.min' => 'El nombre debe tener al menos 2 caracteres.',
-        'email.required' => 'El email es obligatorio.',
-        'email.email' => 'Ingresá un email válido.',
-        'email.unique' => 'Este email ya está registrado.',
-        'username.alpha_dash' => 'Solo letras, números, guiones y guion bajo.',
-        'username.unique' => 'Este username ya está en uso.',
-        'username.min' => 'El username debe tener al menos 3 caracteres.',
-        'password.required' => 'La contraseña es obligatoria.',
-        'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
-        'password.confirmed' => 'Las contraseñas no coinciden.',
-    ];
-
     public function mount()
     {
         $this->avatar = AvatarLibrary::default();
@@ -72,15 +57,14 @@ class AgentRegister extends Component
 
     public function register(): void
     {
-        $this->error = '';
+        $email = trim(strtolower($this->email));
 
-        if (Agent::where('email', trim(strtolower($this->email)))->exists()) {
+        if (Agent::where('email', $email)->exists()) {
             $this->addError('email', 'Este email ya está registrado.');
 
             return;
         }
-
-        if (User::where('email', trim(strtolower($this->email)))->exists()) {
+        if (User::where('email', $email)->exists()) {
             $this->addError('email', 'Este email ya está registrado en una cuenta.');
 
             return;
@@ -88,30 +72,15 @@ class AgentRegister extends Component
 
         $this->validate();
 
-        $username = trim($this->username);
-        if (empty($username)) {
-            $username = $this->makeUsername($this->name, $this->email);
-        } else {
-            if (Agent::where('username', $username)->exists()) {
-                $this->addError('username', 'Este username ya está en uso.');
-
-                return;
-            }
-            if (\App\Models\User::where('username', $username)->exists()) {
-                $this->addError('username', 'Este username ya está en uso.');
-
-                return;
-            }
-        }
-
-        $roleId = Role::where('name', Roles::AGENTE)->value('id');
+        $username = $this->resolveUsername();
         $name = trim($this->name);
         $apellido = trim($this->apellido) ?: null;
+        $roleId = Role::where('name', Roles::AGENTE)->value('id');
 
         $agent = Agent::create([
             'name' => $name,
             'apellido' => $apellido,
-            'email' => trim(strtolower($this->email)),
+            'email' => $email,
             'username' => $username,
             'password' => Hash::make($this->password),
             'phone' => trim($this->phone) ?: null,
@@ -120,11 +89,11 @@ class AgentRegister extends Component
             'cargo' => 'agente',
         ]);
 
-        $user = \App\Models\User::create([
+        $user = User::create([
             'role_id' => $roleId,
             'name' => $name,
             'apellido' => $apellido,
-            'email' => trim(strtolower($this->email)),
+            'email' => $email,
             'username' => $username,
             'password' => Hash::make($this->password),
             'avatar' => $this->avatar,
@@ -133,30 +102,35 @@ class AgentRegister extends Component
 
         $agent->update(['user_id' => $user->id]);
 
-        if (! empty($this->selectedLines)) {
-            $lineIds = collect($this->selectedLines)->map(fn ($id) => (int) $id)->unique()->values();
-            foreach ($lineIds as $lineId) {
-                LineAgent::create([
-                    'line_id' => $lineId,
-                    'agent_id' => $agent->id,
-                    'role' => LineRoles::MIEMBRO,
-                    'is_active' => false,
-                ]);
-            }
+        foreach (collect($this->selectedLines)->map(fn ($id) => (int) $id)->unique() as $lineId) {
+            LineAgent::create([
+                'line_id' => $lineId,
+                'agent_id' => $agent->id,
+                'role' => LineRoles::MIEMBRO,
+                'is_active' => false,
+            ]);
         }
 
         $this->registered = true;
     }
 
-    private function makeUsername(string $name, string $email): string
+    private function resolveUsername(): string
     {
-        $base = Str::slug($name, '_') ?: Str::before($email, '@') ?: 'agente';
+        $username = trim($this->username);
+        if ($username) {
+            if (Agent::where('username', $username)->exists() || User::where('username', $username)->exists()) {
+                $this->addError('username', 'Este username ya está en uso.');
+            }
+
+            return $username;
+        }
+
+        $base = Str::slug($this->name, '_') ?: Str::before($this->email, '@') ?: 'agente';
         $base = Str::limit($base, 50, '');
         $username = $base;
         $suffix = 1;
 
-        while (Agent::where('username', $username)->exists()
-            || \App\Models\User::where('username', $username)->exists()) {
+        while (Agent::where('username', $username)->exists() || User::where('username', $username)->exists()) {
             $username = Str::limit($base, 46, '').'_'.$suffix++;
         }
 
@@ -165,12 +139,8 @@ class AgentRegister extends Component
 
     public function render()
     {
-        $lines = Line::where('status', 'active')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $lines = Line::where('status', 'active')->orderBy('name')->get(['id', 'name']);
 
-        return view('livewire.agents.agent-register', [
-            'lines' => $lines,
-        ])->layout('layouts.dashboard');
+        return view('livewire.agents.agent-register', compact('lines'))->layout('layouts.dashboard');
     }
 }
