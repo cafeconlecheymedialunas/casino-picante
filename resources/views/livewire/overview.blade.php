@@ -124,7 +124,7 @@
 <div class="mod-section">
     <span class="mod-section-label">💰 VENTAS DEL MES</span>
     <div class="mod-section-line"></div>
-    <a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver detalle →</a>
+    <a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver ventas →</a>
 </div>
 <div class="kpi-grid-4">
     <div class="kpi kpi-good">
@@ -247,7 +247,7 @@
 <div class="mod-section">
     <span class="mod-section-label">CLIENTES</span>
     <div class="mod-section-line"></div>
-    <a href="{{ route('users.index') }}" wire:navigate class="mod-section-link">Ir al módulo →</a>
+    <a href="{{ route('users.index') }}" wire:navigate class="mod-section-link">Ver clientes →</a>
 </div>
 <div class="kpi-grid-4">
     <div class="kpi {{ $users['todayNew'] > 0 ? 'kpi-good' : '' }}">
@@ -329,7 +329,7 @@
 <div class="mod-section">
     <span class="mod-section-label">TICKETS DE SOPORTE</span>
     <div class="mod-section-line"></div>
-    <a href="{{ route('tickets') }}" wire:navigate class="mod-section-link">Ir al módulo →</a>
+    <a href="{{ route('tickets') }}" wire:navigate class="mod-section-link">Ver tickets →</a>
 </div>
 <div class="kpi-grid-4">
     <div class="kpi {{ $tickets['open'] > 0 ? 'kpi-urgent' : 'kpi-good' }}">
@@ -393,7 +393,7 @@
 <div class="mod-section">
     <span class="mod-section-label">🎁 BONOS</span>
     <div class="mod-section-line"></div>
-    <a href="{{ route('bonos') }}" wire:navigate class="mod-section-link">Ir a bonos →</a>
+    <a href="{{ route('bonos') }}" wire:navigate class="mod-section-link">Ver bonos →</a>
 </div>
 <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
     <div class="kpi-grid-3">
@@ -441,7 +441,7 @@
 <div class="mod-section">
     <span class="mod-section-label">🎰 SORTEOS</span>
     <div class="mod-section-line"></div>
-    <a href="{{ route('sorteos') }}" wire:navigate class="mod-section-link">Ir a sorteos →</a>
+    <a href="{{ route('sorteos') }}" wire:navigate class="mod-section-link">Ver sorteos →</a>
 </div>
 <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
     <div class="kpi-grid-3">
