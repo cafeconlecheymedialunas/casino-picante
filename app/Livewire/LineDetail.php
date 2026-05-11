@@ -94,7 +94,6 @@ class LineDetail extends Component
 
         $this->validate([
             'line.name' => 'required|string|max:255',
-            'line.encargado_id' => 'nullable|integer|exists:agents,id',
             'line.porcentaje_encargado' => 'nullable|numeric|min:0|max:100',
             'line.ventas_mes_actual' => 'nullable|numeric|min:0',
             'line.ventas_mes_pasado' => 'nullable|numeric|min:0',
@@ -193,7 +192,8 @@ class LineDetail extends Component
         $this->inlineDescription = $this->line->description ?? '';
         $this->inlinePortada = $this->line->portada_url ?? '';
         $this->inlinePerfil = $this->line->perfil_url ?? '';
-        $this->inlineEncargadoId = $this->line->encargado_id;
+        $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
+        $this->inlineEncargadoId = $encargadoLA?->agent_id;
         $this->inlineContacts = $this->line->contact_links ?? [];
         if (empty($this->inlineContacts)) {
             $this->inlineContacts = [['type' => 'whatsapp', 'value' => '', 'name' => 'WhatsApp']];
@@ -270,7 +270,8 @@ class LineDetail extends Component
         if ($this->editingEncargado) {
             $this->saveEncargado();
         } else {
-            $this->inlineEncargadoId = $this->line->encargado_id;
+            $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
+            $this->inlineEncargadoId = $encargadoLA?->agent_id;
         }
         $this->editingEncargado = ! $this->editingEncargado;
     }
@@ -278,9 +279,25 @@ class LineDetail extends Component
     public function saveEncargado(): void
     {
         $this->checkLinePermission(Permissions::LINE_EDIT);
-        $this->line->update(['encargado_id' => $this->inlineEncargadoId ?: null]);
+
+        $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
+
+        if ($this->inlineEncargadoId) {
+            if ($encargadoLA) {
+                $encargadoLA->update(['agent_id' => $this->inlineEncargadoId]);
+            } else {
+                $this->line->lineAgents()->create([
+                    'agent_id' => $this->inlineEncargadoId,
+                    'role' => LineRoles::ENCARGADO,
+                    'is_active' => true,
+                ]);
+            }
+        } elseif ($encargadoLA) {
+            $encargadoLA->delete();
+        }
+
         $this->line->refresh();
-        session()->flash('message', 'Encargado actualizado.');
+        session()->flash('message', $this->inlineEncargadoId ? 'Encargado asignado.' : 'Encargado removido.');
     }
 
     public function toggleEditImages(): void
@@ -576,9 +593,10 @@ class LineDetail extends Component
 
         // Get encargado permissions (if exists)
         $encargadoPerms = [];
-        if ($this->line->encargado_id) {
+        $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
+        if ($encargadoLA) {
             $encargadoPerms = LineAgentPermission::where('line_id', $this->lineId)
-                ->where('agent_id', $this->line->encargado_id)
+                ->where('agent_id', $encargadoLA->agent_id)
                 ->pluck('permission')
                 ->toArray();
         }
@@ -620,9 +638,10 @@ class LineDetail extends Component
 
         // Get encargado permissions (if exists)
         $encargadoPerms = [];
-        if ($this->line->encargado_id) {
+        $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
+        if ($encargadoLA) {
             $encargadoPerms = LineAgentPermission::where('line_id', $this->lineId)
-                ->where('agent_id', $this->line->encargado_id)
+                ->where('agent_id', $encargadoLA->agent_id)
                 ->pluck('permission')
                 ->toArray();
         }
@@ -893,14 +912,31 @@ class LineDetail extends Component
 
     public function getCurrentEncargadoProperty()
     {
-        return $this->line->encargado;
+        $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
+
+        return $encargadoLA?->agent;
     }
 
     public function assignEncargado($agentId): void
     {
         $this->checkLinePermission(Permissions::LINE_EDIT);
 
-        $this->line->update(['encargado_id' => $agentId ?: null]);
+        $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
+
+        if ($agentId) {
+            if ($encargadoLA) {
+                $encargadoLA->update(['agent_id' => $agentId]);
+            } else {
+                $this->line->lineAgents()->create([
+                    'agent_id' => $agentId,
+                    'role' => LineRoles::ENCARGADO,
+                    'is_active' => true,
+                ]);
+            }
+        } elseif ($encargadoLA) {
+            $encargadoLA->delete();
+        }
+
         $this->line->refresh();
         $this->selectedEncargadoId = $agentId;
         session()->flash('message', $agentId ? 'Encargado asignado.' : 'Encargado removido.');

@@ -146,18 +146,18 @@ class AgentRegister extends Component
 
     private function notifyEncargadosLinea(Line $line, Agent $agent): void
     {
-        $encargados = Agent::where('encargado_id', $line->encargado_id)
-            ->where('id', '!=', $agent->id)
-            ->where('status', 'active')
-            ->where('cargo', 'super_agente')
+        $encargados = $line->lineAgents()
+            ->where('role', LineRoles::ENCARGADO)
+            ->where('is_active', true)
+            ->where('agent_id', '!=', $agent->id)
             ->get();
 
         $displayName = trim($agent->name.' '.($agent->apellido ?? ''));
         $msg = "Nuevo agente registrado en \"{$line->name}\": {$displayName}";
 
-        foreach ($encargados as $encargado) {
+        foreach ($encargados as $la) {
             $this->notifyAgent(
-                (int) $encargado->id,
+                (int) $la->agent_id,
                 'Nuevo agente registrado',
                 $msg,
                 'agents',

@@ -13,13 +13,11 @@ class Line extends Model
         'icon',
         'description',
         'status',
-        'encargado_id',
         'contact_links',
         'permissions',
         'best_sales',
         'portada_url',
         'perfil_url',
-        'best_sales',
     ];
 
     protected $casts = [
@@ -61,11 +59,6 @@ class Line extends Model
     public function encargados()
     {
         return $this->agents()->wherePivot('role', 'encargado')->wherePivot('is_active', true);
-    }
-
-    public function encargado()
-    {
-        return $this->belongsTo(Agent::class, 'encargado_id');
     }
 
     public function platforms()

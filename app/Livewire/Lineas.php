@@ -210,7 +210,6 @@ class Lineas extends Component
             'type' => 'whatsapp',
             'description' => trim($this->description) ?: null,
             'permissions' => empty($this->linePermissions) ? null : array_values($this->linePermissions),
-            'encargado_id' => $encargadoId,
             'portada_url' => $portadaPath ?: null,
             'perfil_url' => $perfilPath ?: null,
             'contact_links' => $this->normalizedChannels(),
@@ -722,8 +721,8 @@ class Lineas extends Component
         $this->perfil_url = $line->perfil_url ?? '';
 
         $encargado = $line->lineAgents->firstWhere('role', LineRoles::ENCARGADO);
-        $this->encargadoId = (string) ($encargado?->agent_id ?? $line->encargado_id ?? '');
-        $this->encargadoPercent = (string) ($encargado?->porcentaje_ganancia ?? $line->porcentaje_encargado ?? 0);
+        $this->encargadoId = (string) ($encargado?->agent_id ?? '');
+        $this->encargadoPercent = (string) ($encargado?->porcentaje_ganancia ?? 0);
 
         $this->channels = $this->mapChannels($line->contact_links ?? []);
 
@@ -772,7 +771,6 @@ class Lineas extends Component
     private function availableEncargados(): Collection
     {
         return Agent::where('status', 'active')
-            ->where('cargo', 'super_agente')
             ->orderBy('name')
             ->get();
     }
