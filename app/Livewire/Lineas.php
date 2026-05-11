@@ -112,7 +112,9 @@ class Lineas extends Component
 
     public function openCreateModal(): void
     {
-        $this->checkLinePermission(Permissions::LINE_CREATE);
+        if (! $this->isAdminMode()) {
+            abort(403, 'Solo el administrador puede crear líneas.');
+        }
         $this->resetForm();
         $this->editTab = 'info';
         $this->showModal = true;
@@ -170,9 +172,13 @@ class Lineas extends Component
 
     public function saveLine(): void
     {
-        $this->editingLineId
-            ? $this->authorizeLineEdit(Line::findOrFail($this->editingLineId))
-            : $this->checkLinePermission(Permissions::LINE_CREATE);
+        if ($this->editingLineId) {
+            $this->authorizeLineEdit(Line::findOrFail($this->editingLineId));
+        } else {
+            if (! $this->isAdminMode()) {
+                abort(403, 'Solo el administrador puede crear líneas.');
+            }
+        }
 
         $this->validate();
 
@@ -315,6 +321,19 @@ class Lineas extends Component
             'La linea '.$line->name.' fue '.($line->status === 'active' ? 'activada' : 'pausada').'.',
             'warning'
         );
+    }
+
+    public function deleteLine(int $lineId): void
+    {
+        if (! $this->isAdminMode()) {
+            abort(403, 'Solo el administrador puede eliminar líneas.');
+        }
+
+        $line = Line::findOrFail($lineId);
+        $line->delete();
+
+        session()->flash('message', 'Línea eliminada correctamente.');
+        $this->closeModal();
     }
 
     public function deleteImage(string $field): void
