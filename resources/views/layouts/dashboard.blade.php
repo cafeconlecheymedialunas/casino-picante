@@ -115,8 +115,42 @@
         }
         .btn-ghost:hover { background: rgba(255,255,255,0.08); border-color: var(--orange); }
         
+        .hamburger-btn {
+            display: none; align-items:center; justify-content:center;
+            width:36px; height:36px; border:none; background:rgba(255,255,255,.04);
+            border-radius:8px; color:var(--white); font-size:20px; cursor:pointer;
+            transition:background .15s; flex-shrink:0;
+        }
+        .hamburger-btn:hover { background:rgba(255,255,255,.08); }
+        .sidebar-overlay {
+            display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+            z-index:98; backdrop-filter:blur(2px);
+        }
+        .sidebar-close {
+            display:none; width:28px; height:28px; align-items:center; justify-content:center;
+            background:rgba(255,255,255,.05); border:1px solid var(--line); border-radius:6px;
+            color:var(--muted-2); cursor:pointer; margin-left:auto; font-size:13px; flex-shrink:0;
+        }
+        .sidebar-close:hover { color:#fff; border-color:var(--line-2); }
+
+        @media (max-width: 1024px) {
+            .hamburger-btn { display:flex; }
+            .sidebar-close { display:flex; }
+            .sidebar-overlay.open { display:block; }
+            .sidebar {
+                position:fixed; top:0; left:0; bottom:0; z-index:99;
+                transform:translateX(-100%); transition:transform .25s cubic-bezier(.4,0,.2,1);
+                border-right:1px solid var(--line);
+                box-shadow:4px 0 24px rgba(0,0,0,.4);
+            }
+            .sidebar.open { transform:translateX(0); }
+            .main-content { padding-top:8px; }
+        }
         @media (max-width: 768px) {
-            .sidebar { display: none; }
+            .wrap-content { padding:0 5%; }
+        }
+        @media (max-width: 480px) {
+            .wrap-content { padding:0 6%; }
         }
 
         .sidebar-line-selector {
@@ -240,13 +274,21 @@
             color: var(--muted-2);
         }
 
-        .page-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:22px 28px 14px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; flex-wrap:wrap;margin-bottom: 25px;}
-        .page-header-left { flex:1; min-width:0; }
+        .page-header { display:flex; flex-direction:column; gap:8px; padding:14px 28px 10px; border-bottom:1px solid var(--line); background:var(--black); position:sticky; top:0; z-index:80; margin-bottom:30px; }
+        .page-header-top { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:38px; }
         .page-title { margin:0; font-family:var(--font-display); font-size:34px; letter-spacing:.03em; line-height:.95; }
-        .page-subtitle { margin:5px 0 0; color:var(--muted-2); font-size:12px; }
+        .page-subtitle { margin:3px 0 0; color:var(--muted-2); font-size:12px; }
+        .ph-title-block { padding:0 28px 14px; }
+        .ph-title { margin:0; font-family:var(--font-display); font-size:28px; letter-spacing:.03em; line-height:.95; }
+        .ph-subtitle { margin:3px 0 0; color:var(--muted-2); font-size:12px; }
+        @media (max-width: 768px) {
+            .ph-title-block { padding:0 12px 10px; }
+            .ph-title { font-size:22px; }
+            .ph-subtitle { font-size:10px; }
+        }
         .page-header-btn { height:38px; padding:0 16px; border-radius:8px; border:1px solid var(--orange); background:var(--orange); color:#190702; font-weight:600; font-size:13px; cursor:pointer; transition:all .15s; }
         .page-header-btn:hover { background:#ff8a4a; border-color:#ff8a4a; }
-        .page-header-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .page-header-right { display:flex; align-items:center; gap:10px; flex-shrink:0; margin-left:auto; }
         .header-icon-btn { position:relative; width:38px; height:38px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.035); color:var(--white); cursor:pointer; font-weight:900; display:flex; align-items:center; justify-content:center; }
         .header-icon-btn b { position:absolute; top:-6px; right:-5px; min-width:18px; height:18px; padding:0 5px; border-radius:999px; background:var(--orange); color:#190702; font-size:10px; display:flex; align-items:center; justify-content:center; }
         .profile-menu, .notification-menu { position:relative; }
@@ -255,6 +297,25 @@
         .profile-trigger img { width:30px; height:30px; border-radius:7px; background:rgba(255,255,255,.08); }
         .profile-trigger strong { display:block; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
         .profile-trigger small { display:block; color:var(--muted-2); font-size:10px; margin-top:1px; text-align:left; }
+
+        @media (max-width: 768px) {
+            .page-header { padding:10px 12px 8px; gap:6px; }
+            .page-title { font-size:22px; }
+            .page-subtitle { font-size:10px; }
+            .profile-trigger span { display:none; }
+            .profile-trigger svg { display:none; }
+            .notifications-dropdown { right:-80px; width:300px; }
+            .profile-dropdown { right:0; left:auto; }
+            .page-header-top { min-height:34px; }
+        }
+        @media (max-width: 480px) {
+            .page-title { font-size:18px; }
+            .page-header-right { gap:4px; }
+            .header-icon-btn { width:32px; height:32px; font-size:15px; }
+            .profile-trigger { padding:2px; }
+            .profile-trigger img { width:26px; height:26px; }
+            .notifications-dropdown { right:-100px; width:280px; }
+        }
         .header-dropdown { position:absolute; top:46px; right:0; min-width:230px; border:1px solid var(--line-2); border-radius:8px; background:#140909; box-shadow:0 18px 45px rgba(0,0,0,.45); z-index:120; overflow:hidden; }
         .profile-dropdown { min-width:200px; }
         .profile-dropdown a, .profile-dropdown button { display:block; width:100%; padding:12px 14px; color:var(--white); background:transparent; border:0; text-align:left; text-decoration:none; font:inherit; font-size:13px; cursor:pointer; }
@@ -322,14 +383,16 @@
     </style>
 </head>
 <body>
-    <div class="dash-shell">
-        <aside class="sidebar">
+    <div class="dash-shell" x-data="{ sidebarOpen: false }" @toggle-sidebar.window="sidebarOpen = !sidebarOpen">
+        <div class="sidebar-overlay" :class="sidebarOpen && 'open'" x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak></div>
+        <aside class="sidebar" :class="sidebarOpen && 'open'">
             <div class="sidebar-logo">
                 <svg width="20" height="20" viewBox="0 0 40 40">
                     <circle cx="20" cy="22" r="16" fill="rgba(255,106,26,0.35)" opacity="0.6" />
                     <path d="M14 12 C 12 18, 12 26, 18 32 C 24 36, 32 32, 33 24 C 34 18, 28 14, 22 14 C 18 14, 16 13, 14 12 Z" fill="#ff6a1a" />
                 </svg>
                 <span class="sidebar-logo-text">RED PICANTES</span>
+                <button class="sidebar-close" @click="sidebarOpen = false" title="Cerrar menú">✕</button>
             </div>
             
             {{-- Active line selector (only shown when an agent is in session) --}}
@@ -466,6 +529,9 @@
                 @hasSection('header')
                     @yield('header')
                 @endif
+                @hasSection('page-title-block')
+                    @yield('page-title-block')
+                @endif
                 <div class="wrap-content" style="padding:0 2%;">
                 @isset($slot)
                     {{ $slot }}
@@ -477,6 +543,7 @@
         </main>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     @livewireScripts
     <script>
         function switchLine(lineId) {

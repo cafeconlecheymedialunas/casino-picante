@@ -106,6 +106,34 @@
     .priority-section.critical { border-left-color: #ff4757; }
     .priority-section.high { border-left-color: var(--orange); }
     .priority-section.medium { border-left-color: var(--warn); }
+
+    @media (max-width: 1024px) {
+        .kpi-grid-4 { grid-template-columns: repeat(2,1fr); }
+        .kpi-grid-3 { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 640px) {
+        .kpi-grid-4,
+        .kpi-grid-3 { grid-template-columns: 1fr; }
+        .kpi-value { font-size: 28px; }
+        .kpi-huge { font-size: 32px; }
+        .tables-row { grid-template-columns: 1fr; }
+        [style*="grid-template-columns: 2fr 1fr"],
+        [style*="grid-template-columns: 3fr 1fr"],
+        [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+        .row-users { grid-template-columns: 28px 1fr 60px; gap: 6px; }
+        .row-ticket { grid-template-columns: 1fr auto; row-gap: 4px; padding: 10px 12px; }
+        .row-ticket .badge,
+        .row-ticket > div:last-child { grid-column: 2; }
+        .chart-container { height: 100px; }
+        [id$="Chart"] { max-height: 120px; }
+        .ov-card { border-radius: 10px; }
+        .kpi { padding: 12px 14px; border-radius: 10px; }
+        .kpi-label { font-size: 9px; }
+        .alert-row { font-size: 12px; padding: 8px 12px; flex-wrap: wrap; }
+        .alert-row a { margin-left: 0; }
+        .mod-section { margin: 18px 0 6px; }
+        .mod-section-label { font-size: 9px; }
+    }
 </style>
 
 {{-- ALERTS --}}
