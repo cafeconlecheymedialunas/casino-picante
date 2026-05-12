@@ -495,37 +495,6 @@
                     </div>
                 </div>
 
-                {{-- Permisos de la línea --}}
-                <div class="form-group">
-                    <label class="form-label">Permisos habilitados en esta línea</label>
-                    <p style="color:var(--muted-2);font-size:11px;margin:0 0 12px;line-height:1.6">Determinan qué acciones pueden tener los agentes asignados.</p>
-                    @php
-                    $permChipMeta = \App\Support\Permissions::labels();
-                    $allPerms = array_keys($permChipMeta);
-                    @endphp
-                    <div style="display:flex;gap:8px;margin-bottom:10px;">
-                        <button type="button" class="btn-soft" style="font-size:11px;"
-                            wire:click="$set('linePermissions', {{ json_encode($allPerms) }})">
-                            <i class="fa-solid fa-check-double"></i> Seleccionar todos
-                        </button>
-                        <button type="button" class="btn-soft" style="font-size:11px;"
-                            wire:click="$set('linePermissions', [])">
-                            <i class="fa-solid fa-xmark"></i> Desmarcar todos
-                        </button>
-                    </div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
-                        @foreach($permChipMeta as $perm => [$icon, $label])
-                        @php $on = in_array($perm, $linePermissions ?? []); @endphp
-                        <label class="perm-chip-edit {{ $on ? 'perm-chip-on' : 'perm-chip-off' }}">
-                            <input type="checkbox" wire:model="linePermissions" value="{{ $perm }}" style="display:none">
-                            <i class="{{ $icon }}"></i>
-                            <span>{{ $label }}</span>
-                            @if($on)<i class="fa-solid fa-check" style="margin-left:auto;font-size:10px"></i>@endif
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-
                 <div class="modal-actions" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:18px;margin-top:4px">
                     @if($editingLineId)
                         <button type="button" class="btn-soft btn-danger" wire:click="deleteLine({{ $editingLineId }})" wire:confirm="¿Eliminar esta linea?">Eliminar</button>

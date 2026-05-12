@@ -69,9 +69,6 @@ class LineDetail extends Component
 
     public array $editingPerms = []; // ['promo.create' => true/false, ...]
 
-    // Line permissions
-    public array $linePermissionsList = [];
-
     // Inline editing mode
     public bool $isEditing = false;
 
@@ -179,7 +176,6 @@ class LineDetail extends Component
     {
         $this->lineId = $id;
         $this->authorizeLineContext();
-        $this->linePermissionsList = $this->line->permissions ?? [];
         $this->initInlineFields();
     }
 
@@ -603,8 +599,7 @@ class LineDetail extends Component
         $targetLineAgent = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
         $targetRole = $targetLineAgent->role ?? null;
 
-        // Get line permissions (max allowed)
-        $linePerms = $this->line->permissions ?? [];
+        $linePerms = LineAgentPermission::allPermissions();
 
         // Get encargado permissions (if exists)
         $encargadoPerms = [];
@@ -663,8 +658,7 @@ class LineDetail extends Component
             return;
         }
 
-        // Get line permissions (max allowed)
-        $linePerms = $this->line->permissions ?? [];
+        $linePerms = LineAgentPermission::allPermissions();
 
         // Get target agent's role
         $targetLineAgent = LineAgent::where('line_id', $this->lineId)->where('agent_id', $this->editingPermAgentId)->first();
@@ -1002,62 +996,6 @@ class LineDetail extends Component
         $this->line->refresh();
         $this->selectedEncargadoId = $agentId;
         session()->flash('message', $agentId ? 'Encargado asignado.' : 'Encargado removido.');
-    }
-
-    // ── Line Permissions ──────────────────────────────────────────────────
-
-    public function setAllLinePermissions(bool $grant): void
-    {
-        $this->checkLinePermission(Permissions::LINE_EDIT);
-
-        $this->linePermissionsList = $grant ? LineAgentPermission::allPermissions() : [];
-        $this->line->update(['permissions' => $this->linePermissionsList]);
-        $this->line->refresh();
-
-        // Enforce hierarchical inheritance: remove any agent permissions no longer allowed by the line
-        $allowed = $this->line->permissions;
-        $deleteQuery = LineAgentPermission::where('line_id', $this->line->id);
-        if ($allowed === null) {
-            // no explicit restrictions => do not delete
-        } elseif (is_array($allowed) && empty($allowed)) {
-            // explicit empty list => remove all agent permissions
-            $deleteQuery->delete();
-        } else {
-            $deleteQuery->whereNotIn('permission', $allowed)->delete();
-        }
-
-        session()->flash('message', $grant ? 'Todos los permisos habilitados.' : 'Todos los permisos removidos.');
-    }
-
-    public function toggleLinePermission(string $permission): void
-    {
-        $this->checkLinePermission(Permissions::LINE_EDIT);
-
-        if (! in_array($permission, LineAgentPermission::allPermissions(), true)) {
-            return;
-        }
-
-        if (in_array($permission, $this->linePermissionsList)) {
-            $this->linePermissionsList = array_filter($this->linePermissionsList, fn ($p) => $p !== $permission);
-        } else {
-            $this->linePermissionsList[] = $permission;
-        }
-
-        $this->line->update(['permissions' => array_values($this->linePermissionsList)]);
-        $this->line->refresh();
-
-        // Enforce hierarchical inheritance: remove any agent permissions no longer allowed by the line
-        $allowed = $this->line->permissions;
-        $deleteQuery = LineAgentPermission::where('line_id', $this->line->id);
-        if ($allowed === null) {
-            // no explicit restrictions => do not delete
-        } elseif (is_array($allowed) && empty($allowed)) {
-            $deleteQuery->delete();
-        } else {
-            $deleteQuery->whereNotIn('permission', $allowed)->delete();
-        }
-
-        session()->flash('message', 'Permisos de línea actualizados.');
     }
 
     // ── Render ─────────────────────────────────────────────────────────────

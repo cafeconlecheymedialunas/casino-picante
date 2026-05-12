@@ -406,69 +406,25 @@
     <div x-show="tab==='permisos'" x-cloak>
         @php $permLabels = \App\Support\Permissions::labels(); @endphp
 
-        @if($this->isAdminMode())
-            <div class="perms-grid">
-                @foreach($permLabels as $perm => [$icon, $label])
-                @php $active = in_array($perm, $linePermissionsList ?? []); @endphp
-                <div class="perm-chip {{ $active ? 'perm-chip-on' : 'perm-chip-off' }}">
-                    <i class="{{ $icon }}"></i>
-                    <span>{{ $label }}</span>
-                    @if($active)
-                        <i class="fa-solid fa-check perm-check-icon"></i>
-                    @endif
+        @php $myPerms = $this->currentLinePermissions(); @endphp
+        <div style="margin-bottom:12px;">
+            <div class="form-label" style="margin-bottom:6px">Tus permisos en esta línea</div>
+            @if(!empty($myPerms))
+                <div class="perms-grid">
+                    @foreach($permLabels as $perm => [$icon, $label])
+                        @if(in_array($perm, $myPerms))
+                            <div class="perm-chip perm-chip-on">
+                                <i class="{{ $icon }}"></i>
+                                <span>{{ $label }}</span>
+                                <i class="fa-solid fa-check perm-check-icon"></i>
+                            </div>
+                        @endif
+                    @endforeach
                 </div>
-                @endforeach
-            </div>
-            @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
-            <div x-data="{ open: false }" style="margin-top:20px">
-                <button type="button" class="btn-outline" @click="open=!open">
-                    <i class="fa-solid fa-sliders"></i> Modificar permisos
-                </button>
-                <div x-show="open" x-cloak style="margin-top:16px">
-                    <div style="display:flex;gap:8px;margin-bottom:12px;">
-                        <button type="button" class="btn-soft" wire:click="setAllLinePermissions(true)">
-                            <i class="fa-solid fa-check-double"></i> Seleccionar todos
-                        </button>
-                        <button type="button" class="btn-soft" wire:click="setAllLinePermissions(false)">
-                            <i class="fa-solid fa-xmark"></i> Desmarcar todos
-                        </button>
-                    </div>
-                    <div class="perms-grid">
-                        @foreach($permLabels as $perm => [$icon, $label])
-                        <label class="perm-chip perm-chip-edit {{ in_array($perm, $linePermissionsList ?? []) ? 'perm-chip-on' : 'perm-chip-off' }}">
-                            <input type="checkbox" wire:change="toggleLinePermission('{{ $perm }}')"
-                                   {{ in_array($perm, $linePermissionsList ?? []) ? 'checked' : '' }}
-                                   style="display:none">
-                            <i class="{{ $icon }}"></i>
-                            <span>{{ $label }}</span>
-                        </label>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+            @else
+                <div style="color:var(--muted-2);font-size:12px">No tenés permisos asignados en esta línea.</div>
             @endif
-        @else
-            {{-- Non-admin agents: show only their own permissions (view-only) --}}
-            @php $myPerms = $this->currentLinePermissions(); @endphp
-            <div style="margin-bottom:12px;">
-                <div class="form-label" style="margin-bottom:6px">Tus permisos en esta línea</div>
-                @if(!empty($myPerms))
-                    <div class="perms-grid">
-                        @foreach($permLabels as $perm => [$icon, $label])
-                            @if(in_array($perm, $myPerms))
-                                <div class="perm-chip perm-chip-on">
-                                    <i class="{{ $icon }}"></i>
-                                    <span>{{ $label }}</span>
-                                    <i class="fa-solid fa-check perm-check-icon"></i>
-                                </div>
-                            @endif
-                        @endforeach
-                    </div>
-                @else
-                    <div style="color:var(--muted-2);font-size:12px">No tenés permisos asignados en esta línea.</div>
-                @endif
-            </div>
-        @endif
+        </div>
     </div>
 
 </div>{{-- /ld-tab-body --}}

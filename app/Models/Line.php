@@ -14,7 +14,6 @@ class Line extends Model
         'description',
         'status',
         'contact_links',
-        'permissions',
         'best_sales',
         'portada_url',
         'perfil_url',
@@ -23,7 +22,6 @@ class Line extends Model
     protected $casts = [
         'contact_links' => 'array',
         'platforms' => 'array',
-        'permissions' => 'array',
         'best_sales' => 'decimal:2',
     ];
 

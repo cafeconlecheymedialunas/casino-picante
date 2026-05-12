@@ -42,9 +42,9 @@ class Lineas extends Component
 
     public string $description = '';
 
-    public array $linePermissions = [];
+    public array $channels = [];
 
-    public bool $showLinePermissionsEditor = false;
+    public array $selectedPlatformIds = [];
 
     public string $portada_url = '';
 
@@ -54,14 +54,9 @@ class Lineas extends Component
 
     public $perfilUpload = null;
 
-    // Single encargado
-    public string $encargadoId = '';
+    public $encargadoId = '';
 
-    public string $encargadoPercent = '0';
-
-    public array $channels = [];
-
-    public array $selectedPlatformIds = [];
+    public $encargadoPercent = '0';
 
     // Stats fields (manual entry)
     public string $bestMonth = '';
@@ -85,7 +80,6 @@ class Lineas extends Component
             'name' => 'required|min:2|max:160',
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string|max:500',
-            'linePermissions' => 'array',
             'portadaUpload' => 'nullable|image|max:20480',
             'perfilUpload' => 'nullable|image|max:20480',
             'encargadoId' => 'nullable|integer|exists:agents,id',
@@ -147,17 +141,6 @@ class Lineas extends Component
     {
         $this->editTab = $tab;
         $this->closeAgentPermissions();
-        $this->showLinePermissionsEditor = false;
-    }
-
-    public function openLinePermissionsEditor(): void
-    {
-        $this->showLinePermissionsEditor = true;
-    }
-
-    public function closeLinePermissionsEditor(): void
-    {
-        $this->showLinePermissionsEditor = false;
     }
 
     public function updatedPortadaUpload(): void
@@ -209,7 +192,6 @@ class Lineas extends Component
             'status' => $this->status,
             'type' => 'whatsapp',
             'description' => trim($this->description) ?: null,
-            'permissions' => empty($this->linePermissions) ? null : array_values($this->linePermissions),
             'portada_url' => $portadaPath ?: null,
             'perfil_url' => $perfilPath ?: null,
             'contact_links' => $this->normalizedChannels(),
@@ -224,19 +206,6 @@ class Lineas extends Component
             $this->syncEncargado($line, $encargadoId, $percent);
         }
         $this->syncPlatforms($line);
-
-        // Enforce hierarchical inheritance: if the line has an explicit permissions list,
-        // remove any agent permissions that are no longer allowed by the line.
-        if (is_array($this->linePermissions)) {
-            if (empty($this->linePermissions)) {
-                // Explicit empty list => remove all agent permissions for the line
-                LineAgentPermission::where('line_id', $line->id)->delete();
-            } else {
-                LineAgentPermission::where('line_id', $line->id)
-                    ->whereNotIn('permission', $this->linePermissions)
-                    ->delete();
-            }
-        }
 
         $isEdit = (bool) $this->editingLineId;
 
@@ -255,34 +224,6 @@ class Lineas extends Component
         }
 
         $this->closeModal();
-    }
-
-    // Save only the line permissions from the edit form and synchronize agent permissions
-    public function saveLinePermissions(): void
-    {
-        $this->checkLinePermission(Permissions::LINE_EDIT);
-
-        if (! $this->editingLineId) {
-            return;
-        }
-
-        $permissionsToSave = array_values($this->linePermissions);
-
-        Line::whereKey($this->editingLineId)->update(['permissions' => $permissionsToSave]);
-
-        // Remove any agent permissions that are no longer allowed by the line
-        $deleteQuery = LineAgentPermission::where('line_id', $this->editingLineId);
-        if (empty($permissionsToSave)) {
-            // Explicit empty list => remove all agent permissions for this line
-            $deleteQuery->delete();
-        } else {
-            $deleteQuery->whereNotIn('permission', $permissionsToSave)->delete();
-        }
-
-        // Refresh local form state
-        $this->fillForm(Line::findOrFail($this->editingLineId));
-
-        session()->flash('message', 'Permisos de línea guardados y sincronizados.');
     }
 
     public function reloadLineForm(): void
@@ -379,11 +320,7 @@ class Lineas extends Component
 
         $this->editingAgentPermissionsId = $lineAgent->id;
 
-        // Available = what the line has enabled (or full catalog if not set)
-        $linePerms = $lineAgent->line->permissions;
-        $this->availablePermissions = (is_array($linePerms) && ! empty($linePerms))
-            ? $linePerms
-            : LineAgentPermission::allPermissions();
+        $this->availablePermissions = LineAgentPermission::allPermissions();
 
         // If acting as encargado (not admin) further restrict to encargado's own perms
         if (! $this->isAdminMode()) {
@@ -424,9 +361,7 @@ class Lineas extends Component
         $lineAgent = LineAgent::with('line')->findOrFail($this->editingAgentPermissionsId);
         $this->authorizeLineEdit($lineAgent->line);
 
-        // Recompute allowed permissions server-side to avoid client tampering
-        $linePermsRaw = $lineAgent->line->permissions ?? null;
-        $linePerms = is_array($linePermsRaw) ? $linePermsRaw : LineAgentPermission::allPermissions();
+        $linePerms = LineAgentPermission::allPermissions();
 
         // Role-based restriction on what can be granted
         if ($lineAgent->role === LineRoles::MIEMBRO) {
@@ -719,8 +654,6 @@ class Lineas extends Component
         $this->name = '';
         $this->status = 'active';
         $this->description = '';
-        $this->linePermissions = [];
-        $this->showLinePermissionsEditor = false;
         $this->portada_url = '';
         $this->perfil_url = '';
         $this->portadaUpload = null;
@@ -731,7 +664,6 @@ class Lineas extends Component
 
         $this->channels = [['type' => 'whatsapp', 'value' => '', 'name' => '']];
         $this->selectedPlatformIds = [];
-        $this->linePermissions = LineAgentPermission::allPermissions();
 
         $this->resetValidation();
     }
@@ -742,8 +674,6 @@ class Lineas extends Component
         $this->name = $line->name;
         $this->status = $line->status === 'inactive' ? 'inactive' : 'active';
         $this->description = $line->description ?? '';
-        $this->linePermissions = is_array($line->permissions) ? $line->permissions : [];
-        $this->showLinePermissionsEditor = false;
         $this->portada_url = $line->portada_url ?? '';
         $this->perfil_url = $line->perfil_url ?? '';
 
