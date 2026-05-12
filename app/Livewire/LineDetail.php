@@ -567,9 +567,20 @@ class LineDetail extends Component
             return;
         }
 
-        LineAgent::where('line_id', $this->lineId)
+        $lineAgent = LineAgent::where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
-            ->update(['role' => $role]);
+            ->first();
+
+        if ($lineAgent) {
+            $lineAgent->update(['role' => $role]);
+
+            // Sync default permissions based on new role
+            if ($role === LineRoles::ENCARGADO) {
+                $lineAgent->syncEncargadoPermissions();
+            } else {
+                $lineAgent->syncRegularAgentPermissions();
+            }
+        }
     }
 
     // ── Permissions panel ──────────────────────────────────────────────────
@@ -588,6 +599,10 @@ class LineDetail extends Component
 
         $this->editingPermAgentId = $agentId;
 
+        // Get the target agent's role on this line
+        $targetLineAgent = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
+        $targetRole = $targetLineAgent->role ?? null;
+
         // Get line permissions (max allowed)
         $linePerms = $this->line->permissions ?? [];
 
@@ -599,6 +614,21 @@ class LineDetail extends Component
                 ->where('agent_id', $encargadoLA->agent_id)
                 ->pluck('permission')
                 ->toArray();
+        }
+
+        // If the target agent is a miembro, restrict to non-administration permissions
+        if ($targetRole === LineRoles::MIEMBRO) {
+            $allPermissions = LineAgentPermission::allPermissions();
+            $excludedPermissions = [
+                Permissions::LINE_EDIT,
+                Permissions::AGENT_CREATE,
+                Permissions::AGENT_ASSIGN,
+                Permissions::AGENT_UPDATE,
+                Permissions::AGENT_PERMISSIONS,
+            ];
+            $allowedPermissions = array_diff($allPermissions, $excludedPermissions);
+            $linePerms = array_intersect($linePerms, $allowedPermissions);
+            $encargadoPerms = array_intersect($encargadoPerms, $allowedPermissions);
         }
 
         // Get current agent permissions
@@ -636,6 +666,24 @@ class LineDetail extends Component
         // Get line permissions (max allowed)
         $linePerms = $this->line->permissions ?? [];
 
+        // Get target agent's role
+        $targetLineAgent = LineAgent::where('line_id', $this->lineId)->where('agent_id', $this->editingPermAgentId)->first();
+        $targetRole = $targetLineAgent->role ?? null;
+
+        // If the target agent is a miembro, restrict to non-administration permissions
+        if ($targetRole === LineRoles::MIEMBRO) {
+            $allPermissions = LineAgentPermission::allPermissions();
+            $excludedPermissions = [
+                Permissions::LINE_EDIT,
+                Permissions::AGENT_CREATE,
+                Permissions::AGENT_ASSIGN,
+                Permissions::AGENT_UPDATE,
+                Permissions::AGENT_PERMISSIONS,
+            ];
+            $allowedPermissions = array_diff($allPermissions, $excludedPermissions);
+            $linePerms = array_intersect($linePerms, $allowedPermissions);
+        }
+
         // Get encargado permissions (if exists)
         $encargadoPerms = [];
         $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
@@ -644,6 +692,20 @@ class LineDetail extends Component
                 ->where('agent_id', $encargadoLA->agent_id)
                 ->pluck('permission')
                 ->toArray();
+
+            // If editing a miembro, restrict encargado perms to non-administration scope
+            if ($targetRole === LineRoles::MIEMBRO) {
+                $allPermissions = LineAgentPermission::allPermissions();
+                $excludedPermissions = [
+                    Permissions::LINE_EDIT,
+                    Permissions::AGENT_CREATE,
+                    Permissions::AGENT_ASSIGN,
+                    Permissions::AGENT_UPDATE,
+                    Permissions::AGENT_PERMISSIONS,
+                ];
+                $allowedPermissions = array_diff($allPermissions, $excludedPermissions);
+                $encargadoPerms = array_intersect($encargadoPerms, $allowedPermissions);
+            }
         }
 
         // Collect only the checked ones that are allowed (subset of line AND encargado permissions AND delegation rule)

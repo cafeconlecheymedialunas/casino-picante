@@ -5,12 +5,12 @@ namespace App\Livewire\Agents;
 use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
-use App\Models\LineAgentPermission;
-use App\Models\Notification;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Support\AvatarLibrary;
 use App\Support\LineRoles;
+use App\Support\Permissions;
 use App\Support\Roles;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -121,7 +121,6 @@ class AgentRegister extends Component
 
         foreach ($lineIds as $lineId) {
             $line = Line::find($lineId);
-            $linePermissions = $line->permissions ?? [];
 
             $lineAgent = LineAgent::create([
                 'line_id' => $lineId,
@@ -130,13 +129,12 @@ class AgentRegister extends Component
                 'is_active' => true,
             ]);
 
-            foreach ($linePermissions as $perm) {
-                LineAgentPermission::create([
-                    'line_id' => $lineId,
-                    'agent_id' => $agent->id,
-                    'permission' => $perm,
-                ]);
-            }
+            // Agente gets all permissions except line and agent administration
+            $lineAgent = new LineAgent([
+                'line_id' => $lineId,
+                'agent_id' => $agent->id,
+            ]);
+            $lineAgent->syncRegularAgentPermissions();
 
             $this->notifyEncargadosLinea($line, $agent);
         }
@@ -156,27 +154,15 @@ class AgentRegister extends Component
         $msg = "Nuevo agente registrado en \"{$line->name}\": {$displayName}";
 
         foreach ($encargados as $la) {
-            $this->notifyAgent(
-                (int) $la->agent_id,
+            NotificationService::send(
                 'Nuevo agente registrado',
                 $msg,
-                'agents',
+                (int) $la->agent_id,
+                'success',
                 '/agentes',
-                'success'
+                'agents'
             );
         }
-    }
-
-    private function notifyAgent(int $agentId, string $title, string $message, string $icon, string $url, string $type = 'info'): void
-    {
-        Notification::create([
-            'agent_id' => $agentId,
-            'title' => $title,
-            'message' => $message,
-            'icon' => $icon,
-            'url' => $url,
-            'type' => $type,
-        ]);
     }
 
     private function resolveUsername(): string

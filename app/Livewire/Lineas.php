@@ -399,6 +399,21 @@ class Lineas extends Component
             }
         }
 
+        // Restrict available permissions to role-appropriate set
+        // Encargado: all catalog permissions; Miembro: all except administration permissions
+        if ($lineAgent->role === LineRoles::MIEMBRO) {
+            $allPermissions = LineAgentPermission::allPermissions();
+            $excludedPermissions = [
+                Permissions::LINE_EDIT,
+                Permissions::AGENT_CREATE,
+                Permissions::AGENT_ASSIGN,
+                Permissions::AGENT_UPDATE,
+                Permissions::AGENT_PERMISSIONS,
+            ];
+            $allowedPermissions = array_diff($allPermissions, $excludedPermissions);
+            $this->availablePermissions = array_values(array_intersect($this->availablePermissions, $allowedPermissions));
+        }
+
         // Default to all available if agent has no permissions set yet
         $current = $lineAgent->getPermissionsListAttribute();
         $this->agentPermissions = empty($current) ? $this->availablePermissions : $current;
@@ -412,6 +427,11 @@ class Lineas extends Component
         // Recompute allowed permissions server-side to avoid client tampering
         $linePermsRaw = $lineAgent->line->permissions ?? null;
         $linePerms = is_array($linePermsRaw) ? $linePermsRaw : LineAgentPermission::allPermissions();
+
+        // Role-based restriction on what can be granted
+        if ($lineAgent->role === LineRoles::MIEMBRO) {
+            $linePerms = array_values(array_intersect($linePerms, [Permissions::LINE_READ, Permissions::AGENT_READ]));
+        }
 
         if ($this->isAdminMode()) {
             $available = $linePerms;
@@ -483,6 +503,11 @@ class Lineas extends Component
             ['line_id' => $line->id, 'agent_id' => $agentId],
             ['role' => LineRoles::MIEMBRO, 'is_active' => true]
         );
+
+        // Agente gets all permissions except line and agent administration
+        if ($result->wasRecentlyCreated) {
+            $result->syncRegularAgentPermissions();
+        }
 
         session()->flash(
             'message',
@@ -658,7 +683,9 @@ class Lineas extends Component
                 ->get()
             : collect();
 
-        $assignedAgentIds = $editLineAgents->pluck('agent_id')->toArray();
+        $assignedAgentIds = LineAgent::where('line_id', $this->editingLineId)
+            ->pluck('agent_id')
+            ->toArray();
 
         $availableAgents = ($this->editingLineId && $this->editTab === 'agentes')
             ? Agent::where('status', 'active')
@@ -795,10 +822,13 @@ class Lineas extends Component
             ->where('agent_id', '!=', $agentId)
             ->delete();
 
-        LineAgent::updateOrCreate(
+        $lineAgent = LineAgent::updateOrCreate(
             ['line_id' => $line->id, 'agent_id' => $agentId],
             ['role' => LineRoles::ENCARGADO, 'is_active' => true, 'porcentaje_ganancia' => $percent]
         );
+
+        // Encargado gets all permissions by default
+        $lineAgent->syncEncargadoPermissions();
     }
 
     private function syncPlatforms(Line $line): void

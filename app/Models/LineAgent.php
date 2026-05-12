@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Permissions;
 use Illuminate\Database\Eloquent\Model;
 
 class LineAgent extends Model
@@ -81,5 +82,23 @@ class LineAgent extends Model
                 'permission' => $perm,
             ]);
         }
+    }
+
+    /**
+     * Sync permissions for a regular agent (all except line and agent administration)
+     */
+    public function syncRegularAgentPermissions(): void
+    {
+        $allPermissions = LineAgentPermission::allPermissions();
+        $excludedPermissions = [
+            Permissions::LINE_EDIT,
+            Permissions::AGENT_CREATE,
+            Permissions::AGENT_ASSIGN,
+            Permissions::AGENT_UPDATE,
+            Permissions::AGENT_PERMISSIONS,
+        ];
+        $permissionsToAssign = array_diff($allPermissions, $excludedPermissions);
+
+        $this->syncPermissions($permissionsToAssign);
     }
 }
