@@ -47,7 +47,7 @@ Route::post('/logout', function () {
 })->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/perfil', [PerfilController::class, 'index'])->name('perfil');
+    Route::get('/perfil', [PerfilController::class, 'index'])->middleware('line.authorize')->name('perfil');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
     Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
 });
@@ -87,7 +87,7 @@ Route::post('/session/line/{id}', function (int $id) {
 
 // Dashboard – no line restriction (admin mode passes through)
 Route::middleware('line.authorize')->group(function () {
-    Route::get('/dashboard', Overview::class)->middleware('admin')->name('dashboard');
+    Route::get('/dashboard', Overview::class)->middleware('line.authorize:'.Permissions::DASHBOARD_READ)->name('dashboard');
     Route::get('/clientes', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('clientes');
     Route::get('/usuarios', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('users.index');
     Route::get('/agentes', Agentes::class)->middleware('line.authorize:'.implode('|', [

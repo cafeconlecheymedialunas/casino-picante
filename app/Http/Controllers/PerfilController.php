@@ -47,18 +47,28 @@ class PerfilController extends Controller
                 $request->validate([
                     'name' => 'required|string|max:255',
                     'apellido' => 'nullable|string|max:255',
+                    'email' => 'nullable|email|max:255',
+                    'username' => 'nullable|string|max:255',
+                    'phone' => 'nullable|string|max:50',
                     'avatar' => $avatarRule,
                 ]);
 
                 DB::transaction(function () use ($agent, $user, $request) {
                     $agent->update([
                         'name' => $request->name,
+                        'apellido' => $request->apellido ?? $agent->apellido,
+                        'email' => $request->email ?? $agent->email,
+                        'username' => $request->username ?? $agent->username,
+                        'phone' => $request->phone ?? $agent->phone,
                         'avatar' => $request->avatar ?? $agent->avatar,
                     ]);
 
                     $user->update([
                         'name' => $request->name,
                         'apellido' => $request->apellido ?? $user->apellido,
+                        'email' => $request->email ?? $user->email,
+                        'username' => $request->username ?? $user->username,
+                        'phone' => $request->phone ?? $user->phone,
                         'avatar' => $request->avatar ?? $user->avatar,
                     ]);
                 });
@@ -69,14 +79,22 @@ class PerfilController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'apellido' => 'required|string|max:255',
+            'apellido' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'username' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'contact' => 'nullable|string|max:500',
             'avatar' => $avatarRule,
         ]);
 
         $user = $request->user();
         $user->update([
             'name' => $request->name,
-            'apellido' => $request->apellido,
+            'apellido' => $request->apellido ?? $user->apellido,
+            'email' => $request->email ?? $user->email,
+            'username' => $request->username ?? $user->username,
+            'phone' => $request->phone ?? $user->phone,
+            'contact' => $request->contact ?? $user->contact,
             'avatar' => $request->avatar ?? $user->avatar,
         ]);
 
@@ -127,5 +145,4 @@ class PerfilController extends Controller
 
         return back()->with('message', 'Contraseña actualizada correctamente');
     }
-
 }

@@ -7,6 +7,7 @@ use App\Support\ImageStorage;
 use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -33,10 +34,10 @@ class Novedades extends Component
     public $imageUpload = null;
 
     protected $rules = [
-        'title'   => 'required|min:3',
+        'title' => 'required|min:3',
         'content' => 'nullable',
         'excerpt' => 'nullable',
-        'status'  => 'required|in:draft,published,hidden',
+        'status' => 'required|in:draft,published,hidden',
     ];
 
     public function canCreate(): bool
@@ -64,11 +65,11 @@ class Novedades extends Component
 
     public function resetForm(): void
     {
-        $this->title       = '';
-        $this->content     = '';
-        $this->excerpt     = '';
-        $this->status      = 'published';
-        $this->image       = '';
+        $this->title = '';
+        $this->content = '';
+        $this->excerpt = '';
+        $this->status = 'published';
+        $this->image = '';
         $this->imageUpload = null;
     }
 
@@ -87,13 +88,12 @@ class Novedades extends Component
         }
 
         $post = Post::create([
-            'title'   => $this->title,
-            'slug'    => \Illuminate\Support\Str::slug($this->title) . '-' . uniqid(),
+            'title' => $this->title,
+            'slug' => Str::slug($this->title).'-'.uniqid(),
             'content' => $this->content,
             'excerpt' => $this->excerpt,
-            'status'  => $this->status,
-            'type'    => 'blog',
-            'image'   => $imagePath,
+            'status' => $this->status,
+            'image' => $imagePath,
             'line_id' => session('active_line_id'),
         ]);
 
@@ -106,7 +106,7 @@ class Novedades extends Component
     public function removeImage(): void
     {
         $this->imageUpload = null;
-        $this->image       = '';
+        $this->image = '';
     }
 
     public function deletePost(int $postId): void
@@ -126,7 +126,7 @@ class Novedades extends Component
         $this->checkLinePermission(Permissions::NEWS_READ);
 
         $lineIds = $this->visibleLineIds();
-        $query   = Post::query()->where('type', 'blog');
+        $query = Post::query();
 
         if ($lineIds !== null) {
             $query->whereIn('line_id', $lineIds);
@@ -137,7 +137,7 @@ class Novedades extends Component
         }
 
         if ($this->search) {
-            $query->where('title', 'like', '%' . $this->search . '%');
+            $query->where('title', 'like', '%'.$this->search.'%');
         }
 
         return $query->orderBy('created_at', 'desc')->get();
@@ -146,7 +146,7 @@ class Novedades extends Component
     public function render()
     {
         return view('livewire.novedades', [
-            'posts'     => $this->getPosts(),
+            'posts' => $this->getPosts(),
             'canDelete' => $this->canDelete(),
         ])->layout('layouts.dashboard');
     }

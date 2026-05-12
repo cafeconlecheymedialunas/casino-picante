@@ -3,43 +3,51 @@
 namespace App\Livewire;
 
 use App\Models\Bonus;
+use App\Models\CarouselItem;
 use App\Models\HomeConfig;
 use App\Models\Post;
+use App\Support\ImageStorage;
 use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.dashboard')]
 class EditorHome extends Component
 {
-    use HasLinePermissions;
+    use HasLinePermissions, WithFileUploads;
 
-    public $carouselPosts = [];
+    public $carouselItems = [];
+
     public $bonusItems = [];
+
     public $blogPosts = [];
 
     public $selectedCarousel = [];
+
     public $selectedBonuses = [];
+
     public $selectedBlogs = [];
+
+    public $newCarouselTitle = '';
+
+    public $newCarouselLink = '';
+
+    public $newCarouselImage = null;
 
     public function mount()
     {
         $this->ensureCanEditHome();
 
-        $this->carouselPosts = Post::where('type', Post::TYPE_CARRUSEL)
-            ->where('status', Post::STATUS_PUBLISHED)
-            ->orderBy('published_at', 'desc')
-            ->get()
-            ->toArray();
+        $this->loadCarouselItems();
 
         $this->bonusItems = Bonus::where('status', 'active')
             ->orderBy('start_date', 'desc')
             ->get()
             ->toArray();
 
-        $this->blogPosts = Post::where('type', Post::TYPE_BLOG)
-            ->where('status', Post::STATUS_PUBLISHED)
+        $this->blogPosts = Post::where('status', Post::STATUS_PUBLISHED)
             ->orderBy('published_at', 'desc')
             ->get()
             ->toArray();
@@ -60,6 +68,95 @@ class EditorHome extends Component
             ->toArray();
     }
 
+    public function loadCarouselItems(): void
+    {
+        $this->carouselItems = CarouselItem::orderBy('order')->get()->toArray();
+    }
+
+    public function addCarouselItem(): void
+    {
+        $this->ensureCanEditHome();
+
+        $this->validate([
+            'newCarouselImage' => 'required|image|max:5120',
+            'newCarouselTitle' => 'nullable|string|max:255',
+            'newCarouselLink' => 'nullable|string|max:500',
+        ]);
+
+        $maxOrder = CarouselItem::max('order') ?? 0;
+
+        CarouselItem::create([
+            'image' => ImageStorage::store($this->newCarouselImage, 'carousel'),
+            'title' => $this->newCarouselTitle,
+            'link' => $this->newCarouselLink,
+            'order' => $maxOrder + 1,
+            'line_id' => session('active_line_id'),
+        ]);
+
+        $this->newCarouselTitle = '';
+        $this->newCarouselLink = '';
+        $this->newCarouselImage = null;
+
+        $this->loadCarouselItems();
+    }
+
+    public function removeCarouselItem($itemId): void
+    {
+        $this->ensureCanEditHome();
+
+        $item = CarouselItem::find($itemId);
+        if ($item) {
+            ImageStorage::delete($item->image);
+            $item->delete();
+        }
+
+        $this->loadCarouselItems();
+    }
+
+    public function moveCarouselUp($itemId): void
+    {
+        $this->ensureCanEditHome();
+
+        $item = CarouselItem::find($itemId);
+        if (! $item) {
+            return;
+        }
+
+        $prev = CarouselItem::where('order', '<', $item->order)
+            ->orderBy('order', 'desc')
+            ->first();
+
+        if ($prev) {
+            $temp = $item->order;
+            $item->update(['order' => $prev->order]);
+            $prev->update(['order' => $temp]);
+        }
+
+        $this->loadCarouselItems();
+    }
+
+    public function moveCarouselDown($itemId): void
+    {
+        $this->ensureCanEditHome();
+
+        $item = CarouselItem::find($itemId);
+        if (! $item) {
+            return;
+        }
+
+        $next = CarouselItem::where('order', '>', $item->order)
+            ->orderBy('order', 'asc')
+            ->first();
+
+        if ($next) {
+            $temp = $item->order;
+            $item->update(['order' => $next->order]);
+            $next->update(['order' => $temp]);
+        }
+
+        $this->loadCarouselItems();
+    }
+
     public function toggleCarousel($itemId)
     {
         $this->ensureCanEditHome();
@@ -72,6 +169,7 @@ class EditorHome extends Component
         } else {
             if (count($this->selectedCarousel) >= 5) {
                 session()->flash('message_error', 'Máximo 5 imágenes en el carrusel.');
+
                 return;
             }
             $order = count($this->selectedCarousel);
@@ -96,6 +194,7 @@ class EditorHome extends Component
         } else {
             if (count($this->selectedBonuses) >= 5) {
                 session()->flash('message_error', 'Máximo 5 bonos en la home.');
+
                 return;
             }
             $order = count($this->selectedBonuses);
@@ -120,6 +219,7 @@ class EditorHome extends Component
         } else {
             if (count($this->selectedBlogs) >= 3) {
                 session()->flash('message_error', 'Máximo 3 entradas de blog en la home.');
+
                 return;
             }
             $order = count($this->selectedBlogs);

@@ -36,7 +36,11 @@ class Overview extends Component
     {
         $alerts = [];
 
-        $stale = Ticket::where('status', 'open')
+        $lineIds = $this->visibleLineIds();
+        $ticketQuery = Ticket::where('status', 'open')
+            ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+
+        $stale = (clone $ticketQuery)
             ->where('created_at', '<=', Carbon::now()->subHours(2))
             ->count();
         if ($stale > 0) {
@@ -82,18 +86,21 @@ class Overview extends Component
     public function getTicketStats(): array
     {
         $now = Carbon::now();
+        $lineIds = $this->visibleLineIds();
 
-        $open = Ticket::where('status', 'open')->count();
-        $progress = Ticket::where('status', 'progress')->count();
-        $closed = Ticket::where('status', 'closed')->count();
+        $base = fn () => Ticket::when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+
+        $open = $base()->where('status', 'open')->count();
+        $progress = $base()->where('status', 'progress')->count();
+        $closed = $base()->where('status', 'closed')->count();
         $total = $open + $progress + $closed;
 
-        $stale = Ticket::where('status', 'open')
+        $stale = $base()->where('status', 'open')
             ->where('created_at', '<=', $now->copy()->subHours(2))->count();
-        $closedToday = Ticket::where('status', 'closed')
+        $closedToday = $base()->where('status', 'closed')
             ->whereDate('updated_at', Carbon::today())->count();
-        $openedToday = Ticket::whereDate('created_at', Carbon::today())->count();
-        $weekTotal = Ticket::where('created_at', '>=', $now->copy()->startOfWeek())->count();
+        $openedToday = $base()->whereDate('created_at', Carbon::today())->count();
+        $weekTotal = $base()->where('created_at', '>=', $now->copy()->startOfWeek())->count();
 
         $resolutionRate = $total > 0 ? round($closed / $total * 100) : 0;
 
@@ -105,12 +112,15 @@ class Overview extends Component
     {
         $now = Carbon::now();
         $monthStart = $now->copy()->startOfMonth();
+        $lineIds = $this->visibleLineIds();
 
-        $activeBonuses = Bonus::where('status', 'active')
+        $bonusBase = fn () => Bonus::when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+
+        $activeBonuses = $bonusBase()->where('status', 'active')
             ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
-        $pausedBonuses = Bonus::where('status', 'paused')->count();
-        $expiredBonuses = Bonus::where('end_date', '<', $now)->count();
-        $totalBonuses = Bonus::count();
+        $pausedBonuses = $bonusBase()->where('status', 'paused')->count();
+        $expiredBonuses = $bonusBase()->where('end_date', '<', $now)->count();
+        $totalBonuses = $bonusBase()->count();
 
         $activeAssign = $this->bonusAssignmentsQuery()->where('status', 'active')->count();
         $usedAssign = $this->bonusAssignmentsQuery()->where('status', 'used')->count();
@@ -151,13 +161,16 @@ class Overview extends Component
     public function getPromoStats(): array
     {
         $now = Carbon::now();
+        $lineIds = $this->visibleLineIds();
 
-        $active = Promotion::where('status', 'published')
+        $base = fn () => Promotion::when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+
+        $active = $base()->where('status', 'published')
             ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
-        $upcoming = Promotion::where('status', 'published')->where('start_date', '>', $now)->count();
-        $ended = Promotion::where('end_date', '<', $now)->count();
-        $draft = Promotion::where('status', 'draft')->count();
-        $expiring = Promotion::where('status', 'published')
+        $upcoming = $base()->where('status', 'published')->where('start_date', '>', $now)->count();
+        $ended = $base()->where('end_date', '<', $now)->count();
+        $draft = $base()->where('status', 'draft')->count();
+        $expiring = $base()->where('status', 'published')
             ->whereBetween('end_date', [$now, $now->copy()->addHours(24)])->count();
 
         return compact('active', 'upcoming', 'ended', 'draft', 'expiring');
@@ -178,12 +191,9 @@ class Overview extends Component
     {
         $published = Post::where('status', 'published')->count();
         $draft = Post::where('status', 'draft')->count();
-        $novedades = Post::where('type', 'novedad')->where('status', 'published')->count();
-        $carrusel = Post::where('type', 'carrusel')->where('status', 'published')->count();
-        $blog = Post::where('type', 'blog')->where('status', 'published')->count();
         $total = Post::count();
 
-        return compact('published', 'draft', 'novedades', 'carrusel', 'blog', 'total');
+        return compact('published', 'draft', 'total');
     }
 
     public function getRegisteredUsersCount(): int
@@ -213,10 +223,16 @@ class Overview extends Component
 
     public function getActiveBonosCount(): int
     {
-        return Bonus::where('status', 'active')
+        $lineIds = $this->visibleLineIds();
+        $query = Bonus::where('status', 'active')
             ->where('start_date', '<=', Carbon::now())
-            ->where('end_date', '>=', Carbon::now())
-            ->count();
+            ->where('end_date', '>=', Carbon::now());
+
+        if ($lineIds !== null) {
+            $query->whereIn('line_id', $lineIds);
+        }
+
+        return $query->count();
     }
 
     public function getRafflesByLineCount($lineId = null): int
@@ -224,6 +240,11 @@ class Overview extends Component
         $query = Raffle::query();
         if ($lineId) {
             $query->where('line_id', $lineId);
+        } else {
+            $lineIds = $this->visibleLineIds();
+            if ($lineIds !== null) {
+                $query->whereIn('line_id', $lineIds);
+            }
         }
 
         return $query->count();
@@ -231,7 +252,17 @@ class Overview extends Component
 
     public function getBestSellingLineOfMonth(): ?array
     {
-        return SalesStats::bestSellingLineOfMonth();
+        $result = SalesStats::bestSellingLineOfMonth();
+        if (! $result) {
+            return null;
+        }
+
+        $lineIds = $this->visibleLineIds();
+        if ($lineIds !== null && ! in_array($result['id'], $lineIds)) {
+            return null;
+        }
+
+        return $result;
     }
 
     public function getLast10RegisteredUsers()
@@ -248,8 +279,11 @@ class Overview extends Component
 
     public function getUrgentTickets()
     {
+        $lineIds = $this->visibleLineIds();
+
         return Ticket::with('user')
             ->where('status', 'open')
+            ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds))
             ->orderBy('created_at', 'asc')
             ->limit(6)
             ->get();
@@ -257,9 +291,10 @@ class Overview extends Component
 
     public function render()
     {
-        $this->ensureAdmin();
-
-        $lines = Line::where('status', 'active')->get();
+        $lineIds = $this->visibleLineIds();
+        $lines = $lineIds !== null
+            ? Line::whereIn('id', $lineIds)->where('status', 'active')->get()
+            : Line::where('status', 'active')->get();
 
         return view('livewire.overview', [
             'alerts' => $this->getAlerts(),
@@ -305,13 +340,6 @@ class Overview extends Component
         }
 
         return ['labels' => $labels, 'data' => $data];
-    }
-
-    private function ensureAdmin(): void
-    {
-        if (! $this->isAdminMode()) {
-            abort(403, 'Solo el administrador general puede acceder al dashboard.');
-        }
     }
 
     // Usa el método del trait HasLinePermissions::visibleLineIds()

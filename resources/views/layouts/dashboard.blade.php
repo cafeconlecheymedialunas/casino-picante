@@ -55,13 +55,14 @@
             padding: 8px 10px; border-radius: 8px;
             font-size: 13px; cursor: pointer; transition: all 0.2s; color: var(--muted);
             text-decoration: none;
+            margin-bottom: 5px;
         }
         .sidebar-item:hover { background: rgba(255,255,255,0.04); color: #fff; }
         .sidebar-item.active { 
             background: rgba(255,106,26,0.12); color: var(--orange); font-weight: 700; 
             border: 1px solid rgba(255,106,26,0.3); 
         }
-        .sidebar-item-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+        .sidebar-item-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; margin-right: 4px; }
         .sidebar-spacer { flex: 1; }
         .sidebar-user { 
             padding: 10px; border-radius: 10px; 
@@ -364,7 +365,7 @@
             @endphp
             @if($allLines->count() > 0)
             <div class="sidebar-line-selector">
-                <div class="sidebar-line-label">LÃNEA ACTIVA</div>
+                <div class="sidebar-line-label">LÍNEA ACTIVA</div>
                 <form method="POST" id="line-selector-form">
                     @csrf
                     <select class="sidebar-line-select" onchange="switchLine(this.value)">
@@ -381,13 +382,11 @@
             </div>
             @endif
 
-            <div class="sidebar-section">DASHBOARD</div>
-
+            @if($sidebarCan([\App\Support\Permissions::DASHBOARD_READ]))
             <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-chart-line"></i></span> Overview
             </a>
-
-            <div class="sidebar-section">GESTION</div>
+            @endif
 
             @if($sidebarCan([\App\Support\Permissions::USER_READ, \App\Support\Permissions::USER_UPDATE, \App\Support\Permissions::USER_BLOCK]))
             <a href="{{ route('clientes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('clientes') ? 'active' : '' }}">
@@ -413,8 +412,6 @@
             </a>
             @endif
 
-            <div class="sidebar-section">CONTENIDO</div>
-
             @if($sidebarCanEditHome)
             <a href="{{ route('editor-home') }}" wire:navigate class="sidebar-item {{ request()->routeIs('editor-home') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-house-chimney"></i></span> Editar Home
@@ -426,8 +423,6 @@
                 <span class="sidebar-item-icon"><i class="fa-solid fa-newspaper"></i></span> Blog
             </a>
             @endif
-
-            <div class="sidebar-section">OPERACION</div>
 
             @if($sidebarCan([\App\Support\Permissions::BONO_READ, \App\Support\Permissions::BONO_CREATE, \App\Support\Permissions::BONO_UPDATE, \App\Support\Permissions::BONO_DELETE]))
             <a href="{{ route('bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
@@ -453,13 +448,16 @@
             </a>
             @endif
 
-            <div class="sidebar-section">SISTEMA</div>
-
             @if(! $sessionAgentId)
             <a href="{{ route('settings') }}" wire:navigate class="sidebar-item {{ request()->routeIs('settings*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-gear"></i></span> Configuracion
             </a>
             @endif
+
+            <a href="{{ route('perfil') }}" wire:navigate class="sidebar-item {{ request()->routeIs('perfil') ? 'active' : '' }}">
+                <span class="sidebar-item-icon"><i class="fa-solid fa-user"></i></span> Mi Perfil
+            </a>
+
             <div class="sidebar-spacer"></div>
         </aside>
         
@@ -469,7 +467,11 @@
                     @yield('header')
                 @endif
                 <div class="wrap-content" style="padding:0 2%;">
-                {{ $slot }}
+                @isset($slot)
+                    {{ $slot }}
+                @else
+                    @yield('content')
+                @endisset
                 </div>
             </div>
         </main>

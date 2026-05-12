@@ -72,12 +72,15 @@ final class Permissions
 
     public const HOME_EDIT = 'home.edit';
 
+    public const DASHBOARD_READ = 'dashboard.read';
+
     /**
      * Returns [permission => [icon_class, human_label]] for all permissions.
      */
     public static function labels(): array
     {
         return [
+            self::DASHBOARD_READ => ['fa-solid fa-chart-line',     'Ver dashboard'],
             // Promociones
             self::PROMO_READ => ['fa-solid fa-tags',             'Ver promociones'],
             self::PROMO_CREATE => ['fa-solid fa-tag',              'Crear promociones'],
@@ -131,6 +134,7 @@ final class Permissions
             'news' => [self::NEWS_READ, self::NEWS_CREATE, self::NEWS_UPDATE, self::NEWS_DELETE],
             'user' => [self::USER_READ, self::USER_UPDATE, self::USER_BLOCK],
             'home' => [self::HOME_EDIT],
+            'dashboard' => [self::DASHBOARD_READ],
         ];
     }
 

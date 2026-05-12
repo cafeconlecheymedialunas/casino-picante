@@ -1,5 +1,9 @@
 @extends('layouts.dashboard')
 
+@section('header')
+    <x-livewire.components.page-header title="PERFIL" subtitle="Configura tu cuenta" />
+@endsection
+
 @section('content')
 <div class="page-container">
     <style>
@@ -63,16 +67,42 @@
                                 <label class="form-label" for="name">Nombre</label>
                                 <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" class="form-input" required>
                             </div>
-                            @if(!$isAgent)
-                                <div class="form-group">
-                                    <label class="form-label" for="apellido">Apellido</label>
-                                    <input type="text" id="apellido" name="apellido" value="{{ old('apellido', $user->apellido ?? '') }}" class="form-input">
+                            <div class="form-group">
+                                <label class="form-label" for="apellido">Apellido</label>
+                                <input type="text" id="apellido" name="apellido" value="{{ old('apellido', $user->apellido ?? '') }}" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="email">Email</label>
+                                <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="username">Usuario</label>
+                                <input type="text" id="username" name="username" value="{{ old('username', $user->username ?? '') }}" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="phone">Teléfono</label>
+                                <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone ?? '') }}" class="form-input">
+                            </div>
+                            @if($isAgent)
+                            <div class="form-group" style="grid-column:1/-1;">
+                                <label class="form-label">Líneas asignadas</label>
+                                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+                                    @foreach($user->activeLines as $line)
+                                        @php $rol = $line->pivot->role ?? 'miembro'; @endphp
+                                        <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(255,106,26,0.1);border:1px solid rgba(255,106,26,0.25);color:var(--orange);">
+                                            {{ $line->icon ?? '●' }} {{ $line->name }}
+                                            <span style="padding:1px 7px;border-radius:999px;font-size:9px;font-weight:800;text-transform:uppercase;background:{{ $rol === 'encargado' ? 'rgba(255,106,26,0.2)' : 'rgba(255,255,255,0.06)' }};color:{{ $rol === 'encargado' ? 'var(--orange)' : 'var(--muted-2)' }};">
+                                                {{ $rol === 'encargado' ? 'ADMIN' : 'MIEMBRO' }}
+                                            </span>
+                                        </span>
+                                    @endforeach
                                 </div>
+                            </div>
                             @else
-                                <div class="form-group">
-                                    <label class="form-label">Email</label>
-                                    <input type="email" value="{{ $user->email }}" class="form-input" readonly>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label" for="contact">Contacto</label>
+                                <input type="text" id="contact" name="contact" value="{{ old('contact', $user->contact ?? '') }}" class="form-input">
+                            </div>
                             @endif
                         </div>
 

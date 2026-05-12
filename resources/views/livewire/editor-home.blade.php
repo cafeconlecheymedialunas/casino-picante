@@ -21,6 +21,30 @@
         .eh-counter .current { color:var(--orange); font-weight:800; }
         .flash-error { border:1px solid rgba(255,71,87,.35); background:rgba(255,71,87,.12); color:#ff4757; border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; margin-bottom:16px; }
         .flash-success { border:1px solid rgba(37,196,107,.35); background:rgba(37,196,107,.12); color:var(--good); border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; margin-bottom:16px; }
+        .eh-repeater { padding:12px 16px; display:flex; flex-direction:column; gap:8px; }
+        .eh-repeater-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; background:rgba(255,255,255,.025); border:1px solid var(--line); transition:border-color .15s, background .15s; }
+        .eh-repeater-item:hover { border-color:var(--line-2); background:rgba(255,255,255,.04); }
+        .eh-repeater-item.new-row { background:rgba(255,106,26,.04); border-color:rgba(255,106,26,.25); }
+        .eh-repeater-item .drag-handle { width:20px; flex-shrink:0; display:flex; flex-direction:column; gap:2px; cursor:grab; opacity:.4; }
+        .eh-repeater-item .drag-handle span { display:block; height:2px; border-radius:2px; background:var(--muted-2); }
+        .eh-repeater-thumb { width:72px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0; background:rgba(255,255,255,.04); }
+        .eh-repeater-body { flex:1; min-width:0; display:flex; flex-direction:column; }
+        .eh-repeater-title { font-weight:700; font-size:12px; color:var(--white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .eh-repeater-sub { font-size:10px; color:var(--muted-2); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .eh-repeater-actions { display:flex; gap:3px; flex-shrink:0; }
+        .eh-repeater-actions button { width:26px; height:26px; border-radius:6px; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:10px; transition:all .15s; }
+        .eh-repeater-actions button:hover { border-color:var(--orange); color:var(--orange); background:rgba(255,106,26,.08); }
+        .eh-repeater-actions button:disabled { opacity:.25; cursor:default; pointer-events:none; }
+        .eh-repeater-actions .btn-visible { color:var(--good); border-color:rgba(37,196,107,.3); background:rgba(37,196,107,.08); font-size:9px; width:auto; padding:0 10px; gap:4px; font-weight:700; }
+        .eh-repeater-actions .btn-hidden { font-size:9px; width:auto; padding:0 10px; gap:4px; font-weight:700; }
+        .eh-repeater-actions .btn-del { color:#ff4757; }
+        .eh-repeater-actions .btn-del:hover { border-color:rgba(255,71,87,.4); background:rgba(255,71,87,.12); color:#ff4757; }
+        .eh-repeater-addbtn { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:8px; border:1px dashed var(--line-2); background:transparent; color:var(--muted-2); cursor:pointer; font-size:11px; font-weight:700; transition:all .15s; align-self:flex-start; }
+        .eh-repeater-addbtn:hover { border-color:var(--orange); color:var(--orange); background:rgba(255,106,26,.04); }
+        .eh-repeater-field { display:flex; flex-direction:column; gap:3px; min-width:0; }
+        .eh-repeater-field label { font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
+        .eh-repeater-field input { background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:6px; padding:7px 10px; color:var(--white); font-size:12px; outline:none; }
+        .eh-repeater-field input:focus { border-color:var(--orange); box-shadow:0 0 0 2px rgba(255,106,26,.1); }
     </style>
 
     @section('header')
@@ -42,32 +66,68 @@
             <div class="eh-section-head">
                 <div class="eh-section-title">
                     🖼 IMÁGENES CARROUSEL
-                    <span class="eh-section-badge">MAX 5</span>
+                    <span class="eh-section-badge">SUBÍ Y ORDENÁ</span>
                 </div>
                 <div class="eh-counter">
-                    Seleccionadas: <span class="current">{{ count($selectedCarousel) }}</span> / 5
+                    Visibles: <span class="current">{{ count($selectedCarousel) }}</span> / 5 ·
+                    Total: {{ count($carouselItems) }}
                 </div>
             </div>
-            @if(count($carouselPosts) > 0)
-            <div class="eh-grid">
-                @foreach($carouselPosts as $post)
-                <div class="eh-card {{ in_array($post['id'], $selectedCarousel) ? 'selected' : '' }}"
-                     wire:click="toggleCarousel({{ $post['id'] }})">
-                    @if($post['image'])
-                    <img src="{{ asset('storage/' . $post['image']) }}" class="eh-card-img" alt="{{ $post['title'] }}">
-                    @else
-                    <div class="eh-card-img placeholder">🖼</div>
-                    @endif
-                    <div class="eh-card-title">{{ $post['title'] }}</div>
-                    <div class="eh-card-meta">
-                        <span>{{ \Carbon\Carbon::parse($post['published_at'])->format('d/m/Y') }}</span>
+
+            <div class="eh-repeater" x-data="{ open: false }">
+                @forelse($carouselItems as $i => $item)
+                <div class="eh-repeater-item">
+                    <div class="drag-handle"><span></span><span></span><span></span></div>
+                    <img src="{{ $item['image'] }}" class="eh-repeater-thumb" alt="">
+                    <div class="eh-repeater-body">
+                        <div class="eh-repeater-title">{{ $item['title'] ?: 'Sin título' }}</div>
+                        <div class="eh-repeater-sub">{{ $item['link'] ?: 'Sin enlace' }}</div>
+                    </div>
+                    <div class="eh-repeater-actions">
+                        <button wire:click="moveCarouselUp({{ $item['id'] }})" title="Subir" {{ $i === 0 ? 'disabled' : '' }}>↑</button>
+                        <button wire:click="moveCarouselDown({{ $item['id'] }})" title="Bajar" {{ $i === count($carouselItems) - 1 ? 'disabled' : '' }}>↓</button>
+                        <button wire:click="toggleCarousel({{ $item['id'] }})"
+                            class="{{ in_array($item['id'], $selectedCarousel) ? 'btn-visible' : 'btn-hidden' }}"
+                            title="{{ in_array($item['id'], $selectedCarousel) ? 'Ocultar' : 'Mostrar' }}">
+                            <i class="fa-solid {{ in_array($item['id'], $selectedCarousel) ? 'fa-eye' : 'fa-eye-slash' }}"></i>
+                            {{ in_array($item['id'], $selectedCarousel) ? 'Visible' : 'Oculto' }}
+                        </button>
+                        <button wire:click="removeCarouselItem({{ $item['id'] }})" wire:confirm="¿Eliminar esta imagen?" class="btn-del" title="Eliminar">✕</button>
                     </div>
                 </div>
-                @endforeach
+                @empty
+                <div style="text-align:center;padding:24px 16px;color:var(--muted-2);font-size:12px;">
+                    <i class="fa-solid fa-image" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3"></i>
+                    No hay imágenes en el carrusel
+                </div>
+                @endforelse
+
+                <button type="button" @click="open = !open" class="eh-repeater-addbtn">
+                    <i class="fa-solid" :class="open ? 'fa-xmark' : 'fa-plus'"></i>
+                    <span x-text="open ? 'Cancelar' : 'Agregar imagen'"></span>
+                </button>
+
+                <template x-if="open">
+                    <div class="eh-repeater-item new-row" style="flex-wrap:wrap;">
+                        <div style="flex:1;min-width:140px;">
+                            <x-upload-image label="" model="newCarouselImage" :value="''" aspect="851/315" hint="Máx 5MB">
+                                @error('newCarouselImage') <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
+                            </x-upload-image>
+                        </div>
+                        <div class="eh-repeater-field" style="flex:1;min-width:100px;">
+                            <label>Título</label>
+                            <input type="text" wire:model="newCarouselTitle" placeholder="Opcional">
+                        </div>
+                        <div class="eh-repeater-field" style="flex:1;min-width:100px;">
+                            <label>Link</label>
+                            <input type="text" wire:model="newCarouselLink" placeholder="Opcional">
+                        </div>
+                        <button type="button" wire:click="addCarouselItem" wire:loading.attr="disabled" @click="open = false" class="btn-primary" style="height:30px;padding:0 14px;font-size:11px;white-space:nowrap;">
+                            <i class="fa-solid fa-check"></i> Agregar
+                        </button>
+                    </div>
+                </template>
             </div>
-            @else
-            <div class="eh-empty">No hay publicaciones de tipo carrusel publicadas. Crea una en <strong>Novedades</strong> con tipo "Carrusel".</div>
-            @endif
         </div>
 
         {{-- BONOS --}}
