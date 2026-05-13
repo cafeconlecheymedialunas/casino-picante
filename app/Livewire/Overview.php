@@ -118,7 +118,6 @@ class Overview extends Component
 
         $activeBonuses = $bonusBase()->where('status', 'active')
             ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
-        $pausedBonuses = $bonusBase()->where('status', 'paused')->count();
         $expiredBonuses = $bonusBase()->where('end_date', '<', $now)->count();
         $totalBonuses = $bonusBase()->count();
 
@@ -141,10 +140,13 @@ class Overview extends Component
 
     public function getRaffleStats(): array
     {
-        $active = Raffle::where('status', 'active')->count();
-        $upcoming = Raffle::where('status', 'upcoming')->count();
-        $ended = Raffle::where('status', 'ended')->count();
-        $total = $active + $upcoming + $ended;
+        $now = Carbon::now();
+        $active = Raffle::where('status', 'active')
+            ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
+        $upcoming = Raffle::where('status', 'active')->where('start_date', '>', $now)->count();
+        $ended = Raffle::where('status', 'inactive')->count()
+            + Raffle::where('status', 'active')->where('end_date', '<', $now)->count();
+        $total = Raffle::count();
 
         $totalNumbers = $this->raffleNumbersQuery()->count();
         $uniqueParticip = $this->raffleNumbersQuery()->select('user_id')->distinct()->count();

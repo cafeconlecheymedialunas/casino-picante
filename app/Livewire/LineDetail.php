@@ -91,13 +91,6 @@ class LineDetail extends Component
 
         $this->validate([
             'line.name' => 'required|string|max:255',
-            'line.porcentaje_encargado' => 'nullable|numeric|min:0|max:100',
-            'line.ventas_mes_actual' => 'nullable|numeric|min:0',
-            'line.ventas_mes_pasado' => 'nullable|numeric|min:0',
-            'line.ventas_mes_antiguo' => 'nullable|numeric|min:0',
-            'line.ganancia_encargado' => 'nullable|numeric|min:0',
-            'line.mejor_mes_total' => 'nullable|numeric|min:0',
-            'line.mejor_plataforma_total' => 'nullable|numeric|min:0',
             'portadaUpload' => 'nullable|image|max:20480',
             'perfilUpload' => 'nullable|image|max:20480',
         ]);

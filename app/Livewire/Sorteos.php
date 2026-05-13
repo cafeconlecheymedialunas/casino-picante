@@ -187,6 +187,7 @@ class Sorteos extends Component
 
         if ($end->lt($start)) {
             $this->addError('end_date', 'La fecha y hora de fin debe ser posterior al inicio.');
+
             return;
         }
 
@@ -306,6 +307,7 @@ class Sorteos extends Component
 
         if ($numbers->isEmpty()) {
             session()->flash('info', 'Selecciona al menos un numero del tablero.');
+
             return;
         }
 
@@ -322,6 +324,7 @@ class Sorteos extends Component
         foreach ($numbers as $number) {
             if ($number < $raffle->start_number || $number > $maxNumber) {
                 $errors[] = "Numero {$number} fuera del limite disponible";
+
                 continue;
             }
 
@@ -391,6 +394,7 @@ class Sorteos extends Component
 
         if ($occupiedSelected->isEmpty()) {
             session()->flash('info', 'No hay numeros asignados dentro de la seleccion para desasignar.');
+
             return;
         }
 
@@ -407,6 +411,7 @@ class Sorteos extends Component
         if ($deleted > 0) {
             session()->flash('message', "{$deleted} numero(s) desasignados correctamente");
             $this->notify('Numeros desasignados', "{$deleted} numero(s) desasignados del sorteo {$raffle->title}.", 'raffles', '/sorteos', 'warning');
+
             return;
         }
 
@@ -462,6 +467,7 @@ class Sorteos extends Component
 
         if ($selected->contains($number)) {
             $this->selectedNumbers = $selected->reject(fn ($value) => $value === $number)->values()->toArray();
+
             return;
         }
 
@@ -494,9 +500,9 @@ class Sorteos extends Component
         $this->finalizeOnSave = false;
         $this->winnerPrizes = collect($raffle->prizes ?? [])
             ->map(fn ($prize, $i) => [
-                'position'    => (int) ($prize['position'] ?? $i + 1),
-                'name'        => $prize['name'] ?? '',
-                'image'       => $prize['image'] ?? null,
+                'position' => (int) ($prize['position'] ?? $i + 1),
+                'name' => $prize['name'] ?? '',
+                'image' => $prize['image'] ?? null,
                 'winner_number' => (string) ($prize['winner_number'] ?? ''),
             ])
             ->values()
@@ -513,8 +519,8 @@ class Sorteos extends Component
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
         $this->validate([
-            'winnerPrizes'                   => 'array',
-            'winnerPrizes.*.winner_number'   => 'nullable|integer',
+            'winnerPrizes' => 'array',
+            'winnerPrizes.*.winner_number' => 'nullable|integer',
         ]);
 
         $raffle = Raffle::with('numbers.user', 'numbers.line')->findOrFail($this->selectedRaffleId);
@@ -535,24 +541,24 @@ class Sorteos extends Component
                 }
 
                 return array_merge($prize, [
-                    'winner_number'               => $raw !== '' ? (int) $raw : null,
-                    'winner_user_id'              => $numberModel?->user_id,
-                    'winner_line_id'              => $numberModel?->line_id,
-                    'winner_username'             => $numberModel?->user?->username,
-                    'winner_name'                 => $numberModel?->user?->name,
-                    'winner_line_name'            => $numberModel?->line?->name,
+                    'winner_number' => $raw !== '' ? (int) $raw : null,
+                    'winner_user_id' => $numberModel?->user_id,
+                    'winner_line_id' => $numberModel?->line_id,
+                    'winner_username' => $numberModel?->user?->username,
+                    'winner_name' => $numberModel?->user?->name,
+                    'winner_line_name' => $numberModel?->line?->name,
                     'winner_participations_count' => $numberModel
                         ? $raffle->numbers->where('user_id', $numberModel->user_id)->count()
                         : null,
-                    'winner_awarded_at'           => $raw !== '' ? now()->toDateTimeString() : null,
+                    'winner_awarded_at' => $raw !== '' ? now()->toDateTimeString() : null,
                 ]);
             })
             ->toArray();
 
         $updateData = [
-            'prizes'         => $prizes,
+            'prizes' => $prizes,
             'winner_user_id' => $firstWinnerUserId,
-            'winner_number'  => $firstWinnerNumber,
+            'winner_number' => $firstWinnerNumber,
         ];
 
         if ($this->finalizeOnSave) {
@@ -652,14 +658,10 @@ class Sorteos extends Component
         $availableLines = $this->availableLines();
         $assignmentLine = Line::find($this->assignmentLineId($selectedRaffle));
 
-        $line = Line::find(session('active_line_id'));
-        $platforms = $line ? $line->platforms : collect();
-
         return view('livewire.sorteos', compact(
             'raffles',
             'selectedRaffle',
             'users',
-            'platforms',
             'participants',
             'totalHistorical',
             'availableLines',
@@ -683,17 +685,17 @@ class Sorteos extends Component
                 $existing = $existingPrizes->get($position, []);
 
                 return [
-                    'position'                    => $position,
-                    'name'                        => trim($prize['name'] ?? ''),
-                    'image'                       => $image ?: null,
-                    'winner_number'               => $existing['winner_number'] ?? null,
-                    'winner_user_id'              => $existing['winner_user_id'] ?? null,
-                    'winner_line_id'              => $existing['winner_line_id'] ?? null,
-                    'winner_username'             => $existing['winner_username'] ?? null,
-                    'winner_name'                 => $existing['winner_name'] ?? null,
-                    'winner_line_name'            => $existing['winner_line_name'] ?? null,
+                    'position' => $position,
+                    'name' => trim($prize['name'] ?? ''),
+                    'image' => $image ?: null,
+                    'winner_number' => $existing['winner_number'] ?? null,
+                    'winner_user_id' => $existing['winner_user_id'] ?? null,
+                    'winner_line_id' => $existing['winner_line_id'] ?? null,
+                    'winner_username' => $existing['winner_username'] ?? null,
+                    'winner_name' => $existing['winner_name'] ?? null,
+                    'winner_line_name' => $existing['winner_line_name'] ?? null,
                     'winner_participations_count' => $existing['winner_participations_count'] ?? null,
-                    'winner_awarded_at'           => $existing['winner_awarded_at'] ?? null,
+                    'winner_awarded_at' => $existing['winner_awarded_at'] ?? null,
                 ];
             })
             ->filter(fn ($prize) => $prize['position'] > 0 && $prize['name'] !== '')
@@ -788,6 +790,7 @@ class Sorteos extends Component
     {
         if (! $this->lineParticipates($raffle, $this->assignmentLineId($raffle))) {
             session()->flash('error', 'La linea activa no participa de este sorteo.');
+
             return false;
         }
 

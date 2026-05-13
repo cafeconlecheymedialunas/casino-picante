@@ -239,7 +239,6 @@ class Agentes extends Component
 
         $line = Line::findOrFail($lineId);
         $this->authorizeLineScope($lineId);
-        $linePermissions = $line->permissions ?? [];
 
         // Prevent agents from editing their own permissions here unless admin
         $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
@@ -250,18 +249,18 @@ class Agentes extends Component
         }
 
         if ($this->isAdminMode()) {
-            $available = $linePermissions;
+            $available = Permissions::all();
         } else {
             $currentAgentId = (int) session('active_agent_id');
             $myPerms = LineAgentPermission::where('line_id', $lineId)
                 ->where('agent_id', $currentAgentId)
                 ->pluck('permission')
                 ->toArray();
-            $available = array_values(array_intersect($linePermissions, $myPerms));
+            $available = array_values(array_intersect(Permissions::all(), $myPerms));
         }
 
         $this->permEditAgentId = $agentId;
-        $this->permEditLineId  = $lineId;
+        $this->permEditLineId = $lineId;
         $this->permEditAvailable = $available;
 
         // Load current permissions; default to all available if none stored yet
@@ -292,17 +291,15 @@ class Agentes extends Component
         $this->authorizeLineScope($this->permEditLineId);
 
         // Recompute allowed permissions server-side to avoid client tampering
-        $line = Line::findOrFail($this->permEditLineId);
-        $linePermissions = $line->permissions ?? [];
         if ($this->isAdminMode()) {
-            $available = $linePermissions;
+            $available = Permissions::all();
         } else {
             $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
             $myPerms = LineAgentPermission::where('line_id', $this->permEditLineId)
                 ->where('agent_id', $currentAgentId)
                 ->pluck('permission')
                 ->toArray();
-            $available = array_values(array_intersect($linePermissions, $myPerms));
+            $available = array_values(array_intersect(Permissions::all(), $myPerms));
         }
 
         $toSave = array_values(array_intersect($this->permEditSelected, $available));
@@ -319,9 +316,9 @@ class Agentes extends Component
 
     public function closePermissions(): void
     {
-        $this->permEditAgentId   = null;
-        $this->permEditLineId    = null;
-        $this->permEditSelected  = [];
+        $this->permEditAgentId = null;
+        $this->permEditLineId = null;
+        $this->permEditSelected = [];
         $this->permEditAvailable = [];
     }
 
@@ -378,11 +375,11 @@ class Agentes extends Component
         ];
 
         return view('livewire.agentes', [
-            'agents'           => $agents,
-            'metrics'          => $metrics,
-            'lines'            => $this->availableLines,
-            'canCreateAgents'  => $this->canCreateAgents,
-            'detailAgent'      => $detailAgent,
+            'agents' => $agents,
+            'metrics' => $metrics,
+            'lines' => $this->availableLines,
+            'canCreateAgents' => $this->canCreateAgents,
+            'detailAgent' => $detailAgent,
             'permissionCatalog' => Permissions::catalog(),
         ])->layout('layouts.dashboard');
     }
@@ -581,10 +578,12 @@ class Agentes extends Component
         $agentId = session('active_agent_id');
         if ($agentId) {
             $agent = Agent::find($agentId);
+
             return $agent ? trim($agent->name.' '.($agent->apellido ?? '')) : 'Un encargado';
         }
 
         $user = auth()->user();
+
         return $user ? trim($user->name.' '.($user->apellido ?? '')) : 'El administrador';
     }
 

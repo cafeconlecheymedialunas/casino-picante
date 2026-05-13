@@ -552,7 +552,9 @@
     @livewireScripts
     <script>
         function switchLine(lineId) {
-            fetch('/session/line/' + lineId, {
+            const switchLineUrl = @json(route('session.line', ['id' => '__LINE_ID__'])).replace('__LINE_ID__', lineId);
+
+            fetch(switchLineUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')

@@ -430,7 +430,7 @@
             <div class="kpi-label">Bonos vigentes</div>
             <div class="kpi-value {{ $bonuses['activeBonuses'] > 0 ? 'c-green' : 'c-muted' }}">{{ $bonuses['activeBonuses'] }}</div>
             <div class="kpi-desc">
-                <span class="hi">{{ $bonuses['totalBonuses'] }}</span> total · <span class="hi">{{ $bonuses['pausedBonuses'] }}</span> pausados
+                <span class="hi">{{ $bonuses['totalBonuses'] }}</span> total
             </div>
         </div>
 
@@ -707,15 +707,14 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(bonosCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Activos', 'Usados', 'Expirados', 'Pausados'],
+                labels: ['Activos', 'Usados', 'Expirados'],
                 datasets: [{
                     data: [
                         {{ $bonuses['activeAssign'] }},
                         {{ $bonuses['usedAssign'] }},
-                        {{ $bonuses['expiredAssign'] }},
-                        {{ $bonuses['pausedBonuses'] }}
+                        {{ $bonuses['expiredAssign'] }}
                     ],
-                    backgroundColor: ['#25c46b', '#ff6a1a', '#ff4757', '#ffb347'],
+                    backgroundColor: ['#25c46b', '#ff6a1a', '#ff4757'],
                     borderWidth: 0
                 }]
             },

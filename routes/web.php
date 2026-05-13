@@ -46,6 +46,7 @@ Route::post('/logout', function () {
     return redirect()->route('admin.login');
 })->name('logout');
 
+Route::prefix('admin')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/perfil', [PerfilController::class, 'index'])->middleware('line.authorize')->name('perfil');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
@@ -134,4 +135,5 @@ Route::middleware('line.authorize')->group(function () {
     // Settings – admin only
     Route::get('/settings', Settings::class)->middleware('admin')->name('settings');
 
+});
 });
