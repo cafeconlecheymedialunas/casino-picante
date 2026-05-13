@@ -157,8 +157,8 @@ class SorteosNumberCrudTest extends TestCase
             'status' => 'active',
         ]);
 
-        $firstClient = User::factory()->create(['username' => 'cliente_uno']);
-        $secondClient = User::factory()->create(['username' => 'cliente_dos']);
+        $firstClient = User::factory()->create(['username' => 'cliente_uno', 'status' => 'active']);
+        $secondClient = User::factory()->create(['username' => 'cliente_dos', 'status' => 'active']);
         $line->clients()->syncWithoutDetaching([
             $firstClient->id => ['is_active' => true],
             $secondClient->id => ['is_active' => true],
@@ -214,6 +214,56 @@ class SorteosNumberCrudTest extends TestCase
         $this->assertSame(4, RaffleNumber::where('raffle_id', $raffle->id)->count());
     }
 
+    public function test_active_client_without_line_can_be_assigned_to_raffle_number(): void
+    {
+        $clientRole = Role::firstOrCreate(
+            ['name' => Roles::CLIENTE],
+            ['label' => 'Cliente']
+        );
+        $line = Line::create([
+            'name' => 'Linea Test',
+            'status' => 'active',
+        ]);
+        $client = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'username' => 'cliente_suelto',
+            'line_id' => null,
+            'status' => 'active',
+        ]);
+
+        $raffle = Raffle::withoutGlobalScopes()->create([
+            'title' => 'Sorteo Test',
+            'description' => 'Test',
+            'status' => 'active',
+            'start_date' => now()->subMinute(),
+            'end_date' => now()->addDay(),
+            'start_number' => 1,
+            'end_number' => 20,
+            'numbers_limit' => 20,
+            'line_id' => $line->id,
+        ]);
+        $raffle->lines()->sync([$line->id]);
+
+        Livewire::test(Sorteos::class)
+            ->set('selectedRaffleId', $raffle->id)
+            ->assertSee('cliente_suelto')
+            ->set('assignUserId', (string) $client->id)
+            ->set('selectedNumbers', [5])
+            ->call('saveSelectedNumbers')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('line_clients', [
+            'line_id' => $line->id,
+            'user_id' => $client->id,
+        ]);
+        $this->assertDatabaseHas('raffle_numbers', [
+            'raffle_id' => $raffle->id,
+            'user_id' => $client->id,
+            'line_id' => $line->id,
+            'number' => 5,
+        ]);
+    }
+
     public function test_agent_with_read_permission_can_assign_selected_numbers(): void
     {
         $line = Line::create([
@@ -240,7 +290,7 @@ class SorteosNumberCrudTest extends TestCase
             'permission' => Permissions::SORTEO_READ,
         ]);
 
-        $client = User::factory()->create(['username' => 'cliente_uno']);
+        $client = User::factory()->create(['username' => 'cliente_uno', 'status' => 'active']);
         $line->clients()->syncWithoutDetaching([$client->id => ['is_active' => true]]);
         $raffle = Raffle::withoutGlobalScopes()->create([
             'title' => 'Sorteo Test',
@@ -335,7 +385,7 @@ class SorteosNumberCrudTest extends TestCase
             'name' => 'Linea Test',
             'status' => 'active',
         ]);
-        $client = User::factory()->create(['username' => 'cliente_uno']);
+        $client = User::factory()->create(['username' => 'cliente_uno', 'status' => 'active']);
         $line->clients()->syncWithoutDetaching([$client->id => ['is_active' => true]]);
         $raffle = Raffle::withoutGlobalScopes()->create([
             'title' => 'Sorteo Test',
@@ -375,7 +425,7 @@ class SorteosNumberCrudTest extends TestCase
             'name' => 'Linea Test',
             'status' => 'active',
         ]);
-        $client = User::factory()->create(['username' => 'cliente_uno']);
+        $client = User::factory()->create(['username' => 'cliente_uno', 'status' => 'active']);
         $line->clients()->syncWithoutDetaching([$client->id => ['is_active' => true]]);
         $raffle = Raffle::withoutGlobalScopes()->create([
             'title' => 'Sorteo Test',

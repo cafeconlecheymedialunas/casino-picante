@@ -101,4 +101,9 @@ class LineAgent extends Model
 
         $this->syncPermissions($permissionsToAssign);
     }
+
+    public function syncEncargadoPermissions(): void
+    {
+        $this->syncPermissions(LineAgentPermission::allPermissions());
+    }
 }
