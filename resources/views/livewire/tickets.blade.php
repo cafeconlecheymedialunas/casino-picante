@@ -193,6 +193,29 @@
     <style>
         .content-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 0; height: calc(100vh - 180px); padding: 0 28px 28px; }
         @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .content-grid { grid-template-columns: 1fr; height: auto; min-height: calc(100vh - 180px); padding: 0 14px 20px; gap: 20px; }
+            .ticket-list { border-right: none; padding-right: 0; }
+            .ticket-filters { gap: 4px; }
+            .ticket-filter { padding: 4px 8px; font-size: 10px; }
+            .ticket-item { padding: 10px; border-radius: 10px; }
+            .ticket-item-header { flex-wrap: wrap; gap: 4px; }
+            .ticket-user { font-size: 12px; }
+            .ticket-conversation { padding-left: 0; }
+            .conv-header { flex-direction: column; align-items: flex-start; }
+            .conv-actions { width: 100%; justify-content: flex-end; }
+            .conv-title { font-size: 13px; }
+            .conv-meta { font-size: 10px; }
+            .message-bubble { max-width: 85%; padding: 8px 12px; font-size: 12px; }
+            .message-text { font-size: 12px; }
+            .input-box { padding: 8px 10px; }
+            .input-text { font-size: 12px; }
+            .send-btn { height: 28px; padding: 0 12px; font-size: 11px; }
+            .modal-box { max-width:100% !important; margin:0 10px; border-radius:12px; }
+            .modal-header { padding:14px 16px; }
+            .modal-body { padding:14px 16px; }
+            .modal-actions { padding:12px 16px; }
+        }
 
         .ticket-list { border-right: 1px solid var(--line); padding-right: 20px; overflow-y: auto; }
         .ticket-filters { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
