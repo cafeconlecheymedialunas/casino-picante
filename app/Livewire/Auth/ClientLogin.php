@@ -102,7 +102,7 @@ class ClientLogin extends Component
         if ($user?->hasRole(Roles::CLIENTE)) {
             session()->forget(['active_agent_id', 'active_line_id']);
             session()->regenerate();
-            $this->redirect('/perfil', navigate: true);
+            $this->redirect(route('perfil'), navigate: true);
 
             return true;
         }

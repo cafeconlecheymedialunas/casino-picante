@@ -200,14 +200,14 @@ class UsersIndex extends Component
             $user->update($data);
             $this->dispatch('toast', message: 'Cliente actualizado correctamente.', type: 'success');
 
-            $this->notify('Cliente actualizado', "El cliente {$user->name} fue actualizado.", 'users', '/clientes', 'info');
+            $this->notify('Cliente actualizado', "El cliente {$user->name} fue actualizado.", 'users', route('clientes', [], false), 'info');
             $this->dispatch('notification-created');
         } else {
             $data['password'] = Hash::make($this->password);
             $user = User::create($data);
             $this->dispatch('toast', message: 'Cliente creado correctamente.', type: 'success');
 
-            $this->notify('Nuevo cliente registrado', "El cliente {$user->name} fue creado exitosamente.", 'users', '/clientes', 'success');
+            $this->notify('Nuevo cliente registrado', "El cliente {$user->name} fue creado exitosamente.", 'users', route('clientes', [], false), 'success');
             $this->dispatch('notification-created');
         }
 
@@ -225,7 +225,7 @@ class UsersIndex extends Component
         $user->delete();
         $this->dispatch('toast', message: 'Cliente eliminado.', type: 'danger');
 
-        $this->notify('Cliente eliminado', "El cliente {$userName} fue eliminado del sistema.", 'users', '/clientes', 'danger');
+        $this->notify('Cliente eliminado', "El cliente {$userName} fue eliminado del sistema.", 'users', route('clientes', [], false), 'danger');
         $this->dispatch('notification-created');
     }
 
@@ -245,7 +245,7 @@ class UsersIndex extends Component
         $this->dispatch('toast', message: "Cliente {$label}.", type: $status === 'active' ? 'success' : 'danger');
 
         $user = User::findOrFail($userId);
-        $this->notify('Estado de cliente cambiado', "El cliente {$user->name} fue " . ($status === 'active' ? 'activado' : 'pausado') . ".", 'users', '/clientes', 'warning');
+        $this->notify('Estado de cliente cambiado', "El cliente {$user->name} fue " . ($status === 'active' ? 'activado' : 'pausado') . ".", 'users', route('clientes', [], false), 'warning');
         $this->dispatch('notification-created');
 
         if ($this->detailUserId === $userId) {

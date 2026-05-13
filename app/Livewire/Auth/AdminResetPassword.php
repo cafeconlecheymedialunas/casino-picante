@@ -40,7 +40,7 @@ class AdminResetPassword extends Component
     {
         $this->token = $token;
         if (auth()->check()) {
-            $this->redirect('/dashboard', navigate: true);
+            $this->redirect(route('dashboard'), navigate: true);
         }
         if (empty($token)) {
             $this->error = 'Token inválido.';

@@ -7,6 +7,7 @@ use App\Livewire\Auth\AdminForgotPassword;
 use App\Livewire\Auth\AdminResetPassword;
 use App\Livewire\Auth\ClientLogin;
 use App\Livewire\Auth\Login;
+use App\Livewire\Frontend\PublicRaffle;
 use App\Livewire\BlogEdit;
 use App\Livewire\Bonos;
 use App\Livewire\Chats;
@@ -34,9 +35,8 @@ Route::get('/admin/register', AgentRegister::class)->name('agent.register')->mid
 Route::get('/admin/forgot-password', AdminForgotPassword::class)->name('admin.password.request')->middleware('guest_or_agent');
 Route::get('/admin/reset-password/{token}', AdminResetPassword::class)->name('admin.password.reset')->middleware('guest_or_agent');
 Route::get('/login', ClientLogin::class)->name('login')->middleware('guest_or_agent');
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', PublicRaffle::class)->name('frontend.home');
+Route::get('/sorteo', PublicRaffle::class)->name('sorteo.publico');
 
 Route::post('/logout', function () {
     Auth::logout();

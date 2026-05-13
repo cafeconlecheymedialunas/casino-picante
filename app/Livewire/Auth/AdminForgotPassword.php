@@ -27,7 +27,7 @@ class AdminForgotPassword extends Component
     public function mount()
     {
         if (auth()->check()) {
-            $this->redirect('/dashboard', navigate: true);
+            $this->redirect(route('dashboard'), navigate: true);
         }
     }
 

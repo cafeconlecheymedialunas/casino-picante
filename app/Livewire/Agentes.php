@@ -173,7 +173,7 @@ class Agentes extends Component
             session()->flash('message', 'Agente actualizado correctamente.');
 
             $editorName = $this->currentAgentDisplayName();
-            $this->notify('Agente actualizado', "{$editorName} actualizó los datos del agente {$agent->name}.", 'agents', '/agentes', 'info');
+            $this->notify('Agente actualizado', "{$editorName} actualizó los datos del agente {$agent->name}.", 'agents', route('agentes', [], false), 'info');
             $this->notifyAffectedAgent($agent, 'Tu perfil fue actualizado', "{$editorName} modificó tus datos de agente.", 'info');
         } else {
             $data['password'] = Hash::make($this->password);
@@ -182,7 +182,7 @@ class Agentes extends Component
             session()->flash('message', 'Agente creado correctamente.');
 
             $creatorName = $this->currentAgentDisplayName();
-            $this->notify('Nuevo agente creado', "{$creatorName} creó el agente {$agent->name} exitosamente.", 'agents', '/agentes', 'success');
+            $this->notify('Nuevo agente creado', "{$creatorName} creó el agente {$agent->name} exitosamente.", 'agents', route('agentes', [], false), 'success');
             $this->notifyAffectedAgent($agent, 'Bienvenido al panel', "Tu cuenta de agente fue creada por {$creatorName}.", 'success');
         }
 
@@ -204,7 +204,7 @@ class Agentes extends Component
         LineAgent::where('agent_id', $agentId)->update(['is_active' => $newStatus === 'active']);
         session()->flash('message', $newStatus === 'active' ? 'Agente activado.' : 'Agente pausado.');
 
-        $this->notify('Estado de agente cambiado', "El agente {$agent->name} fue ".($newStatus === 'active' ? 'activado' : 'pausado').'.', 'agents', '/agentes', 'warning');
+        $this->notify('Estado de agente cambiado', "El agente {$agent->name} fue ".($newStatus === 'active' ? 'activado' : 'pausado').'.', 'agents', route('agentes', [], false), 'warning');
 
         $this->notifyAffectedAgent(
             $agent,
@@ -230,7 +230,7 @@ class Agentes extends Component
 
         session()->flash('message', 'Agente eliminado correctamente.');
 
-        $this->notify('Agente eliminado', "El agente {$agentName} fue eliminado del sistema.", 'agents', '/agentes', 'danger');
+        $this->notify('Agente eliminado', "El agente {$agentName} fue eliminado del sistema.", 'agents', route('agentes', [], false), 'danger');
     }
 
     public function openPermissions(int $agentId, int $lineId): void
@@ -463,7 +463,7 @@ class Agentes extends Component
             $title ?: 'Tu usuario fue actualizado',
             $message ?: 'Se actualizaron datos o lineas asignadas de tu usuario.',
             'agents',
-            '/perfil',
+            route('perfil', [], false),
             $type
         );
     }

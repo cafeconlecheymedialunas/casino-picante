@@ -22,9 +22,9 @@ class GuestOrAgent
         }
 
         if (auth()->user()?->hasRole(Roles::CLIENTE)) {
-            return redirect('/perfil');
+            return redirect()->route('perfil');
         }
 
-        return redirect('/dashboard');
+        return redirect()->route('dashboard');
     }
 }

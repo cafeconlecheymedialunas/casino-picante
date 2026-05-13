@@ -3,7 +3,6 @@
 namespace App\Livewire\Frontend;
 
 use App\Models\Raffle;
-use App\Models\RaffleNumber;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -11,18 +10,16 @@ class PublicRaffle extends Component
 {
     public function getActiveRaffle()
     {
-        return Raffle::whereIn('status', ['upcoming', 'active'])
-            ->with(['positions' => fn ($q) => $q->orderBy('position')])
+        return Raffle::with(['lines', 'platform'])
+            ->where('status', 'active')
             ->latest()
             ->first();
     }
 
     public function getEndedRaffle()
     {
-        return Raffle::where('status', 'ended')
-            ->with(['positions' => function ($q) {
-                $q->with('winner')->orderBy('position');
-            }])
+        return Raffle::with(['winner', 'lines', 'platform'])
+            ->where('status', 'finished')
             ->latest('end_date')
             ->first();
     }

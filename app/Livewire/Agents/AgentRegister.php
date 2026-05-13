@@ -159,7 +159,7 @@ class AgentRegister extends Component
                 $msg,
                 (int) $la->agent_id,
                 'success',
-                '/agentes',
+                route('agentes', [], false),
                 'agents'
             );
         }

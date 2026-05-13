@@ -105,7 +105,7 @@ class Login extends Component
         if ($user?->hasRole(Roles::ADMIN)) {
             session()->forget(['active_agent_id', 'active_line_id']);
 
-            $this->redirect('/dashboard', navigate: false);
+            $this->redirect(route('dashboard'), navigate: false);
 
             return true;
         }
@@ -113,7 +113,7 @@ class Login extends Component
         if ($user?->hasRole(Roles::AGENTE) && $user->agent?->status === 'active') {
             session(['active_agent_id' => $user->agent->id]);
 
-            $this->redirect('/dashboard', navigate: false);
+            $this->redirect(route('dashboard'), navigate: false);
 
             return true;
         }

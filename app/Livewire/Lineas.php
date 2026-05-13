@@ -251,7 +251,7 @@ class Lineas extends Component
             'Estado de linea cambiado',
             'La linea '.$line->name.' fue '.($line->status === 'active' ? 'activada' : 'pausada').'.',
             'lines',
-            '/lineas',
+            route('lineas', [], false),
             'warning'
         );
 
@@ -702,7 +702,7 @@ class Lineas extends Component
             ->each(function ($agentId) use ($currentAgentId, $title, $message, $type) {
                 $agentId = (int) $agentId;
                 if ($agentId !== $currentAgentId) {
-                    $this->notifyAgent($agentId, $title, $message, 'lines', '/lineas', $type);
+                    $this->notifyAgent($agentId, $title, $message, 'lines', route('lineas', [], false), $type);
                 }
             });
     }
