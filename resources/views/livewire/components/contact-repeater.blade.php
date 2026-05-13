@@ -20,7 +20,7 @@
                 placeholder="Nombre (ej: línea principal)" 
                 class="contact-name"
             >
-            <button type="button" wire:click="removeContact({{ $index }})" class="contact-remove" title="Eliminar">✕</button>
+            <button type="button" wire:click="removeContact({{ $index }})" class="contact-remove" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
         </div>
     </div>
     @endforeach
@@ -57,6 +57,7 @@
         display: flex;
         gap: 8px;
         align-items: center;
+        min-width: 0;
     }
     
     .contact-type {
@@ -72,6 +73,7 @@
     
     .contact-value {
         flex: 1;
+        min-width: 160px;
         padding: 10px 14px;
         background: linear-gradient(180deg, #1c0d0a, #120909);
         border: 1px solid var(--line-warm);
@@ -129,5 +131,31 @@
     .contact-add:hover {
         background: rgba(255,106,26,0.1);
         border-style: solid;
+    }
+
+    @media (max-width: 720px) {
+        .contact-main {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: stretch;
+        }
+
+        .contact-type,
+        .contact-value,
+        .contact-name {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .contact-type,
+        .contact-value,
+        .contact-name {
+            grid-column: 1 / -1;
+        }
+
+        .contact-remove {
+            grid-column: 2;
+            justify-self: end;
+        }
     }
 </style>

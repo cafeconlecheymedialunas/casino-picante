@@ -5,10 +5,13 @@
 <div class="page-container lineas-page-root">
     <style>
         /* ── List / cards ───────────────────────────────────────────────────── */
-        .dash-shell:has(.lineas-page-root) { height:auto; min-height:100vh; }
+        html:has(.lineas-page-root),
+        body:has(.lineas-page-root) { overflow-x:hidden; }
+        .dash-shell:has(.lineas-page-root) { height:auto; min-height:100vh; overflow-x:hidden; max-width:100vw; }
         .main:has(.lineas-page-root) { overflow:visible; }
-        .main-content:has(.lineas-page-root) { overflow-y:visible; }
-        .lines-page { display: flex; flex-direction: column; gap: 18px; }
+        .main-content:has(.lineas-page-root) { overflow-y:visible; overflow-x:hidden; }
+        .lineas-page-root { max-width:100%; overflow-x:clip; }
+        .lines-page { display: flex; flex-direction: column; gap: 18px; min-width:0; max-width:100%; }
         .search-input, .filter-select, .form-input { background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:7px; padding:9px 12px; color:var(--white); font-size:13px; font-family:var(--font-body); }
         .search-input { width:280px; }
         .search-input:focus, .filter-select:focus, .form-input:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,106,26,.12); }
@@ -64,10 +67,11 @@
         .line-actions { display:flex; align-items:center; gap:6px; }
 
         /* ── Detail / edit inline view ──────────────────────────────────────── */
-        .detail-view { display:flex; flex-direction:column; gap:0; }
+        .detail-view { display:flex; flex-direction:column; gap:0; min-width:0; }
+        .detail-view:has(.editor-fixed-actions) { padding-bottom:78px; }
         .detail-edit-view { min-height:calc(100vh - 150px); }
         .detail-edit-view .tab-content { flex:1; min-height:calc(100vh - 490px); }
-        .detail-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+        .detail-topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
         .detail-back { display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:none; border:none; cursor:pointer; padding:0; }
         .detail-back:hover { color:var(--white); }
         .detail-hero { border-radius:10px 10px 0 0; overflow:hidden; border:1px solid var(--line); border-bottom:0; }
@@ -76,17 +80,56 @@
         .detail-avatar { position:absolute; left:24px; bottom:-32px; width:90px; height:90px; border-radius:10px; border:3px solid rgba(255,255,255,.8); background:#210f0f; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,.5); z-index:2; }
         .detail-avatar img { width:100%; height:100%; object-fit:cover; }
         .detail-avatar span { display:flex; width:100%; height:100%; align-items:center; justify-content:center; font-family:var(--font-display); font-size:36px; color:var(--orange); }
-        .detail-meta { background:linear-gradient(180deg,#1c0e0e,#120909); padding:44px 24px 20px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; border:1px solid var(--line); border-top:0; }
-        .detail-title { font-family:var(--font-display); font-size:34px; line-height:1; letter-spacing:.03em; }
-        .detail-sub { color:var(--muted-2); font-family:var(--font-mono); font-size:11px; margin-top:5px; display:flex; align-items:center; gap:8px; }
+        .detail-meta { background:linear-gradient(180deg,#1c0e0e,#120909); padding:44px 24px 20px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; border:1px solid var(--line); border-top:0; min-width:0; }
+        .detail-meta > div { min-width:0; max-width:100%; }
+        .detail-title { font-family:var(--font-display); font-size:34px; line-height:1; letter-spacing:.03em; overflow-wrap:anywhere; }
+        .detail-sub { color:var(--muted-2); font-family:var(--font-mono); font-size:11px; margin-top:5px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 
         /* ── Tabs ────────────────────────────────────────────────────────────── */
-        .detail-tabs { display:flex; gap:2px; background:linear-gradient(180deg,#1c0e0e,#120909); border:1px solid var(--line); border-top:0; padding:0 20px; overflow-x:auto; }
+        .edit-layout { display:flex; flex-direction:column; min-width:0; }
+        .edit-content { min-width:0; width:100%; }
+        .detail-tabs { display:flex; gap:2px; background:linear-gradient(180deg,#1c0e0e,#120909); border:1px solid var(--line); border-top:0; padding:0 20px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        .detail-tabs::-webkit-scrollbar { height:6px; }
         .tab-btn { padding:12px 16px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:color .15s,border-color .15s; white-space:nowrap; flex-shrink:0; }
         .tab-btn { padding:12px 16px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:color .15s,border-color .15s; white-space:nowrap; flex-shrink:0; }
         .tab-btn:hover { color:var(--white); }
         .tab-btn-active { color:var(--orange); border-bottom-color:var(--orange); }
-        .tab-content { background:linear-gradient(180deg,#1c0e0e,#120909); border:1px solid var(--line); border-top:0; border-radius:0 0 10px 10px; padding:26px; }
+        .tab-content { background:linear-gradient(180deg,#1c0e0e,#120909); border:1px solid var(--line); border-top:0; border-radius:0 0 10px 10px; padding:26px; min-width:0; }
+        .line-edit-actions { display:flex; gap:10px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
+        .editor-fixed-actions {
+            position: fixed;
+            left: 220px;
+            right: 0;
+            bottom: 0;
+            z-index: 230;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px max(16px, 2vw);
+            margin: 0;
+            border: 1px solid var(--line);
+            border-top-color: var(--line-2);
+            border-radius: 0;
+            background: linear-gradient(180deg, rgba(28,14,14,.96), rgba(18,9,9,.98));
+            backdrop-filter: blur(10px);
+            box-shadow: 0 -12px 30px rgba(0,0,0,.28);
+        }
+        .editor-fixed-actions-left,
+        .editor-fixed-actions-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .line-edit-actions .btn-soft,
+        .line-edit-actions .btn-primary,
+        .modal-actions > .btn-soft,
+        .modal-actions > .btn-primary { min-width:0; }
+        .agent-add-row { display:flex; gap:8px; align-items:flex-end; }
+        .agent-add-row > div { flex:1; min-width:0; }
+        .agent-row-actions { display:flex; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; justify-content:flex-end; }
+        .perm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px; }
+        .perm-editor-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; }
+        .perm-editor-actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; padding-top:12px; border-top:1px solid var(--line); }
+        .form-input, .btn-primary, .btn-soft, .chip, .perm-chip-edit, .platform-pick-label { max-width:100%; }
+        .perm-chip-edit span,
+        .platform-pick-label div { min-width:0; overflow-wrap:anywhere; }
 
         /* ── Stats & sales ───────────────────────────────────────────────────── */
         .stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
@@ -167,6 +210,9 @@
             .detail-cover { height:120px; }
             .detail-avatar { width:60px; height:60px; left:16px; bottom:-24px; }
             .detail-avatar span { font-size:22px; }
+            .detail-topbar { align-items:stretch; }
+            .detail-view:has(.editor-fixed-actions) { padding-bottom:128px; }
+            .detail-topbar .btn-primary { width:100%; justify-content:center; }
             .detail-meta { padding:30px 14px 14px; }
             .detail-title { font-size:24px; }
             .detail-tabs, .edit-layout .detail-tabs { flex-direction:row; gap:4px; padding:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; background:none; border:none; }
@@ -177,6 +223,27 @@
             .edit-layout { flex-direction:column; gap:0; }
             .edit-content { width:100%; }
             .tab-content { padding:14px; }
+            .line-edit-actions,
+            .modal-actions { width:100%; justify-content:stretch !important; }
+            .editor-fixed-actions { left:0; align-items:stretch; flex-direction:column; padding:12px; }
+            .editor-fixed-actions-left,
+            .editor-fixed-actions-right { width:100%; }
+            .editor-fixed-actions .btn-soft,
+            .editor-fixed-actions .btn-primary { flex:1 1 130px; justify-content:center; }
+            .line-edit-actions .btn-soft,
+            .line-edit-actions .btn-primary,
+            .modal-actions > .btn-soft,
+            .modal-actions > .btn-primary { flex:1 1 140px; justify-content:center; }
+            .agent-add-row { flex-direction:column; align-items:stretch; }
+            .agent-add-row .btn-primary { justify-content:center; width:100%; }
+            .agent-item-head { align-items:flex-start; }
+            .agent-row-actions { width:100%; justify-content:flex-start; }
+            .agent-row-actions .chip-row { width:100%; }
+            .perm-grid { grid-template-columns:1fr; }
+            .perm-editor-head { align-items:flex-start; flex-direction:column; }
+            .perm-editor-actions { justify-content:stretch; }
+            .perm-editor-actions .btn-soft,
+            .perm-editor-actions .btn-primary { flex:1 1 150px; justify-content:center; }
             .modal-overlay { padding:12px; }
             .modal-panel { max-height:92vh; }
             .modal-head { padding:12px 14px; }
@@ -184,6 +251,19 @@
             .agent-item-head { flex-wrap:wrap; }
             .stat-value { font-size:22px; }
             .sales-row { font-size:11px; }
+        }
+        @media (max-width:520px){
+            .detail-back { width:100%; min-height:34px; }
+            .detail-cover { height:96px; }
+            .detail-avatar { width:54px; height:54px; bottom:-21px; }
+            .detail-meta { padding-top:28px; }
+            .detail-title { font-size:21px; }
+            .detail-sub { font-size:10px; }
+            .tab-content { padding:12px; }
+            .tab-btn, .edit-layout .tab-btn { min-height:34px; }
+            .modal-actions > div { width:100%; display:flex; gap:8px; flex-wrap:wrap; }
+            .modal-actions > div > .btn-soft,
+            .modal-actions > div > .btn-primary { flex:1 1 130px; justify-content:center; }
         }
     </style>
 
@@ -533,17 +613,6 @@
                     </div>
                 </div>
 
-                <div class="modal-actions" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:18px;margin-top:4px">
-                    @if($editingLineId)
-                        <button type="button" class="btn-soft btn-danger" wire:click="deleteLine({{ $editingLineId }})" wire:confirm="¿Eliminar esta linea?">Eliminar</button>
-                    @else
-                        <span></span>
-                    @endif
-                    <div style="display:flex;gap:10px">
-                        <button type="button" wire:click="closeModal" class="btn-soft">Cancelar</button>
-                        <button type="submit" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
-                    </div>
-                </div>
             </form>
         </div>
         @endif
@@ -579,10 +648,6 @@
                     @error('encargadoPercent') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
 
-                <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;margin-top:4px">
-                    <button type="button" wire:click="closeModal" class="btn-soft">Cancelar</button>
-                    <button type="submit" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
-                </div>
             </form>
 
             {{-- Permisos del encargado --}}
@@ -616,14 +681,14 @@
 
                     @if($editingAgentPermissionsId === $encLA->id)
                     <div class="perm-editor" style="border-radius:8px;border:1px solid var(--line)">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                        <div class="perm-editor-head">
                             <span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">
                                 Permisos de {{ $encLA->agent?->name ?? 'encargado' }}
                             </span>
                             <button type="button" class="btn-soft" wire:click="closeAgentPermissions" style="font-size:10px">Cancelar</button>
                         </div>
                         @php $permLabelsEnc = \App\Support\Permissions::labels(); @endphp
-                        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
+                        <div class="perm-grid" style="margin-bottom:14px">
                             @foreach($permLabelsEnc as $perm => [$icon, $label])
                             @if(in_array($perm, $availablePermissions))
                             <label class="perm-chip-edit">
@@ -636,7 +701,7 @@
                             @endif
                             @endforeach
                         </div>
-                        <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--line)">
+                        <div class="perm-editor-actions">
                             <button type="button" class="btn-soft" wire:click="closeAgentPermissions">Cancelar</button>
                             <button type="button" class="btn-primary" wire:click="saveAgentPermissions">
                                 <i class="fa-solid fa-floppy-disk"></i> Guardar permisos
@@ -646,7 +711,7 @@
                     @else
                     @php $encPermsNow = $encLA->getPermissionsListAttribute(); @endphp
                     @if(!empty($encPermsNow))
-                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">
+                    <div class="perm-grid">
                         @foreach(\App\Support\Permissions::labels() as $perm => [$icon, $label])
                             @if(in_array($perm, $encPermsNow))
                             <div class="perm-chip-edit perm-chip-on" style="cursor:default">
@@ -684,8 +749,8 @@
                     @if($availableAgents->isEmpty())
                         <div style="color:var(--muted-2);font-size:12px;padding:10px 0">Todos los agentes activos ya están asignados.</div>
                     @else
-                    <div style="display:flex;gap:8px;align-items:flex-end">
-                        <div style="flex:1">
+                    <div class="agent-add-row">
+                        <div>
                             <select id="agent-select-add" class="form-input">
                                 <option value="">Seleccionar agente...</option>
                                 @foreach($availableAgents as $agent)
@@ -719,7 +784,7 @@
                                     </span>
                                 </div>
                             </div>
-                            <div style="display:flex;align-items:center;gap:8px">
+                            <div class="agent-row-actions">
                                 @if(!empty($laPerms))
                                     <div class="chip-row">
                                         @foreach(array_slice($laPerms, 0, 3) as $p)<span class="chip" style="font-size:9px">{{ $p }}</span>@endforeach
@@ -746,7 +811,7 @@
                         {{-- Permission editor (expands inline) --}}
                         @if($editingAgentPermissionsId === $la->id)
                         <div class="perm-editor">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                            <div class="perm-editor-head">
                                 <span style="font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">
                                     Permisos de {{ $la->agent?->name ?? 'agente' }}
                                 </span>
@@ -759,7 +824,7 @@
                                 </div>
                             @else
                             @php $permLabelsAg = \App\Support\Permissions::labels(); @endphp
-                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:14px">
+                            <div class="perm-grid" style="margin-bottom:14px">
                                 @foreach($permLabelsAg as $perm => [$icon, $label])
                                 @if(in_array($perm, $availablePermissions))
                                 @php $checked = in_array($perm, $agentPermissions); @endphp
@@ -774,7 +839,7 @@
                             </div>
                             @endif
 
-                            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+                            <div class="perm-editor-actions" style="margin-top:14px">
                                 <button type="button" class="btn-soft" wire:click="closeAgentPermissions">Cancelar</button>
                                 <button type="button" class="btn-primary" wire:click="saveAgentPermissions">Guardar permisos</button>
                             </div>
@@ -907,10 +972,6 @@
 
                 <livewire:components.contact-repeater wire:model="channels" />
 
-                <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;margin-top:18px">
-                    <button type="button" wire:click="closeModal" class="btn-soft">Cancelar</button>
-                    <button type="submit" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
-                </div>
             </form>
         </div>
         @endif
@@ -949,15 +1010,22 @@
                 <div style="margin-bottom:6px;color:var(--muted-2);font-size:11px">{{ count($selectedPlatformIds) }} plataforma(s) seleccionada(s)</div>
                 @endif
 
-                <div class="modal-actions" style="justify-content:flex-end;border-top:1px solid var(--line);padding-top:18px;margin-top:18px">
-                    <button type="button" wire:click="closeModal" class="btn-soft">Cancelar</button>
-                    <button type="submit" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
-                </div>
             </form>
         </div>
         @endif
 
     </div>{{-- /edit-content --}}
+        <div class="editor-fixed-actions">
+            <div class="editor-fixed-actions-left">
+                @if($editingLineId)
+                    <button type="button" class="btn-soft btn-danger" wire:click="deleteLine({{ $editingLineId }})" wire:confirm="¿Eliminar esta linea?">Eliminar</button>
+                @endif
+            </div>
+            <div class="editor-fixed-actions-right">
+                <button type="button" wire:click="closeModal" class="btn-soft">Cancelar</button>
+                <button type="button" wire:click="saveLine" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
+            </div>
+        </div>
     </div>{{-- /edit-layout --}}
     </div>{{-- /detail-view edit --}}
     @endif{{-- /state switch --}}
