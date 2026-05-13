@@ -38,9 +38,9 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         [x-cloak] { display: none !important; }
-        html, body { background: var(--black); color: var(--white); font-family: var(--font-body); height: 100%; }
+        html, body { background: var(--black); color: var(--white); font-family: var(--font-body); height: 100%; overflow-x: hidden; }
         
-        .dash-shell { display: flex; height: 100vh; }
+        .dash-shell { display: flex; height: 100vh; width: 100%; max-width: 100vw; overflow-x: hidden; }
         .sidebar { 
             width: 220px; padding: 18px 14px; border-right: 1px solid var(--line); 
             background: linear-gradient(180deg, #0d0707 0%, #0a0606 100%); 
@@ -78,7 +78,7 @@
         .sidebar-user-name { font-size: 12px; font-weight: 700; }
         .sidebar-user-role { font-size: 10px; color: var(--muted); }
         
-        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
         
         .btn-primary, .new-client-btn, .btn-add {
             display: inline-flex;
@@ -186,9 +186,11 @@
         * { scrollbar-width: thin; scrollbar-color: var(--orange) var(--black-2); }
         
         /* Main content padding */
-        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
         .main-content {
             flex: 1;
+            min-width: 0;
+            max-width: 100%;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 0;
@@ -196,7 +198,10 @@
         .page-container {
             padding:0 0 20px 0;
             min-height: 100%;
+            min-width: 0;
+            max-width: 100%;
         }
+        .wrap-content { min-width: 0; max-width: 100%; overflow-x: clip; }
         
         /* Ensure all scrollable areas have proper styling */
         .scrollable {
@@ -204,7 +209,7 @@
             overflow-x: hidden;
         }
 
-        /* â”€â”€ Global select styles â”€â”€ */
+        /* Global select styles */
         select,
         select.select,
         select.filter-select,
@@ -392,7 +397,7 @@
                     <path d="M14 12 C 12 18, 12 26, 18 32 C 24 36, 32 32, 33 24 C 34 18, 28 14, 22 14 C 18 14, 16 13, 14 12 Z" fill="#ff6a1a" />
                 </svg>
                 <span class="sidebar-logo-text">RED PICANTES</span>
-                <button class="sidebar-close" @click="sidebarOpen = false" title="Cerrar menú">✕</button>
+                <button class="sidebar-close" @click="sidebarOpen = false" title="Cerrar menú"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
             {{-- Active line selector (only shown when an agent is in session) --}}
@@ -438,7 +443,7 @@
                         </option>
                         @endforeach
                         @if(!$sessionAgentId)
-                        <option value="0" {{ !$sessionLineId ? 'selected' : '' }}>Todas las lÃ­neas</option>
+                        <option value="0" {{ !$sessionLineId ? 'selected' : '' }}>Todas las líneas</option>
                         @endif
                     </select>
                 </form>

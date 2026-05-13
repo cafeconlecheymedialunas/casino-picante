@@ -9,7 +9,9 @@
 
 <div class="page-header" wire:poll.15s>
     <div class="page-header-top">
-        <button class="hamburger-btn" @click="window.dispatchEvent(new CustomEvent('toggle-sidebar'))" title="Abrir menú">☰</button>
+        <button class="hamburger-btn" @click="window.dispatchEvent(new CustomEvent('toggle-sidebar'))" title="Abrir menú">
+            <i class="fa-solid fa-bars"></i>
+        </button>
         <div class="page-header-right">
             @if($buttonText && $buttonAction)
                 <button type="button" class="page-header-btn" wire:click="$dispatch('page-header-action', { action: '{{ $buttonAction }}' })">
@@ -33,11 +35,11 @@
                         <strong>Notificaciones</strong>
                         <div style="display:flex;gap:6px;align-items:center;">
                             @if($unreadCount > 0)
-                                <button type="button" wire:click="markAllRead" title="Marcar todas leídas" style="font-size:10px;padding:3px 8px;">✓ Leídas</button>
+                                <button type="button" wire:click="markAllRead" title="Marcar todas leídas" style="font-size:10px;padding:3px 8px;"><i class="fa-solid fa-check"></i> Leídas</button>
                             @endif
                             <button type="button" wire:click="deleteAllRead" title="Borrar notificaciones leídas" style="font-size:10px;padding:3px 8px;color:var(--muted);">Limpiar</button>
                             @if($canOpenSettings)
-                                <a href="{{ route('settings') }}" wire:navigate class="settings-link">⚙</a>
+                                <a href="{{ route('settings') }}" wire:navigate class="settings-link" title="Configuración"><i class="fa-solid fa-gear"></i></a>
                             @endif
                         </div>
                     </div>
@@ -62,7 +64,7 @@
                                     style="flex-shrink:0;background:none;border:none;color:var(--muted-2);cursor:pointer;padding:2px 4px;font-size:13px;line-height:1;"
                                     onmouseover="this.style.color='#ff4757'"
                                     onmouseout="this.style.color='var(--muted-2)'"
-                                >×</button>
+                                ><i class="fa-solid fa-xmark"></i></button>
                             </div>
                         @empty
                             <div class="dropdown-empty">No hay notificaciones pendientes.</div>

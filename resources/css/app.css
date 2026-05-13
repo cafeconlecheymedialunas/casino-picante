@@ -9,3 +9,275 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Line editor responsive overrides.
+   Kept global so Livewire wire:navigate cannot leave the editor with stale inline styles. */
+.lineas-page-root,
+.ld-root {
+    min-width: 0;
+}
+
+.lineas-page-root .detail-view,
+.ld-root,
+.ld-root .ld-tab-body {
+    min-width: 0;
+}
+
+.lineas-page-root .detail-meta,
+.ld-root .ld-hero-meta {
+    min-width: 0;
+}
+
+.lineas-page-root .detail-meta > div,
+.ld-root .ld-hero-meta > div {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.lineas-page-root .detail-title,
+.ld-root .ld-hero-name,
+.ld-root .info-box-value,
+.ld-root .agent-row-name,
+.ld-root .plat-name,
+.ld-root .perm-chip span {
+    overflow-wrap: anywhere;
+}
+
+.lineas-page-root .detail-tabs,
+.ld-root .ld-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.lineas-page-root .tab-content,
+.ld-root .ld-tab-body,
+.ld-root .info-box,
+.ld-root .agent-row,
+.ld-root .kpi-card,
+.ld-root .channel-card,
+.ld-root .plat-card,
+.ld-root .perm-chip {
+    min-width: 0;
+}
+
+.lineas-page-root .edit-layout,
+.lineas-page-root .edit-content {
+    min-width: 0;
+    width: 100%;
+}
+
+.lineas-page-root .line-edit-actions,
+.lineas-page-root .agent-row-actions,
+.lineas-page-root .perm-editor-actions,
+.ld-root .agent-row-actions {
+    flex-wrap: wrap;
+}
+
+.lineas-page-root .agent-add-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.lineas-page-root .agent-add-row > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.lineas-page-root .perm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 900px) {
+    .ld-root .images-row {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+
+    .ld-root .channels-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .lineas-page-root .detail-topbar {
+        align-items: stretch !important;
+    }
+
+    .lineas-page-root .detail-topbar .btn-primary {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .lineas-page-root .detail-tabs,
+    .lineas-page-root .edit-layout .detail-tabs {
+        flex-direction: row !important;
+        gap: 4px !important;
+        padding: 8px !important;
+        overflow-x: auto !important;
+        background: none !important;
+        border: 0 !important;
+    }
+
+    .lineas-page-root .tab-btn,
+    .lineas-page-root .edit-layout .tab-btn {
+        min-height: 34px !important;
+        padding: 7px 10px !important;
+        font-size: 10px !important;
+        gap: 4px !important;
+        border: 1px solid var(--line) !important;
+        border-radius: 7px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .lineas-page-root .tab-btn-active,
+    .lineas-page-root .edit-layout .tab-btn-active {
+        border-color: var(--orange) !important;
+        background: rgba(255, 106, 26, .12) !important;
+        color: var(--orange) !important;
+    }
+
+    .lineas-page-root .line-edit-actions,
+    .lineas-page-root .modal-actions {
+        width: 100% !important;
+        justify-content: stretch !important;
+    }
+
+    .lineas-page-root .line-edit-actions .btn-soft,
+    .lineas-page-root .line-edit-actions .btn-primary,
+    .lineas-page-root .modal-actions > .btn-soft,
+    .lineas-page-root .modal-actions > .btn-primary {
+        flex: 1 1 140px !important;
+        justify-content: center !important;
+    }
+
+    .lineas-page-root .agent-add-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .lineas-page-root .agent-add-row .btn-primary {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .lineas-page-root .agent-item-head {
+        align-items: flex-start !important;
+    }
+
+    .lineas-page-root .agent-row-actions {
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    .lineas-page-root .perm-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .ld-root .ld-cover {
+        height: 110px !important;
+    }
+
+    .ld-root .ld-avatar {
+        width: 58px !important;
+        height: 58px !important;
+        left: 16px !important;
+        bottom: -23px !important;
+        border-width: 2px !important;
+    }
+
+    .ld-root .ld-hero-meta {
+        padding: 30px 14px 14px !important;
+        align-items: stretch !important;
+    }
+
+    .ld-root .ld-hero-name {
+        font-size: 24px !important;
+    }
+
+    .ld-root .btn-edit-hero {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .ld-root .ld-tabs {
+        gap: 4px !important;
+        padding: 8px !important;
+        background: none !important;
+        border: 0 !important;
+    }
+
+    .ld-root .ld-tab {
+        min-height: 34px !important;
+        padding: 7px 10px !important;
+        font-size: 10px !important;
+        gap: 5px !important;
+        border: 1px solid var(--line) !important;
+        border-radius: 7px !important;
+    }
+
+    .ld-root .ld-tab-active {
+        border-color: var(--orange) !important;
+        background: rgba(255, 106, 26, .12) !important;
+    }
+
+    .ld-root .ld-tab-body {
+        padding: 12px !important;
+    }
+
+    .ld-root .info-grid-4,
+    .ld-root .kpi-grid,
+    .ld-root .channels-grid,
+    .ld-root .platforms-grid,
+    .ld-root .perms-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .ld-root .agent-row {
+        align-items: flex-start !important;
+        flex-wrap: wrap !important;
+        padding: 12px !important;
+    }
+
+    .ld-root .agent-row-actions {
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    .ld-root .channel-card {
+        align-items: flex-start !important;
+    }
+
+    .ld-root .channel-val {
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+    }
+}
+
+@media (max-width: 520px) {
+    .lineas-page-root .detail-cover {
+        height: 96px !important;
+    }
+
+    .lineas-page-root .detail-avatar {
+        width: 54px !important;
+        height: 54px !important;
+        bottom: -21px !important;
+    }
+
+    .lineas-page-root .detail-meta {
+        padding-top: 28px !important;
+    }
+
+    .lineas-page-root .detail-title {
+        font-size: 21px !important;
+    }
+
+    .lineas-page-root .tab-content {
+        padding: 12px !important;
+    }
+}
