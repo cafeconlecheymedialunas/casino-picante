@@ -1,19 +1,20 @@
 <div class="page-container">
     <style>
-        .eh-page { display:flex; flex-direction:column; gap:28px; }
+        .eh-page { display:flex; flex-direction:column; gap:28px; min-width:0; max-width:100%; overflow-x:clip; }
         .eh-section { border:1px solid var(--line); border-radius:14px; background:linear-gradient(180deg,#170b0b,#0f0707); overflow:hidden; }
-        .eh-section-head { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--line); }
-        .eh-section-title { font-family:var(--font-display); font-size:20px; letter-spacing:.04em; display:flex; align-items:center; gap:10px; }
+        .eh-section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 20px; border-bottom:1px solid var(--line); }
+        .eh-section-title { font-family:var(--font-display); font-size:20px; letter-spacing:.04em; display:flex; align-items:center; gap:10px; min-width:0; }
+        .eh-section-title i { color:var(--orange); font-size:16px; }
         .eh-section-badge { font-size:10px; font-weight:800; color:var(--orange); background:rgba(255,106,26,.12); padding:3px 9px; border-radius:999px; }
-        .eh-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; padding:16px 20px; }
-        .eh-card { border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.02); padding:12px; cursor:pointer; transition:all .18s; position:relative; }
+        .eh-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:10px; padding:16px 20px; min-width:0; }
+        .eh-card { min-width:0; border:1px solid var(--line); border-radius:10px; background:rgba(255,255,255,.02); padding:12px; cursor:pointer; transition:all .18s; position:relative; }
         .eh-card:hover { border-color:var(--orange); background:rgba(255,106,26,.05); }
         .eh-card.selected { border-color:var(--orange); background:rgba(255,106,26,.1); }
-        .eh-card.selected::after { content:'✓'; position:absolute; top:8px; right:10px; width:22px; height:22px; border-radius:999px; background:var(--orange); color:#190702; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+        .eh-card-check { position:absolute; top:8px; right:10px; width:22px; height:22px; border-radius:999px; background:var(--orange); color:#190702; font-size:11px; font-weight:900; display:flex; align-items:center; justify-content:center; }
         .eh-card-img { width:100%; aspect-ratio:851/315; border-radius:6px; background:rgba(255,255,255,.04); object-fit:cover; display:block; margin-bottom:10px; }
         .eh-card-img.placeholder { display:flex; align-items:center; justify-content:center; color:var(--muted-2); font-size:28px; }
-        .eh-card-title { font-weight:800; font-size:13px; margin-bottom:4px; }
-        .eh-card-meta { font-size:11px; color:var(--muted-2); display:flex; align-items:center; gap:8px; }
+        .eh-card-title { font-weight:800; font-size:13px; margin-bottom:4px; overflow-wrap:anywhere; }
+        .eh-card-meta { font-size:11px; color:var(--muted-2); display:flex; align-items:center; gap:8px; min-width:0; }
         .eh-bonus-value { font-family:var(--font-display); font-size:24px; color:var(--green,var(--good)); }
         .eh-bonus-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
         .eh-empty { padding:40px 20px; text-align:center; color:var(--muted-2); font-size:13px; }
@@ -45,6 +46,32 @@
         .eh-repeater-field label { font-size:9px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.1em; }
         .eh-repeater-field input { background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:6px; padding:7px 10px; color:var(--white); font-size:12px; outline:none; }
         .eh-repeater-field input:focus { border-color:var(--orange); box-shadow:0 0 0 2px rgba(255,106,26,.1); }
+        .eh-card-icon { color:var(--orange); font-size:24px; margin-bottom:8px; }
+        @media (max-width: 768px) {
+            .page-container:has(.eh-page) { overflow-x:hidden; }
+            .eh-page { gap:16px; }
+            .eh-section { border-radius:10px; }
+            .eh-section-head { flex-direction:column; align-items:stretch; padding:14px; }
+            .eh-section-title { flex-wrap:wrap; font-size:19px; line-height:1.1; }
+            .eh-section-badge { width:max-content; max-width:100%; }
+            .eh-counter { font-size:11px; }
+            .eh-grid { grid-template-columns:1fr; padding:14px; }
+            .eh-repeater { padding:12px; }
+            .eh-repeater-item { align-items:flex-start; gap:10px; padding:12px; }
+            .eh-repeater-thumb { width:64px; height:36px; }
+            .eh-repeater-actions { width:100%; flex-wrap:wrap; justify-content:flex-end; }
+            .eh-repeater-actions button { min-width:30px; height:30px; }
+            .eh-repeater-actions .btn-visible,
+            .eh-repeater-actions .btn-hidden { flex:1 1 110px; justify-content:center; }
+            .eh-repeater-addbtn { width:100%; justify-content:center; }
+            .eh-repeater-item.new-row { display:grid; grid-template-columns:1fr; }
+            .eh-repeater-item.new-row .btn-primary { width:100%; justify-content:center; }
+        }
+        @media (max-width: 520px) {
+            .eh-repeater-item:not(.new-row) { display:grid; grid-template-columns:20px 56px minmax(0,1fr); }
+            .eh-repeater-actions { grid-column:1 / -1; }
+            .eh-card-meta { flex-direction:column; align-items:flex-start; }
+        }
     </style>
 
     @section('header')
@@ -65,11 +92,12 @@
         <div class="eh-section">
             <div class="eh-section-head">
                 <div class="eh-section-title">
-                    🖼 IMÁGENES CARROUSEL
-                    <span class="eh-section-badge">SUBÍ Y ORDENÁ</span>
+                    <i class="fa-solid fa-images"></i>
+                    IMÁGENES CARROUSEL
+                    <span class="eh-section-badge">SUBI Y ORDENA</span>
                 </div>
                 <div class="eh-counter">
-                    Visibles: <span class="current">{{ count($selectedCarousel) }}</span> / 5 ·
+                    Visibles: <span class="current">{{ count($selectedCarousel) }}</span> / 5 -
                     Total: {{ count($carouselItems) }}
                 </div>
             </div>
@@ -80,25 +108,25 @@
                     <div class="drag-handle"><span></span><span></span><span></span></div>
                     <img src="{{ $item['image'] }}" class="eh-repeater-thumb" alt="">
                     <div class="eh-repeater-body">
-                        <div class="eh-repeater-title">{{ $item['title'] ?: 'Sin título' }}</div>
+                        <div class="eh-repeater-title">{{ $item['title'] ?: 'Sin titulo' }}</div>
                         <div class="eh-repeater-sub">{{ $item['link'] ?: 'Sin enlace' }}</div>
                     </div>
                     <div class="eh-repeater-actions">
-                        <button wire:click="moveCarouselUp({{ $item['id'] }})" title="Subir" {{ $i === 0 ? 'disabled' : '' }}>↑</button>
-                        <button wire:click="moveCarouselDown({{ $item['id'] }})" title="Bajar" {{ $i === count($carouselItems) - 1 ? 'disabled' : '' }}>↓</button>
+                        <button wire:click="moveCarouselUp({{ $item['id'] }})" title="Subir" {{ $i === 0 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-up"></i></button>
+                        <button wire:click="moveCarouselDown({{ $item['id'] }})" title="Bajar" {{ $i === count($carouselItems) - 1 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-down"></i></button>
                         <button wire:click="toggleCarousel({{ $item['id'] }})"
                             class="{{ in_array($item['id'], $selectedCarousel) ? 'btn-visible' : 'btn-hidden' }}"
                             title="{{ in_array($item['id'], $selectedCarousel) ? 'Ocultar' : 'Mostrar' }}">
                             <i class="fa-solid {{ in_array($item['id'], $selectedCarousel) ? 'fa-eye' : 'fa-eye-slash' }}"></i>
                             {{ in_array($item['id'], $selectedCarousel) ? 'Visible' : 'Oculto' }}
                         </button>
-                        <button wire:click="removeCarouselItem({{ $item['id'] }})" wire:confirm="¿Eliminar esta imagen?" class="btn-del" title="Eliminar">✕</button>
+                        <button wire:click="removeCarouselItem({{ $item['id'] }})" wire:confirm="Eliminar esta imagen?" class="btn-del" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                 </div>
                 @empty
                 <div style="text-align:center;padding:24px 16px;color:var(--muted-2);font-size:12px;">
                     <i class="fa-solid fa-image" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3"></i>
-                    No hay imágenes en el carrusel
+                    No hay imagenes en el carrusel
                 </div>
                 @endforelse
 
@@ -110,12 +138,12 @@
                 <template x-if="open">
                     <div class="eh-repeater-item new-row" style="flex-wrap:wrap;">
                         <div style="flex:1;min-width:140px;">
-                            <x-upload-image label="" model="newCarouselImage" :value="''" aspect="851/315" hint="Máx 5MB">
+                            <x-upload-image label="" model="newCarouselImage" :value="''" aspect="851/315" hint="Max 5MB">
                                 @error('newCarouselImage') <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
                             </x-upload-image>
                         </div>
                         <div class="eh-repeater-field" style="flex:1;min-width:100px;">
-                            <label>Título</label>
+                            <label>Titulo</label>
                             <input type="text" wire:model="newCarouselTitle" placeholder="Opcional">
                         </div>
                         <div class="eh-repeater-field" style="flex:1;min-width:100px;">
@@ -134,7 +162,8 @@
         <div class="eh-section">
             <div class="eh-section-head">
                 <div class="eh-section-title">
-                    🎁 BONOS DISPONIBLES
+                    <i class="fa-solid fa-gift"></i>
+                    BONOS DISPONIBLES
                     <span class="eh-section-badge">MAX 5</span>
                 </div>
                 <div class="eh-counter">
@@ -146,24 +175,27 @@
                 @foreach($bonusItems as $bonus)
                 <div class="eh-card {{ in_array($bonus['id'], $selectedBonuses) ? 'selected' : '' }}"
                      wire:click="toggleBonus({{ $bonus['id'] }})">
+                    @if(in_array($bonus['id'], $selectedBonuses))
+                        <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
+                    @endif
                     <div class="eh-bonus-value">
                         @if($bonus['bonus_percent'])
                             {{ $bonus['bonus_percent'] }}%
                         @elseif($bonus['bonus_amount'])
                             ${{ number_format($bonus['bonus_amount'], 2) }}
                         @else
-                            🎁
+                            <i class="fa-solid fa-gift eh-card-icon"></i>
                         @endif
                     </div>
                     <div class="eh-card-title">{{ $bonus['title'] }}</div>
                     <div class="eh-card-meta">
-                        <span>{{ $bonus['code'] ?? 'Sin código' }}</span>
+                        <span>{{ $bonus['code'] ?? 'Sin codigo' }}</span>
                     </div>
                 </div>
                 @endforeach
             </div>
             @else
-            <div class="eh-empty">No hay bonos activos disponibles. Crea uno en el módulo de <strong>Bonos</strong>.</div>
+            <div class="eh-empty">No hay bonos activos disponibles. Crea uno en el modulo de <strong>Bonos</strong>.</div>
             @endif
         </div>
 
@@ -171,7 +203,8 @@
         <div class="eh-section">
             <div class="eh-section-head">
                 <div class="eh-section-title">
-                    📝 ENTRADAS DE BLOG
+                    <i class="fa-solid fa-newspaper"></i>
+                    ENTRADAS DE BLOG
                     <span class="eh-section-badge">MAX 3</span>
                 </div>
                 <div class="eh-counter">
@@ -183,10 +216,13 @@
                 @foreach($blogPosts as $post)
                 <div class="eh-card {{ in_array($post['id'], $selectedBlogs) ? 'selected' : '' }}"
                      wire:click="toggleBlog({{ $post['id'] }})">
+                    @if(in_array($post['id'], $selectedBlogs))
+                        <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
+                    @endif
                     @if($post['image'])
                     <img src="{{ asset('storage/' . $post['image']) }}" class="eh-card-img" alt="{{ $post['title'] }}">
                     @else
-                    <div class="eh-card-img placeholder">📝</div>
+                    <div class="eh-card-img placeholder"><i class="fa-solid fa-newspaper"></i></div>
                     @endif
                     <div class="eh-card-title">{{ $post['title'] }}</div>
                     <div class="eh-card-meta">

@@ -1,4 +1,4 @@
-<div>
+<div class="platforms-page">
 @section('header')
     <x-livewire.components.page-header title="GESTIÓN GLOBAL DE PLATAFORMAS" subtitle="Catálogo maestro · los cambios se propagan a todas las líneas" />
 @endsection
@@ -21,16 +21,16 @@
                 @if($platform->logo_url)
                 <img src="{{ $platform->logo_url }}" alt="{{ $platform->name }}" class="pm-logo">
                 @else
-                <div class="pm-logo-placeholder">🎮</div>
+                <div class="pm-logo-placeholder"><i class="fa-solid fa-gamepad"></i></div>
                 @endif
                 <div class="pm-info">
                     <div class="pm-name">{{ $platform->name }}</div>
                     <div class="pm-slug">{{ $platform->slug }}</div>
                 </div>
                 <div class="pm-actions">
-                    <button class="btn-ghost pm-btn" wire:click="openEditModal({{ $platform->id }})">✎</button>
+                    <button class="btn-ghost pm-btn" wire:click="openEditModal({{ $platform->id }})" aria-label="Editar {{ $platform->name }}"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-ghost pm-btn danger" wire:click="deletePlatform({{ $platform->id }})"
-                        wire:confirm="¿Eliminar '{{ $platform->name }}'? Se desasociará de todas las líneas.">🗑</button>
+                        wire:confirm="¿Eliminar '{{ $platform->name }}'? Se desasociará de todas las líneas." aria-label="Eliminar {{ $platform->name }}"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>
 
@@ -40,10 +40,11 @@
 
             <div class="pm-meta">
                 @if($platform->website_url)
-                <a href="{{ $platform->website_url }}" target="_blank" class="pm-link">🌐 Sitio web</a>
+                <a href="{{ $platform->website_url }}" target="_blank" class="pm-link"><i class="fa-solid fa-globe"></i> Sitio web</a>
                 @endif
                 <span class="pm-status {{ $platform->is_active ? 'active' : 'inactive' }}">
-                    {{ $platform->is_active ? '● Activa' : '● Inactiva' }}
+                    <i class="fa-solid fa-circle" aria-hidden="true"></i>
+                    {{ $platform->is_active ? 'Activa' : 'Inactiva' }}
                 </span>
                 <button class="pm-toggle" wire:click="toggleActive({{ $platform->id }})">
                     {{ $platform->is_active ? 'Desactivar' : 'Activar' }}
@@ -55,7 +56,7 @@
         </div>
         @empty
         <div class="pm-empty">
-            <div style="font-size:36px;margin-bottom:10px;">🎮</div>
+            <div style="font-size:36px;margin-bottom:10px;"><i class="fa-solid fa-gamepad"></i></div>
             <p>No hay plataformas creadas aún.</p>
             <p style="font-size:12px;margin-top:4px;">Creá la primera plataforma para que los agentes puedan asociarla a sus líneas.</p>
         </div>
@@ -64,7 +65,7 @@
 
     @if($showModal)
     <div class="modal-overlay" wire:click="closeModal">
-        <div class="modal-panel" style="max-width:600px" wire:click.stop>
+        <div class="modal-panel" wire:click.stop>
 
             <div class="modal-head">
                 <h3><i class="fa-solid {{ $editingPlatform ? 'fa-pen-to-square' : 'fa-gamepad' }}" style="color:var(--orange);margin-right:8px"></i>{{ $editingPlatform ? 'Editar plataforma' : 'Nueva plataforma' }}</h3>
@@ -87,7 +88,7 @@
                 </div>
 
                 {{-- Logo + Estado --}}
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:flex-start">
+                <div class="pm-form-split">
                     <div class="form-group">
                         <x-upload-image label="Logo" model="logoUpload" :value="$logo_url" remove-action="removeLogo" aspect="1" icon="fa-solid fa-gamepad">
                             @error('logoUpload') <div class="form-error">{{ $message }}</div> @enderror
@@ -140,9 +141,11 @@
 
     <style>
         /* ── Listado ─────────────────────────────────────────────────── */
-        .pm-flash { position:fixed;top:20px;right:20px;background:var(--good);color:#000;padding:12px 20px;border-radius:8px;font-weight:700;z-index:2000;font-size:13px; }
-        .pm-grid { padding:24px 28px 40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px; }
-        .pm-card { background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:14px;padding:18px;transition:all 0.2s; }
+        .platforms-page { min-width:0;max-width:100%;overflow-x:clip; }
+        .platforms-page .module-top-bar { padding-left:28px;padding-right:28px; }
+        .pm-flash { position:fixed;top:20px;right:20px;background:var(--good);color:#000;padding:12px 20px;border-radius:8px;font-weight:700;z-index:2000;font-size:13px;max-width:calc(100vw - 24px); }
+        .pm-grid { padding:24px 28px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:14px;min-width:0; }
+        .pm-card { min-width:0;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid var(--line-warm);border-radius:14px;padding:18px;transition:all 0.2s; }
         .pm-card:hover { border-color:var(--orange); }
         .pm-card.inactive { opacity:0.55; }
         .pm-header { display:flex;gap:12px;align-items:flex-start;margin-bottom:10px; }
@@ -150,14 +153,15 @@
         .pm-logo-placeholder { width:44px;height:44px;border-radius:8px;background:rgba(255,106,26,0.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0; }
         .pm-info { flex:1;min-width:0; }
         .pm-name { font-weight:700;font-size:15px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-        .pm-slug { font-size:11px;color:var(--muted);font-family:var(--font-mono); }
+        .pm-slug { font-size:11px;color:var(--muted);font-family:var(--font-mono);overflow-wrap:anywhere; }
         .pm-actions { display:flex;gap:4px;flex-shrink:0; }
-        .pm-btn { width:28px;height:28px;padding:0;font-size:12px; }
-        .pm-desc { font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.4; }
+        .pm-btn { width:28px;height:28px;padding:0;font-size:12px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center; }
+        .pm-desc { font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.4;overflow-wrap:anywhere; }
         .pm-meta { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
-        .pm-link { font-size:11px;color:var(--orange);text-decoration:none; }
+        .pm-link { font-size:11px;color:var(--orange);text-decoration:none;max-width:100%;overflow-wrap:anywhere; }
         .pm-link:hover { text-decoration:underline; }
         .pm-status { font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700; }
+        .pm-status i { font-size:6px;margin-right:4px;vertical-align:middle; }
         .pm-status.active { background:rgba(37,196,107,0.12);color:var(--good); }
         .pm-status.inactive { background:rgba(255,255,255,0.05);color:var(--muted); }
         .pm-toggle { padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s; }
@@ -177,6 +181,7 @@
 
         /* ── Form ────────────────────────────────────────────────────── */
         .form-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px; }
+        .pm-form-split { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:flex-start; }
         .form-group { margin-bottom:16px; }
         .form-label { display:block;margin-bottom:6px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase; }
         .form-input { width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:7px;padding:9px 12px;color:var(--white);font-size:13px;font-family:var(--font-body); }
@@ -195,5 +200,35 @@
         .pm-switch input:checked ~ .pm-switch-track { background:rgba(255,106,26,.35);border-color:rgba(255,106,26,.6); }
         .pm-switch-thumb { position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s; }
         .pm-switch input:checked ~ .pm-switch-track .pm-switch-thumb { transform:translateX(20px);background:var(--orange); }
+
+        @media (max-width: 768px) {
+            .platforms-page .module-top-bar { justify-content:stretch;padding:10px 12px 8px; }
+            .platforms-page .module-top-bar .btn-primary { width:100%;justify-content:center; }
+            .pm-grid { padding:16px 12px 32px;grid-template-columns:1fr;gap:12px; }
+            .pm-card { border-radius:10px;padding:14px; }
+            .pm-header { gap:10px; }
+            .pm-logo,.pm-logo-placeholder { width:44px;height:44px; }
+            .pm-name { white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.25; }
+            .pm-meta { align-items:stretch; }
+            .pm-link,.pm-status,.pm-toggle,.pm-lines-count { flex:1 1 auto; }
+            .pm-toggle { min-height:30px; }
+            .pm-lines-count { margin-left:0;text-align:right;align-self:center; }
+            .modal-overlay { align-items:flex-start;padding:10px;overflow-y:auto; }
+            .modal-panel { max-height:none;width:100%; }
+            .modal-head { padding:14px 16px; }
+            .modal-head h3 { font-size:20px;min-width:0; }
+            .modal-form { padding:16px; }
+            .form-grid,.pm-form-split { grid-template-columns:1fr;gap:0; }
+            .modal-actions { align-items:stretch; }
+            .modal-actions .btn-ghost,.modal-actions .btn-primary { justify-content:center;flex:1 1 150px; }
+        }
+
+        @media (max-width: 420px) {
+            .pm-card { padding:12px; }
+            .pm-header { display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:start; }
+            .pm-actions { flex-direction:column; }
+            .pm-lines-count { flex-basis:100%;text-align:left; }
+            .pm-empty { padding:36px 18px; }
+        }
     </style>
 </div>
