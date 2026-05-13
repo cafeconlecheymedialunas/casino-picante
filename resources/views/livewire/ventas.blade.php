@@ -81,6 +81,25 @@
         .form-error { margin-top:4px; color:#ff4757; font-size:11px; }
         .modal-actions { display:flex; justify-content:flex-end; align-items:center; gap:10px; border-top:1px solid var(--line); padding-top:18px; }
         @media (max-width:900px){ .stats-grid,.form-grid{grid-template-columns:1fr;} .sales-row{grid-template-columns:1fr;} .toolbar .input{width:100%;} }
+        @media (max-width:768px){
+            .stat-card { padding:10px 12px; }
+            .stat-value { font-size:22px; }
+            .stat-note { font-size:11px; }
+            .table-scroll { overflow-x:visible; }
+            .t-head { display:none; }
+            .t-row { grid-template-columns:1fr auto; gap:6px; padding:8px 12px; min-width:0; }
+            .t-row .line-meta { font-size:10px; }
+            .t-row > :nth-child(3) { display:none !important; }
+            .action-row .btn-icon { width:26px; height:26px; }
+            .action-row .mini-icon { width:12px; height:12px; }
+            .modal-panel { border-radius:0; width:100%; max-height:100vh; min-height:100vh; }
+            .modal-overlay { padding:0; align-items:flex-end; }
+            .modal-head { padding:14px 16px; }
+            .modal-head h3 { font-size:20px; }
+            .modal-form { padding:16px; }
+            .table-header-row { padding:12px 14px; }
+            .table-header-left .tc-title { font-size:18px; }
+        }
     </style>
 
     @section('header')
