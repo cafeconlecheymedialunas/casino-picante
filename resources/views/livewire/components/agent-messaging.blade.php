@@ -22,7 +22,7 @@
             <path d="M21 12a8 8 0 0 1-8 8H7l-4 3 1.4-5A8 8 0 1 1 21 12Z"/>
             <path d="M8 10h8M8 14h5"/>
         </svg>
-        Mensaje
+        <span class="btn-text-label">Mensaje</span>
     </button>
 
     @if($open)

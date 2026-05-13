@@ -61,17 +61,23 @@
 
     .t-head, .t-row {
         display: grid;
-        grid-template-columns: 46px 1fr 1.4fr 1.7fr 126px 80px 170px;
+        grid-template-columns: minmax(140px,1.6fr) 1fr 1.4fr auto;
         gap: 12px;
         align-items: center;
         padding: 11px 20px;
-        min-width: 920px;
+        min-width: 640px;
     }
+    .col-client { display:flex; align-items:center; gap:10px; min-width:0; }
+    .col-client .table-avatar { width:34px; height:34px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.05); object-fit:cover; flex-shrink:0; }
+    .col-client .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .table-scroll { overflow-x: auto; }
     .t-head { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--muted-2); text-transform: uppercase; border-bottom: 1px solid var(--line); }
     .t-row { border-bottom: 1px solid var(--line); font-size: 13px; transition: background .15s; }
     .t-row:last-child { border-bottom: 0; }
     .t-row:hover { background: rgba(255,106,26,.04); }
+
+    .col-username, .col-email, .col-msg { display:block; }
+    .col-username-label, .col-email-label, .col-msg-label { display:none; }
     .toggle-btn {
         position: relative;
         width: 44px;
@@ -147,6 +153,11 @@
     .btn-text.disabled { opacity: .45; pointer-events: none; }
     .tc-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted-2); flex-wrap: wrap; gap: 10px; }
     .empty-state { padding: 56px 24px; text-align: center; color: var(--muted-2); }
+    .s-toggle-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:999px; font-size:10px; font-weight:800; border:none; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .s-toggle-btn.is-active { background:rgba(37,196,107,.15); color:var(--good); }
+    .s-toggle-btn.is-active:hover { background:rgba(255,71,87,.15); color:#ff4757; }
+    .s-toggle-btn.is-inactive { background:rgba(255,71,87,.12); color:#ff4757; }
+    .s-toggle-btn.is-inactive:hover { background:rgba(37,196,107,.15); color:var(--good); }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
     .modal-box { background: linear-gradient(180deg, #1c0e0e, #120909); border: 1px solid var(--line-2); border-radius: 8px; width: min(760px, 100%); max-height: min(86vh, 820px); overflow-y: auto; }
@@ -214,6 +225,47 @@
         .form-row-2, .detail-grid { grid-template-columns: 1fr; }
         .search-input { min-width: 100%; }
         .tc-filters { width: 100%; }
+        .stat-value { font-size: 26px; }
+    }
+    {{-- Agent messaging inline icon (hide text) --}}
+    .action-row .agent-message { display:inline-flex; }
+    .action-row .agent-message .btn-text {
+        all:unset; display:inline-flex; align-items:center; justify-content:center;
+        width:32px; height:32px; border-radius:7px; border:1px solid var(--line);
+        background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer;
+        transition:all .15s; box-sizing:border-box;
+    }
+    .action-row .agent-message .btn-text:hover { background:rgba(255,106,26,.15); border-color:var(--orange); color:var(--white); }
+    .action-row .agent-message .btn-text svg { width:15px; height:15px; stroke-width:1.9; }
+    .action-row .agent-message .btn-text .btn-text-label { display:none; }
+
+    @media (max-width: 768px) {
+        .t-head, .t-row {
+            grid-template-columns: 1fr auto;
+            gap: 6px;
+            padding: 8px 10px;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .table-header-left{ display:none; }
+        .t-head > *, .t-row > * { min-width:0; }
+        .col-username,
+        .col-email { display:none !important; }
+        .col-client .table-avatar { width:26px; height:26px; border-radius:6px; }
+        .col-client { gap:6px; }
+        .col-client span { font-size:12px; }
+        .action-row { gap:3px; flex-wrap:nowrap; }
+        .action-row .btn-icon,
+        .action-row .agent-message .btn-text { width:26px; height:26px; min-height:26px; font-size:9px; border-radius:5px; }
+        .action-row .agent-message .btn-text svg { width:12px; height:12px; stroke-width:2; }
+        .tc-header { padding: 12px 14px; }
+        .tc-footer { flex-direction: column; text-align:center; }
+        .module-top-bar { padding: 8px 12px; }
+        .new-client-btn { width:100%; justify-content:center; }
+        .modal-box { border-radius:0; width:100%; max-height:100vh; min-height:100vh; }
+        .modal-overlay { padding:0; align-items:flex-end; }
+        .modal-head { padding:14px 16px; }
+        .modal-body { padding:14px 16px; }
     }
 </style>
 
@@ -276,26 +328,24 @@
     @else
         <div class="table-scroll">
             <div class="t-head">
-                <div>Avatar</div>
-                <div>Username</div>
-                <div>Nombre y apellido</div>
-                <div>Email</div>
-                <div>Enviar mensaje</div>
-                <div>Estado</div>
+                <div>Cliente</div>
+                <div class="col-username">Username</div>
+                <div class="col-email">Email</div>
                 <div>Acciones</div>
             </div>
 
             @foreach($users as $user)
                 @php($isActive = $user->status === 'active')
                 @php($fullName = trim($user->name.' '.($user->apellido ?? '')))
+                @php($avatarUrl = \App\Support\AvatarLibrary::url($user->avatar ?? null))
                 <div class="t-row">
-                    <div>
-                        <img class="table-avatar" src="{{ \App\Support\AvatarLibrary::url($user->avatar ?? null) }}" alt="">
+                    <div class="col-client">
+                        <img class="table-avatar" src="{{ $avatarUrl }}" alt="">
+                        <span class="strong truncate">{{ $fullName ?: '-' }}</span>
                     </div>
-                    <div class="strong truncate">{{ $user->username ?? '-' }}</div>
-                    <div class="truncate">{{ $fullName ?: '-' }}</div>
-                    <div class="truncate">{{ $user->email }}</div>
-                    <div>
+                    <div class="strong truncate col-username">{{ $user->username ?? '-' }}</div>
+                    <div class="truncate col-email">{{ $user->email }}</div>
+                    <div class="action-row">
                         <livewire:components.agent-messaging
                             :target-user-id="$user->id"
                             :target-name="$fullName ?: $user->name"
@@ -304,29 +354,28 @@
                             :context-label="$user->preferredLine?->name ?? ''"
                             :key="'client-agent-message-'.$user->id"
                         />
-                    </div>
-                    <div>
-                        <span class="s-badge {{ $isActive ? 's-active' : 's-inactive' }}">
-                            {{ $isActive ? 'Activo' : 'Inactivo' }}
-                        </span>
-                    </div>
-                    <div class="action-row">
                         @if($isActive)
-                            <button wire:click="setStatus({{ $user->id }}, 'inactive')" class="btn-icon danger" title="Pausar y restringir acceso">
+                            <button wire:click="setStatus({{ $user->id }}, 'inactive')"
+                                wire:confirm="¿Desactivar acceso de {{ $fullName }}?"
+                                class="btn-icon" title="Activo — desactivar"
+                                style="border-color:rgba(37,196,107,.3);color:var(--good);background:rgba(37,196,107,.08);">
                                 <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6v16h4V4ZM18 4h-4v16h4V4Z"/></svg>
                             </button>
                         @else
-                            <button wire:click="setStatus({{ $user->id }}, 'active')" class="btn-icon activate" title="Activar acceso">
+                            <button wire:click="setStatus({{ $user->id }}, 'active')"
+                                wire:confirm="¿Activar acceso de {{ $fullName }}?"
+                                class="btn-icon" title="Inactivo — activar"
+                                style="border-color:rgba(255,71,87,.3);color:#ff4757;background:rgba(255,71,87,.08);">
                                 <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
                             </button>
                         @endif
-                        <button wire:click="openDetailModal({{ $user->id }})" class="btn-icon" title="Ver detalle">
+                        <button wire:click="openDetailModal({{ $user->id }})" class="btn-icon" title="Ver">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
                         </button>
                         <button wire:click="openEditModal({{ $user->id }})" class="btn-icon" title="Editar">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
                         </button>
-                        <button wire:click="deleteUser({{ $user->id }})" wire:confirm="Eliminar al cliente {{ $fullName ?: $user->name }}?" class="btn-icon danger" title="Eliminar">
+                        <button wire:click="deleteUser({{ $user->id }})" wire:confirm="¿Eliminar a {{ $fullName ?: $user->name }}?" class="btn-icon danger" title="Eliminar">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
                         </button>
                     </div>
