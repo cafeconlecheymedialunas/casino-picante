@@ -169,5 +169,9 @@
         .nv-modal-body{ padding:16px; }
         .nv-modal-overlay{ padding:12px;align-items:flex-end; }
     }
+    @media (max-width:480px){
+        .nv-item{ grid-template-columns:36px 1fr; }
+        .nv-actions{ display:none; }
+    }
 </style>
 </div>

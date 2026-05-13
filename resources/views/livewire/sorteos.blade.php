@@ -93,7 +93,7 @@
         }
         @media (max-width:760px){
             .page-container:has(.raffles-page){overflow-x:hidden;}
-            .stats-grid,.info-grid,.selection-stats-grid{grid-template-columns:1fr;}
+            .stats-grid,.info-grid,.selection-stats-grid{display:none;}
             .panel-head{flex-direction:column;align-items:stretch;padding:14px;}
             .panel-body{padding:14px;}
             .action-row,.assign-controls,.modal-actions{align-items:stretch;}

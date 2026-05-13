@@ -113,7 +113,7 @@
     }
     @media (max-width: 640px) {
         .kpi-grid-4,
-        .kpi-grid-3 { grid-template-columns: 1fr; }
+        .kpi-grid-3 { display:none; }
         .kpi-value { font-size: 28px; }
         .kpi-huge { font-size: 32px; }
         .tables-row { grid-template-columns: 1fr; }

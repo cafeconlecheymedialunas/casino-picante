@@ -53,6 +53,9 @@
             -webkit-box-shadow: 0 0 0px 1000px #1c0d0a inset !important;
             transition: background-color 5000s ease-in-out 0s;
         }
+        @media (max-width: 480px) {
+            .btn-primary { height: 34px; font-size: 12px; padding: 0 14px; }
+        }
     </style>
 </head>
 <body>

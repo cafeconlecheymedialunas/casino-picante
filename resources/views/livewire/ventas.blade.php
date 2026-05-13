@@ -82,6 +82,7 @@
         .modal-actions { display:flex; justify-content:flex-end; align-items:center; gap:10px; border-top:1px solid var(--line); padding-top:18px; }
         @media (max-width:900px){ .stats-grid,.form-grid{grid-template-columns:1fr;} .sales-row{grid-template-columns:1fr;} .toolbar .input{width:100%;} }
         @media (max-width:768px){
+            .stats-grid { display:none; }
             .stat-card { padding:10px 12px; }
             .stat-value { font-size:22px; }
             .stat-note { font-size:11px; }

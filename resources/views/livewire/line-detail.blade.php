@@ -613,6 +613,7 @@
     .ld-tab { min-height: 34px; padding: 7px 10px; font-size: 10px; gap: 5px; border: 1px solid var(--line); border-radius: 7px; border-bottom: 1px solid var(--line); }
     .ld-tab-active { border-color: var(--orange) !important; background: rgba(255,106,26,.12); }
     .ld-tab-body { padding: 12px; }
+    .kpi-grid { display:none; }
     .info-grid-4 { grid-template-columns: 1fr; }
     .kpi-grid    { grid-template-columns: 1fr; }
     .agent-hero-card { flex-direction: column; text-align: center; }

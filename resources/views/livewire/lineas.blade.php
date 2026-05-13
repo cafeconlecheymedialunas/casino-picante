@@ -198,8 +198,12 @@
             .detail-tabs{ padding:0 8px; }
             .tab-btn{ padding:10px 8px; font-size:9px; gap:4px; }
             .tab-btn svg{ width:12px; height:12px; }
+            .preview-grid{ grid-template-columns:1fr; }
+            .detail-edit-view { min-height:auto; }
+            .detail-edit-view .tab-content { min-height:auto; }
         }
         @media (max-width:768px){
+            .stat-grid { display:none; }
             .info-grid{ grid-template-columns:1fr; }
             .sales-kpis { grid-template-columns:1fr; }
             .line-cover { height:100px; }

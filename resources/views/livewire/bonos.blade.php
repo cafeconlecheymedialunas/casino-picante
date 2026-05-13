@@ -73,6 +73,7 @@
         @media (max-width:768px){
             .stat-card { padding:12px 14px; }
             .stat-value { font-size:24px; }
+            .stats-grid { display:none; }
             .table-top { padding:12px 14px; }
             .table-title { font-size:18px; }
             .table-scroll { overflow-x:visible; }
