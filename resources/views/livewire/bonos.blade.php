@@ -70,6 +70,43 @@
         .ms-check { color:var(--orange);font-size:11px;width:14px; }
         .ms-empty { padding:14px;text-align:center;color:var(--muted);font-size:13px; }
         @media (max-width:900px) { .stats-grid,.form-grid{grid-template-columns:1fr;} .search-input{width:100%;} }
+        @media (max-width:768px){
+            .stat-card { padding:12px 14px; }
+            .stat-value { font-size:24px; }
+            .table-top { padding:12px 14px; }
+            .table-title { font-size:18px; }
+            .table-scroll { overflow-x:visible; }
+            .t-head, .t-row { grid-template-columns:1fr auto; gap:6px; padding:8px 12px; min-width:0; }
+            .t-head { display:none; }
+            .t-row { grid-template-columns:1fr auto; gap:6px; padding:8px 12px; min-width:0; }
+            .t-row .t-vigencia, .t-row .t-tipo { display:none !important; }
+            .t-bono-code { font-size:9px; }
+            .t-bono-name { font-size:12px; }
+            .t-uso { font-size:12px; }
+            .t-uso-sub { font-size:9px; }
+            .btn-icon { width:26px; height:26px; }
+            .btn-soft { height:26px; font-size:10px; padding:0 8px; }
+            .mini-icon { width:12px; height:12px; }
+            .modal-panel { border-radius:0; width:100%; max-height:100vh; min-height:100vh; }
+            .modal-overlay { padding:0; align-items:flex-end; }
+            .modal-head { padding:14px 16px; }
+            .modal-head h3 { font-size:20px; }
+            .modal-form { padding:16px; }
+            .form-grid { gap:10px; }
+            .form-group { margin-bottom:10px; }
+            .header-tools { flex-direction:column; align-items:stretch; }
+            .search-input { width:100%; }
+            .filter-select { width:100%; }
+            .table-tools { width:100%; justify-content:flex-start; }
+            .bonos-layout.with-panel .ap-panel { position:static; border-radius:14px; }
+            .ap-head { padding:12px 14px; }
+            .ap-list { max-height:300px; }
+            .ap-row { padding:8px 14px; }
+            .type-btn { font-size:11px; height:32px; }
+            .input-suffix-wrap .form-input { padding-right:32px; }
+            .ms-tags { gap:4px; }
+            .ms-tag { font-size:11px; padding:2px 6px; }
+        }
 
         /* Layout with side panel */
         .bonos-layout { display:grid;grid-template-columns:1fr;gap:16px;align-items:start; }
@@ -274,14 +311,14 @@
                 <form class="modal-form" wire:submit.prevent="saveBonus">
                     <div class="form-grid">
                         <div class="form-group">
+                            <label class="form-label">Codigo</label>
+                            <input type="text" wire:model="code" class="form-input" placeholder="Dejalo vacio para auto-generar">
+                            @error('code') <div class="form-error">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">Nombre</label>
                             <input type="text" wire:model="title" class="form-input">
                             @error('title') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Codigo</label>
-                            <input type="text" wire:model="code" class="form-input">
-                            @error('code') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                     </div>
                     <div class="form-grid">

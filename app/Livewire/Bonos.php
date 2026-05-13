@@ -7,9 +7,9 @@ use App\Models\BonusAssignment;
 use App\Models\Line;
 use App\Models\Platform;
 use App\Models\User;
+use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
-use App\Support\Permissions;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -107,7 +107,6 @@ class Bonos extends Component
     {
         $this->checkLinePermission(Permissions::BONO_CREATE);
         $this->resetForm();
-        $this->code = Bonus::generateCode();
         $this->startDate = now()->format('Y-m-d');
         $this->endDate = now()->addWeek()->format('Y-m-d');
         $this->lineId = (string) (session('active_line_id') ?: $this->availableLines()->first()?->id);
@@ -228,6 +227,7 @@ class Bonos extends Component
 
         if (empty($this->assignUserIds)) {
             $this->addError('assignUserIds', 'Seleccioná al menos un usuario.');
+
             return;
         }
 
@@ -238,11 +238,12 @@ class Bonos extends Component
 
         if ($bonus->status !== 'active') {
             $this->addError('assignUserIds', 'Solo se pueden otorgar bonos activos.');
+
             return;
         }
 
         $assigned = [];
-        $skipped  = [];
+        $skipped = [];
 
         foreach ($this->assignUserIds as $userId) {
             $user = User::find($userId);
@@ -252,26 +253,27 @@ class Bonos extends Component
 
             if (! $bonus->canUserClaim($user->id)) {
                 $skipped[] = $user->username ?? $user->email;
+
                 continue;
             }
 
             BonusAssignment::create([
-                'bonus_id'    => $bonus->id,
-                'user_id'     => $user->id,
-                'status'      => 'active',
+                'bonus_id' => $bonus->id,
+                'user_id' => $user->id,
+                'status' => 'active',
                 'assigned_at' => now(),
             ]);
 
             $assigned[] = $user->username ?? $user->email;
         }
 
-        $msg = 'Bono otorgado a ' . implode(', ', $assigned) . '.';
+        $msg = 'Bono otorgado a '.implode(', ', $assigned).'.';
         if ($skipped) {
-            $msg .= ' Omitidos (límite alcanzado): ' . implode(', ', $skipped) . '.';
+            $msg .= ' Omitidos (límite alcanzado): '.implode(', ', $skipped).'.';
         }
 
         session()->flash('message', $msg);
-        $this->notify('Bono asignado', "El bono {$bonus->title} fue asignado a " . count($assigned) . ' usuario(s).', 'bonuses', '/bonos', 'success');
+        $this->notify('Bono asignado', "El bono {$bonus->title} fue asignado a ".count($assigned).' usuario(s).', 'bonuses', '/bonos', 'success');
 
         $this->closeAssignModal();
     }
@@ -418,8 +420,8 @@ class Bonos extends Component
         return BonusAssignment::with('user')
             ->where('bonus_id', $this->bonusForAssignments)
             ->when($this->assignmentsSearch, function ($q) {
-                $s = '%' . $this->assignmentsSearch . '%';
-                $q->whereHas('user', fn($u) => $u->where('username', 'like', $s)->orWhere('email', 'like', $s));
+                $s = '%'.$this->assignmentsSearch.'%';
+                $q->whereHas('user', fn ($u) => $u->where('username', 'like', $s)->orWhere('email', 'like', $s));
             })
             ->orderByDesc('assigned_at')
             ->get();
@@ -432,10 +434,10 @@ class Bonos extends Component
             : (int) session('active_line_id');
 
         return User::where('line_id', $lineId)
-            ->orWhereHas('lines', fn($q) => $q->where('lines.id', $lineId)->wherePivot('is_active', true))
+            ->orWhereHas('lines', fn ($q) => $q->where('lines.id', $lineId)->wherePivot('is_active', true))
             ->orderBy('username')
             ->get(['id', 'username', 'email'])
-            ->map(fn($u) => ['id' => $u->id, 'label' => $u->username ?? $u->email])
+            ->map(fn ($u) => ['id' => $u->id, 'label' => $u->username ?? $u->email])
             ->toArray();
     }
 
