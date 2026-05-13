@@ -153,5 +153,21 @@
     textarea.form-input { resize:vertical; }
     select.form-input { cursor:pointer; }
     .form-error { margin-top:4px;color:#ff4757;font-size:11px; }
+    @media (max-width:768px){
+        .filter-row{ flex-direction:column; }
+        .status-filters{ width:100%; }
+        .status-filter{ flex:1;text-align:center;padding:7px 8px;font-size:9px; }
+        .nv-item{ grid-template-columns:44px 1fr auto;padding:10px 12px;gap:8px; }
+        .nv-thumb{ height:34px; }
+        .nv-title{ font-size:12px; }
+        .nv-date{ font-size:10px; }
+        .nv-status{ display:none; }
+        .nv-actions{ gap:2px; }
+        .nv-action-btn{ width:24px;height:24px;font-size:10px; }
+        .nv-modal{ border-radius:12px; }
+        .nv-modal-head{ padding:14px 16px;font-size:16px; }
+        .nv-modal-body{ padding:16px; }
+        .nv-modal-overlay{ padding:12px;align-items:flex-end; }
+    }
 </style>
 </div>

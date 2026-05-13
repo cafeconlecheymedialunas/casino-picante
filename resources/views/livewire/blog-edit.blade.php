@@ -205,5 +205,17 @@
     .nv-reply { margin-top:10px;margin-left:36px;padding:10px 12px;border-radius:8px;background:rgba(255,106,26,.05);border-left:2px solid rgba(255,106,26,.4); }
     .nv-reply-form { margin-top:10px;margin-left:36px; }
     .be-new-comment { padding:12px 16px;border-bottom:1px solid var(--line);margin-bottom:4px; }
+    @media (max-width:768px){
+        .be-wrap{ padding:0 14px 20px; }
+        .be-card-head{ padding:12px 14px;font-size:14px;flex-wrap:wrap;gap:8px; }
+        .be-form{ padding:14px; }
+        .be-comments{ padding:12px; }
+        .form-group{ margin-bottom:12px; }
+        .nv-comment-head{ flex-wrap:wrap;gap:6px; }
+        .nv-comment-body{ padding-left:0;margin-top:6px; }
+        .nv-reply{ margin-left:12px; }
+        .nv-reply-form{ margin-left:12px; }
+        .be-card{ border-radius:14px; }
+    }
 </style>
 </div>
