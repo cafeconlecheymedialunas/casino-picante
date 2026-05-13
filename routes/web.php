@@ -7,12 +7,12 @@ use App\Livewire\Auth\AdminForgotPassword;
 use App\Livewire\Auth\AdminResetPassword;
 use App\Livewire\Auth\ClientLogin;
 use App\Livewire\Auth\Login;
-use App\Livewire\Frontend\Home;
-use App\Livewire\Frontend\PublicRaffle;
 use App\Livewire\BlogEdit;
 use App\Livewire\Bonos;
 use App\Livewire\Chats;
 use App\Livewire\EditorHome;
+use App\Livewire\Frontend\Home;
+use App\Livewire\Frontend\PublicRaffle;
 use App\Livewire\Lineas;
 use App\Livewire\LineDetail;
 use App\Livewire\Novedades;
@@ -48,93 +48,93 @@ Route::post('/logout', function () {
 })->name('logout');
 
 Route::prefix('admin')->group(function () {
-Route::middleware('auth')->group(function () {
-    Route::get('/perfil', [PerfilController::class, 'index'])->middleware('line.authorize')->name('perfil');
-    Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
-    Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
-});
+    Route::middleware('auth')->group(function () {
+        Route::get('/perfil', [PerfilController::class, 'index'])->name('perfil');
+        Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
+        Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
+    });
 
-// Switch active line only to a line the current panel user can access.
-Route::post('/session/line/{id}', function (int $id) {
-    $user = auth()->user();
+    // Switch active line only to a line the current panel user can access.
+    Route::post('/session/line/{id}', function (int $id) {
+        $user = auth()->user();
 
-    if (! $user) {
-        return redirect()->route('admin.login');
-    }
-
-    if ($user->hasRole(Roles::ADMIN)) {
-        if ($id !== 0) {
-            Line::findOrFail($id);
+        if (! $user) {
+            return redirect()->route('admin.login');
         }
 
-        session(['active_line_id' => $id ?: null]);
+        if ($user->hasRole(Roles::ADMIN)) {
+            if ($id !== 0) {
+                Line::findOrFail($id);
+            }
+
+            session(['active_line_id' => $id ?: null]);
+
+            return back();
+        }
+
+        if (! $user->hasRole(Roles::AGENTE)) {
+            abort(403, 'No tenes acceso al panel.');
+        }
+
+        $agentId = session('active_agent_id') ?: $user->agent?->id;
+        if (! $agentId || ! LineAgent::where('agent_id', $agentId)->where('line_id', $id)->where('is_active', true)->exists()) {
+            abort(403, 'No podes cambiar a una linea que no tenes asignada.');
+        }
+
+        session(['active_agent_id' => $agentId]);
+        session(['active_line_id' => $id]);
 
         return back();
-    }
+    })->middleware('auth')->name('session.line');
 
-    if (! $user->hasRole(Roles::AGENTE)) {
-        abort(403, 'No tenes acceso al panel.');
-    }
+    // Dashboard – no line restriction (admin mode passes through)
+    Route::middleware('line.authorize')->group(function () {
+        Route::get('/dashboard', Overview::class)->middleware('line.authorize:'.Permissions::DASHBOARD_READ)->name('dashboard');
+        Route::get('/clientes', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('clientes');
+        Route::get('/usuarios', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('users.index');
+        Route::get('/agentes', Agentes::class)->middleware('line.authorize:'.implode('|', [
+            Permissions::AGENT_CREATE,
+            Permissions::AGENT_ASSIGN,
+            Permissions::AGENT_UPDATE,
+            Permissions::AGENT_PERMISSIONS,
+        ]))->name('agentes');
+        Route::get('/chats', Chats::class)->middleware('line.authorize:'.implode('|', [
+            Permissions::TICKET_READ,
+            Permissions::USER_READ,
+        ]))->name('chats');
+        Route::get('/platforms', PlatformsMaster::class)->middleware('admin')->name('platforms.master');
+        Route::get('/ventas/{line?}', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
 
-    $agentId = session('active_agent_id') ?: $user->agent?->id;
-    if (! $agentId || ! LineAgent::where('agent_id', $agentId)->where('line_id', $id)->where('is_active', true)->exists()) {
-        abort(403, 'No podes cambiar a una linea que no tenes asignada.');
-    }
+        Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_READ)->name('lineas');
+        Route::get('/lineas/{id}/edit', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('lineas.edit');
+        Route::get('/lineas/{id}', LineDetail::class)->middleware('line.authorize')->name('lineas.detail');
 
-    session(['active_agent_id' => $agentId]);
-    session(['active_line_id' => $id]);
+        Route::middleware('line.authorize:'.Permissions::PROMO_READ)->group(function () {
+            Route::get('/promociones', Promociones::class)->name('promociones');
+        });
 
-    return back();
-})->middleware('auth')->name('session.line');
+        Route::middleware('line.authorize:'.Permissions::NEWS_READ)->group(function () {
+            Route::get('/novedades', Novedades::class)->name('novedades');
+        });
 
-// Dashboard – no line restriction (admin mode passes through)
-Route::middleware('line.authorize')->group(function () {
-    Route::get('/dashboard', Overview::class)->middleware('line.authorize:'.Permissions::DASHBOARD_READ)->name('dashboard');
-    Route::get('/clientes', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('clientes');
-    Route::get('/usuarios', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('users.index');
-    Route::get('/agentes', Agentes::class)->middleware('line.authorize:'.implode('|', [
-        Permissions::AGENT_CREATE,
-        Permissions::AGENT_ASSIGN,
-        Permissions::AGENT_UPDATE,
-        Permissions::AGENT_PERMISSIONS,
-    ]))->name('agentes');
-    Route::get('/chats', Chats::class)->middleware('line.authorize:'.implode('|', [
-        Permissions::TICKET_READ,
-        Permissions::USER_READ,
-    ]))->name('chats');
-    Route::get('/platforms', PlatformsMaster::class)->middleware('admin')->name('platforms.master');
-    Route::get('/ventas/{line?}', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
+        Route::middleware('line.authorize:'.Permissions::NEWS_UPDATE)->group(function () {
+            Route::get('/blog/{id}/edit', BlogEdit::class)->name('blog.edit');
+        });
 
-    Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_READ)->name('lineas');
-    Route::get('/lineas/{id}/edit', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('lineas.edit');
-    Route::get('/lineas/{id}', LineDetail::class)->middleware('line.authorize')->name('lineas.detail');
+        Route::middleware('line.authorize:'.Permissions::BONO_READ)->group(function () {
+            Route::get('/bonos', Bonos::class)->name('bonos');
+        });
 
-    Route::middleware('line.authorize:'.Permissions::PROMO_READ)->group(function () {
-        Route::get('/promociones', Promociones::class)->name('promociones');
+        Route::get('/editor-home', EditorHome::class)->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home');
+
+        Route::get('/tickets', Tickets::class)->middleware('line.authorize')->name('tickets');
+
+        Route::middleware('line.authorize:'.Permissions::SORTEO_READ)->group(function () {
+            Route::get('/sorteos', Sorteos::class)->name('sorteos');
+        });
+
+        // Settings – admin only
+        Route::get('/settings', Settings::class)->middleware('admin')->name('settings');
+
     });
-
-    Route::middleware('line.authorize:'.Permissions::NEWS_READ)->group(function () {
-        Route::get('/novedades', Novedades::class)->name('novedades');
-    });
-
-    Route::middleware('line.authorize:'.Permissions::NEWS_UPDATE)->group(function () {
-        Route::get('/blog/{id}/edit', BlogEdit::class)->name('blog.edit');
-    });
-
-    Route::middleware('line.authorize:'.Permissions::BONO_READ)->group(function () {
-        Route::get('/bonos', Bonos::class)->name('bonos');
-    });
-
-    Route::get('/editor-home', EditorHome::class)->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home');
-
-    Route::get('/tickets', Tickets::class)->middleware('line.authorize')->name('tickets');
-
-    Route::middleware('line.authorize:'.Permissions::SORTEO_READ)->group(function () {
-        Route::get('/sorteos', Sorteos::class)->name('sorteos');
-    });
-
-    // Settings – admin only
-    Route::get('/settings', Settings::class)->middleware('admin')->name('settings');
-
-});
 });
