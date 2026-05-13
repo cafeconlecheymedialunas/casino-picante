@@ -4,25 +4,25 @@
 @endsection
 
     <style>
-        .raffles-page { display:flex; flex-direction:column; gap:18px; }
+        .raffles-page { display:flex; flex-direction:column; gap:18px; min-width:0; max-width:100%; overflow-x:clip; }
         .raffle-tools, .action-row, .modal-actions, .assign-controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-        .search-input, .filter-select, .form-input { background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:7px; padding:9px 12px; color:var(--white); font-size:13px; font-family:var(--font-body); }
+        .search-input, .filter-select, .form-input { max-width:100%; background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:7px; padding:9px 12px; color:var(--white); font-size:13px; font-family:var(--font-body); }
         .search-input { width:260px; }
         .search-input:focus, .filter-select:focus, .form-input:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,106,26,.12); }
         .stats-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
-        .stat-card, .panel-card { border:1px solid var(--line); border-radius:8px; background:linear-gradient(180deg,#170b0b,#0f0707); }
+        .stat-card, .panel-card { min-width:0; border:1px solid var(--line); border-radius:8px; background:linear-gradient(180deg,#170b0b,#0f0707); }
         .stat-card { padding:16px 18px; position:relative; overflow:hidden; }
         .stat-card::before { content:''; position:absolute; inset:0 0 auto; height:2px; background:linear-gradient(90deg,var(--orange),var(--amber)); }
         .stat-label { color:var(--muted-2); font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px; }
         .stat-value { font-family:var(--font-display); font-size:32px; line-height:1; }
-        .raffles-layout { display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start; }
-        .panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:16px 18px; border-bottom:1px solid var(--line); }
+        .raffles-layout { display:grid; grid-template-columns:minmax(260px,330px) minmax(0,1fr); gap:18px; align-items:start; min-width:0; }
+        .panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:16px 18px; border-bottom:1px solid var(--line); min-width:0; }
         .panel-title { font-family:var(--font-display); font-size:22px; letter-spacing:.03em; }
         .panel-body { padding:16px 18px; }
         .raffle-item { padding:12px; border-radius:8px; background:rgba(255,255,255,.03); border:1px solid var(--line); margin-bottom:8px; cursor:pointer; transition:all .15s; }
         .raffle-item:hover, .raffle-item.selected { border-color:var(--orange); background:rgba(255,106,26,.08); }
-        .raffle-name { font-weight:800; font-size:13px; margin-bottom:4px; }
-        .raffle-meta { font-size:11px; color:var(--muted); line-height:1.45; }
+        .raffle-name { font-weight:800; font-size:13px; margin-bottom:4px; overflow-wrap:anywhere; }
+        .raffle-meta { font-size:11px; color:var(--muted); line-height:1.45; overflow-wrap:anywhere; }
         .badge { display:inline-flex; width:fit-content; align-items:center; border-radius:999px; padding:4px 10px; font-size:10px; font-weight:800; }
         .b-active { color:var(--good); background:rgba(37,196,107,.12); }
         .b-inactive { color:var(--muted); background:rgba(255,255,255,.06); }
@@ -43,7 +43,7 @@
         .mini-icon { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
         .flash-message { border:1px solid rgba(37,196,107,.35); background:rgba(37,196,107,.12); color:var(--good); border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; }
         .flash-error { border-color:rgba(255,71,87,.45); background:rgba(255,71,87,.12); color:#ff6b7a; }
-        .info-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+        .info-grid, .selection-stats-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
         .info-box { border:1px solid var(--line); border-radius:8px; padding:12px; background:rgba(255,255,255,.03); }
         .info-label { color:var(--muted-2); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin-bottom:5px; }
         .info-value { font-size:13px; font-weight:800; }
@@ -51,7 +51,7 @@
         .prize-card { border:1px solid var(--line); border-radius:8px; overflow:hidden; background:rgba(255,255,255,.03); }
         .prize-card img { width:100%; aspect-ratio:1.4; object-fit:cover; display:block; background:rgba(255,255,255,.04); }
         .prize-body { padding:10px; }
-        .raffle-board { display:grid; grid-template-columns:repeat(auto-fill,minmax(46px,1fr)); gap:6px; max-height:430px; overflow:auto; padding-right:4px; }
+        .raffle-board { display:grid; grid-template-columns:repeat(auto-fill,minmax(46px,1fr)); gap:6px; max-height:430px; overflow:auto; padding-right:4px; min-width:0; }
         .board-slot { appearance:none; -webkit-appearance:none; padding:0; aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:6px; font-family:var(--font-mono); font-size:11px; font-weight:800; cursor:pointer; position:relative; border:1px solid transparent; }
         .slot-free { background:rgba(37,196,107,.05); color:var(--good); border-color:rgba(37,196,107,.18); }
         .slot-selected { background:var(--orange); color:#190702; border-color:var(--amber); box-shadow:0 0 0 2px rgba(255,179,71,.18); }
@@ -63,7 +63,7 @@
         .tab-btn { height:32px; padding:0 14px; font-size:11px; font-weight:800; border-radius:7px; background:rgba(255,255,255,.03); border:1px solid var(--line); color:var(--muted); cursor:pointer; }
         .tab-btn.active { background:var(--orange); color:#190702; border-color:var(--orange); }
         .table-scroll { overflow-x:auto; }
-        .t-head, .t-row { display:grid; grid-template-columns:64px 1fr 1fr 120px 120px; gap:12px; align-items:center; min-width:760px; padding:10px 12px; }
+        .t-head, .t-row { display:grid; grid-template-columns:64px 1fr 1fr 120px; gap:12px; align-items:center; min-width:640px; padding:10px 12px; }
         .t-head { color:var(--muted-2); font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; border-bottom:1px solid var(--line); }
         .t-row { border-bottom:1px solid var(--line); font-size:13px; }
         .modal-overlay { position:fixed; inset:0; z-index:240; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.78); }
@@ -80,7 +80,56 @@
         .form-error { margin-top:4px; color:#ff4757; font-size:11px; }
         .check-row { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; font-weight:700; margin-top:8px; }
         .repeat-row { display:grid; grid-template-columns:80px 1fr 170px 36px; gap:8px; align-items:start; padding:10px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.03); margin-bottom:8px; }
-        @media (max-width:1000px){ .raffles-layout,.stats-grid,.info-grid,.form-grid,.repeat-row{grid-template-columns:1fr;} .search-input{width:100%;} }
+        .winner-prize-row { display:grid; grid-template-columns:64px 1fr 160px 1fr; gap:10px; align-items:start; padding:12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,.03); margin-bottom:10px; }
+        @media (max-width:1180px){
+            .stats-grid,.info-grid,.selection-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+            .raffles-layout{grid-template-columns:280px minmax(0,1fr);}
+        }
+        @media (max-width:1000px){
+            .raffles-layout,.form-grid,.repeat-row{grid-template-columns:1fr;}
+            .search-input{width:100%;}
+            .raffle-tools{align-items:stretch;}
+            .raffle-tools .search-input,.raffle-tools .filter-select{flex:1 1 220px;}
+        }
+        @media (max-width:760px){
+            .page-container:has(.raffles-page){overflow-x:hidden;}
+            .stats-grid,.info-grid,.selection-stats-grid{grid-template-columns:1fr;}
+            .panel-head{flex-direction:column;align-items:stretch;padding:14px;}
+            .panel-body{padding:14px;}
+            .action-row,.assign-controls,.modal-actions{align-items:stretch;}
+            .assign-controls > span{flex:1 0 100%;}
+            .action-row .btn-soft,.action-row .btn-icon,.assign-controls .btn-primary,.assign-controls .btn-soft,.assign-controls .qty-btn,.modal-actions .btn-soft,.modal-actions .btn-primary{justify-content:center;flex:1 1 130px;}
+            .raffle-board{grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:5px;max-height:60vh;padding-right:0;}
+            .board-slot{font-size:10px;border-radius:6px;}
+            .slot-info{display:none !important;}
+            .tab-row{overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;}
+            .tab-btn{flex:0 0 auto;}
+            .t-head,.t-row{min-width:0;grid-template-columns:56px minmax(0,1fr) minmax(0,.9fr) 74px;gap:8px;padding:9px 8px;font-size:11px;}
+            .table-scroll{overflow-x:hidden;}
+            .modal-overlay{padding:10px;align-items:flex-start;overflow-y:auto;}
+            .modal-panel{max-height:none;border-radius:8px;}
+            .modal-head{padding:14px 16px;}
+            .modal-form{padding:16px;}
+            .winner-prize-row{grid-template-columns:1fr;}
+        }
+        @media (max-width:520px){
+            .stats-grid{gap:10px;}
+            .stat-card{padding:13px 14px;}
+            .stat-value{font-size:26px;}
+            .panel-title{font-size:20px;}
+            .raffle-item{padding:10px;}
+            .raffle-board{grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px;}
+            .board-slot{font-size:9px;}
+            .t-head{display:none;}
+            .t-row{display:grid;grid-template-columns:1fr;gap:4px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,.03);}
+            .t-row > div{display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;align-items:center;overflow-wrap:anywhere;}
+            .t-row > div::before{color:var(--muted-2);font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;}
+            .t-row > div:nth-child(1)::before{content:'ID';}
+            .t-row > div:nth-child(2)::before{content:'Username';}
+            .t-row > div:nth-child(3)::before{content:'Linea';}
+            .t-row > div:nth-child(4)::before{content:'Numero';}
+            .repeat-row{padding:8px;}
+        }
     </style>
 
     @if (session()->has('message'))
@@ -133,7 +182,11 @@
                             <div style="display:flex;justify-content:space-between;gap:10px;">
                                 <div class="raffle-name">{{ $raffle->title }}</div>
                                 <span class="badge {{ $raffle->status === 'finished' ? 'b-finished' : ($raffle->status === 'active' ? 'b-active' : 'b-inactive') }}">
-                                    {{ $raffle->status === 'finished' ? '★ Finalizado' : ($raffle->status === 'active' ? 'Activo' : 'Inactivo') }}
+                                    @if($raffle->status === 'finished')
+                                        <i class="fa-solid fa-star"></i> Finalizado
+                                    @else
+                                        {{ $raffle->status === 'active' ? 'Activo' : 'Inactivo' }}
+                                    @endif
                                 </span>
                             </div>
                             <div class="raffle-meta">
@@ -245,7 +298,7 @@
                                     </select>
                                 </div>
                                 <div class="t-head">
-                                    <div>ID</div><div>Username</div><div>Linea otorgada</div><div>Numero</div><div>Total</div>
+                                        <div>ID</div><div>Username</div><div>Linea otorgada</div><div>Numero</div>
                                 </div>
                                 @forelse($participants as $participant)
                                     <div class="t-row">
@@ -253,7 +306,6 @@
                                         <div>{{ $participant->user?->username ?? $participant->user?->email ?? '-' }}</div>
                                         <div>{{ $participant->line?->name ?? '-' }}</div>
                                         <div>{{ $participant->number }}</div>
-                                        <div>{{ $participant->total_for_user }}</div>
                                     </div>
                                 @empty
                                     <div style="padding:22px;color:var(--muted);text-align:center;">Sin participantes registrados.</div>
@@ -265,8 +317,52 @@
                                 $selectedNumberMap = $selectedCollection->flip();
                                 $occupiedSelection = $selectedRaffle->numbers->whereIn('number', $selectedCollection)->pluck('number');
                                 $freeSelection = $selectedCollection->diff($occupiedSelection);
+                                $start = (int) $selectedRaffle->start_number;
+                                $end = $selectedRaffle->numbers_limit
+                                    ? $start + (int) $selectedRaffle->numbers_limit - 1
+                                    : min((int) $selectedRaffle->end_number, $start + 999);
+                                $takenMap = $selectedRaffle->numbers->keyBy('number');
+                                $occupiedNumbers = $selectedRaffle->numbers->pluck('number')->map(fn ($number) => (int) $number)->values()->all();
                             @endphp
 
+                            <div
+                                x-data="{
+                                    selected: @js($selectedCollection->values()->all()),
+                                    occupied: @js($occupiedNumbers),
+                                    has(number) {
+                                        return this.selected.includes(number);
+                                    },
+                                    isOccupied(number) {
+                                        return this.occupied.includes(number);
+                                    },
+                                    toggle(number) {
+                                        if (this.has(number)) {
+                                            this.selected = this.selected.filter((value) => value !== number);
+                                            return;
+                                        }
+
+                                        this.selected = [...this.selected, number].sort((a, b) => a - b);
+                                    },
+                                    clear() {
+                                        this.selected = [];
+                                    },
+                                    addConsecutive(qty, start, end) {
+                                        let added = 0;
+                                        for (let number = start; number <= end && added < qty; number++) {
+                                            if (this.isOccupied(number) || this.has(number)) continue;
+                                            this.selected.push(number);
+                                            added++;
+                                        }
+                                        this.selected = [...new Set(this.selected)].sort((a, b) => a - b);
+                                    },
+                                    freeSelected() {
+                                        return this.selected.filter((number) => !this.isOccupied(number));
+                                    },
+                                    occupiedSelected() {
+                                        return this.selected.filter((number) => this.isOccupied(number));
+                                    },
+                                }"
+                            >
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label class="form-label">Cliente</label>
@@ -289,17 +385,17 @@
                             <div class="assign-controls" style="margin-bottom:6px;">
                                 <span style="color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.06em;">AGREGAR CONSECUTIVOS:</span>
                                 @foreach([1,5,10,20] as $qty)
-                                    <button type="button" wire:click="addConsecutiveNumbers({{ $qty }})" class="qty-btn">+{{ $qty }}</button>
+                                    <button type="button" @click="addConsecutive({{ $qty }}, {{ $start }}, {{ $end }})" class="qty-btn">+{{ $qty }}</button>
                                 @endforeach
                             </div>
                             <div class="assign-controls" style="margin-bottom:10px;">
-                                <button type="button" wire:click="saveSelectedNumbers" class="btn-primary">
-                                    Guardar seleccion ({{ $selectedCollection->count() }})
+                                <button type="button" @click="$wire.saveSelectedNumbersFromClient(selected)" class="btn-primary">
+                                    Guardar seleccion (<span x-text="selected.length"></span>)
                                 </button>
-                                <button type="button" wire:click="unassignSelectedNumbers" class="btn-soft btn-danger">
-                                    Desocupar seleccionados ({{ $occupiedSelection->count() }})
+                                <button type="button" @click="$wire.unassignSelectedNumbersFromClient(selected)" class="btn-soft btn-danger">
+                                    Desocupar seleccionados (<span x-text="occupiedSelected().length"></span>)
                                 </button>
-                                <button type="button" wire:click="clearSelectedNumbers" class="btn-soft">Limpiar</button>
+                                <button type="button" @click="clear(); $wire.clearSelectedNumbers()" class="btn-soft">Limpiar</button>
                             </div>
                             @if (session()->has('message'))
                                 <div class="flash-message" style="margin-bottom:10px;">{{ session('message') }}</div>
@@ -311,23 +407,21 @@
                                 <div class="flash-message" style="margin-bottom:10px;">{{ session('info') }}</div>
                             @endif
 
-                            <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;">
-                                <div class="info-box"><div class="info-label">Seleccionados</div><div class="info-value">{{ $selectedCollection->count() }}</div></div>
-                                <div class="info-box"><div class="info-label">Libres para asignar</div><div class="info-value" style="color:var(--good);">{{ $freeSelection->count() }}</div></div>
-                                <div class="info-box"><div class="info-label">Ocupados para reasignar</div><div class="info-value" style="color:var(--orange);">{{ $occupiedSelection->count() }}</div></div>
+                            <div class="selection-stats-grid" style="gap:10px;margin-bottom:12px;">
+                                <div class="info-box"><div class="info-label">Seleccionados</div><div class="info-value" x-text="selected.length"></div></div>
+                                <div class="info-box"><div class="info-label">Libres para asignar</div><div class="info-value" style="color:var(--good);" x-text="freeSelected().length"></div></div>
+                                <div class="info-box"><div class="info-label">Ocupados para reasignar</div><div class="info-value" style="color:var(--orange);" x-text="occupiedSelected().length"></div></div>
                                 <div class="info-box"><div class="info-label">Asignados total</div><div class="info-value">{{ $selectedRaffle->numbers->count() }}</div></div>
                             </div>
 
-                            @if(count($selectedNumbers) > 0)
-                                <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;">
-                                    @foreach($freeSelection as $selectedNumber)
-                                        <span class="badge b-active">Por asignar {{ $selectedNumber }}</span>
-                                    @endforeach
-                                    @foreach($occupiedSelection as $selectedNumber)
-                                        <span class="badge" style="background:#ffb347;color:#190702;">Ocupado {{ $selectedNumber }}</span>
-                                    @endforeach
-                                </div>
-                            @endif
+                            <div x-show="selected.length > 0" style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;">
+                                <template x-for="selectedNumber in freeSelected()" :key="'free-' + selectedNumber">
+                                    <span class="badge b-active">Por asignar <span x-text="selectedNumber"></span></span>
+                                </template>
+                                <template x-for="selectedNumber in occupiedSelected()" :key="'occupied-' + selectedNumber">
+                                    <span class="badge" style="background:#ffb347;color:#190702;">Ocupado <span x-text="selectedNumber"></span></span>
+                                </template>
+                            </div>
                             @error('selectedNumbers') <div class="form-error">{{ $message }}</div> @enderror
 
                             <div class="tab-row" style="margin-top:4px;">
@@ -338,19 +432,12 @@
 
                             @if($viewMode === 'board')
                                 <div class="raffle-board">
-                                    @php
-                                        $start = (int) $selectedRaffle->start_number;
-                                        $end = $selectedRaffle->numbers_limit
-                                            ? $start + (int) $selectedRaffle->numbers_limit - 1
-                                            : min((int) $selectedRaffle->end_number, $start + 999);
-                                        $takenMap = $selectedRaffle->numbers->keyBy('number');
-                                    @endphp
                                     @for($n = $start; $n <= $end; $n++)
                                         @php
                                             $numModel = $takenMap->get($n);
                                             $isSelected = $selectedNumberMap->has($n);
                                         @endphp
-                                        <button type="button" wire:key="raffle-{{ $selectedRaffle->id }}-number-{{ $n }}" wire:click="toggleNumber({{ $n }})" class="board-slot {{ $numModel ? 'slot-taken' : 'slot-free' }} {{ $isSelected ? 'slot-selected' : '' }}">
+                                        <button type="button" wire:key="raffle-{{ $selectedRaffle->id }}-number-{{ $n }}" @click="toggle({{ $n }})" class="board-slot {{ $numModel ? 'slot-taken' : 'slot-free' }} {{ $isSelected ? 'slot-selected' : '' }}" :class="{ 'slot-selected': has({{ $n }}) }">
                                             {{ $n }}
                                             @if($numModel)
                                                 <span class="slot-info">
@@ -391,7 +478,6 @@
                                         <div>Username</div>
                                         <div>Linea otorgada</div>
                                         <div>Numero</div>
-                                        <div>Total</div>
                                     </div>
                                     @forelse($participants as $participant)
                                         <div class="t-row">
@@ -399,13 +485,13 @@
                                             <div>{{ $participant->user?->username ?? $participant->user?->email ?? '-' }}</div>
                                             <div>{{ $participant->line?->name ?? '-' }}</div>
                                             <div>{{ $participant->number }}</div>
-                                            <div>{{ $participant->total_for_user }}</div>
                                         </div>
                                     @empty
                                         <div style="padding:22px;color:var(--muted);text-align:center;">Sin participantes para estos filtros.</div>
                                     @endforelse
                                 </div>
                             @endif
+                            </div>
                         @endif
                         </div>
                     </div>
@@ -560,7 +646,7 @@
                                 ? $selectedRaffle->numbers->where('user_id', $numberModel->user_id)->count()
                                 : null;
                         @endphp
-                        <div style="display:grid;grid-template-columns:64px 1fr 160px 1fr;gap:10px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.03);margin-bottom:10px;" wire:key="wp-{{ $idx }}">
+                        <div class="winner-prize-row" wire:key="wp-{{ $idx }}">
                             <div>
                                 <div class="form-label">Puesto</div>
                                 <div class="form-input" style="color:var(--muted);">#{{ $wp['position'] }}</div>
@@ -599,7 +685,8 @@
                         <div style="display:flex;gap:8px;">
                             <button type="submit" wire:click="$set('finalizeOnSave', false)" class="btn-soft">Guardar resultados</button>
                             <button type="submit" wire:click="$set('finalizeOnSave', true)" class="btn-primary" style="background:var(--amber);border-color:var(--amber);color:#190702;">
-                                ★ Guardar y finalizar sorteo
+                                <i class="fa-solid fa-star"></i>
+                                Guardar y finalizar sorteo
                             </button>
                         </div>
                     </div>

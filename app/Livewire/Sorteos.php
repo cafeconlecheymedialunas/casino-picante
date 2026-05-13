@@ -270,6 +270,12 @@ class Sorteos extends Component
         $this->saveSelectedNumbers();
     }
 
+    public function saveSelectedNumbersFromClient(array $numbers): void
+    {
+        $this->selectedNumbers = $this->normalizeSelectedNumbers($numbers);
+        $this->saveSelectedNumbers();
+    }
+
     public function saveSelectedNumbers(): void
     {
         $this->checkLinePermission(Permissions::SORTEO_READ);
@@ -287,7 +293,7 @@ class Sorteos extends Component
         }
 
         if (! $this->userCanBeAssignedToRaffle($user, $raffle)) {
-            $this->addError('assignUserId', 'El usuario no pertenece a la linea de asignacion.');
+            $this->addError('assignUserId', 'Selecciona un cliente activo.');
 
             return;
         }
@@ -360,6 +366,12 @@ class Sorteos extends Component
         if (! empty($errors)) {
             session()->flash('error', implode('. ', $errors));
         }
+    }
+
+    public function unassignSelectedNumbersFromClient(array $numbers): void
+    {
+        $this->selectedNumbers = $this->normalizeSelectedNumbers($numbers);
+        $this->unassignSelectedNumbers();
     }
 
     public function unassignSelectedNumbers(): void
@@ -454,6 +466,17 @@ class Sorteos extends Component
         }
 
         $this->selectedNumbers = $selected->push($number)->unique()->sort()->values()->toArray();
+    }
+
+    private function normalizeSelectedNumbers(array $numbers): array
+    {
+        return collect($numbers)
+            ->map(fn ($number) => (int) $number)
+            ->filter(fn ($number) => $number >= 0)
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
     }
 
     public function removeNumber(int $numberId): void
@@ -773,20 +796,11 @@ class Sorteos extends Component
 
     private function assignableUsers(?Raffle $raffle)
     {
-        $lineId = $this->assignmentLineId($raffle);
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
 
         return User::query()
             ->when($clientRoleId, fn ($query) => $query->where('role_id', $clientRoleId))
             ->where('status', 'active')
-            ->when($lineId, function ($query) use ($lineId) {
-                $query->where(function ($inner) use ($lineId) {
-                    $inner->where('line_id', $lineId)
-                        ->orWhereHas('lines', fn ($line) => $line
-                            ->where('lines.id', $lineId)
-                            ->where('line_clients.is_active', true));
-                });
-            })
             ->orderBy('name')
             ->get(['id', 'username', 'name', 'email']);
     }
@@ -795,9 +809,14 @@ class Sorteos extends Component
     {
         $lineId = $this->assignmentLineId($raffle);
 
-        return $lineId
-            && ((int) $user->line_id === (int) $lineId
-                || $user->lines()->where('lines.id', $lineId)->wherePivot('is_active', true)->exists());
+        if (! $lineId) {
+            return false;
+        }
+
+        $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
+
+        return (! $clientRoleId || (int) $user->role_id === (int) $clientRoleId)
+            && $user->status === 'active';
     }
 
     private function participants()
