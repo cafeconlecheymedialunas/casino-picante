@@ -35,9 +35,13 @@
         .table-count { color: var(--muted-2); font-size: 11px; }
         .table-scroll { overflow-x: auto; }
         .t-head, .t-row {
-            display: grid; grid-template-columns: 46px 1fr 1.2fr 128px 1.2fr 122px 170px;
-            gap: 12px; align-items: center; min-width: 1080px; padding: 11px 18px;
+            display: grid; grid-template-columns: minmax(160px,1.6fr) 1fr 128px 1fr 122px auto;
+            gap: 12px; align-items: center; min-width: 900px; padding: 11px 18px;
         }
+        .col-agent { display:flex; align-items:center; gap:10px; min-width:0; }
+        .col-agent .table-avatar { flex-shrink:0; }
+        .col-agent .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .col-username, .col-cargo, .col-status, .col-msg { display:block; }
         .t-head { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
         .t-row { border-bottom: 1px solid var(--line); font-size: 13px; transition: background .15s; }
         .t-row:last-child { border-bottom: 0; }
@@ -67,33 +71,90 @@
         .btn-icon.activate:hover { background: rgba(37,196,107,.15); border-color: var(--good); color: var(--good); }
         .mini-icon { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
         .empty-state { padding: 56px 24px; color: var(--muted-2); text-align: center; }
-        .table-footer { padding: 14px 18px; border-top: 1px solid var(--line); color: var(--muted-2); font-size: 12px; }
-        .modal-overlay { position: fixed; inset: 0; z-index: 240; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.78); }
-        .modal-panel { width: min(760px, 100%); max-height: 92vh; overflow-y: auto; border: 1px solid var(--line-2); border-radius: 8px; background: linear-gradient(180deg, #1c0e0e, #120909); }
-        .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; border-bottom: 1px solid var(--line); }
-        .modal-head h3 { margin: 0; font-family: var(--font-display); font-size: 23px; letter-spacing: .03em; }
-        .modal-close { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.03); color: var(--muted); cursor: pointer; }
-        .modal-form { padding: 22px; }
-        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-        .form-group { margin-bottom: 14px; }
-        .form-label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-        .form-input { width: 100%; }
-        .form-error { margin-top: 4px; color: #ff4757; font-size: 11px; }
-        .line-check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-        .line-check {
-            display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 10px 12px;
-            border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.03);
-            color: var(--white); font-size: 13px; cursor: pointer;
+        .table-footer { padding: 14px 18px; border-top: 1px solid var(--line); }
+        .pg-wrap { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted-2); }
+        .pg-info { white-space:nowrap; }
+        .pg-highlight { font-weight:800; color:var(--white); }
+        .pg-nav { display:flex; align-items:center; gap:4px; }
+        .pg-btn {
+            display:inline-flex; align-items:center; justify-content:center;
+            min-width:32px; height:32px; padding:0 8px;
+            border:1px solid var(--line); border-radius:7px;
+            background:rgba(255,255,255,.03); color:var(--muted);
+            font-size:12px; font-weight:700; font-family:var(--font-body);
+            text-decoration:none;
+            cursor:pointer; transition:all .15s;
         }
+        button.pg-btn { line-height:1; }
+        .pg-btn:hover { background:rgba(255,106,26,.12); border-color:var(--orange); color:var(--white); }
+        .pg-btn.active { background:rgba(255,106,26,.18); border-color:var(--orange); color:var(--orange); cursor:default; }
+        .pg-btn.disabled { opacity:.3; cursor:default; pointer-events:none; }
+        .pg-dots { padding:0 4px; color:var(--muted-2); font-size:13px; }
+        .pg-icon { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+        .modal-overlay { position: fixed; inset: 0; z-index: 240; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(0,0,0,.78); }
+        .modal-panel { width: min(720px, 100%); max-height: 92vh; overflow-y: auto; border: 1px solid var(--line-2); border-radius: 10px; background: linear-gradient(180deg, #1c0e0e, #120909); box-shadow: 0 12px 48px rgba(0,0,0,.5); }
+        .modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); position:sticky; top:0; background:#1c0e0e; z-index:1; }
+        .modal-head h3 { margin: 0; font-family: var(--font-display); font-size: 20px; letter-spacing: .03em; }
+        .modal-close { width: 30px; height: 30px; border: 1px solid var(--line); border-radius: 7px; background: rgba(255,255,255,.03); color: var(--muted); cursor: pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:all .15s; flex-shrink:0; }
+        .modal-close:hover { border-color:var(--orange); color:var(--orange); }
+        .modal-form { padding: 16px 20px 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .form-group { margin-bottom: 10px; }
+        .form-label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+        .form-input { width: 100%; background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:7px; padding:8px 11px; color:var(--white); font-size:13px; font-family:var(--font-body); }
+        .form-input:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,106,26,.12); }
+        .form-error { margin-top: 3px; color: #ff4757; font-size: 11px; }
+        .line-check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+        .line-check {
+            display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 7px 10px;
+            border: 1px solid var(--line); border-radius: 6px; background: rgba(255,255,255,.03);
+            color: var(--white); font-size: 12px; cursor: pointer; transition:border-color .15s;
+        }
+        .line-check:hover { border-color:var(--orange); }
         .line-check input { accent-color: var(--orange); }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--line); }
-        .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 22px; }
-        .detail-item label { display: block; margin-bottom: 5px; color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--line); }
+        .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px 20px 20px; }
+        .detail-item label { display: block; margin-bottom: 3px; color: var(--muted-2); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
         .detail-item p { margin: 0; color: var(--white); font-size: 13px; word-break: break-word; }
         @media (max-width: 860px) {
-            .stats-row, .form-grid, .line-check-grid, .detail-grid { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .form-grid, .line-check-grid, .detail-grid { grid-template-columns: 1fr; }
             .search-input { width: 100%; }
             .table-tools { width: 100%; justify-content: flex-start; }
+            .stat-value { font-size: 26px; }
+        }
+        @media (max-width: 768px) {
+            .stats-row { display: none; }
+            .table-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            .table-tools .search-input { grid-column: 1 / -1; }
+            .table-tools .filter-select { min-width: 0; width: 100%; }
+            .table-footer .pg-wrap { flex-direction: column; align-items: stretch; }
+            .table-footer .pg-info { text-align: center; }
+            .table-footer .pg-nav { justify-content: center; }
+            .t-head, .t-row {
+                grid-template-columns: 1fr auto;
+                gap: 6px;
+                padding: 8px 10px;
+                min-width: 0;
+            }
+            .col-username,
+            .col-cargo,
+            .col-status,
+            .col-msg { display: none !important; }
+            .col-agent .table-avatar { width: 26px; height: 26px; border-radius: 6px; }
+            .col-agent { gap: 6px; }
+            .col-agent span { font-size: 12px; }
+            .action-row { gap: 3px; flex-wrap: nowrap; }
+            .action-row .btn-icon { width: 26px; height: 26px; border-radius: 5px; }
+            .action-row .btn-icon .mini-icon { width: 12px; height: 12px; stroke-width: 2; }
+            .table-top { padding: 12px 14px; }
+            .table-footer { flex-direction: column; text-align: center; }
+            .module-top-bar .btn-primary { width: 100%; justify-content: center; }
+            .modal-panel { width: min(100%, 100vw); max-height: 92vh; }
+            .modal-overlay { padding: 12px; }
+            .modal-head { padding: 12px 14px; }
+            .modal-form { padding: 12px 14px 16px; }
+            .detail-grid { padding: 12px 14px 16px; }
         }
     </style>
 
@@ -146,38 +207,38 @@
             @else
                 <div class="table-scroll">
                     <div class="t-head">
-                        <div>Avatar</div>
-                        <div>Username</div>
-                        <div>Nombre y apellido</div>
-                        <div>Cargo</div>
-                        <div>Estado</div>
-                        <div>Enviar mensaje</div>
+                        <div>Agente</div>
+                        <div class="col-username">Username</div>
+                        <div class="col-cargo">Cargo</div>
+                        <div class="col-status">Estado</div>
+                        <div class="col-msg">Mensaje</div>
                         <div>Acciones</div>
                     </div>
 
                     @foreach($agents as $agent)
                         @php $isActive = $agent->status === 'active'; @endphp
+                        @php $fullName = trim($agent->name.' '.($agent->apellido ?? '')); @endphp
                         <div class="t-row">
-                            <div>
+                            <div class="col-agent">
                                 <img class="table-avatar" src="{{ \App\Support\AvatarLibrary::url($agent->avatar ?? null) }}" alt="">
+                                <span class="strong truncate">{{ $fullName ?: '-' }}</span>
                             </div>
-                            <div class="strong truncate">{{ $agent->username ?? '-' }}</div>
-                            <div class="truncate">{{ trim($agent->name.' '.($agent->apellido ?? '')) }}</div>
-                            <div>
+                            <div class="strong truncate col-username">{{ $agent->username ?? '-' }}</div>
+                            <div class="col-cargo">
                                 <span class="role-badge {{ $agent->cargo === 'super_agente' ? 'role-super' : 'role-agent' }}">
                                     {{ $agent->cargo === 'super_agente' ? 'Encargado' : 'Agente' }}
                                 </span>
                             </div>
-                            <div>
+                            <div class="col-status">
                                 <span class="status-badge {{ $isActive ? 'status-active' : 'status-inactive' }}">
                                     {{ $isActive ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </div>
-                            <div>
+                            <div class="col-msg">
                                 <livewire:components.agent-messaging
                                     :target-agent-id="$agent->id"
                                     target-type="Agente"
-                                    :target-name="trim($agent->name.' '.($agent->apellido ?? ''))"
+                                    :target-name="$fullName"
                                     :target-email="$agent->email"
                                     :target-phone="$agent->phone ?? ''"
                                     :context-label="$agent->cargo === 'super_agente' ? 'Encargado' : 'Agente'"
@@ -200,7 +261,7 @@
                                 <button wire:click="openEditModal({{ $agent->id }})" class="btn-icon" title="Editar agente">
                                     <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
                                 </button>
-                                <button wire:click="deleteAgent({{ $agent->id }})" wire:confirm="Eliminar al agente {{ trim($agent->name.' '.($agent->apellido ?? '')) }}?" class="btn-icon danger" title="Eliminar agente">
+                                <button wire:click="deleteAgent({{ $agent->id }})" wire:confirm="Eliminar al agente {{ $fullName }}?" class="btn-icon danger" title="Eliminar agente">
                                     <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
                                 </button>
                             </div>
@@ -209,7 +270,7 @@
                 </div>
 
                 <div class="table-footer">
-                    {{ $agents->links() }}
+                    {{ $agents->links('vendor.pagination.casino') }}
                 </div>
             @endif
         </div>

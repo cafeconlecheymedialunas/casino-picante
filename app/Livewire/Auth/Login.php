@@ -87,7 +87,9 @@ class Login extends Component
 
     private function attemptPanelLogin(string $field): bool
     {
-        if (! Auth::attempt([$field => $this->username, 'password' => $this->password], false)) {
+        $result = Auth::attempt([$field => $this->username, 'password' => $this->password], false);
+
+        if (! $result) {
             return false;
         }
 

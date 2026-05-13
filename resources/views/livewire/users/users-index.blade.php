@@ -151,7 +151,26 @@
     }
     .btn-text:hover { border-color: var(--orange); background: rgba(255,106,26,.15); }
     .btn-text.disabled { opacity: .45; pointer-events: none; }
-    .tc-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted-2); flex-wrap: wrap; gap: 10px; }
+    .tc-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--line); flex-wrap: wrap; gap: 10px; }
+    .pg-wrap { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--muted-2); width:100%; }
+    .pg-info { white-space:nowrap; }
+    .pg-highlight { font-weight:800; color:var(--white); }
+    .pg-nav { display:flex; align-items:center; gap:4px; }
+    .pg-btn {
+        display:inline-flex; align-items:center; justify-content:center;
+        min-width:32px; height:32px; padding:0 8px;
+        border:1px solid var(--line); border-radius:7px;
+        background:rgba(255,255,255,.03); color:var(--muted);
+        font-size:12px; font-weight:700; font-family:var(--font-body);
+        text-decoration:none;
+        cursor:pointer; transition:all .15s;
+    }
+    button.pg-btn { line-height:1; }
+    .pg-btn:hover { background:rgba(255,106,26,.12); border-color:var(--orange); color:var(--white); }
+    .pg-btn.active { background:rgba(255,106,26,.18); border-color:var(--orange); color:var(--orange); cursor:default; }
+    .pg-btn.disabled { opacity:.3; cursor:default; pointer-events:none; }
+    .pg-dots { padding:0 4px; color:var(--muted-2); font-size:13px; }
+    .pg-icon { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .empty-state { padding: 56px 24px; text-align: center; color: var(--muted-2); }
     .s-toggle-btn { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:999px; font-size:10px; font-weight:800; border:none; cursor:pointer; transition:all .15s; white-space:nowrap; }
     .s-toggle-btn.is-active { background:rgba(37,196,107,.15); color:var(--good); }
@@ -160,16 +179,16 @@
     .s-toggle-btn.is-inactive:hover { background:rgba(37,196,107,.15); color:var(--good); }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
-    .modal-box { background: linear-gradient(180deg, #1c0e0e, #120909); border: 1px solid var(--line-2); border-radius: 8px; width: min(760px, 100%); max-height: min(86vh, 820px); overflow-y: auto; }
-    .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; border-bottom: 1px solid var(--line); }
-    .modal-head h3 { font-family: var(--font-display); font-size: 22px; letter-spacing: .04em; margin: 0; }
-    .modal-close { background: none; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
-    .modal-close:hover { color: var(--white); background: rgba(255,255,255,.06); }
-    .modal-body { padding: 20px 22px 22px; }
-    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .form-group { margin-bottom: 12px; }
-    .form-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
-    .form-input { width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--line-2); border-radius: 7px; padding: 9px 12px; color: var(--white); font-size: 13px; font-family: var(--font-body); }
+    .modal-box { background: linear-gradient(180deg, #1c0e0e, #120909); border: 1px solid var(--line-2); border-radius: 10px; width: min(720px, 100%); max-height: min(86vh, 820px); overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,.5); }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--line); position:sticky; top:0; background:#1c0e0e; z-index:1; }
+    .modal-head h3 { font-family: var(--font-display); font-size: 20px; letter-spacing: .04em; margin: 0; }
+    .modal-close { background: none; border: 1px solid var(--line); color: var(--muted); font-size: 14px; cursor: pointer; width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; transition:all .15s; flex-shrink:0; }
+    .modal-close:hover { color: var(--orange); border-color:var(--orange); background: rgba(255,106,26,.08); }
+    .modal-body { padding: 16px 20px 20px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-group { margin-bottom: 10px; }
+    .form-label { display: block; font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+    .form-input { width: 100%; background: rgba(255,255,255,.04); border: 1px solid var(--line-2); border-radius: 7px; padding: 8px 11px; color: var(--white); font-size: 13px; font-family: var(--font-body); }
     .form-input:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,106,26,.12); }
     .form-input:-webkit-autofill,
     .form-input:-webkit-autofill:hover,
@@ -182,9 +201,9 @@
     .form-input.is-error { border-color: #ff4757; }
     .form-error { font-size: 11px; color: #ff4757; margin-top: 4px; }
     .form-hint { font-size: 11px; color: var(--muted-2); margin-top: 4px; }
-    .modal-foot { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; padding-top: 16px; border-top: 1px solid var(--line); }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-    .detail-item label { display: block; font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--muted-2); text-transform: uppercase; margin-bottom: 4px; }
+    .modal-foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .detail-item label { display: block; font-size: 9px; font-weight: 800; letter-spacing: .1em; color: var(--muted-2); text-transform: uppercase; margin-bottom: 3px; }
     .detail-item p { margin: 0; font-size: 13px; word-break: break-word; }
     .toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
     .toast-item { padding: 13px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
@@ -240,6 +259,10 @@
     .action-row .agent-message .btn-text .btn-text-label { display:none; }
 
     @media (max-width: 768px) {
+        .stats-row { display:none; }
+        .tc-footer .pg-wrap { flex-direction:column; align-items:stretch; }
+        .tc-footer .pg-info { text-align:center; }
+        .tc-footer .pg-nav { justify-content:center; }
         .t-head, .t-row {
             grid-template-columns: 1fr auto;
             gap: 6px;
@@ -262,10 +285,10 @@
         .tc-footer { flex-direction: column; text-align:center; }
         .module-top-bar { padding: 8px 12px; }
         .new-client-btn { width:100%; justify-content:center; }
-        .modal-box { border-radius:0; width:100%; max-height:100vh; min-height:100vh; }
-        .modal-overlay { padding:0; align-items:flex-end; }
-        .modal-head { padding:14px 16px; }
-        .modal-body { padding:14px 16px; }
+        .modal-box { width: min(100%, 100vw); max-height: 92vh; }
+        .modal-overlay { padding: 12px; }
+        .modal-head { padding:12px 14px; }
+        .modal-body { padding:12px 14px 16px; }
     }
 </style>
 
@@ -384,8 +407,7 @@
         </div>
 
         <div class="tc-footer">
-            <span>Mostrando {{ $users->firstItem() }}-{{ $users->lastItem() }} de {{ $users->total() }} clientes</span>
-            {{ $users->links() }}
+            {{ $users->links('vendor.pagination.casino') }}
         </div>
     @endif
 </div>

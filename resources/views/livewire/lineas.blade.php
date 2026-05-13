@@ -83,6 +83,7 @@
         /* ── Tabs ────────────────────────────────────────────────────────────── */
         .detail-tabs { display:flex; gap:2px; background:linear-gradient(180deg,#1c0e0e,#120909); border:1px solid var(--line); border-top:0; padding:0 20px; overflow-x:auto; }
         .tab-btn { padding:12px 16px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:color .15s,border-color .15s; white-space:nowrap; flex-shrink:0; }
+        .tab-btn { padding:12px 16px; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:color .15s,border-color .15s; white-space:nowrap; flex-shrink:0; }
         .tab-btn:hover { color:var(--white); }
         .tab-btn-active { color:var(--orange); border-bottom-color:var(--orange); }
         .tab-content { background:linear-gradient(180deg,#1c0e0e,#120909); border:1px solid var(--line); border-top:0; border-radius:0 0 10px 10px; padding:26px; }
@@ -149,6 +150,40 @@
             .search-input{ width:100%; }
             .sales-kpis { grid-template-columns: repeat(2, 1fr); }
             .months-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width:860px){
+            .detail-tabs{ padding:0 8px; }
+            .tab-btn{ padding:10px 8px; font-size:9px; gap:4px; }
+            .tab-btn svg{ width:12px; height:12px; }
+        }
+        @media (max-width:768px){
+            .info-grid{ grid-template-columns:1fr; }
+            .sales-kpis { grid-template-columns:1fr; }
+            .line-cover { height:100px; }
+            .line-profile { width:46px; height:46px; left:12px; bottom:10px; }
+            .line-profile span { font-size:18px; }
+            .line-body { padding:10px 12px 12px; }
+            .line-name { font-size:20px; }
+            .detail-cover { height:120px; }
+            .detail-avatar { width:60px; height:60px; left:16px; bottom:-24px; }
+            .detail-avatar span { font-size:22px; }
+            .detail-meta { padding:30px 14px 14px; }
+            .detail-title { font-size:24px; }
+            .detail-tabs, .edit-layout .detail-tabs { flex-direction:row; gap:4px; padding:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; background:none; border:none; }
+            .detail-tabs::-webkit-scrollbar { display:none; }
+            .tab-btn, .edit-layout .tab-btn { padding:7px 10px; font-size:10px; gap:4px; border:1px solid var(--line); border-radius:7px; border-bottom:1px solid var(--line); flex-shrink:0; }
+            .tab-btn-active, .edit-layout .tab-btn-active { border-color:var(--orange) !important; background:rgba(255,106,26,.12); color:var(--orange); }
+            .tab-btn svg { width:12px; height:12px; }
+            .edit-layout { flex-direction:column; gap:0; }
+            .edit-content { width:100%; }
+            .tab-content { padding:14px; }
+            .modal-overlay { padding:12px; }
+            .modal-panel { max-height:92vh; }
+            .modal-head { padding:12px 14px; }
+            .modal-body,.modal-form { padding:14px; }
+            .agent-item-head { flex-wrap:wrap; }
+            .stat-value { font-size:22px; }
+            .sales-row { font-size:11px; }
         }
     </style>
 
@@ -423,6 +458,7 @@
         </div>
 
         {{-- Tab bar --}}
+        <div class="edit-layout">
         <div class="detail-tabs">
             <button type="button" wire:click="switchTab('info')" class="tab-btn {{ $editTab==='info' ? 'tab-btn-active' : '' }}">
                 <svg class="mini-icon" viewBox="0 0 15 15"><rect x="2" y="2" width="11" height="11" rx="2"/><path d="M5 7.5h5M5 5h3M5 10h4"/></svg>
@@ -449,6 +485,8 @@
                 Plataformas
             </button>
         </div>
+
+        <div class="edit-content">
 
         {{-- ── TAB: INFO ──────────────────────────────────────────────────── --}}
         @if($editTab === 'info')
@@ -919,6 +957,8 @@
         </div>
         @endif
 
+    </div>{{-- /edit-content --}}
+    </div>{{-- /edit-layout --}}
     </div>{{-- /detail-view edit --}}
     @endif{{-- /state switch --}}
 

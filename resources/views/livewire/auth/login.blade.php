@@ -21,7 +21,7 @@
                     <label style="display:block;margin-bottom:7px;color:rgba(255,255,255,0.62);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Usuario</label>
                     <input
                         type="text"
-                        wire:model.blur="username"
+                        wire:model="username"
                         placeholder="Username o email"
                         autocomplete="username"
                         autofocus
@@ -35,7 +35,7 @@
                     <label style="display:block;margin-bottom:7px;color:rgba(255,255,255,0.62);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;">Contraseña</label>
                     <input
                         type="password"
-                        wire:model.blur="password"
+                        wire:model="password"
                         placeholder="••••••••"
                         autocomplete="current-password"
                         style="width:100%;background:linear-gradient(180deg,#1c0d0a,#120909);border:1px solid rgba(255,120,50,0.22);border-radius:8px;padding:11px 14px;color:#fff;font-size:14px;font-family:var(--font-body);outline:none;transition:border-color .15s;"
