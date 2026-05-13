@@ -133,7 +133,7 @@ class Overview extends Component
         $denominator = $usedMonth + $expiredMonth;
         $conversionRate = $denominator > 0 ? round($usedMonth / $denominator * 100) : 0;
 
-        return compact('activeBonuses', 'pausedBonuses', 'expiredBonuses', 'totalBonuses',
+        return compact('activeBonuses', 'expiredBonuses', 'totalBonuses',
             'activeAssign', 'usedAssign', 'expiredAssign', 'totalAssign',
             'usedMonth', 'conversionRate');
     }
