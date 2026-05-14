@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Support\ImageStorage;
@@ -18,24 +19,34 @@ class BlogEdit extends Component
     public Post $post;
 
     public $title = '';
+
     public $content = '';
+
     public $excerpt = '';
+
     public $status = 'published';
+
+    public $category_id = '';
+
     public $image = '';
+
     public $imageUpload = null;
 
     public $replyTo = null;
+
     public $replyContent = '';
+
     public $newComment = '';
 
     // Loaded separately to bypass Post::comments() is_approved filter
     public $comments = [];
 
     protected $rules = [
-        'title'   => 'required|min:3',
+        'title' => 'required|min:3',
         'content' => 'nullable',
         'excerpt' => 'nullable',
-        'status'  => 'required|in:draft,published,hidden',
+        'status' => 'required|in:draft,published,hidden',
+        'category_id' => 'nullable|exists:categories,id',
     ];
 
     public function mount(int $id): void
@@ -43,16 +54,17 @@ class BlogEdit extends Component
         $this->checkLinePermission(Permissions::NEWS_UPDATE);
         $this->post = Post::findOrFail($id);
 
-        $this->title   = $this->post->title;
+        $this->title = $this->post->title;
         $this->content = $this->post->content ?? '';
         $this->excerpt = $this->post->excerpt ?? '';
-        $this->status  = $this->post->status;
-        $this->image   = $this->post->image ?? '';
+        $this->status = $this->post->status;
+        $this->category_id = $this->post->category_id ?? '';
+        $this->image = $this->post->image ?? '';
 
         $this->refreshComments();
     }
 
-    public function savePost(): void
+    public function savePost()
     {
         $this->checkLinePermission(Permissions::NEWS_UPDATE);
 
@@ -68,18 +80,21 @@ class BlogEdit extends Component
         }
 
         $this->post->update([
-            'title'   => $this->title,
+            'title' => $this->title,
             'content' => $this->content,
             'excerpt' => $this->excerpt,
-            'status'  => $this->status,
-            'image'   => $imagePath ?: null,
+            'status' => $this->status,
+            'category_id' => $this->category_id ?: null,
+            'image' => $imagePath ?: null,
         ]);
 
-        $this->image       = $imagePath ?: '';
+        $this->image = $imagePath ?: '';
         $this->imageUpload = null;
 
         session()->flash('message', 'Post actualizado correctamente');
         $this->notify('Post actualizado', "El post {$this->post->title} fue actualizado.", 'posts', '/novedades', 'info');
+
+        $this->redirectRoute('novedades');
     }
 
     public function removeImage(): void
@@ -95,13 +110,13 @@ class BlogEdit extends Component
 
     public function startReply(int $commentId): void
     {
-        $this->replyTo      = $commentId;
+        $this->replyTo = $commentId;
         $this->replyContent = '';
     }
 
     public function cancelReply(): void
     {
-        $this->replyTo      = null;
+        $this->replyTo = null;
         $this->replyContent = '';
     }
 
@@ -118,14 +133,14 @@ class BlogEdit extends Component
         $parent = Comment::findOrFail($this->replyTo);
 
         Comment::create([
-            'post_id'   => $parent->post_id,
+            'post_id' => $parent->post_id,
             'parent_id' => $parent->id,
-            'user_id'   => auth()->id(),
-            'content'   => $this->replyContent,
+            'user_id' => auth()->id(),
+            'content' => $this->replyContent,
             'is_approved' => true,
         ]);
 
-        $this->replyTo      = null;
+        $this->replyTo = null;
         $this->replyContent = '';
         $this->refreshComments();
     }
@@ -151,9 +166,9 @@ class BlogEdit extends Component
         $this->validate(['newComment' => 'required|string|min:1|max:2000']);
 
         Comment::create([
-            'post_id'     => $this->post->id,
-            'user_id'     => auth()->id(),
-            'content'     => $this->newComment,
+            'post_id' => $this->post->id,
+            'user_id' => auth()->id(),
+            'content' => $this->newComment,
             'is_approved' => true,
         ]);
 
@@ -172,6 +187,8 @@ class BlogEdit extends Component
 
     public function render()
     {
-        return view('livewire.blog-edit')->layout('layouts.dashboard');
+        return view('livewire.blog-edit', [
+            'categories' => Category::all(),
+        ])->layout('layouts.dashboard');
     }
 }

@@ -75,4 +75,9 @@ class Line extends Model
     {
         return $this->hasMany(Sale::class);
     }
+
+    public function ratings()
+    {
+        return $this->hasMany(LineRating::class);
+    }
 }

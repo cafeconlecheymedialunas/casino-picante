@@ -28,6 +28,16 @@
                 <input type="text" wire:model="excerpt" class="form-input" placeholder="Breve descripción...">
             </div>
             <div class="form-group">
+                <label class="form-label">Categoría</label>
+                <select wire:model="category_id" class="form-input">
+                    <option value="">Sin categoría</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
+                @error('category_id') <div class="form-error">{{ $message }}</div> @enderror
+            </div>
+            <div class="form-group">
                 <label class="form-label">Contenido</label>
                 <textarea wire:model="content" rows="4" class="form-input" style="resize:vertical" placeholder="Contenido completo..."></textarea>
             </div>
@@ -56,11 +66,51 @@
 @endif
 
 @if($this->canCreate())
-<div class="module-top-bar">
+<div class="module-top-bar" style="display:flex;gap:10px;">
     <button type="button" class="btn-primary" wire:click="openCreatePanel()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         Nuevo post
     </button>
+    <button type="button" class="btn-ghost" wire:click="openCategoryPanel()">
+        <i class="fa-solid fa-tags"></i> Gestionar Categorías
+    </button>
+</div>
+@endif
+
+{{-- Modal Categorías --}}
+@if($showCategoryPanel)
+<div class="nv-modal-overlay" wire:click="$set('showCategoryPanel', false)">
+    <div class="nv-modal" wire:click.stop style="width:min(400px, 100%)">
+        <div class="nv-modal-head">
+            <span><i class="fa-solid fa-tags" style="color:var(--orange);margin-right:8px"></i>Categorías</span>
+            <button class="modal-close" wire:click="$set('showCategoryPanel', false)"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="nv-modal-body">
+            @if(session()->has('category_message'))
+                <div style="background:var(--good);color:#000;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;font-weight:700;">
+                    {{ session('category_message') }}
+                </div>
+            @endif
+
+            <form wire:submit.prevent="saveCategory" style="display:flex;gap:8px;margin-bottom:16px;">
+                <input type="text" wire:model="newCategoryName" class="form-input" placeholder="Nueva categoría..." style="flex:1">
+                <button type="submit" class="btn-primary" style="padding:0 12px;"><i class="fa-solid fa-plus"></i></button>
+            </form>
+            @error('newCategoryName') <div class="form-error" style="margin-top:-12px;margin-bottom:12px;">{{ $message }}</div> @enderror
+
+            <div style="display:grid;gap:6px;">
+                @foreach($categories as $category)
+                <div style="display:flex;justify-content:between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--line);border-radius:8px;">
+                    <span style="font-size:13px;flex:1">{{ $category->name }}</span>
+                    <button wire:click="deleteCategory({{ $category->id }})" wire:confirm="¿Eliminar categoría? Los posts quedarán sin categoría." 
+                        class="nv-action-btn danger" style="width:24px;height:24px;font-size:10px;">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
 </div>
 @endif
 
@@ -68,6 +118,14 @@
     <div class="filter-row">
         <div class="filter-box">
             <input type="text" placeholder="Buscar..." wire:model.live="search" class="search-input">
+        </div>
+        <div class="filter-box" style="max-width:200px">
+            <select wire:model.live="categoryFilter" class="form-input" style="height:38px;font-size:12px;">
+                <option value="all">Todas las categorías</option>
+                @foreach($categories as $category)
+                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                @endforeach
+            </select>
         </div>
         <div class="status-filters">
             <button class="status-filter {{ $statusFilter === 'all' ? 'active' : '' }}" wire:click="$set('statusFilter','all')">Todos</button>
@@ -89,7 +147,12 @@
             </div>
             <div class="nv-info">
                 <div class="nv-title">{{ $post->title }}</div>
-                <div class="nv-date">{{ $post->created_at->format('d/m/Y') }}</div>
+                <div class="nv-date">
+                    {{ $post->created_at->format('d/m/Y') }} 
+                    @if($post->category)
+                        · <span style="color:var(--orange)">{{ $post->category->name }}</span>
+                    @endif
+                </div>
             </div>
             <span class="nv-status status-{{ $post->status }}">
                 @if($post->status === 'published')● Publicado

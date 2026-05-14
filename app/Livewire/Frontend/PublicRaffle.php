@@ -8,19 +8,31 @@ use Livewire\Component;
 
 class PublicRaffle extends Component
 {
-    public function getActiveRaffle()
+    public function getActiveRaffle(): ?Raffle
     {
-        return Raffle::with(['lines', 'platform'])
+        return Raffle::withoutGlobalScopes()
+            ->with(['lines', 'platform'])
             ->where('status', 'active')
             ->latest()
             ->first();
     }
 
-    public function getEndedRaffle()
+    public function getEndedRaffle(): ?Raffle
     {
-        return Raffle::with(['winner', 'lines', 'platform'])
+        return Raffle::withoutGlobalScopes()
+            ->with(['winner', 'lines', 'platform'])
             ->where('status', 'finished')
             ->latest('end_date')
+            ->first();
+    }
+
+    public function getUpcomingRaffle(): ?Raffle
+    {
+        return Raffle::withoutGlobalScopes()
+            ->with(['lines', 'platform'])
+            ->where('status', 'inactive')
+            ->where('end_date', '>=', now())
+            ->oldest('start_date')
             ->first();
     }
 
@@ -40,13 +52,20 @@ class PublicRaffle extends Component
     public function render()
     {
         $activeRaffle = $this->getActiveRaffle();
+        $upcomingRaffle = $this->getUpcomingRaffle();
         $endedRaffle = $this->getEndedRaffle();
         $myNumbers = $activeRaffle ? $this->getMyNumbers($activeRaffle) : collect();
         $isLogged = Auth::check();
         $user = Auth::user();
+        $raffles = Raffle::withoutGlobalScopes()
+            ->with(['lines', 'platform'])
+            ->withCount('numbers')
+            ->orderByRaw("CASE status WHEN 'active' THEN 0 WHEN 'inactive' THEN 1 ELSE 2 END")
+            ->latest('end_date')
+            ->get();
 
         return view('livewire.frontend.public-raffle', compact(
-            'activeRaffle', 'endedRaffle', 'myNumbers', 'isLogged', 'user'
-        ))->layout('layouts.frontend');
+            'activeRaffle', 'upcomingRaffle', 'endedRaffle', 'myNumbers', 'isLogged', 'user', 'raffles'
+        ))->layout('frontend.layouts.app');
     }
 }

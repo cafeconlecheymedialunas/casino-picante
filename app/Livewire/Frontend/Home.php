@@ -81,6 +81,7 @@ class Home extends Component
     {
         $selected = $this->configuredIds(HomeConfig::SECTION_BLOG);
         $baseQuery = Post::withoutGlobalScopes()
+            ->with('category')
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at');
 

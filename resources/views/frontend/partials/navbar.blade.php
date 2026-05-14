@@ -8,23 +8,29 @@
 
             <nav class="fe-nav-links" aria-label="Navegacion principal">
                 <a href="{{ route('frontend.home') }}" wire:navigate class="{{ request()->routeIs('frontend.home') ? 'active' : '' }}">Inicio</a>
-                <a href="#lineas">Lineas</a>
+                <a href="{{ route('frontend.lines') }}" wire:navigate class="{{ request()->routeIs('frontend.lines*') ? 'active' : '' }}">Lineas</a>
                 <a href="#bonos">Bonos</a>
-                <a href="{{ route('sorteo.publico') }}" wire:navigate class="{{ request()->routeIs('sorteo.publico') ? 'active' : '' }}">Sorteo</a>
-                <a href="#blog">Blog</a>
-                <a href="#como-empezar">Como empezar</a>
+                <a href="{{ route('frontend.raffles') }}" wire:navigate class="{{ request()->routeIs('frontend.raffles*') || request()->routeIs('sorteo.publico') ? 'active' : '' }}">Sorteo</a>
+                <a href="{{ route('frontend.blog') }}" wire:navigate class="{{ request()->routeIs('frontend.blog') ? 'active' : '' }}">Novedades</a>
+                <a href="{{ route('frontend.home') }}#como-empezar">Como empezar</a>
             </nav>
 
             <div class="fe-nav-actions">
                 @auth
-                    <a href="{{ route('perfil') }}" wire:navigate class="fe-btn ghost">Mi perfil</a>
+                    @if(auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
+                        <a href="{{ route('client.account') }}" wire:navigate class="fe-btn ghost">Mi cuenta</a>
+                    @endif
                     @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE))
                         <a href="{{ route('dashboard') }}" wire:navigate class="fe-btn ghost">Panel</a>
                     @endif
+                    <form method="POST" action="{{ route('logout') }}" style="display:inline">
+                        @csrf
+                        <button type="submit" class="fe-btn ghost" style="cursor:pointer">Salir</button>
+                    </form>
                 @else
                     <a href="{{ route('login') }}" wire:navigate class="fe-btn ghost">Ingresar</a>
                 @endauth
-                <a href="#lineas" class="fe-btn primary">Atencion</a>
+                <a href="{{ route('frontend.lines') }}" wire:navigate class="fe-btn primary">Atencion</a>
             </div>
 
             <button type="button" class="fe-mobile-toggle" onclick="toggleFrontendMenu()" aria-label="Abrir menu">

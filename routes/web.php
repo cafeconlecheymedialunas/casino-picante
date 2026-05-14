@@ -5,14 +5,23 @@ use App\Livewire\Agentes;
 use App\Livewire\Agents\AgentRegister;
 use App\Livewire\Auth\AdminForgotPassword;
 use App\Livewire\Auth\AdminResetPassword;
+use App\Livewire\Auth\ClientForgotPassword;
 use App\Livewire\Auth\ClientLogin;
+use App\Livewire\Auth\ClientRegister;
+use App\Livewire\Auth\ClientResetPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\BlogEdit;
 use App\Livewire\Bonos;
 use App\Livewire\Chats;
 use App\Livewire\EditorHome;
+use App\Livewire\Frontend\Blog;
+use App\Livewire\Frontend\ClientAccount;
 use App\Livewire\Frontend\Home;
+use App\Livewire\Frontend\LineShow;
+use App\Livewire\Frontend\LinesIndex;
+use App\Livewire\Frontend\PostShow;
 use App\Livewire\Frontend\PublicRaffle;
+use App\Livewire\Frontend\RaffleShow;
 use App\Livewire\Lineas;
 use App\Livewire\LineDetail;
 use App\Livewire\Novedades;
@@ -36,15 +45,25 @@ Route::get('/admin/register', AgentRegister::class)->name('agent.register')->mid
 Route::get('/admin/forgot-password', AdminForgotPassword::class)->name('admin.password.request')->middleware('guest_or_agent');
 Route::get('/admin/reset-password/{token}', AdminResetPassword::class)->name('admin.password.reset')->middleware('guest_or_agent');
 Route::get('/login', ClientLogin::class)->name('login')->middleware('guest_or_agent');
+Route::get('/registro', ClientRegister::class)->name('client.register')->middleware('guest_or_agent');
+Route::get('/recuperar-password', ClientForgotPassword::class)->name('client.password.request')->middleware('guest_or_agent');
+Route::get('/recuperar-password/{token}', ClientResetPassword::class)->name('client.password.reset')->middleware('guest_or_agent');
 Route::get('/', Home::class)->name('frontend.home');
+Route::get('/lineas', LinesIndex::class)->name('frontend.lines');
+Route::get('/lineas/{line}', LineShow::class)->name('frontend.lines.show');
 Route::get('/sorteo', PublicRaffle::class)->name('sorteo.publico');
+Route::get('/sorteos', PublicRaffle::class)->name('frontend.raffles');
+Route::get('/sorteos/{raffleId}', RaffleShow::class)->name('frontend.raffles.show');
+Route::get('/blog', Blog::class)->name('frontend.blog');
+Route::get('/blog/{post:slug}', PostShow::class)->name('frontend.blog.show');
+Route::get('/mi-cuenta', ClientAccount::class)->middleware('auth')->name('client.account');
 
 Route::post('/logout', function () {
     Auth::logout();
     session()->flush();
     session()->regenerateToken();
 
-    return redirect()->route('admin.login');
+    return redirect()->route('frontend.home');
 })->name('logout');
 
 Route::prefix('admin')->group(function () {

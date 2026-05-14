@@ -135,6 +135,7 @@
             RED PICANTES
         </a>
         <div class="fe-nav-links">
+            <a href="{{ route('frontend.blog') }}" wire:navigate class="fe-nav-link {{ request()->routeIs('frontend.blog') ? 'active' : '' }}">📰 Blog</a>
             <a href="{{ route('sorteo.publico') }}" wire:navigate class="fe-nav-link {{ request()->routeIs('sorteo.publico') ? 'active' : '' }}">🎯 Sorteo</a>
             @auth
             <a href="{{ route('perfil') }}" wire:navigate class="fe-nav-link {{ request()->routeIs('perfil') ? 'active' : '' }}">Mi Perfil</a>

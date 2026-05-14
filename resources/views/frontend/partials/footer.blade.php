@@ -12,9 +12,9 @@
                 <div class="fe-footer-title">Secciones</div>
                 <ul>
                     <li><a href="{{ route('frontend.home') }}" wire:navigate>Inicio</a></li>
-                    <li><a href="#lineas">Lineas</a></li>
+                    <li><a href="{{ route('frontend.lines') }}" wire:navigate>Lineas</a></li>
                     <li><a href="#bonos">Bonos</a></li>
-                    <li><a href="#blog">Blog</a></li>
+                    <li><a href="{{ route('frontend.blog') }}" wire:navigate>Novedades</a></li>
                 </ul>
             </div>
             <div>

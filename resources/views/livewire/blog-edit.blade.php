@@ -34,8 +34,54 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Categoría</label>
+                    <select wire:model="category_id" class="form-input">
+                        <option value="">Sin categoría</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('category_id') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Contenido</label>
-                    <textarea wire:model="content" rows="10" class="form-input" style="resize:vertical" placeholder="Contenido completo..."></textarea>
+                    <div
+                        class="wysiwyg"
+                        x-data="{
+                            content: @entangle('content').live,
+                            init() { this.$refs.editor.innerHTML = this.content || ''; },
+                            sync() { this.content = this.$refs.editor.innerHTML; },
+                            command(action, value = null) {
+                                this.$refs.editor.focus();
+                                document.execCommand(action, false, value);
+                                this.sync();
+                            },
+                            addImage() {
+                                const url = window.prompt('URL de la imagen');
+                                if (!url) return;
+                                this.command('insertImage', url);
+                            }
+                        }"
+                        wire:ignore
+                    >
+                        <div class="wysiwyg-toolbar">
+                            <button type="button" @click="command('formatBlock', 'h2')" title="Titulo"><i class="fa-solid fa-heading"></i></button>
+                            <button type="button" @click="command('bold')" title="Negrita"><i class="fa-solid fa-bold"></i></button>
+                            <button type="button" @click="command('italic')" title="Italica"><i class="fa-solid fa-italic"></i></button>
+                            <button type="button" @click="command('insertUnorderedList')" title="Lista"><i class="fa-solid fa-list-ul"></i></button>
+                            <button type="button" @click="addImage()" title="Imagen"><i class="fa-solid fa-image"></i></button>
+                        </div>
+                        <div
+                            x-ref="editor"
+                            class="wysiwyg-editor"
+                            contenteditable="true"
+                            @input="sync"
+                            @blur="sync"
+                            data-placeholder="Contenido completo..."
+                        ></div>
+                    </div>
+                    @error('content') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="form-group">
@@ -185,6 +231,16 @@
     .form-input { width:100%;background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:7px;padding:9px 12px;color:var(--white);font-size:13px;font-family:var(--font-body); }
     .form-input:focus { outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,106,26,.12); }
     textarea.form-input { resize:vertical; }
+    .wysiwyg { border:1px solid var(--line-2);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.035); }
+    .wysiwyg-toolbar { display:flex;gap:4px;flex-wrap:wrap;padding:8px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.18); }
+    .wysiwyg-toolbar button { width:32px;height:32px;border-radius:7px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center; }
+    .wysiwyg-toolbar button:hover { color:var(--orange);border-color:rgba(255,106,26,.35); }
+    .wysiwyg-editor { min-height:260px;padding:14px;color:var(--white);font-size:14px;line-height:1.65;outline:none; }
+    .wysiwyg-editor:empty::before { content:attr(data-placeholder);color:var(--muted-2); }
+    .wysiwyg-editor h2 { font-family:var(--font-display);font-size:34px;line-height:1;margin:14px 0 8px;color:#fff; }
+    .wysiwyg-editor p { margin:0 0 12px; }
+    .wysiwyg-editor img { max-width:100%;border-radius:10px;margin:12px 0;display:block; }
+    .wysiwyg-editor ul { padding-left:22px;margin:10px 0; }
     select.form-input { cursor:pointer; }
     .form-error { margin-top:4px;color:#ff4757;font-size:11px; }
 

@@ -19,7 +19,7 @@ class ClientLogin extends Component
     ];
 
     protected $messages = [
-        'username.required' => 'Ingresa tu usuario.',
+        'username.required' => 'Ingresa tu usuario o email.',
         'password.required' => 'Ingresa tu contrasena.',
     ];
 
@@ -78,10 +78,7 @@ class ClientLogin extends Component
 
     public function render()
     {
-        return view('livewire.auth.login', [
-            'heading' => 'Acceso clientes',
-            'submitLabel' => 'INGRESAR',
-        ])->layout('layouts.auth');
+        return view('livewire.auth.client-login')->layout('layouts.auth');
     }
 
     private function attemptClientLogin(string $field): bool
@@ -102,7 +99,7 @@ class ClientLogin extends Component
         if ($user?->hasRole(Roles::CLIENTE)) {
             session()->forget(['active_agent_id', 'active_line_id']);
             session()->regenerate();
-            $this->redirect(route('perfil'), navigate: true);
+            $this->redirect(route('client.account'), navigate: true);
 
             return true;
         }

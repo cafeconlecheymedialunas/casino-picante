@@ -21,11 +21,17 @@ class Post extends Model
         'status',
         'published_at',
         'line_id',
+        'category_id',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     const STATUS_DRAFT = 'draft';
 

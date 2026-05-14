@@ -1,0 +1,51 @@
+@php
+    $channelIcons = [
+        'wsp' => 'fa-brands fa-whatsapp',
+        'wsap' => 'fa-brands fa-whatsapp',
+        'wa' => 'fa-brands fa-whatsapp',
+        'whatsapp' => 'fa-brands fa-whatsapp',
+        'whatsApp' => 'fa-brands fa-whatsapp',
+        'telegram' => 'fa-brands fa-telegram',
+        'tg' => 'fa-brands fa-telegram',
+        'instagram' => 'fa-brands fa-instagram',
+        'ig' => 'fa-brands fa-instagram',
+        'facebook' => 'fa-brands fa-facebook',
+        'fb' => 'fa-brands fa-facebook',
+        'phone' => 'fa-solid fa-phone',
+        'telefono' => 'fa-solid fa-phone',
+        'tel' => 'fa-solid fa-phone',
+        'email' => 'fa-solid fa-envelope',
+        'mail' => 'fa-solid fa-envelope',
+        'web' => 'fa-solid fa-globe',
+        'tiktok' => 'fa-brands fa-tiktok',
+        'twitter' => 'fa-brands fa-x-twitter',
+        'x' => 'fa-brands fa-x-twitter',
+        'youtube' => 'fa-brands fa-youtube',
+    ];
+
+    $channelColors = [
+        'wsp' => '#9a9a9a',
+        'wsap' => '#9a9a9a',
+        'wa' => '#9a9a9a',
+        'whatsapp' => '#9a9a9a',
+        'whatsApp' => '#9a9a9a',
+        'telegram' => '#9a9a9a',
+        'tg' => '#9a9a9a',
+        'instagram' => '#9a9a9a',
+        'ig' => '#9a9a9a',
+        'facebook' => '#9a9a9a',
+        'fb' => '#9a9a9a',
+        'phone' => '#9a9a9a',
+        'telefono' => '#9a9a9a',
+        'tel' => '#9a9a9a',
+        'email' => '#9a9a9a',
+        'mail' => '#9a9a9a',
+        'web' => '#9a9a9a',
+        'tiktok' => '#9a9a9a',
+        'twitter' => '#9a9a9a',
+        'x' => '#9a9a9a',
+        'youtube' => '#9a9a9a',
+    ];
+
+    $normalizeChannelType = fn (?string $type): string => strtolower(trim((string) $type));
+@endphp

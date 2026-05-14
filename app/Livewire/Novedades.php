@@ -17,27 +17,32 @@ class Novedades extends Component
 
     public $statusFilter = 'all';
 
+    public $categoryFilter = 'all';
+
     public $showPanel = false;
+
+    public $showCategoryPanel = false;
 
     public $search = '';
 
+    // Post fields
     public $title = '';
-
     public $content = '';
-
     public $excerpt = '';
-
     public $status = 'published';
-
+    public $category_id = '';
     public $image = '';
-
     public $imageUpload = null;
+
+    // Category management
+    public $newCategoryName = '';
 
     protected $rules = [
         'title' => 'required|min:3',
         'content' => 'nullable',
         'excerpt' => 'nullable',
         'status' => 'required|in:draft,published,hidden',
+        'category_id' => 'nullable|exists:categories,id',
     ];
 
     public function canCreate(): bool
@@ -63,12 +68,43 @@ class Novedades extends Component
         $this->resetForm();
     }
 
+    public function openCategoryPanel(): void
+    {
+        $this->checkLinePermission(Permissions::NEWS_CREATE);
+        $this->newCategoryName = '';
+        $this->showCategoryPanel = true;
+    }
+
+    public function saveCategory(): void
+    {
+        $this->checkLinePermission(Permissions::NEWS_CREATE);
+        $this->validate([
+            'newCategoryName' => 'required|min:2|unique:categories,name',
+        ]);
+
+        \App\Models\Category::create([
+            'name' => $this->newCategoryName,
+            'slug' => Str::slug($this->newCategoryName),
+        ]);
+
+        $this->newCategoryName = '';
+        session()->flash('category_message', 'Categoría creada');
+    }
+
+    public function deleteCategory(int $id): void
+    {
+        $this->checkLinePermission(Permissions::NEWS_DELETE);
+        \App\Models\Category::find($id)?->delete();
+        session()->flash('category_message', 'Categoría eliminada');
+    }
+
     public function resetForm(): void
     {
         $this->title = '';
         $this->content = '';
         $this->excerpt = '';
         $this->status = 'published';
+        $this->category_id = '';
         $this->image = '';
         $this->imageUpload = null;
     }
@@ -93,6 +129,7 @@ class Novedades extends Component
             'content' => $this->content,
             'excerpt' => $this->excerpt,
             'status' => $this->status,
+            'category_id' => $this->category_id ?: null,
             'image' => $imagePath,
             'line_id' => session('active_line_id'),
         ]);
@@ -136,6 +173,10 @@ class Novedades extends Component
             $query->where('status', $this->statusFilter);
         }
 
+        if ($this->categoryFilter !== 'all') {
+            $query->where('category_id', $this->categoryFilter);
+        }
+
         if ($this->search) {
             $query->where('title', 'like', '%'.$this->search.'%');
         }
@@ -147,6 +188,7 @@ class Novedades extends Component
     {
         return view('livewire.novedades', [
             'posts' => $this->getPosts(),
+            'categories' => \App\Models\Category::all(),
             'canDelete' => $this->canDelete(),
         ])->layout('layouts.dashboard');
     }
