@@ -13,6 +13,11 @@
     .auth-error-box { background:rgba(255,71,87,.1); border:1px solid rgba(255,71,87,.35); border-radius:8px; padding:12px 14px; margin-bottom:18px; color:#ff8a8a; font-size:13px; font-weight:800; }
     .auth-foot { margin-top:16px; color:var(--muted); font-size:12px; text-align:center; }
     .auth-foot a { color:var(--orange); font-weight:900; text-decoration:none; }
+    @media (max-width: 520px) {
+        .auth-reset { padding-top:34px; }
+        .auth-reset-card { padding:22px 18px; }
+        .auth-reset-brand h1 { font-size:34px; }
+    }
 </style>
 @endpush
 

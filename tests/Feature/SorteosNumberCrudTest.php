@@ -454,4 +454,67 @@ class SorteosNumberCrudTest extends TestCase
             'number' => 9,
         ]);
     }
+
+    public function test_agent_can_manage_raffle_when_their_line_is_participating_but_not_primary(): void
+    {
+        $agentRole = Role::firstOrCreate(['name' => Roles::AGENTE], ['label' => 'Agente']);
+        $clientRole = Role::firstOrCreate(['name' => Roles::CLIENTE], ['label' => 'Cliente']);
+        $agentUser = User::factory()->create(['role_id' => $agentRole->id, 'status' => 'active']);
+        $agent = Agent::create([
+            'user_id' => $agentUser->id,
+            'username' => 'agente_participante',
+            'name' => 'Agente',
+            'email' => $agentUser->email,
+            'password' => $agentUser->password,
+            'cargo' => 'agente',
+            'status' => 'active',
+        ]);
+        $primaryLine = Line::create(['name' => 'Linea Principal', 'status' => 'active']);
+        $participantLine = Line::create(['name' => 'Linea Participante', 'status' => 'active']);
+        LineAgent::create([
+            'line_id' => $participantLine->id,
+            'agent_id' => $agent->id,
+            'role' => 'miembro',
+            'is_active' => true,
+        ]);
+        LineAgentPermission::create([
+            'line_id' => $participantLine->id,
+            'agent_id' => $agent->id,
+            'permission' => Permissions::SORTEO_READ,
+        ]);
+        $client = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'username' => 'cliente_participante',
+            'status' => 'active',
+        ]);
+        $raffle = Raffle::withoutGlobalScopes()->create([
+            'title' => 'Sorteo Multi Linea',
+            'description' => 'Test',
+            'status' => 'active',
+            'start_date' => now()->subMinute(),
+            'end_date' => now()->addDay(),
+            'start_number' => 1,
+            'end_number' => 20,
+            'numbers_limit' => 20,
+            'line_id' => $primaryLine->id,
+        ]);
+        $raffle->lines()->sync([$primaryLine->id, $participantLine->id]);
+
+        $this->actingAs($agentUser)
+            ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $participantLine->id]);
+
+        Livewire::test(Sorteos::class)
+            ->call('selectRaffle', $raffle->id)
+            ->set('assignUserId', (string) $client->id)
+            ->set('selectedNumbers', [11])
+            ->call('saveSelectedNumbers')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('raffle_numbers', [
+            'raffle_id' => $raffle->id,
+            'user_id' => $client->id,
+            'line_id' => $participantLine->id,
+            'number' => 11,
+        ]);
+    }
 }

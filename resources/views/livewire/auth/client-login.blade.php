@@ -15,6 +15,12 @@
     .client-login-foot a { color:var(--orange); font-weight:900; text-decoration:none; }
     .client-login-foot a:hover { text-decoration:underline; }
     .client-login-links { display:flex; justify-content:space-between; margin-top:12px; }
+    @media (max-width: 520px) {
+        .client-login { padding-top:34px; }
+        .client-login-card { padding:22px 18px; }
+        .client-login-brand h1 { font-size:44px; }
+        .client-login-links { display:grid; gap:10px; text-align:center; }
+    }
 </style>
 @endpush
 

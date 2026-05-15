@@ -22,7 +22,7 @@ class GuestOrAgent
         }
 
         if (auth()->user()?->hasRole(Roles::CLIENTE)) {
-            return redirect()->route('perfil');
+            return redirect()->route('client.account');
         }
 
         return redirect()->route('dashboard');

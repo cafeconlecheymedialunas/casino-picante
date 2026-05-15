@@ -79,7 +79,23 @@ class AuthorizeLine
             : [];
 
         if ($permissions && ! collect($permissions)->contains(fn (string $perm) => $lineAgent->hasPermission(trim($perm)))) {
-            abort(403, "Sin permiso: {$permission}");
+            $permittedLineAgent = LineAgent::where('agent_id', $agentId)
+                ->where('is_active', true)
+                ->whereExists(function ($permissionQuery) use ($permissions) {
+                    $permissionQuery->selectRaw('1')
+                        ->from('line_agent_permissions')
+                        ->whereColumn('line_agent_permissions.line_id', 'line_agents.line_id')
+                        ->whereColumn('line_agent_permissions.agent_id', 'line_agents.agent_id')
+                        ->whereIn('line_agent_permissions.permission', array_map('trim', $permissions));
+                })
+                ->first();
+
+            if (! $permittedLineAgent) {
+                abort(403, "Sin permiso: {$permission}");
+            }
+
+            session(['active_line_id' => $permittedLineAgent->line_id]);
+            $lineAgent = $permittedLineAgent;
         }
 
         // Share context with all views and Livewire components

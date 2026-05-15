@@ -148,11 +148,20 @@
 </div>
 @endif
 
+@if($isAgentScopedOverview)
+<div class="alert-row info" style="margin-bottom:14px;">
+    Vista de agente: estadisticas calculadas sobre
+    {{ $overviewLines->count() === 1 ? 'la linea' : 'las lineas' }}
+    {{ $overviewLines->pluck('name')->join(', ') ?: 'con permiso de dashboard' }}.
+</div>
+@endif
 {{-- ── VENTAS ── --}}
 <div class="mod-section">
     <span class="mod-section-label">💰 VENTAS DEL MES</span>
     <div class="mod-section-line"></div>
-    <a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver ventas →</a>
+        @if($canViewSales)
+<a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver ventas →</a>
+    @endif
 </div>
 <div class="kpi-grid-4">
     <div class="kpi kpi-good">
@@ -752,3 +761,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+
+
+

@@ -174,6 +174,7 @@
                             <option value="all">Todos</option>
                             <option value="active">Activos</option>
                             <option value="inactive">Inactivos</option>
+                            <option value="finished">Finalizados</option>
                         </select>
                     </div>
 

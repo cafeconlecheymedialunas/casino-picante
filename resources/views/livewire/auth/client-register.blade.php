@@ -24,6 +24,13 @@
         .client-auth-grid { grid-template-columns:1fr; }
         .client-auth-title { font-size:46px; }
     }
+    @media (max-width: 520px) {
+        .client-auth { padding-top:30px; }
+        .client-auth-copy, .client-auth-card { padding:20px; }
+        .client-auth-title { font-size:38px; }
+        .client-auth-card h1 { font-size:34px; }
+        .client-auth-point { align-items:flex-start; }
+    }
 </style>
 @endpush
 
@@ -50,7 +57,12 @@
                         @error('name') <div class="client-error">{{ $message }}</div> @enderror
                     </div>
                     <div class="client-field">
-                        <label class="client-label" for="username">Usuario</label>
+                        <label class="client-label" for="apellido">Apellido</label>
+                        <input id="apellido" class="client-input" type="text" wire:model.defer="apellido" autocomplete="family-name">
+                        @error('apellido') <div class="client-error">{{ $message }}</div> @enderror
+                    </div>
+                    <div class="client-field">
+                        <label class="client-label" for="username">Nombre de cliente</label>
                         <input id="username" class="client-input" type="text" wire:model.defer="username" autocomplete="username">
                         @error('username') <div class="client-error">{{ $message }}</div> @enderror
                     </div>
@@ -74,15 +86,17 @@
                         <input id="password_confirmation" class="client-input" type="password" wire:model.defer="password_confirmation" autocomplete="new-password">
                     </div>
                     <label class="client-check">
-                        <input type="checkbox" wire:model.defer="terms">
-                        <span>Acepto crear una cuenta para usar las funciones de cliente de Red Picantes.</span>
+                        <input type="checkbox" wire:model.defer="recibir_bonos">
+                        <span>Quiero recibir bonos y novedades del blog por email.</span>
                     </label>
-                    @error('terms') <div class="client-error" style="margin-bottom:12px;">{{ $message }}</div> @enderror
+                    @error('recibir_bonos') <div class="client-error" style="margin-bottom:12px;">{{ $message }}</div> @enderror
 
                     <button type="submit" class="fe-btn primary" style="width:100%;height:46px;">Crear cuenta</button>
                 </form>
                 <div class="client-auth-foot">
                     Ya tenes cuenta? <a href="{{ route('login') }}" wire:navigate>Ingresar</a>
+                    <br>
+                    <a href="{{ route('client.password.request') }}" wire:navigate>Recuperar contrasena</a>
                 </div>
             </div>
         </div>

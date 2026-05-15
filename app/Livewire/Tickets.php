@@ -29,6 +29,7 @@ class Tickets extends Component
 
     public bool $showCreateModal = false;
     public string $createSubject = '';
+    public string $createCategory = 'atencion';
     public string $createUserId = '';
     public string $createPriority = 'medium';
     public string $createMessage = '';
@@ -37,6 +38,7 @@ class Tickets extends Component
     {
         $this->checkLinePermission(Permissions::TICKET_UPDATE);
         $this->createSubject = '';
+        $this->createCategory = 'atencion';
         $this->createUserId = '';
         $this->createPriority = 'medium';
         $this->createMessage = '';
@@ -50,6 +52,7 @@ class Tickets extends Component
 
         $this->validate([
             'createSubject' => 'required|string|min:3|max:255',
+            'createCategory' => 'required|in:juego,bono,sorteo,atencion,otro',
             'createUserId'  => 'required|integer|exists:users,id',
             'createPriority' => 'required|in:low,medium,high',
             'createMessage' => 'required|string|min:1',
@@ -61,6 +64,7 @@ class Tickets extends Component
             'user_id'  => (int) $this->createUserId,
             'line_id'  => $lineId,
             'subject'  => trim($this->createSubject),
+            'category' => $this->createCategory,
             'status'   => 'open',
             'priority' => $this->createPriority,
         ]);
@@ -79,10 +83,11 @@ class Tickets extends Component
     public function selectTicket($id)
     {
         $this->checkLinePermission(Permissions::TICKET_READ);
-        $ticket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->findOrFail($id);
+        $ticket = Ticket::withoutGlobalScopes()
+            ->with(['user', 'line', 'messages.agent', 'messages.user'])
+            ->findOrFail($id);
 
-        $visibleLineIds = $this->visibleLineIds();
-        if ($visibleLineIds !== null && ! in_array($ticket->line_id, $visibleLineIds)) {
+        if (! $this->ticketIsVisible($ticket)) {
             abort(403, 'No tienes acceso a este ticket.');
         }
 
@@ -107,8 +112,7 @@ class Tickets extends Component
             return;
         }
 
-        $visibleLineIds = $this->visibleLineIds();
-        if ($visibleLineIds !== null && ! in_array($this->selectedTicket->line_id, $visibleLineIds)) {
+        if (! $this->ticketIsVisible($this->selectedTicket)) {
             abort(403, 'No tienes acceso a este ticket.');
         }
 
@@ -124,7 +128,9 @@ class Tickets extends Component
         }
 
         $this->newMessage = '';
-        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+        $this->selectedTicket = Ticket::withoutGlobalScopes()
+            ->with(['user', 'line', 'messages.agent', 'messages.user'])
+            ->find($this->selectedTicket->id);
 
         $this->notify('Nuevo mensaje en ticket', "Se envió un mensaje en el ticket: {$this->selectedTicket->subject}", 'tickets', '/tickets', 'info');
 
@@ -141,8 +147,7 @@ class Tickets extends Component
             return;
         }
 
-        $visibleLineIds = $this->visibleLineIds();
-        if ($visibleLineIds !== null && ! in_array($this->selectedTicket->line_id, $visibleLineIds)) {
+        if (! $this->ticketIsVisible($this->selectedTicket)) {
             abort(403, 'No tienes acceso a este ticket.');
         }
 
@@ -163,7 +168,9 @@ class Tickets extends Component
             $this->notify('Ticket resuelto', "El ticket {$this->selectedTicket->subject} fue marcado como resuelto.", 'tickets', '/tickets', 'success');
         }
 
-        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+        $this->selectedTicket = Ticket::withoutGlobalScopes()
+            ->with(['user', 'line', 'messages.agent', 'messages.user'])
+            ->find($this->selectedTicket->id);
         $this->dispatch('messageSent');
     }
 
@@ -175,6 +182,10 @@ class Tickets extends Component
             return;
         }
 
+        if (! $this->ticketIsVisible($this->selectedTicket)) {
+            abort(403, 'No tienes acceso a este ticket.');
+        }
+
         $this->selectedTicket->update(['status' => 'open']);
 
         TicketMessage::create([
@@ -183,7 +194,9 @@ class Tickets extends Component
             'message'   => '🔄 Ticket reabierto',
         ]);
 
-        $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+        $this->selectedTicket = Ticket::withoutGlobalScopes()
+            ->with(['user', 'line', 'messages.agent', 'messages.user'])
+            ->find($this->selectedTicket->id);
         $this->dispatch('messageSent');
         $this->notify('Ticket reabierto', "El ticket {$this->selectedTicket->subject} fue reabierto.", 'tickets', '/tickets', 'warning');
     }
@@ -195,13 +208,14 @@ class Tickets extends Component
         );
 
         if ($this->selectedTicket) {
-            $visibleLineIds = $this->visibleLineIds();
-            if ($visibleLineIds !== null && ! in_array($this->selectedTicket->line_id, $visibleLineIds)) {
+            if (! $this->ticketIsVisible($this->selectedTicket)) {
                 abort(403, 'No tienes acceso a este ticket.');
             }
 
             $this->selectedTicket->update(['status' => $status]);
-            $this->selectedTicket = Ticket::with(['user', 'line', 'messages.agent', 'messages.user'])->find($this->selectedTicket->id);
+            $this->selectedTicket = Ticket::withoutGlobalScopes()
+                ->with(['user', 'line', 'messages.agent', 'messages.user'])
+                ->find($this->selectedTicket->id);
 
             $this->notify('Estado de ticket cambiado', "El ticket {$this->selectedTicket->subject} cambió a: {$status}", 'tickets', '/tickets', 'warning');
         }
@@ -211,11 +225,13 @@ class Tickets extends Component
     {
         $this->checkLinePermission(Permissions::TICKET_READ);
 
-        $query = Ticket::with(['user', 'line']);
+        $query = Ticket::withoutGlobalScopes()->with(['user', 'line']);
 
         $lineIds = $this->visibleLineIds();
         if ($lineIds !== null) {
-            $query->whereIn('line_id', $lineIds);
+            $query->where(fn ($ticket) => $ticket
+                ->whereIn('line_id', $lineIds)
+                ->orWhereNull('line_id'));
         }
 
         if ($this->filter !== 'all') {
@@ -240,9 +256,11 @@ class Tickets extends Component
     {
         $lineIds = $this->visibleLineIds();
 
-        $base = Ticket::query();
+        $base = Ticket::withoutGlobalScopes();
         if ($lineIds !== null) {
-            $base->whereIn('line_id', $lineIds);
+            $base->where(fn ($ticket) => $ticket
+                ->whereIn('line_id', $lineIds)
+                ->orWhereNull('line_id'));
         }
 
         $open = (clone $base)->where('status', 'open')->count();
@@ -266,5 +284,26 @@ class Tickets extends Component
             ->get(['id', 'name', 'username']);
 
         return view('livewire.tickets', compact('tickets', 'metrics', 'assignableUsers'))->layout('layouts.dashboard');
+    }
+
+    public function categoryLabel(?string $category): string
+    {
+        return match ($category) {
+            'juego' => 'Juego',
+            'bono' => 'Bono',
+            'sorteo' => 'Sorteo',
+            'atencion' => 'Atencion',
+            'otro' => 'Otro',
+            default => 'Sin categoria',
+        };
+    }
+
+    private function ticketIsVisible(Ticket $ticket): bool
+    {
+        $visibleLineIds = $this->visibleLineIds();
+
+        return $visibleLineIds === null
+            || $ticket->line_id === null
+            || in_array((int) $ticket->line_id, $visibleLineIds, true);
     }
 }

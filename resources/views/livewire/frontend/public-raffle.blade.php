@@ -30,6 +30,17 @@
     .raffles-stat i { color:var(--orange); font-size:20px; }
     .raffles-stat span { color:rgba(255,255,255,.5); font-size:10px; font-weight:900; text-transform:uppercase; display:block; }
     .raffles-stat strong { color:var(--orange); font-family:var(--font-mono); font-size:15px; }
+    .raffles-modal-backdrop { position:fixed; inset:0; z-index:80; display:flex; align-items:center; justify-content:center; padding:22px; background:rgba(0,0,0,.72); backdrop-filter:blur(10px); }
+    .raffles-modal { width:min(720px,100%); max-height:min(760px,90vh); overflow:auto; border:1px solid rgba(255,106,26,.38); border-radius:12px; background:linear-gradient(180deg,#160807,#070302); box-shadow:0 30px 90px rgba(0,0,0,.68); padding:20px; }
+    .raffles-modal-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .raffles-modal-head h2 { font-family:var(--font-display); font-size:38px; line-height:1; margin:0; letter-spacing:.02em; }
+    .raffles-modal-close { width:36px; height:36px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04); color:#fff; cursor:pointer; font-weight:900; }
+    .raffles-full-prizes { display:grid; gap:10px; }
+    .raffles-full-prize { display:grid; grid-template-columns:48px minmax(0,1fr) auto; gap:12px; align-items:center; border:1px solid rgba(255,106,26,.16); border-radius:9px; background:rgba(255,255,255,.035); padding:12px; }
+    .raffles-full-prize span { color:var(--orange); font-family:var(--font-display); font-size:34px; line-height:1; }
+    .raffles-full-prize strong { color:#fff; font-size:14px; }
+    .raffles-full-prize small { display:block; margin-top:3px; color:var(--muted); font-size:11px; }
+    .raffles-full-prize b { color:var(--orange); font-size:13px; }
     .raffles-list { margin-top:38px; display:grid; gap:14px; }
     .raffles-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; border:1px solid rgba(255,106,26,.2); border-radius:10px; background:linear-gradient(180deg,#130807,#080403); padding:18px; text-decoration:none; box-shadow:0 16px 44px rgba(0,0,0,.24); }
     .raffles-row:hover { border-color:rgba(255,106,26,.58); transform:translateY(-1px); }
@@ -52,15 +63,23 @@
         .raffles-prize, .raffles-prize.main { grid-template-columns:54px minmax(0,1fr); }
         .raffles-prize-img { grid-column:1 / -1; width:100%; }
         .raffles-stats, .raffles-row { grid-template-columns:1fr; }
+        .raffles-actions .fe-btn, .raffles-row .fe-btn { width:100%; }
         .raffles-stat { border-left:0; border-top:1px solid rgba(255,106,26,.16); }
         .raffles-stat:first-child { border-top:0; }
+        .raffles-full-prize { grid-template-columns:42px minmax(0,1fr); }
+        .raffles-full-prize b { grid-column:2; }
+        .raffles-modal-backdrop { padding:12px; align-items:flex-start; }
+        .raffles-modal { max-height:calc(100vh - 24px); padding:16px; }
+        .raffles-modal-head { align-items:flex-start; }
+        .raffles-modal-head h2 { font-size:31px; }
     }
 </style>
 @endpush
 
 @php
     $heroRaffle = $activeRaffle ?? $upcomingRaffle ?? $endedRaffle ?? $raffles->first();
-    $rankedPrizes = collect($heroRaffle?->prizes ?? [])->sortBy(fn ($prize) => (int) ($prize['position'] ?? 99))->take(3)->values();
+    $allPrizes = collect($heroRaffle?->prizes ?? [])->sortBy(fn ($prize) => (int) ($prize['position'] ?? 99))->values();
+    $rankedPrizes = $allPrizes->take(3)->values();
     $podium = $rankedPrizes->count() === 3
         ? collect([2, 1, 3])->map(fn ($position) => $rankedPrizes->first(fn ($prize, $index) => (int) ($prize['position'] ?? $index + 1) === $position))->filter()->values()
         : $rankedPrizes;
@@ -69,7 +88,7 @@
     $score = number_format($numbersCount * 125.10, 2, ',', '.');
 @endphp
 
-<section class="raffles-page">
+<section class="raffles-page" x-data="{ showPrizes: false }">
     <div class="fe-shell">
         @if($heroRaffle)
             <div class="raffles-hero">
@@ -86,6 +105,9 @@
                         <div class="raffles-status-note">Proximamente: registrate y enterate del proximo sorteo disponible.</div>
                     @endif
                     <div class="raffles-actions">
+                        @if($allPrizes->count() > 3)
+                            <button type="button" class="fe-btn ghost" @click="showPrizes = true">Ver premios</button>
+                        @endif
                         @if($heroRaffle->status === 'active')
                             @auth
                                 <a href="{{ route('frontend.lines') }}" wire:navigate class="fe-btn primary">Suma puntos</a>
@@ -160,4 +182,29 @@
             @endforeach
         </div>
     </div>
+
+    @if($heroRaffle && $allPrizes->count() > 3)
+        <div class="raffles-modal-backdrop" x-show="showPrizes" x-cloak x-transition @click.self="showPrizes = false">
+            <div class="raffles-modal" role="dialog" aria-modal="true" aria-label="Listado de premios disponibles">
+                <div class="raffles-modal-head">
+                    <h2>Premios disponibles</h2>
+                    <button type="button" class="raffles-modal-close" @click="showPrizes = false">X</button>
+                </div>
+                <div class="raffles-full-prizes">
+                    @foreach($allPrizes as $prize)
+                        <div class="raffles-full-prize">
+                            <span>{{ $prize['position'] ?? $loop->iteration }}</span>
+                            <div>
+                                <strong>{{ $prize['name'] ?? 'Premio del sorteo' }}</strong>
+                                <small>{{ $heroRaffle->status === 'active' ? 'Premio activo disponible' : ($heroRaffle->isFinished() ? 'Premio del sorteo finalizado' : 'Premio del proximo sorteo') }}</small>
+                            </div>
+                            @if(! empty($prize['amount']))
+                                <b>${{ number_format((float) $prize['amount'], 0, ',', '.') }}</b>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
 </section>

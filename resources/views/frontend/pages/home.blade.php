@@ -57,11 +57,11 @@
     .raffle-banner-head p { margin:6px auto 0; color:var(--muted); font-size:12px; line-height:1.45; max-width:720px; }
     .raffle-countdown { display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; border:1px solid rgba(255,106,26,.55); border-radius:999px; background:rgba(255,106,26,.12); color:#fff; padding:8px 16px; font-size:12px; font-weight:900; letter-spacing:.04em; text-transform:uppercase; box-shadow:0 0 22px rgba(255,106,26,.16); }
     .raffle-countdown strong { color:var(--orange); font-size:14px; }
-    .raffle-prize-strip { position:relative; z-index:2; display:grid; gap:14px; padding:10px 0 0; align-items:end; justify-content:center; }
-    .raffle-prize-strip.count-1 { grid-template-columns:minmax(0, 400px); }
-    .raffle-prize-strip.count-2 { grid-template-columns:repeat(2, minmax(0, 400px)); }
-    .raffle-prize-strip.count-3 { grid-template-columns:repeat(3, minmax(0, 400px)); align-items:end; }
-    .raffle-prize-tile { min-height:116px; display:grid; grid-template-columns:58px minmax(0, .86fr) minmax(112px, 1fr); align-items:center; gap:12px; border:1px solid rgba(255,106,26,.55); border-radius:8px; background:#0d0706; box-shadow:0 0 18px rgba(255,106,26,.09) inset, 0 18px 38px rgba(0,0,0,.28); padding:12px; overflow:hidden; }
+    .raffle-prize-strip { position:relative; z-index:2; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(310px, 400px); gap:14px; padding:10px 0 12px; align-items:end; justify-content:start; overflow-x:auto; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
+    .raffle-prize-strip::-webkit-scrollbar, .bonus-carousel::-webkit-scrollbar { height:8px; }
+    .raffle-prize-strip::-webkit-scrollbar-track, .bonus-carousel::-webkit-scrollbar-track { background:rgba(255,255,255,.08); border-radius:999px; }
+    .raffle-prize-strip::-webkit-scrollbar-thumb, .bonus-carousel::-webkit-scrollbar-thumb { background:rgba(255,106,26,.72); border-radius:999px; }
+    .raffle-prize-tile { min-height:116px; display:grid; grid-template-columns:58px minmax(0, .86fr) minmax(112px, 1fr); align-items:center; gap:12px; border:1px solid rgba(255,106,26,.55); border-radius:8px; background:#0d0706; box-shadow:0 0 18px rgba(255,106,26,.09) inset, 0 18px 38px rgba(0,0,0,.28); padding:12px; overflow:hidden; scroll-snap-align:start; }
     .raffle-prize-tile.primary { min-height:146px; grid-template-columns:72px minmax(0, .82fr) minmax(150px, 1fr); border-color:rgba(255,179,71,.75); background:#120807; }
     .raffle-prize-strip.count-3 .raffle-prize-tile.primary { transform:translateY(-18px); }
     .raffle-rank { font-family:var(--font-display); font-size:82px; line-height:.8; color:var(--orange); text-align:center; text-shadow:0 0 20px rgba(255,106,26,.32); }
@@ -73,11 +73,11 @@
     .raffle-prize-tile.primary .raffle-prize-image { height:116px; }
     .raffle-prize-image img { width:100%; height:100%; object-fit:cover; }
     .raffle-prize-image span { font-family:var(--font-display); color:rgba(255,255,255,.12); font-size:44px; letter-spacing:.05em; }
-    .bonus-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; }
+    .bonus-carousel { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px, 360px); gap:16px; overflow-x:auto; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; padding:4px 0 16px; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
     .bonus-card { min-height:250px; color:#fff; position:relative; border:3px dashed rgba(255,106,26,.9); border-radius:18px; background:
         radial-gradient(90% 100% at 0% 0%, rgba(255,106,26,.2), transparent 58%),
         linear-gradient(180deg,#180b08,#090505);
-        box-shadow:0 18px 42px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.04) inset; transform:rotate(-1deg); overflow:hidden; padding:30px; }
+        box-shadow:0 18px 42px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.04) inset; transform:rotate(-1deg); overflow:hidden; padding:30px; scroll-snap-align:start; }
     .bonus-card:nth-child(even) { transform:rotate(1deg); }
     .bonus-card::before, .bonus-card::after { content:none; }
     .bonus-ticket-main { min-height:194px; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:8px; padding:0; position:relative; }
@@ -118,14 +118,33 @@
         .raffle-deco { opacity:.14; }
         .raffle-banner-head { padding:18px 22px 8px; }
         .raffle-banner-head h3 { font-size:34px; }
-        .raffle-prize-strip,
-        .raffle-prize-strip.count-1,
-        .raffle-prize-strip.count-2,
-        .raffle-prize-strip.count-3 { grid-template-columns:minmax(0, 1fr) !important; }
+        .raffle-prize-strip { grid-auto-columns:minmax(280px, 88vw); }
         .raffle-prize-strip.count-3 .raffle-prize-tile.primary { transform:none; }
         .raffle-prize-tile, .raffle-prize-tile.primary { grid-template-columns:54px minmax(0, 1fr) 104px; min-height:104px; }
         .raffle-rank, .raffle-prize-tile.primary .raffle-rank { font-size:72px; }
         .raffle-prize-image, .raffle-prize-tile.primary .raffle-prize-image { height:84px; }
+        .bonus-carousel { grid-auto-columns:minmax(280px, 88vw); }
+    }
+    @media (max-width: 560px) {
+        .home-hero-slide { min-height:280px; }
+        .raffle-banner { min-height:0; padding:14px 12px 18px; }
+        .raffle-deco { display:none; }
+        .raffle-banner-head { padding:10px 4px 8px; }
+        .raffle-banner-head h3 { font-size:30px; line-height:1; overflow-wrap:anywhere; }
+        .raffle-countdown { width:100%; border-radius:10px; padding:9px 12px; }
+        .raffle-prize-strip { grid-auto-columns:minmax(248px, 86vw); }
+        .raffle-prize-tile, .raffle-prize-tile.primary { grid-template-columns:48px minmax(0, 1fr); gap:10px; padding:10px; }
+        .raffle-rank, .raffle-prize-tile.primary .raffle-rank { font-size:62px; }
+        .raffle-prize-image, .raffle-prize-tile.primary .raffle-prize-image { grid-column:1 / -1; width:100%; height:118px; }
+        .bonus-carousel { grid-auto-columns:minmax(248px, 86vw); }
+        .bonus-card { min-height:230px; padding:22px; transform:none !important; }
+        .bonus-ticket-main { min-height:176px; }
+        .bonus-card h3 { font-size:28px; max-width:100%; }
+        .bonus-ticket-value { font-size:46px; }
+        .step-card, .about-box { padding:22px; }
+        .step-card { min-height:auto; }
+        .step-card h3 { font-size:26px; }
+        .about-title { font-size:36px; }
     }
 </style>
 @endpush
@@ -211,23 +230,10 @@
                         return asset('storage/'.$image);
                     };
 
-                    $rankedPrizes = collect($activeRaffle->prizes)
+                    $displayPrizes = collect($activeRaffle->prizes)
                         ->sortBy(fn ($prize, $index) => (int) ($prize['position'] ?? $index + 1))
-                        ->take(3)
                         ->values();
-
-                    $displayPrizes = $rankedPrizes;
                     $prizeCount = max(1, $displayPrizes->count());
-                    if ($displayPrizes->count() === 3) {
-                        $displayPrizes = collect([2, 1, 3])
-                            ->map(fn ($position) => $rankedPrizes->first(fn ($prize, $index) => (int) ($prize['position'] ?? $index + 1) === $position))
-                            ->filter()
-                            ->values();
-
-                        if ($displayPrizes->count() < 3) {
-                            $displayPrizes = $rankedPrizes;
-                        }
-                    }
                     $lineNames = $activeRaffle->lines->pluck('name')->filter()->join(', ');
                     $remaining = now()->diff($activeRaffle->end_date);
                     $remainingText = $activeRaffle->end_date->isFuture()
@@ -259,7 +265,7 @@
                             Termina en <strong>{{ $remainingText ?: 'menos de 1m' }}</strong>
                         </div>
                     </div>
-                    <div class="raffle-prize-strip count-{{ $prizeCount }}">
+                    <div class="raffle-prize-strip count-{{ min($prizeCount, 3) }}" aria-label="Carousel de premios del sorteo activo">
                         @foreach($displayPrizes as $index => $prize)
                             @php
                                 $position = (int) ($prize['position'] ?? $index + 1);
@@ -330,10 +336,11 @@
                 'title' => 'Bonos',
                 'highlight' => 'activos',
                 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
+                'action' => '<a class="fe-btn ghost" href="'.route('frontend.bonuses').'" wire:navigate>Ver todos</a>',
             ])
 
             @if($bonusItems->count())
-                <div class="bonus-grid">
+                <div class="bonus-carousel" aria-label="Carousel de bonos activos">
                     @foreach($bonusItems as $bonus)
                         @include('frontend.components.bonus-card', ['bonus' => $bonus])
                     @endforeach

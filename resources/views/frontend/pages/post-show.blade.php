@@ -5,6 +5,7 @@
     .post-hero { display:block; margin-top:34px; }
     .post-title { font-family:var(--font-display); font-size:68px; line-height:.92; letter-spacing:.02em; margin:0; }
     .post-meta { color:var(--orange); font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; margin-bottom:10px; }
+    .post-author { color:rgba(255,255,255,.62); font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; margin-bottom:10px; }
     .post-excerpt { color:var(--muted); font-size:15px; line-height:1.6; margin:16px 0 0; max-width:760px; }
     .post-image { width:100vw; margin-left:calc(50% - 50vw); min-height:420px; overflow:hidden; background:radial-gradient(90% 80% at 80% 0%, rgba(255,106,26,.35), transparent 70%), #130807; }
     .post-image img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -52,6 +53,7 @@
     @media (max-width: 620px) {
         .post-hero { margin-top:24px; }
         .post-title { font-size:42px; }
+        .post-meta, .post-author { overflow-wrap:anywhere; }
         .post-image { min-height:240px; }
         .post-body-grid { margin-top:26px; }
         .post-comments-panel { margin-top:30px; padding-top:22px; }
@@ -60,6 +62,8 @@
         .post-reply-form { margin-left:0; padding:12px; }
         .post-comment-head { display:block; }
         .post-comment-date { display:block; margin-top:3px; }
+        .post-comments-head .fe-btn, .post-login-box .fe-btn, .post-reply-actions .fe-btn { width:100%; }
+        .post-reply-actions { justify-content:stretch; }
     }
 </style>
 @endpush
@@ -87,6 +91,7 @@
                             · {{ $post->category->name }}
                         @endif
                     </div>
+                    <div class="post-author">Autor: {{ $post->authorAgent?->username ?: $post->authorAgent?->name ?: 'RED PICANTES BET' }}</div>
                     <h1 class="post-title">{{ $post->title }}</h1>
                     <p class="post-excerpt">{{ $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($post->content), 180) }}</p>
                 </div>

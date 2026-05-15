@@ -29,6 +29,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'contact',
+        'wants_bonus_emails',
         'status',
     ];
 
@@ -52,6 +53,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'wants_bonus_emails' => 'boolean',
         ];
     }
 

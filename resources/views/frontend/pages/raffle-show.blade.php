@@ -83,6 +83,13 @@
         .raffle-metric:first-child { border-top:0; }
         .raffle-table-wrap { overflow-x:auto; }
         .raffle-table { min-width:620px; }
+        .raffle-actions .fe-btn { width:100%; }
+        .raffle-modal-backdrop { padding:12px; align-items:flex-start; }
+        .raffle-modal { max-height:calc(100vh - 24px); padding:16px; }
+        .raffle-modal-head { align-items:flex-start; }
+        .raffle-modal h2 { font-size:31px; }
+        .raffle-full-prize { grid-template-columns:42px minmax(0, 1fr); }
+        .raffle-full-prize b { grid-column:2; }
     }
 </style>
 @endpush

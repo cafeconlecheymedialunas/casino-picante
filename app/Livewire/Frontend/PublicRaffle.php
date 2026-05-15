@@ -13,7 +13,9 @@ class PublicRaffle extends Component
         return Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
             ->where('status', 'active')
-            ->latest()
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->orderBy('end_date')
             ->first();
     }
 
@@ -31,7 +33,7 @@ class PublicRaffle extends Component
         return Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
             ->where('status', 'inactive')
-            ->where('end_date', '>=', now())
+            ->where('start_date', '>', now())
             ->oldest('start_date')
             ->first();
     }

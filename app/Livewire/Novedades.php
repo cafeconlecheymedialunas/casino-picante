@@ -2,6 +2,8 @@
 
 namespace App\Livewire;
 
+use App\Models\Agent;
+use App\Models\LineAgent;
 use App\Models\Post;
 use App\Support\ImageStorage;
 use App\Support\Permissions;
@@ -31,6 +33,7 @@ class Novedades extends Component
     public $excerpt = '';
     public $status = 'published';
     public $category_id = '';
+    public $author_agent_id = '';
     public $image = '';
     public $imageUpload = null;
 
@@ -43,6 +46,7 @@ class Novedades extends Component
         'excerpt' => 'nullable',
         'status' => 'required|in:draft,published,hidden',
         'category_id' => 'nullable|exists:categories,id',
+        'author_agent_id' => 'nullable|exists:agents,id',
     ];
 
     public function canCreate(): bool
@@ -105,6 +109,7 @@ class Novedades extends Component
         $this->excerpt = '';
         $this->status = 'published';
         $this->category_id = '';
+        $this->author_agent_id = session('active_agent_id') ?: '';
         $this->image = '';
         $this->imageUpload = null;
     }
@@ -117,6 +122,7 @@ class Novedades extends Component
             ...$this->rules,
             'imageUpload' => 'nullable|image|max:4096',
         ]);
+        $this->authorizeAuthorChoice($this->author_agent_id);
 
         $imagePath = null;
         if ($this->imageUpload) {
@@ -129,7 +135,9 @@ class Novedades extends Component
             'content' => $this->content,
             'excerpt' => $this->excerpt,
             'status' => $this->status,
+            'published_at' => $this->status === Post::STATUS_PUBLISHED ? now() : null,
             'category_id' => $this->category_id ?: null,
+            'author_agent_id' => $this->author_agent_id ?: null,
             'image' => $imagePath,
             'line_id' => session('active_line_id'),
         ]);
@@ -163,7 +171,7 @@ class Novedades extends Component
         $this->checkLinePermission(Permissions::NEWS_READ);
 
         $lineIds = $this->visibleLineIds();
-        $query = Post::query();
+        $query = Post::with(['category', 'authorAgent']);
 
         if ($lineIds !== null) {
             $query->whereIn('line_id', $lineIds);
@@ -189,7 +197,37 @@ class Novedades extends Component
         return view('livewire.novedades', [
             'posts' => $this->getPosts(),
             'categories' => \App\Models\Category::all(),
+            'authors' => $this->availableAuthors(),
             'canDelete' => $this->canDelete(),
         ])->layout('layouts.dashboard');
+    }
+
+    private function availableAuthors()
+    {
+        $query = Agent::orderBy('name');
+        $lineIds = $this->visibleLineIds();
+
+        if ($lineIds !== null) {
+            $agentIds = LineAgent::whereIn('line_id', $lineIds)
+                ->where('is_active', true)
+                ->pluck('agent_id');
+
+            $query->whereIn('id', $agentIds);
+        }
+
+        return $query->get();
+    }
+
+    private function authorizeAuthorChoice($authorAgentId): void
+    {
+        if (! $authorAgentId) {
+            return;
+        }
+
+        $allowed = $this->availableAuthors()
+            ->pluck('id')
+            ->contains((int) $authorAgentId);
+
+        abort_unless($allowed, 403, 'No podes asignar un autor fuera de tu alcance.');
     }
 }

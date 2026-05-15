@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\User;
+use App\Support\Roles;
 use Illuminate\Support\Facades\Password;
 use Livewire\Component;
 
@@ -21,9 +23,20 @@ class ClientForgotPassword extends Component
     public function sendResetLink(): void
     {
         $this->validate();
+        $email = trim(strtolower($this->email));
+
+        $client = User::where('email', $email)
+            ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE))
+            ->first();
+
+        if (! $client) {
+            $this->addError('email', 'No existe una cuenta de cliente con este email.');
+
+            return;
+        }
 
         $status = Password::sendResetLink(
-            $this->only('email')
+            ['email' => $email]
         );
 
         if ($status === Password::RESET_LINK_SENT) {

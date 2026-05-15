@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\PerfilController;
 use App\Livewire\Agentes;
-use App\Livewire\Agents\AgentRegister;
 use App\Livewire\Auth\AdminForgotPassword;
 use App\Livewire\Auth\AdminResetPassword;
 use App\Livewire\Auth\ClientForgotPassword;
@@ -15,6 +14,8 @@ use App\Livewire\Bonos;
 use App\Livewire\Chats;
 use App\Livewire\EditorHome;
 use App\Livewire\Frontend\Blog;
+use App\Livewire\Frontend\BonusShow;
+use App\Livewire\Frontend\BonusesIndex;
 use App\Livewire\Frontend\ClientAccount;
 use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\LineShow;
@@ -41,7 +42,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/admin/login', Login::class)->name('admin.login')->middleware('guest_or_agent');
-Route::get('/admin/register', AgentRegister::class)->name('agent.register')->middleware('guest_or_agent');
 Route::get('/admin/forgot-password', AdminForgotPassword::class)->name('admin.password.request')->middleware('guest_or_agent');
 Route::get('/admin/reset-password/{token}', AdminResetPassword::class)->name('admin.password.reset')->middleware('guest_or_agent');
 Route::get('/login', ClientLogin::class)->name('login')->middleware('guest_or_agent');
@@ -51,11 +51,13 @@ Route::get('/recuperar-password/{token}', ClientResetPassword::class)->name('cli
 Route::get('/', Home::class)->name('frontend.home');
 Route::get('/lineas', LinesIndex::class)->name('frontend.lines');
 Route::get('/lineas/{line}', LineShow::class)->name('frontend.lines.show');
+Route::get('/bonos', BonusesIndex::class)->name('frontend.bonuses');
+Route::get('/bonos/{bonusId}', BonusShow::class)->name('frontend.bonuses.show');
 Route::get('/sorteo', PublicRaffle::class)->name('sorteo.publico');
 Route::get('/sorteos', PublicRaffle::class)->name('frontend.raffles');
 Route::get('/sorteos/{raffleId}', RaffleShow::class)->name('frontend.raffles.show');
 Route::get('/blog', Blog::class)->name('frontend.blog');
-Route::get('/blog/{post:slug}', PostShow::class)->name('frontend.blog.show');
+Route::get('/blog/{slug}', PostShow::class)->name('frontend.blog.show');
 Route::get('/mi-cuenta', ClientAccount::class)->middleware('auth')->name('client.account');
 
 Route::post('/logout', function () {

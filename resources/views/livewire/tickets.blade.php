@@ -29,6 +29,7 @@
                 </div>
                 <div class="ticket-subject">{{ $ticket->subject }}</div>
                 <div class="ticket-item-footer">
+                    <span class="ticket-category">{{ $this->categoryLabel($ticket->category) }}</span>
                     <span class="ticket-line">{{ $ticket->line->name ?? 'Sin línea' }}</span>
                     <span class="ticket-status {{ $ticket->status }}">
                         @if($ticket->status === 'open')● Abierto
@@ -54,7 +55,7 @@
                     @if($selectedTicket->tracking_code)
                         <span style="color:var(--orange);font-weight:800;">{{ $selectedTicket->tracking_code }}</span> ·
                     @endif
-                    {{ $selectedTicket->line->name ?? 'Sin línea' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->priority }} · {{ $selectedTicket->created_at->diffForHumans() }}
+                    {{ $this->categoryLabel($selectedTicket->category) }} · {{ $selectedTicket->line->name ?? 'Sin línea' }} · {{ $selectedTicket->status }} · {{ $selectedTicket->priority }} · {{ $selectedTicket->created_at->diffForHumans() }}
                 </div>
                 </div>
                 <div class="conv-actions">
@@ -74,7 +75,9 @@
                 @php
                     $isAgent = (bool)$message->agent_id;
                     $sender = $isAgent ? $message->agent : $message->user;
-                    $senderName = $sender ? $sender->name : ($isAgent ? 'Agente' : 'Usuario');
+                    $senderName = $sender
+                        ? trim(collect([$sender->name, $sender->apellido ?? null])->filter()->join(' '))
+                        : ($isAgent ? 'Agente' : 'Usuario');
                     $avatarValue = $sender?->avatar ?: 'avatar_'.\Illuminate\Support\Str::slug($senderName ?: ($isAgent ? 'agente' : 'usuario'), '-');
                 @endphp
                 <div class="message {{ $isAgent ? 'agent' : '' }}">
@@ -145,6 +148,17 @@
                     <label class="form-label">Asunto</label>
                     <input type="text" class="form-input" wire:model="createSubject" placeholder="Describe el problema...">
                     @error('createSubject') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Categoria</label>
+                    <select class="form-input" wire:model="createCategory">
+                        <option value="juego">Juego</option>
+                        <option value="bono">Bono</option>
+                        <option value="sorteo">Sorteo</option>
+                        <option value="atencion">Atencion</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                    @error('createCategory') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-group">
                     <label class="form-label">Prioridad</label>
@@ -232,6 +246,7 @@
         .ticket-subject { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
         .ticket-item-footer { display: flex; gap: 6px; align-items: center; }
         .ticket-line { padding: 2px 6px; border-radius: 4px; background: rgba(255,106,26,0.12); color: var(--orange); font-size: 10px; font-weight: 700; }
+        .ticket-category { padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.08); color: var(--muted); font-size: 10px; font-weight: 800; }
         .ticket-status { font-size: 10px; font-weight: 700; }
         .ticket-status.open { color: var(--good); }
         .ticket-status.progress { color: var(--amber); }

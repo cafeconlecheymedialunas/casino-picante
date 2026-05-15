@@ -60,9 +60,6 @@
         <div style="text-align:center;margin-top:18px;color:rgba(255,255,255,0.42);font-size:11px;">
             <a href="{{ route('admin.password.request') }}" wire:navigate style="color:var(--orange);text-decoration:none;font-weight:700;">¿Olvidaste tu contraseña?</a>
         </div>
-        <div style="text-align:center;margin-top:14px;color:rgba(255,255,255,0.42);font-size:12px;">
-            ¿No tenés cuenta? <a href="{{ route('agent.register') }}" wire:navigate style="color:var(--orange);text-decoration:none;font-weight:700;">Registrate como agente</a>
-        </div>
         <div style="text-align:center;margin-top:20px;color:rgba(255,255,255,0.25);font-size:10px;">
             RED PICANTES &copy; {{ date('Y') }}
         </div>

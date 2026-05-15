@@ -12,7 +12,7 @@ class Blog extends Component
     public function render()
     {
         $posts = Post::withoutGlobalScopes()
-            ->with('category')
+            ->with(['category', 'authorAgent'])
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at')
             ->when(trim($this->search) !== '', function ($query) {

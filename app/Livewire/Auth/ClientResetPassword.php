@@ -2,6 +2,8 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\User;
+use App\Support\Roles;
 use Illuminate\Support\Facades\Password;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -39,9 +41,25 @@ class ClientResetPassword extends Component
     public function resetPassword(): void
     {
         $this->validate();
+        $email = trim(strtolower($this->email));
+
+        $isClient = User::where('email', $email)
+            ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE))
+            ->exists();
+
+        if (! $isClient) {
+            $this->addError('email', 'No existe una cuenta de cliente con este email.');
+
+            return;
+        }
 
         $status = Password::reset(
-            $this->only('email', 'password', 'password_confirmation', 'token'),
+            [
+                'email' => $email,
+                'password' => $this->password,
+                'password_confirmation' => $this->password_confirmation,
+                'token' => $this->token,
+            ],
             function ($user, $password) {
                 $user->forceFill([
                     'password' => $password,

@@ -45,6 +45,17 @@
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">Autor</label>
+                    <select wire:model="author_agent_id" class="form-input">
+                        <option value="">Sin autor asignado</option>
+                        @foreach($authors as $author)
+                            <option value="{{ $author->id }}">{{ $author->username ?: $author->name }}{{ $author->apellido ? ' '.$author->apellido : '' }}</option>
+                        @endforeach
+                    </select>
+                    @error('author_agent_id') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Contenido</label>
                     <div
                         class="wysiwyg"

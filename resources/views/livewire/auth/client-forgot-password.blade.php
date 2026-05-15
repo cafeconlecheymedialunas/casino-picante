@@ -14,6 +14,11 @@
     .auth-success-box { background:rgba(37,196,107,.1); border:1px solid rgba(37,196,107,.35); border-radius:8px; padding:12px 14px; margin-bottom:18px; color:#adffd0; font-size:13px; font-weight:800; }
     .auth-foot { margin-top:16px; color:var(--muted); font-size:12px; text-align:center; }
     .auth-foot a { color:var(--orange); font-weight:900; text-decoration:none; }
+    @media (max-width: 520px) {
+        .auth-forgot { padding-top:34px; }
+        .auth-forgot-card { padding:22px 18px; }
+        .auth-forgot-brand h1 { font-size:34px; }
+    }
 </style>
 @endpush
 

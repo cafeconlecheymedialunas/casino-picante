@@ -1,7 +1,7 @@
 <nav class="fe-mobile-menu" data-fe-mobile-menu aria-label="Navegacion movil">
     <a href="{{ route('frontend.home') }}" wire:navigate>Inicio</a>
     <a href="{{ route('frontend.lines') }}" wire:navigate>Lineas de atencion</a>
-    <a href="#bonos">Bonos</a>
+    <a href="{{ route('frontend.bonuses') }}" wire:navigate>Bonos</a>
     <a href="{{ route('frontend.raffles') }}" wire:navigate>Sorteo</a>
     <a href="{{ route('frontend.blog') }}" wire:navigate>Novedades</a>
     <a href="{{ route('frontend.home') }}#como-empezar">Como empezar</a>

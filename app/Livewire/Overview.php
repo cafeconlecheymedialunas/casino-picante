@@ -7,6 +7,7 @@ use App\Models\Bonus;
 use App\Models\BonusAssignment;
 use App\Models\Line;
 use App\Models\LineAgent;
+use App\Models\Scopes\LineScope;
 use App\Models\Post;
 use App\Models\Promotion;
 use App\Models\Raffle;
@@ -15,6 +16,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SalesStats;
 use App\Support\LineRoles;
+use App\Support\Permissions;
 use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use Carbon\Carbon;
@@ -36,8 +38,9 @@ class Overview extends Component
     {
         $alerts = [];
 
-        $lineIds = $this->visibleLineIds();
-        $ticketQuery = Ticket::where('status', 'open')
+        $lineIds = $this->overviewLineIds();
+        $ticketQuery = Ticket::withoutGlobalScope(LineScope::class)
+            ->where('status', 'open')
             ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
 
         $stale = (clone $ticketQuery)
@@ -86,9 +89,10 @@ class Overview extends Component
     public function getTicketStats(): array
     {
         $now = Carbon::now();
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
-        $base = fn () => Ticket::when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+        $base = fn () => Ticket::withoutGlobalScope(LineScope::class)
+            ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
 
         $open = $base()->where('status', 'open')->count();
         $progress = $base()->where('status', 'progress')->count();
@@ -112,9 +116,10 @@ class Overview extends Component
     {
         $now = Carbon::now();
         $monthStart = $now->copy()->startOfMonth();
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
-        $bonusBase = fn () => Bonus::when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+        $bonusBase = fn () => Bonus::withoutGlobalScope(LineScope::class)
+            ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
 
         $activeBonuses = $bonusBase()->where('status', 'active')
             ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
@@ -141,17 +146,22 @@ class Overview extends Component
     public function getRaffleStats(): array
     {
         $now = Carbon::now();
-        $active = Raffle::where('status', 'active')
+        $base = fn () => $this->rafflesQuery();
+
+        $active = $base()->where('status', 'active')
             ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
-        $upcoming = Raffle::where('status', 'active')->where('start_date', '>', $now)->count();
-        $ended = Raffle::where('status', 'inactive')->count()
-            + Raffle::where('status', 'active')->where('end_date', '<', $now)->count();
-        $total = Raffle::count();
+        $upcoming = $base()->where('status', 'inactive')->where('start_date', '>', $now)->count();
+        $ended = $base()->where('status', 'finished')->count();
+        $total = $base()->count();
 
         $totalNumbers = $this->raffleNumbersQuery()->count();
         $uniqueParticip = $this->raffleNumbersQuery()->select('user_id')->distinct()->count();
 
-        $activeRaffle = Raffle::where('status', 'active')->orderBy('end_date')->first();
+        $activeRaffle = $base()->where('status', 'active')
+            ->where('start_date', '<=', $now)
+            ->where('end_date', '>=', $now)
+            ->orderBy('end_date')
+            ->first();
         $numbersActive = $activeRaffle
             ? $this->raffleNumbersQuery()->where('raffle_id', $activeRaffle->id)->count()
             : 0;
@@ -163,9 +173,10 @@ class Overview extends Component
     public function getPromoStats(): array
     {
         $now = Carbon::now();
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
-        $base = fn () => Promotion::when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+        $base = fn () => Promotion::withoutGlobalScope(LineScope::class)
+            ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
 
         $active = $base()->where('status', 'published')
             ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
@@ -191,9 +202,13 @@ class Overview extends Component
 
     public function getContentStats(): array
     {
-        $published = Post::where('status', 'published')->count();
-        $draft = Post::where('status', 'draft')->count();
-        $total = Post::count();
+        $lineIds = $this->overviewLineIds();
+        $base = fn () => Post::withoutGlobalScope(LineScope::class)
+            ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
+
+        $published = $base()->where('status', 'published')->count();
+        $draft = $base()->where('status', 'draft')->count();
+        $total = $base()->count();
 
         return compact('published', 'draft', 'total');
     }
@@ -225,8 +240,9 @@ class Overview extends Component
 
     public function getActiveBonosCount(): int
     {
-        $lineIds = $this->visibleLineIds();
-        $query = Bonus::where('status', 'active')
+        $lineIds = $this->overviewLineIds();
+        $query = Bonus::withoutGlobalScope(LineScope::class)
+            ->where('status', 'active')
             ->where('start_date', '<=', Carbon::now())
             ->where('end_date', '>=', Carbon::now());
 
@@ -239,13 +255,13 @@ class Overview extends Component
 
     public function getRafflesByLineCount($lineId = null): int
     {
-        $query = Raffle::query();
+        $query = Raffle::withoutGlobalScope(LineScope::class);
         if ($lineId) {
-            $query->where('line_id', $lineId);
+            $this->filterRafflesByLines($query, [(int) $lineId]);
         } else {
-            $lineIds = $this->visibleLineIds();
+            $lineIds = $this->overviewLineIds();
             if ($lineIds !== null) {
-                $query->whereIn('line_id', $lineIds);
+                $this->filterRafflesByLines($query, $lineIds);
             }
         }
 
@@ -254,17 +270,12 @@ class Overview extends Component
 
     public function getBestSellingLineOfMonth(): ?array
     {
-        $result = SalesStats::bestSellingLineOfMonth();
-        if (! $result) {
-            return null;
-        }
+        $lineIds = $this->overviewLineIds();
+        $lines = $lineIds !== null
+            ? Line::whereIn('id', $lineIds)->where('status', 'active')->get()
+            : null;
 
-        $lineIds = $this->visibleLineIds();
-        if ($lineIds !== null && ! in_array($result['id'], $lineIds)) {
-            return null;
-        }
-
-        return $result;
+        return SalesStats::bestSellingLineOfMonth(null, null, $lines);
     }
 
     public function getLast10RegisteredUsers()
@@ -281,9 +292,10 @@ class Overview extends Component
 
     public function getUrgentTickets()
     {
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
-        return Ticket::with('user')
+        return Ticket::withoutGlobalScope(LineScope::class)
+            ->with('user')
             ->where('status', 'open')
             ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds))
             ->orderBy('created_at', 'asc')
@@ -293,7 +305,7 @@ class Overview extends Component
 
     public function render()
     {
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
         $lines = $lineIds !== null
             ? Line::whereIn('id', $lineIds)->where('status', 'active')->get()
             : Line::where('status', 'active')->get();
@@ -327,6 +339,13 @@ class Overview extends Component
             'platformComparison' => SalesStats::globalPlatformComparison($lines),
             'lineComparison' => SalesStats::globalLineComparison($lines),
             'dailyRegistrations' => $this->getDailyRegistrations(),
+            'overviewLines' => $lines,
+            'isAgentScopedOverview' => ! $this->isAdminMode(),
+            'canViewSales' => $this->canViewAnyLinePermission(Permissions::LINE_EDIT),
+            'canViewUsers' => $this->canViewAnyLinePermission(Permissions::USER_READ),
+            'canViewTickets' => $this->canViewAnyLinePermission(Permissions::TICKET_READ),
+            'canViewBonuses' => $this->canViewAnyLinePermission(Permissions::BONO_READ),
+            'canViewRaffles' => $this->canViewAnyLinePermission(Permissions::SORTEO_READ),
         ]);
     }
 
@@ -346,12 +365,52 @@ class Overview extends Component
 
     // Usa el método del trait HasLinePermissions::visibleLineIds()
 
+    private function overviewLineIds(): ?array
+    {
+        return $this->visibleLineIdsWithPermission(Permissions::DASHBOARD_READ, false);
+    }
+
+    private function canViewAnyLinePermission(array|string $permissions): bool
+    {
+        if ($this->isAdminMode()) {
+            return true;
+        }
+
+        return $this->visibleLineIdsWithPermission($permissions, false) !== [];
+    }
+
+    private function rafflesQuery()
+    {
+        $query = Raffle::withoutGlobalScope(LineScope::class);
+        $lineIds = $this->overviewLineIds();
+
+        if ($lineIds !== null) {
+            $this->filterRafflesByLines($query, $lineIds);
+        }
+
+        return $query;
+    }
+
+    private function filterRafflesByLines($query, array $lineIds): void
+    {
+        if ($lineIds === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function ($raffles) use ($lineIds) {
+            $raffles->whereIn('line_id', $lineIds)
+                ->orWhereHas('lines', fn ($line) => $line->whereIn('lines.id', $lineIds));
+        });
+    }
+
     private function clientUsersQuery()
     {
         $query = User::query()
             ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE));
 
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
         if ($lineIds !== null) {
             $query->where(function ($inner) use ($lineIds) {
                 if ($lineIds === []) {
@@ -373,7 +432,7 @@ class Overview extends Component
     private function agentsQuery()
     {
         $query = Agent::query();
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
         if ($lineIds !== null) {
             $query->whereHas('lineAgents', fn ($lineAgent) => $lineAgent
@@ -387,7 +446,7 @@ class Overview extends Component
     private function lineAgentsQuery()
     {
         $query = LineAgent::query();
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
         if ($lineIds !== null) {
             $query->whereIn('line_id', $lineIds);
@@ -399,10 +458,12 @@ class Overview extends Component
     private function bonusAssignmentsQuery()
     {
         $query = BonusAssignment::query();
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
         if ($lineIds !== null) {
-            $query->whereHas('bonus', fn ($bonus) => $bonus->whereIn('line_id', $lineIds));
+            $query->whereHas('bonus', fn ($bonus) => $bonus
+                ->withoutGlobalScope(LineScope::class)
+                ->whereIn('line_id', $lineIds));
         }
 
         return $query;
@@ -411,7 +472,7 @@ class Overview extends Component
     private function raffleNumbersQuery()
     {
         $query = RaffleNumber::query();
-        $lineIds = $this->visibleLineIds();
+        $lineIds = $this->overviewLineIds();
 
         if ($lineIds !== null) {
             $query->whereIn('line_id', $lineIds);
@@ -420,3 +481,4 @@ class Overview extends Component
         return $query;
     }
 }
+

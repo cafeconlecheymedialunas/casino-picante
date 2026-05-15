@@ -5,6 +5,7 @@ namespace App\Livewire\Auth;
 use App\Models\Agent;
 use App\Models\User;
 use App\Notifications\AdminPasswordReset;
+use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -38,7 +39,9 @@ class AdminForgotPassword extends Component
         $email = trim(strtolower($this->email));
 
         $agent = Agent::where('email', $email)->first();
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)
+            ->whereHas('role', fn ($role) => $role->whereIn('name', [Roles::ADMIN, Roles::AGENTE]))
+            ->first();
 
         if (! $agent && ! $user) {
             $this->addError('email', 'No existe una cuenta con este email.');

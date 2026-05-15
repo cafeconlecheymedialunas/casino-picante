@@ -17,6 +17,7 @@ class Ticket extends Model
         'line_id',
         'tracking_code',
         'subject',
+        'category',
         'status',
         'priority',
     ];

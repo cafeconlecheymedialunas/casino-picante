@@ -115,6 +115,7 @@
         letter-spacing:.08em;
         line-height:1.35;
     }
+    .blog-author { display:block; margin-top:6px; color:rgba(255,255,255,.62); font-size:11px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
     .blog-body h3 {
         font-size:18px;
         line-height:1.2;
@@ -146,6 +147,9 @@
         }
         .blog-thumb { height:190px; }
         .blog-body h3 { font-size:17px; }
+        .blog-featured-body, .blog-aside-card, .blog-body { padding:18px; }
+        .blog-featured h2 { font-size:36px; overflow-wrap:anywhere; }
+        .blog-date, .blog-author { overflow-wrap:anywhere; }
     }
 </style>
 @endpush
@@ -176,7 +180,7 @@
                             ? (\Illuminate\Support\Str::startsWith($featuredPost->image, ['http://', 'https://', '/storage/']) ? $featuredPost->image : asset('storage/'.$featuredPost->image))
                             : null;
                     @endphp
-                    <a class="blog-featured" href="{{ route('frontend.blog.show', $featuredPost) }}" wire:navigate style="text-decoration:none;color:inherit">
+                    <a class="blog-featured" href="{{ route('frontend.blog.show', $featuredPost->slug) }}" wire:navigate style="text-decoration:none;color:inherit">
                         <div class="blog-featured-media">
                             @if($featuredImage)
                                 <img src="{{ $featuredImage }}" alt="{{ $featuredPost->title }}">
@@ -189,6 +193,7 @@
                                     · {{ $featuredPost->category->name }}
                                 @endif
                             </div>
+                            <span class="blog-author">Autor: {{ $featuredPost->authorAgent?->username ?: $featuredPost->authorAgent?->name ?: 'RED PICANTES BET' }}</span>
                             <h2>{{ $featuredPost->title }}</h2>
                             <p>{{ $featuredPost->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($featuredPost->content), 180) }}</p>
                         </div>
@@ -196,13 +201,14 @@
 
                     <div class="blog-aside">
                         @foreach($asidePosts as $post)
-                            <a class="blog-aside-card" href="{{ route('frontend.blog.show', $post) }}" wire:navigate style="text-decoration:none;color:inherit">
+                            <a class="blog-aside-card" href="{{ route('frontend.blog.show', $post->slug) }}" wire:navigate style="text-decoration:none;color:inherit">
                                 <div class="blog-date">
                                     {{ $post->published_at?->format('d/m/Y') }}
                                     @if($post->category)
                                         · {{ $post->category->name }}
                                     @endif
                                 </div>
+                                <span class="blog-author">Autor: {{ $post->authorAgent?->username ?: $post->authorAgent?->name ?: 'RED PICANTES BET' }}</span>
                                 <h3>{{ $post->title }}</h3>
                                 <p>{{ $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($post->content), 92) }}</p>
                             </a>

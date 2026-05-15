@@ -4,12 +4,12 @@ namespace App\Livewire\Frontend;
 
 use App\Models\BonusAssignment;
 use App\Models\Line;
-use App\Models\LineRating;
-use App\Models\Post;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\UserNotification;
+use App\Support\AvatarLibrary;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
@@ -48,14 +48,37 @@ class ClientAccount extends Component
 
     public string $ticket_description = '';
 
+    public function setTab(string $tab): void
+    {
+        if (in_array($tab, ['perfil', 'password', 'tickets', 'sorteo', 'bonos'], true)) {
+            $this->activeTab = $tab;
+        }
+    }
+
+    public function markNotificationRead(int $notificationId): void
+    {
+        UserNotification::where('user_id', auth()->id())
+            ->whereKey($notificationId)
+            ->first()
+            ?->markRead();
+    }
+
+    public function markAllNotificationsRead(): void
+    {
+        UserNotification::where('user_id', auth()->id())
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+    }
+
     protected $rules = [
         'name' => ['required', 'string', 'min:2', 'max:255'],
+        'apellido' => ['nullable', 'string', 'max:255'],
         'username' => ['required', 'string', 'min:3', 'max:40', 'alpha_dash'],
         'email' => ['required', 'email', 'max:255'],
         'phone' => ['nullable', 'string', 'max:50'],
         'contact' => ['nullable', 'string', 'max:500'],
         'avatar' => ['nullable', 'string'],
-        'preferred_line_id' => ['nullable', 'integer', 'exists:lines,id'],
+        'preferred_line_id' => ['nullable', 'integer', 'min:0'],
     ];
 
     protected $messages = [
@@ -101,14 +124,20 @@ class ClientAccount extends Component
 
         $validated = $this->validate([
             'name' => ['required', 'string', 'min:2', 'max:255'],
+            'apellido' => ['nullable', 'string', 'max:255'],
             'username' => ['required', 'string', 'min:3', 'max:40', 'alpha_dash', "unique:users,username,{$user->id}"],
             'email' => ['required', 'email', 'max:255', "unique:users,email,{$user->id}"],
             'phone' => ['nullable', 'string', 'max:50'],
             'contact' => ['nullable', 'string', 'max:500'],
-            'avatar' => ['nullable', 'string'],
-            'preferred_line_id' => ['nullable', 'integer', 'exists:lines,id'],
+            'avatar' => ['nullable', 'string', function ($attribute, $value, $fail) {
+                if ($value && ! AvatarLibrary::isValid($value)) {
+                    $fail('Selecciona un avatar valido.');
+                }
+            }],
+            'preferred_line_id' => ['nullable', 'integer', 'min:0'],
         ], [], [
             'name' => 'Nombre',
+            'apellido' => 'Apellido',
             'username' => 'Nombre de Cliente',
             'email' => 'Email',
             'phone' => 'Celular',
@@ -117,7 +146,22 @@ class ClientAccount extends Component
             'preferred_line_id' => 'Línea preferida',
         ]);
 
-        $user->update($validated);
+        if (($validated['preferred_line_id'] ?? 0) > 0 && ! Line::whereKey($validated['preferred_line_id'])->where('status', 'active')->exists()) {
+            $this->addError('preferred_line_id', 'Selecciona una linea valida.');
+
+            return;
+        }
+
+        $user->update([
+            'name' => $validated['name'],
+            'apellido' => $validated['apellido'] ?? null,
+            'username' => $validated['username'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'contact' => $validated['contact'] ?? null,
+            'avatar' => $validated['avatar'] ?: AvatarLibrary::default(),
+            'line_id' => $validated['preferred_line_id'] ?: null,
+        ]);
         session()->flash('client_message', 'Tus datos personales fueron actualizados.');
     }
 
@@ -160,7 +204,7 @@ class ClientAccount extends Component
         $validated = $this->validate([
             'ticket_subject' => ['required', 'string', 'min:3', 'max:255'],
             'ticket_category' => ['required', 'in:juego,bono,sorteo,atencion,otro'],
-            'ticket_line_id' => ['nullable', 'integer', 'exists:lines,id'],
+            'ticket_line_id' => ['nullable', 'integer', 'min:0'],
             'ticket_description' => ['required', 'string', 'min:5', 'max:2000'],
         ], [
             'ticket_subject.required' => 'El asunto es obligatorio.',
@@ -168,12 +212,22 @@ class ClientAccount extends Component
             'ticket_description.required' => 'La descripción es obligatoria.',
         ]);
 
+        if (($validated['ticket_line_id'] ?? 0) > 0 && ! Line::whereKey($validated['ticket_line_id'])->where('status', 'active')->exists()) {
+            $this->addError('ticket_line_id', 'Selecciona una linea valida.');
+
+            return;
+        }
+
         $lineId = $validated['ticket_line_id'] ?: ($user->line_id ?: null);
+        if ($lineId && ! Line::whereKey($lineId)->where('status', 'active')->exists()) {
+            $lineId = null;
+        }
 
         $ticket = Ticket::create([
             'user_id' => $user->id,
             'line_id' => $lineId,
             'subject' => trim($validated['ticket_subject']),
+            'category' => $validated['ticket_category'],
             'status' => 'open',
             'priority' => 'medium',
         ]);
@@ -194,10 +248,12 @@ class ClientAccount extends Component
 
         $activeRaffleIds = Raffle::withoutGlobalScopes()
             ->where('status', 'active')
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
             ->pluck('id');
 
         return view('frontend.pages.client-account', [
-            'myNumbers' => RaffleNumber::with('raffle')
+            'myNumbers' => RaffleNumber::with(['raffle', 'line'])
                 ->where('user_id', $user->id)
                 ->latest()
                 ->take(12)
@@ -205,20 +261,23 @@ class ClientAccount extends Component
             'activeNumbersCount' => RaffleNumber::where('user_id', $user->id)
                 ->whereIn('raffle_id', $activeRaffleIds)
                 ->count(),
-            'pendingCommentsCount' => Post::query()
-                ->whereHas('comments', fn ($q) => $q->where('user_id', $user->id)->where('is_approved', false))
-                ->count(),
-            'ratingsCount' => LineRating::where('user_id', $user->id)->count(),
             'myTickets' => Ticket::where('user_id', $user->id)
-                ->with('line')
+                ->with(['line', 'messages'])
                 ->latest()
                 ->take(6)
                 ->get(),
             'recentBonuses' => BonusAssignment::where('user_id', $user->id)
                 ->where('created_at', '>=', now()->subWeek())
-                ->with('bonus')
+                ->with('bonus.line')
                 ->latest()
                 ->get(),
+            'notifications' => UserNotification::where('user_id', $user->id)
+                ->latest()
+                ->take(8)
+                ->get(),
+            'unreadNotificationsCount' => UserNotification::where('user_id', $user->id)
+                ->whereNull('read_at')
+                ->count(),
             'availableLines' => Line::with('activePlatforms')
                 ->where('status', 'active')
                 ->orderBy('name')

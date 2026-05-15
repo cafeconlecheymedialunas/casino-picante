@@ -157,6 +157,36 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_agent_can_access_dashboard_when_permission_exists_on_another_assigned_line(): void
+    {
+        [$user, $agent, $lineWithoutDashboard] = $this->agentWithLine();
+        $lineWithDashboard = Line::create([
+            'name' => 'Linea Dashboard '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+
+        LineAgent::create([
+            'line_id' => $lineWithDashboard->id,
+            'agent_id' => $agent->id,
+            'role' => LineRoles::MIEMBRO,
+            'is_active' => true,
+        ]);
+
+        LineAgentPermission::create([
+            'line_id' => $lineWithDashboard->id,
+            'agent_id' => $agent->id,
+            'permission' => Permissions::DASHBOARD_READ,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $lineWithoutDashboard->id])
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $this->assertSame($lineWithDashboard->id, session('active_line_id'));
+    }
+
     public function test_inactive_client_cannot_login(): void
     {
         $role = $this->role(Roles::CLIENTE, 'Cliente');

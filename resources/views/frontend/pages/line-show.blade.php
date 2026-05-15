@@ -21,10 +21,10 @@
     .line-info-row strong { color:#fff; text-align:right; }
     .detail-channel-list { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
     .platform-grid { display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0, 1fr)); }
-    .detail-channel { width:max-content; max-width:100%; display:inline-grid; grid-template-columns:42px auto; gap:12px; align-items:center; padding:12px 14px 12px 12px; border:1px solid rgba(154,154,154,.18); border-radius:999px; background:rgba(255,255,255,.035); text-decoration:none; }
+    .detail-channel { width:max-content; max-width:100%; display:inline-grid; grid-template-columns:42px minmax(0, auto); gap:12px; align-items:center; padding:12px 14px 12px 12px; border:1px solid rgba(154,154,154,.18); border-radius:999px; background:rgba(255,255,255,.035); text-decoration:none; }
     .detail-channel i { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(154,154,154,.08); color:#9a9a9a; font-size:18px; }
     .detail-channel strong { display:block; font-size:14px; }
-    .detail-channel small { display:block; color:var(--muted-2); font-size:11px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .detail-channel small { display:block; color:var(--muted-2); font-size:11px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:min(420px, 58vw); }
     .platform-card { display:grid; grid-template-columns:46px minmax(0, 1fr); gap:12px; align-items:center; padding:14px; border:1px solid var(--line); border-radius:var(--r-sm); background:rgba(255,255,255,.035); }
     .platform-logo { width:46px; height:46px; border-radius:12px; background:rgba(255,106,26,.14); display:flex; align-items:center; justify-content:center; overflow:hidden; color:var(--orange); font-weight:900; }
     .platform-logo img { width:100%; height:100%; object-fit:cover; }
@@ -63,6 +63,11 @@
         .line-detail-profile { padding:0 18px 20px; gap:12px; }
         .line-detail-avatar { width:96px; height:96px; border-radius:20px; }
         .line-detail-title h1 { font-size:42px; }
+        .line-info-row { display:grid; grid-template-columns:1fr; gap:4px; }
+        .line-info-row strong { text-align:left; overflow-wrap:anywhere; }
+        .detail-channel { width:100%; grid-template-columns:42px minmax(0, 1fr); border-radius:12px; }
+        .detail-channel small { max-width:none; white-space:normal; overflow-wrap:anywhere; }
+        .line-login-box .fe-btn, .rating-form .fe-btn { width:100%; }
         .rating-item { grid-template-columns:1fr; }
         .rating-head { display:block; }
         .rating-date { display:block; margin-top:3px; }

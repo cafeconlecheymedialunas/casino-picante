@@ -13,7 +13,7 @@
                 <ul>
                     <li><a href="{{ route('frontend.home') }}" wire:navigate>Inicio</a></li>
                     <li><a href="{{ route('frontend.lines') }}" wire:navigate>Lineas</a></li>
-                    <li><a href="#bonos">Bonos</a></li>
+                    <li><a href="{{ route('frontend.bonuses') }}" wire:navigate>Bonos</a></li>
                     <li><a href="{{ route('frontend.blog') }}" wire:navigate>Novedades</a></li>
                 </ul>
             </div>
@@ -23,7 +23,11 @@
                     <li><a href="{{ route('login') }}" wire:navigate>Login clientes</a></li>
                     <li><a href="{{ route('admin.login') }}" wire:navigate>Login panel</a></li>
                     @auth
-                        <li><a href="{{ route('perfil') }}" wire:navigate>Mi perfil</a></li>
+                        @if(auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
+                            <li><a href="{{ route('client.account') }}" wire:navigate>Mi cuenta</a></li>
+                        @else
+                            <li><a href="{{ route('perfil') }}" wire:navigate>Mi perfil</a></li>
+                        @endif
                     @endauth
                 </ul>
             </div>

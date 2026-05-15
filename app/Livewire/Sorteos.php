@@ -114,7 +114,7 @@ class Sorteos extends Component
     public function openEdit(int $id): void
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
-        $raffle = Raffle::with('lines')->findOrFail($id);
+        $raffle = $this->findAccessibleRaffle($id, ['lines']);
         $this->editingRaffle = $raffle;
         $this->title = $raffle->title;
         $this->description = $raffle->description ?? '';
@@ -232,7 +232,7 @@ class Sorteos extends Component
     public function delete(int $id): void
     {
         $this->checkLinePermission(Permissions::SORTEO_DELETE);
-        $raffle = Raffle::findOrFail($id);
+        $raffle = $this->findAccessibleRaffle($id);
         $raffleTitle = $raffle->title;
         $raffle->delete();
 
@@ -246,12 +246,7 @@ class Sorteos extends Component
 
     public function selectRaffle(int $id): void
     {
-        $raffle = Raffle::findOrFail($id);
-        $allowed = $this->availableLines()->pluck('id');
-        $raffleLineIds = $raffle->lines()->pluck('lines.id')->push($raffle->line_id)->filter()->unique();
-        if (! $this->isAdminMode() && $raffleLineIds->intersect($allowed)->isEmpty()) {
-            abort(403, 'Sin acceso a este sorteo.');
-        }
+        $this->findAccessibleRaffle($id, ['lines']);
 
         $this->selectedRaffleId = $id;
         $this->assignUserId = '';
@@ -286,7 +281,7 @@ class Sorteos extends Component
             'selectedNumbers.*' => 'integer',
         ]);
 
-        $raffle = Raffle::findOrFail($this->selectedRaffleId);
+        $raffle = $this->findAccessibleRaffle((int) $this->selectedRaffleId);
         $user = User::find((int) $this->assignUserId);
 
         if (! $user || ! $this->canAssignInRaffle($raffle)) {
@@ -385,7 +380,7 @@ class Sorteos extends Component
             'selectedNumbers.*' => 'integer',
         ]);
 
-        $raffle = Raffle::findOrFail($this->selectedRaffleId);
+        $raffle = $this->findAccessibleRaffle((int) $this->selectedRaffleId);
 
         $occupiedSelected = RaffleNumber::where('raffle_id', $raffle->id)
             ->whereIn('number', collect($this->selectedNumbers)->map(fn ($number) => (int) $number)->unique()->values())
@@ -426,7 +421,7 @@ class Sorteos extends Component
             return;
         }
 
-        $raffle = Raffle::with('numbers')->findOrFail($this->selectedRaffleId);
+        $raffle = $this->findAccessibleRaffle((int) $this->selectedRaffleId, ['numbers']);
         $end = $this->boardEndNumber($raffle);
         $taken = $raffle->numbers->pluck('number')->map(fn ($n) => (int) $n)->flip();
         $alreadySelected = collect($this->selectedNumbers)->map(fn ($n) => (int) $n)->flip();
@@ -457,7 +452,7 @@ class Sorteos extends Component
             return;
         }
 
-        $raffle = Raffle::findOrFail($this->selectedRaffleId);
+        $raffle = $this->findAccessibleRaffle((int) $this->selectedRaffleId);
 
         if ($number < $raffle->start_number || $number > $this->boardEndNumber($raffle)) {
             return;
@@ -488,14 +483,16 @@ class Sorteos extends Component
     public function removeNumber(int $numberId): void
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
-        RaffleNumber::findOrFail($numberId)->delete();
+        $number = RaffleNumber::findOrFail($numberId);
+        $this->findAccessibleRaffle((int) $number->raffle_id);
+        $number->delete();
         session()->flash('message', 'Numero eliminado');
     }
 
     public function openWinnerModal(int $raffleId): void
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
-        $raffle = Raffle::findOrFail($raffleId);
+        $raffle = $this->findAccessibleRaffle($raffleId);
         $this->selectedRaffleId = $raffleId;
         $this->finalizeOnSave = false;
         $this->winnerPrizes = collect($raffle->prizes ?? [])
@@ -523,7 +520,7 @@ class Sorteos extends Component
             'winnerPrizes.*.winner_number' => 'nullable|integer',
         ]);
 
-        $raffle = Raffle::with('numbers.user', 'numbers.line')->findOrFail($this->selectedRaffleId);
+        $raffle = $this->findAccessibleRaffle((int) $this->selectedRaffleId, ['numbers.user', 'numbers.line']);
         $numbersByValue = $raffle->numbers->keyBy('number');
 
         $firstWinnerUserId = null;
@@ -567,11 +564,12 @@ class Sorteos extends Component
 
         $raffle->update($updateData);
 
+        $message = $this->finalizeOnSave ? 'Sorteo finalizado' : 'Resultados registrados';
+
         $this->showWinnerModal = false;
         $this->winnerPrizes = [];
         $this->finalizeOnSave = false;
 
-        $message = $this->finalizeOnSave ? 'Sorteo finalizado' : 'Resultados registrados';
         session()->flash('message', $message);
         $this->notify('Resultados registrados', "Se cargaron los resultados del sorteo {$raffle->title}.", 'raffles', route('sorteos', [], false), 'success');
     }
@@ -579,14 +577,14 @@ class Sorteos extends Component
     public function reopenRaffle(int $id): void
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
-        Raffle::findOrFail($id)->update(['status' => 'inactive']);
+        $this->findAccessibleRaffle($id)->update(['status' => 'inactive']);
         session()->flash('message', 'Sorteo reabierto');
     }
 
     public function toggleStatus(int $id): void
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
-        $raffle = Raffle::findOrFail($id);
+        $raffle = $this->findAccessibleRaffle($id);
 
         if ($raffle->isFinished()) {
             return;
@@ -621,7 +619,7 @@ class Sorteos extends Component
     {
         $this->backfillRaffleLines();
 
-        return Raffle::with(['lines', 'platform'])->withCount('numbers')
+        return $this->accessibleRafflesQuery()->with(['lines', 'platform'])->withCount('numbers')
             ->when($this->filterStatus !== 'all', fn ($q) => $q->where('status', $this->filterStatus))
             ->when($this->search, fn ($q) => $q->where('title', 'like', '%'.$this->search.'%'))
             ->latest()
@@ -634,7 +632,7 @@ class Sorteos extends Component
             return null;
         }
 
-        return Raffle::with(['winner', 'lines', 'platform', 'numbers' => function ($q) {
+        return $this->accessibleRafflesQuery()->with(['winner', 'lines', 'platform', 'numbers' => function ($q) {
             $q->with(['user', 'line'])
                 ->when($this->numbersSearch, function ($nq) {
                     $search = '%'.$this->numbersSearch.'%';
@@ -739,6 +737,29 @@ class Sorteos extends Component
             ->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
         )->orderBy('name')->get();
+    }
+
+    private function accessibleRafflesQuery()
+    {
+        $query = Raffle::withoutGlobalScopes();
+
+        if (! $this->isAdminMode()) {
+            $allowedLineIds = $this->availableLines()->pluck('id')->map(fn ($id) => (int) $id)->values();
+
+            $query->where(function ($raffles) use ($allowedLineIds) {
+                $raffles->whereIn('line_id', $allowedLineIds)
+                    ->orWhereHas('lines', fn ($lines) => $lines->whereIn('lines.id', $allowedLineIds));
+            });
+        }
+
+        return $query;
+    }
+
+    private function findAccessibleRaffle(int $id, array $with = []): Raffle
+    {
+        return $this->accessibleRafflesQuery()
+            ->with($with)
+            ->findOrFail($id);
     }
 
     private function authorizeLineChoices(): void

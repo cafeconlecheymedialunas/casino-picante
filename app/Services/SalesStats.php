@@ -67,16 +67,22 @@ class SalesStats
         return compact('bestMonth', 'bestPlatform', 'lastMonths', 'earnings', 'monthTotal');
     }
 
-    public static function bestSellingLineOfMonth(?int $month = null, ?int $year = null): ?array
+    public static function bestSellingLineOfMonth(?int $month = null, ?int $year = null, ?Collection $lines = null): ?array
     {
         $month ??= now()->month;
         $year ??= now()->year;
+        $lineIds = $lines ? $lines->pluck('id')->all() : null;
+
+        if ($lineIds === []) {
+            return null;
+        }
 
         [$monthFn, $yearFn] = self::dateFunctions();
 
         $sale = Sale::query()
             ->join('lines', 'lines.id', '=', 'sales.line_id')
             ->where('lines.status', 'active')
+            ->when($lineIds !== null, fn ($query) => $query->whereIn('sales.line_id', $lineIds))
             ->whereRaw("{$monthFn} = ?", [$month])
             ->whereRaw("{$yearFn} = ?", [$year])
             ->selectRaw('sales.line_id, SUM(sales.monto_fichas) as total')

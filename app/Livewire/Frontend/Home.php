@@ -53,7 +53,9 @@ class Home extends Component
         return Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
             ->where('status', 'active')
-            ->latest()
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->orderBy('end_date')
             ->first();
     }
 
@@ -64,7 +66,8 @@ class Home extends Component
             ->with(['line', 'platform'])
             ->where('status', 'active')
             ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now());
+            ->where('end_date', '>=', now())
+            ->whereHas('line', fn ($line) => $line->where('status', 'active'));
 
         if ($selected->isNotEmpty()) {
             $configured = (clone $baseQuery)->whereIn('id', $selected)->get();
@@ -81,7 +84,7 @@ class Home extends Component
     {
         $selected = $this->configuredIds(HomeConfig::SECTION_BLOG);
         $baseQuery = Post::withoutGlobalScopes()
-            ->with('category')
+            ->with(['category', 'authorAgent'])
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at');
 

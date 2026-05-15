@@ -169,4 +169,42 @@ trait HasLinePermissions
             ->map(fn ($id) => (int) $id)
             ->all();
     }
+
+    // Returns line IDs where the current agent has any of the given permissions.
+    // Admin keeps the same active-line/all-lines behavior as visibleLineIds().
+    public function visibleLineIdsWithPermission(array|string $permissions, bool $respectActiveLine = true): ?array
+    {
+        if ($this->isAdminMode()) {
+            return $this->visibleLineIds();
+        }
+
+        $agentId = $this->validateSessionAgent() ?: auth()->user()?->agent?->id;
+        if (! $agentId) {
+            return [];
+        }
+
+        $permissions = array_filter(array_map('trim', (array) $permissions));
+
+        $lineIds = LineAgent::where('agent_id', $agentId)
+            ->where('is_active', true)
+            ->when($permissions !== [], fn ($query) => $query->whereExists(function ($permissionQuery) use ($permissions) {
+                $permissionQuery->selectRaw('1')
+                    ->from('line_agent_permissions')
+                    ->whereColumn('line_agent_permissions.line_id', 'line_agents.line_id')
+                    ->whereColumn('line_agent_permissions.agent_id', 'line_agents.agent_id')
+                    ->whereIn('line_agent_permissions.permission', $permissions);
+            }))
+            ->pluck('line_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $activeLineId = session('active_line_id');
+        if ($respectActiveLine && $activeLineId && in_array((int) $activeLineId, $lineIds, true)) {
+            return [(int) $activeLineId];
+        }
+
+        return $lineIds;
+    }
 }

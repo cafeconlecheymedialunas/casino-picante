@@ -38,6 +38,16 @@
                 @error('category_id') <div class="form-error">{{ $message }}</div> @enderror
             </div>
             <div class="form-group">
+                <label class="form-label">Autor</label>
+                <select wire:model="author_agent_id" class="form-input">
+                    <option value="">Sin autor asignado</option>
+                    @foreach($authors as $author)
+                        <option value="{{ $author->id }}">{{ $author->username ?: $author->name }}{{ $author->apellido ? ' '.$author->apellido : '' }}</option>
+                    @endforeach
+                </select>
+                @error('author_agent_id') <div class="form-error">{{ $message }}</div> @enderror
+            </div>
+            <div class="form-group">
                 <label class="form-label">Contenido</label>
                 <textarea wire:model="content" rows="4" class="form-input" style="resize:vertical" placeholder="Contenido completo..."></textarea>
             </div>
@@ -154,6 +164,7 @@
                     @endif
                 </div>
             </div>
+            <div class="nv-author">{{ $post->authorAgent?->username ?: $post->authorAgent?->name ?: 'Sin autor' }}</div>
             <span class="nv-status status-{{ $post->status }}">
                 @if($post->status === 'published')● Publicado
                 @elseif($post->status === 'draft')● Borrador
@@ -187,11 +198,12 @@
     .status-filter.active { background:var(--orange);color:#190702;border-color:var(--orange); }
 
     .nv-list { display:grid;gap:8px; }
-    .nv-item { padding:12px 14px;display:grid;grid-template-columns:56px 1fr 100px auto;gap:12px;align-items:center;border-radius:14px;cursor:pointer;transition:all .2s;background:linear-gradient(180deg,#170b0b 0%,#0f0707 100%);border:1px solid var(--line);text-decoration:none;color:inherit; }
+    .nv-item { padding:12px 14px;display:grid;grid-template-columns:56px 1fr 140px 100px auto;gap:12px;align-items:center;border-radius:14px;cursor:pointer;transition:all .2s;background:linear-gradient(180deg,#170b0b 0%,#0f0707 100%);border:1px solid var(--line);text-decoration:none;color:inherit; }
     .nv-item:hover { border-color:var(--line-2); }
     .nv-thumb { height:44px;border-radius:8px;overflow:hidden;background:linear-gradient(135deg,var(--black-3),var(--ink));display:flex;align-items:center;justify-content:center; }
     .nv-title { font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
     .nv-date { font-size:11px;color:var(--muted);margin-top:2px; }
+    .nv-author { font-size:11px;color:var(--muted-2);font-weight:800;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
     .nv-status { font-size:11px;font-weight:700;text-align:right; }
     .status-published { color:var(--good); }
     .status-draft { color:var(--warn); }
@@ -224,7 +236,7 @@
         .nv-thumb{ height:34px; }
         .nv-title{ font-size:12px; }
         .nv-date{ font-size:10px; }
-        .nv-status{ display:none; }
+        .nv-status,.nv-author{ display:none; }
         .nv-actions{ gap:2px; }
         .nv-action-btn{ width:24px;height:24px;font-size:10px; }
         .nv-modal{ border-radius:12px; }

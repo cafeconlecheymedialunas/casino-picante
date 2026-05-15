@@ -18,11 +18,16 @@ class PostShow extends Component
 
     public ?string $commentNotice = null;
 
-    public function mount(Post $post): void
+    public function mount(string $slug): void
     {
-        abort_unless($post->status === Post::STATUS_PUBLISHED, 404);
+        $post = Post::withoutGlobalScopes()
+            ->with(['category', 'authorAgent'])
+            ->where('slug', $slug)
+            ->where('status', Post::STATUS_PUBLISHED)
+            ->whereNotNull('published_at')
+            ->firstOrFail();
 
-        $this->post = $post->load('category');
+        $this->post = $post;
     }
 
     public function addComment(): void

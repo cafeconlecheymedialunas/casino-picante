@@ -9,6 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <title>Ingresar — RED PICANTES</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @stack('styles')
@@ -24,7 +25,18 @@
             --font-mono: 'JetBrains Mono', monospace;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        html, body { background:var(--black); color:var(--white); font-family:var(--font-body); min-height:100vh; }
+        html, body { background:var(--black); color:var(--white); font-family:var(--font-body); min-height:100vh; overflow-x:hidden; }
+        img, svg, video, canvas { max-width:100%; height:auto; }
+        button, input, select, textarea { font:inherit; min-width:0; }
+        .fe-shell { width:min(1220px, calc(100% - 40px)); margin:0 auto; min-width:0; }
+        .fe-btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:8px;
+            height:40px; padding:0 18px; border-radius:999px; font-size:13px; font-weight:800;
+            text-decoration:none; border:1px solid transparent; cursor:pointer; white-space:nowrap;
+            font-family:var(--font-body); max-width:100%;
+        }
+        .fe-btn.primary { background:linear-gradient(180deg,#ff8a3d,var(--orange) 62%,#e6580f); color:#190702; box-shadow:0 12px 36px rgba(255,106,26,.36); }
+        .fe-btn.ghost { background:rgba(255,255,255,.04); color:#fff; border-color:var(--line-2); }
         .btn-primary {
             display: inline-flex; align-items: center; gap: 7px;
             height: 38px; padding: 0 18px;
@@ -55,6 +67,8 @@
             transition: background-color 5000s ease-in-out 0s;
         }
         @media (max-width: 480px) {
+            .fe-shell { width:calc(100% - 24px); }
+            .fe-btn { height:auto; min-height:40px; padding:10px 14px; white-space:normal; line-height:1.15; }
             .btn-primary { height: 34px; font-size: 12px; padding: 0 14px; }
         }
     </style>

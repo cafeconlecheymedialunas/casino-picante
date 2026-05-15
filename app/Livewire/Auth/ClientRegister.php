@@ -25,17 +25,7 @@ class ClientRegister extends Component
 
     public string $password_confirmation = '';
 
-    public bool $recibir_bonos = false;
-
-    protected $rules = [
-        'name' => ['required', 'string', 'min:2', 'max:255'],
-        'apellido' => ['nullable', 'string', 'max:255'],
-        'username' => ['required', 'string', 'min:3', 'max:40', 'alpha_dash', 'unique:users,username'],
-        'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-        'phone' => ['nullable', 'string', 'max:50'],
-        'password' => ['required', 'confirmed', Password::min(8)],
-        'recibir_bonos' => ['accepted'],
-    ];
+    public bool $recibir_bonos = true;
 
     protected $messages = [
         'name.required' => 'Ingresa tu nombre.',
@@ -46,7 +36,6 @@ class ClientRegister extends Component
         'email.unique' => 'Ese email ya está registrado.',
         'password.required' => 'Ingresa una contraseña.',
         'password.confirmed' => 'Las contraseñas no coinciden.',
-        'recibir_bonos.accepted' => 'Debés aceptar para recibir bonos y novedades por email.',
     ];
 
     public function register(): void
@@ -65,6 +54,7 @@ class ClientRegister extends Component
             'username' => $validated['username'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
+            'wants_bonus_emails' => (bool) ($validated['recibir_bonos'] ?? false),
             'password' => $validated['password'],
             'status' => 'active',
         ]);
@@ -79,5 +69,18 @@ class ClientRegister extends Component
     public function render()
     {
         return view('livewire.auth.client-register')->layout('layouts.auth');
+    }
+
+    protected function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'min:2', 'max:255'],
+            'apellido' => ['nullable', 'string', 'max:255'],
+            'username' => ['required', 'string', 'min:3', 'max:40', 'alpha_dash', 'unique:users,username'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'password' => ['required', 'confirmed', Password::min(8)],
+            'recibir_bonos' => ['boolean'],
+        ];
     }
 }

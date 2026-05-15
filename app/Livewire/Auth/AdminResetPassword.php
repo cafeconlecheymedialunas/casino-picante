@@ -4,6 +4,7 @@ namespace App\Livewire\Auth;
 
 use App\Models\Agent;
 use App\Models\User;
+use App\Support\Roles;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -72,7 +73,16 @@ class AdminResetPassword extends Component
         }
 
         $agent = Agent::where('email', $email)->first();
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)
+            ->whereHas('role', fn ($role) => $role->whereIn('name', [Roles::ADMIN, Roles::AGENTE]))
+            ->first();
+
+        if (! $agent && ! $user) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            $this->addError('email', 'No existe una cuenta de panel con este email.');
+
+            return;
+        }
 
         foreach ([$agent, $user] as $model) {
             $model?->update(['password' => Hash::make($this->password)]);

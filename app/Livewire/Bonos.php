@@ -117,6 +117,7 @@ class Bonos extends Component
     {
         $this->checkLinePermission(Permissions::BONO_UPDATE);
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
+        $this->authorizeLineChoice((int) $bonus->line_id);
         $this->editingBonusId = $bonus->id;
         $this->title = $bonus->title;
         $this->code = $bonus->code ?? '';
@@ -165,6 +166,19 @@ class Bonos extends Component
             return;
         }
 
+        $specificUser = null;
+        if ($this->bonusType === 'specific') {
+            $specificUser = User::where('email', $this->specificUsername)
+                ->orWhere('username', $this->specificUsername)
+                ->first();
+
+            if (! $specificUser || $specificUser->status !== 'active' || ! $this->clientBelongsToLine($specificUser, (int) $this->lineId)) {
+                $this->addError('specificUsername', 'Selecciona un cliente activo de la linea del bono.');
+
+                return;
+            }
+        }
+
         $data = [
             'title' => trim($this->title),
             'code' => trim($this->code) ?: Bonus::generateCode(),
@@ -176,7 +190,7 @@ class Bonos extends Component
             'line_id' => (int) $this->lineId,
             'platform_id' => $this->platformId ? (int) $this->platformId : null,
             'type' => $this->bonusType,
-            'user_id' => $this->bonusType === 'specific' ? optional(User::where('email', $this->specificUsername)->orWhere('username', $this->specificUsername)->first())->id : null,
+            'user_id' => $specificUser?->id,
             'bonus_percent' => $this->bonusPercent !== '' ? (float) $this->bonusPercent : 0,
             'min_deposit' => $this->minDeposit !== '' ? (float) $this->minDeposit : 0,
             'max_bonus' => $this->maxBonus !== '' ? (float) $this->maxBonus : 0,
@@ -234,6 +248,14 @@ class Bonos extends Component
         $this->authorizeLineChoice((int) $this->assignLineId);
 
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($this->selectedBonusId);
+        $this->authorizeLineChoice((int) $bonus->line_id);
+
+        if ((int) $this->assignLineId !== (int) $bonus->line_id) {
+            $this->addError('assignUserIds', 'La linea seleccionada no coincide con el bono.');
+
+            return;
+        }
+
         $bonus->updateStatus();
 
         if ($bonus->status !== 'active') {
@@ -248,6 +270,12 @@ class Bonos extends Component
         foreach ($this->assignUserIds as $userId) {
             $user = User::find($userId);
             if (! $user) {
+                continue;
+            }
+
+            if ($user->status !== 'active' || ! $this->clientBelongsToLine($user, (int) $bonus->line_id)) {
+                $skipped[] = $user->username ?? $user->email;
+
                 continue;
             }
 
@@ -399,6 +427,9 @@ class Bonos extends Component
     public function openAssignmentsPanel(int $bonusId): void
     {
         $this->checkLinePermission(Permissions::BONO_READ);
+        $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
+        $this->authorizeLineChoice((int) $bonus->line_id);
+
         $this->bonusForAssignments = $bonusId;
         $this->assignmentsSearch = '';
         $this->showAssignmentsPanel = true;
@@ -419,6 +450,7 @@ class Bonos extends Component
 
         return BonusAssignment::with('user')
             ->where('bonus_id', $this->bonusForAssignments)
+            ->whereHas('bonus', fn ($bonus) => $bonus->whereIn('line_id', $this->availableLines()->pluck('id')))
             ->when($this->assignmentsSearch, function ($q) {
                 $s = '%'.$this->assignmentsSearch.'%';
                 $q->whereHas('user', fn ($u) => $u->where('username', 'like', $s)->orWhere('email', 'like', $s));
@@ -433,8 +465,11 @@ class Bonos extends Component
             ? (int) Bonus::withoutGlobalScopes()->find($this->selectedBonusId)?->line_id
             : (int) session('active_line_id');
 
-        return User::where('line_id', $lineId)
-            ->orWhereHas('lines', fn ($q) => $q->where('lines.id', $lineId)->wherePivot('is_active', true))
+        return User::where(function ($query) use ($lineId) {
+            $query->where('line_id', $lineId)
+                ->orWhereHas('lines', fn ($q) => $q->where('lines.id', $lineId)->wherePivot('is_active', true));
+        })
+            ->where('status', 'active')
             ->orderBy('username')
             ->get(['id', 'username', 'email'])
             ->map(fn ($u) => ['id' => $u->id, 'label' => $u->username ?? $u->email])

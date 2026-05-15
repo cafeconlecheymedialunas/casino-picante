@@ -50,6 +50,8 @@ class UsersIndex extends Component
 
     public string $contact = '';
 
+    public bool $wantsBonusEmails = false;
+
     public string $avatar = '';
 
     public string $userStatus = 'active';
@@ -90,6 +92,7 @@ class UsersIndex extends Component
             'password' => $this->editingUserId ? 'nullable|min:6' : 'required|min:6',
             'phone' => 'nullable|max:30',
             'contact' => 'nullable|max:100',
+            'wantsBonusEmails' => 'boolean',
             'avatar' => ['required', 'string', 'regex:/^avatar_[A-Za-z0-9_-]{1,80}$/'],
             'userStatus' => 'required|in:active,inactive',
             'preferredLineId' => 'nullable|exists:lines,id',
@@ -138,6 +141,7 @@ class UsersIndex extends Component
         $this->email = $user->email;
         $this->phone = $user->phone ?? '';
         $this->contact = $user->contact ?? '';
+        $this->wantsBonusEmails = (bool) $user->wants_bonus_emails;
         $this->avatar = AvatarLibrary::isValid($user->avatar) ? $user->avatar : AvatarLibrary::default();
         $this->userStatus = $user->status === 'blocked' ? 'inactive' : $user->status;
         $this->preferredLineId = $user->line_id ? (int) $user->line_id : null;
@@ -185,6 +189,7 @@ class UsersIndex extends Component
             'email' => trim($this->email),
             'phone' => $this->phone ?: null,
             'contact' => $this->contact ?: null,
+            'wants_bonus_emails' => $this->wantsBonusEmails,
             'avatar' => $this->avatar,
             'status' => $status,
         ];
@@ -306,6 +311,7 @@ class UsersIndex extends Component
         $this->password = '';
         $this->phone = '';
         $this->contact = '';
+        $this->wantsBonusEmails = false;
         $this->avatar = AvatarLibrary::default();
         $this->userStatus = 'active';
         $this->preferredLineId = null;

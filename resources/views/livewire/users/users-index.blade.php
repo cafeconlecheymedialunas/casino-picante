@@ -177,6 +177,7 @@
     .s-toggle-btn.is-active:hover { background:rgba(255,71,87,.15); color:#ff4757; }
     .s-toggle-btn.is-inactive { background:rgba(255,71,87,.12); color:#ff4757; }
     .s-toggle-btn.is-inactive:hover { background:rgba(37,196,107,.15); color:var(--good); }
+    .newsletter-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 7px; border-radius:999px; background:rgba(255,106,26,.12); color:var(--orange); font-size:9px; font-weight:900; letter-spacing:.04em; text-transform:uppercase; margin-top:3px; }
 
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
     .modal-box { background: linear-gradient(180deg, #1c0e0e, #120909); border: 1px solid var(--line-2); border-radius: 10px; width: min(720px, 100%); max-height: min(86vh, 820px); overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,.5); }
@@ -364,7 +365,12 @@
                 <div class="t-row">
                     <div class="col-client">
                         <img class="table-avatar" src="{{ $avatarUrl }}" alt="">
-                        <span class="strong truncate">{{ $fullName ?: '-' }}</span>
+                        <span class="truncate">
+                            <span class="strong truncate" style="display:block">{{ $fullName ?: '-' }}</span>
+                            @if($user->wants_bonus_emails)
+                                <span class="newsletter-badge">Bonos/email</span>
+                            @endif
+                        </span>
                     </div>
                     <div class="strong truncate col-username">{{ $user->username ?? '-' }}</div>
                     <div class="truncate col-email">{{ $user->email }}</div>
@@ -510,6 +516,14 @@
                 </div>
 
                 <div class="form-group">
+                    <label style="display:flex;gap:8px;align-items:flex-start;color:var(--muted);font-size:12px;font-weight:700;">
+                        <input type="checkbox" wire:model="wantsBonusEmails" style="accent-color:var(--orange);margin-top:2px;">
+                        Recibe bonos y novedades del blog por email
+                    </label>
+                    @error('wantsBonusEmails') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">{{ $editingUserId ? 'Nueva contrasena (opcional)' : 'Contrasena *' }}</label>
                     <input type="password" wire:model="password" class="form-input @error('password') is-error @enderror" placeholder="{{ $editingUserId ? 'Dejar vacio para mantener' : 'Minimo 6 caracteres' }}">
                     @error('password') <div class="form-error">{{ $message }}</div> @enderror
@@ -544,6 +558,7 @@
                 <div class="detail-item"><label>Linea preferida</label><p>{{ $detailUser->preferredLine?->name ?? '-' }}</p></div>
                 <div class="detail-item"><label>Telefono</label><p>{{ $detailUser->phone ?? '-' }}</p></div>
                 <div class="detail-item"><label>Contacto adicional</label><p>{{ $detailUser->contact ?? '-' }}</p></div>
+                <div class="detail-item"><label>Bonos por email</label><p>{{ $detailUser->wants_bonus_emails ? 'Si' : 'No' }}</p></div>
                 <div class="detail-item"><label>Estado</label><p>{{ $detailUser->status === 'active' ? 'Activo' : 'Inactivo' }}</p></div>
                 <div class="detail-item"><label>Registro</label><p>{{ $detailUser->created_at->format('d/m/Y H:i') }}</p></div>
             </div>

@@ -22,6 +22,7 @@ class Post extends Model
         'published_at',
         'line_id',
         'category_id',
+        'author_agent_id',
     ];
 
     protected $casts = [
@@ -31,6 +32,11 @@ class Post extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function authorAgent()
+    {
+        return $this->belongsTo(Agent::class, 'author_agent_id');
     }
 
     const STATUS_DRAFT = 'draft';

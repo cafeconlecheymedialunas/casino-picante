@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Models\Agent;
 use App\Models\Category;
 use App\Models\Comment;
+use App\Models\LineAgent;
 use App\Models\Post;
 use App\Support\ImageStorage;
 use App\Support\Permissions;
@@ -28,6 +30,8 @@ class BlogEdit extends Component
 
     public $category_id = '';
 
+    public $author_agent_id = '';
+
     public $image = '';
 
     public $imageUpload = null;
@@ -47,6 +51,7 @@ class BlogEdit extends Component
         'excerpt' => 'nullable',
         'status' => 'required|in:draft,published,hidden',
         'category_id' => 'nullable|exists:categories,id',
+        'author_agent_id' => 'nullable|exists:agents,id',
     ];
 
     public function mount(int $id): void
@@ -59,6 +64,7 @@ class BlogEdit extends Component
         $this->excerpt = $this->post->excerpt ?? '';
         $this->status = $this->post->status;
         $this->category_id = $this->post->category_id ?? '';
+        $this->author_agent_id = $this->post->author_agent_id ?? '';
         $this->image = $this->post->image ?? '';
 
         $this->refreshComments();
@@ -72,6 +78,7 @@ class BlogEdit extends Component
             ...$this->rules,
             'imageUpload' => 'nullable|image|max:4096',
         ]);
+        $this->authorizeAuthorChoice($this->author_agent_id);
 
         $imagePath = $this->image;
 
@@ -84,7 +91,11 @@ class BlogEdit extends Component
             'content' => $this->content,
             'excerpt' => $this->excerpt,
             'status' => $this->status,
+            'published_at' => $this->status === Post::STATUS_PUBLISHED
+                ? ($this->post->published_at ?: now())
+                : $this->post->published_at,
             'category_id' => $this->category_id ?: null,
+            'author_agent_id' => $this->author_agent_id ?: null,
             'image' => $imagePath ?: null,
         ]);
 
@@ -189,6 +200,36 @@ class BlogEdit extends Component
     {
         return view('livewire.blog-edit', [
             'categories' => Category::all(),
+            'authors' => $this->availableAuthors(),
         ])->layout('layouts.dashboard');
+    }
+
+    private function availableAuthors()
+    {
+        $query = Agent::orderBy('name');
+        $lineIds = $this->visibleLineIds();
+
+        if ($lineIds !== null) {
+            $agentIds = LineAgent::whereIn('line_id', $lineIds)
+                ->where('is_active', true)
+                ->pluck('agent_id');
+
+            $query->whereIn('id', $agentIds);
+        }
+
+        return $query->get();
+    }
+
+    private function authorizeAuthorChoice($authorAgentId): void
+    {
+        if (! $authorAgentId) {
+            return;
+        }
+
+        $allowed = $this->availableAuthors()
+            ->pluck('id')
+            ->contains((int) $authorAgentId);
+
+        abort_unless($allowed, 403, 'No podes asignar un autor fuera de tu alcance.');
     }
 }
