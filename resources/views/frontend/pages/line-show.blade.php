@@ -20,16 +20,17 @@
     .line-info-row:last-child { border-bottom:0; }
     .line-info-row strong { color:#fff; text-align:right; }
     .detail-channel-list { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
-    .platform-grid { display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .detail-channel { width:max-content; max-width:100%; display:inline-grid; grid-template-columns:42px minmax(0, auto); gap:12px; align-items:center; padding:12px 14px 12px 12px; border:1px solid rgba(154,154,154,.18); border-radius:999px; background:rgba(255,255,255,.035); text-decoration:none; }
     .detail-channel i { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(154,154,154,.08); color:#9a9a9a; font-size:18px; }
     .detail-channel strong { display:block; font-size:14px; }
     .detail-channel small { display:block; color:var(--muted-2); font-size:11px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:min(420px, 58vw); }
-    .platform-card { display:grid; grid-template-columns:46px minmax(0, 1fr); gap:12px; align-items:center; padding:14px; border:1px solid var(--line); border-radius:var(--r-sm); background:rgba(255,255,255,.035); }
-    .platform-logo { width:46px; height:46px; border-radius:12px; background:rgba(255,106,26,.14); display:flex; align-items:center; justify-content:center; overflow:hidden; color:var(--orange); font-weight:900; }
+    .platform-grid { display:grid; gap:12px; grid-template-columns:repeat(4, minmax(0, 1fr)); }
+    .platform-card { display:flex; flex-direction:column; gap:12px; padding:16px; border:1px solid var(--line); border-radius:var(--r-md); background:rgba(255,255,255,.035); text-align:center; align-items:center; transition: transform 0.2s ease, border-color 0.2s ease; }
+    .platform-card:hover { transform: translateY(-4px); border-color: var(--orange); }
+    .platform-logo { width:100%; height:100px; border-radius:12px; background:rgba(255,106,26,.14); display:flex; align-items:center; justify-content:center; overflow:hidden; color:var(--orange); font-weight:900; font-size:32px; font-family:var(--font-display); }
     .platform-logo img { width:100%; height:100%; object-fit:cover; }
-    .platform-card strong { display:block; font-size:14px; }
-    .platform-card p { color:var(--muted); font-size:12px; line-height:1.4; margin:4px 0 0; }
+    .platform-card strong { display:block; font-size:18px; font-family:var(--font-display); letter-spacing:0.02em; margin-top:4px; }
+    .platform-card p { color:var(--muted); font-size:12px; line-height:1.4; margin:2px 0 0; }
     .line-rating-wrap { margin-top:18px; }
     .rating-summary { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
     .rating-big { font-family:var(--font-display); font-size:54px; line-height:.85; color:var(--orange); }
@@ -51,11 +52,43 @@
     .rating-date { font-size:10px; color:var(--muted-2); font-weight:800; white-space:nowrap; }
     .rating-message { color:var(--muted); font-size:13px; line-height:1.5; margin:6px 0 0; }
     .line-login-box { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px; border:1px solid var(--line); border-radius:var(--r-md); background:rgba(255,255,255,.035); margin-bottom:16px; color:var(--muted); font-size:13px; }
+
+    /* Raffle & Bonus Styles */
+    .raffle-banner { position: relative; overflow: hidden; border-radius: 10px; min-height: 330px; padding: 18px 22px 22px; }
+    .raffle-banner-head h3 { font-family:var(--font-display); font-size:44px; line-height:.9; letter-spacing:.03em; margin:0; }
+    .raffle-banner-head p { margin:6px auto 0; color:var(--muted); font-size:12px; line-height:1.45; }
+    .raffle-countdown { display:inline-flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; border:1px solid rgba(255,106,26,.55); border-radius:999px; background:rgba(255,106,26,.12); color:#fff; padding:8px 16px; font-size:12px; font-weight:900; letter-spacing:.04em; text-transform:uppercase; box-shadow:0 0 22px rgba(255,106,26,.16); }
+    .raffle-countdown strong { color:var(--orange); font-size:14px; }
+    .raffle-prize-strip { position:relative; z-index:2; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(310px, 400px); gap:14px; padding:10px 0 12px; align-items:end; justify-content:start; overflow-x:auto; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
+    .raffle-prize-strip::-webkit-scrollbar { height:8px; }
+    .raffle-prize-strip::-webkit-scrollbar-track { background:rgba(255,255,255,.08); border-radius:999px; }
+    .raffle-prize-strip::-webkit-scrollbar-thumb { background:rgba(255,106,26,.72); border-radius:999px; }
+    .raffle-prize-tile { min-height:116px; display:grid; grid-template-columns:58px minmax(0, .86fr) minmax(112px, 1fr); align-items:center; gap:12px; border:1px solid rgba(255,106,26,.55); border-radius:8px; background:#0d0706; box-shadow:0 0 18px rgba(255,106,26,.09) inset, 0 18px 38px rgba(0,0,0,.28); padding:12px; overflow:hidden; scroll-snap-align:start; }
+    .raffle-prize-tile.primary { min-height:146px; grid-template-columns:72px minmax(0, .82fr) minmax(150px, 1fr); border-color:rgba(255,179,71,.75); background:#120807; }
+    .raffle-rank { font-family:var(--font-display); font-size:82px; line-height:.8; color:var(--orange); text-align:center; text-shadow:0 0 20px rgba(255,106,26,.32); }
+    .raffle-prize-tile.primary .raffle-rank { font-size:100px; color:#ff8a1f; }
+    .raffle-prize-info strong { display:block; color:#fff; font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
+    .raffle-prize-info span { display:block; color:rgba(255,255,255,.78); font-size:12px; line-height:1.25; }
+    .raffle-prize-info b { display:block; color:var(--orange); font-size:15px; margin-top:3px; }
+    .raffle-prize-image { height:90px; border-radius:6px; background:radial-gradient(70% 70% at 50% 50%, rgba(255,106,26,.22), transparent 72%); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .raffle-prize-tile.primary .raffle-prize-image { height:116px; }
+    .raffle-prize-image img { width:100%; height:100%; object-fit:cover; }
+    .raffle-prize-image span { font-family:var(--font-display); color:rgba(255,255,255,.12); font-size:44px; letter-spacing:.05em; }
+    .bonus-carousel { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; padding:4px 0 16px; }
+    .bonus-card { min-height:250px; color:#fff; position:relative; border:3px dashed rgba(255,106,26,.9); border-radius:18px; background:radial-gradient(90% 100% at 0% 0%, rgba(255,106,26,.2), transparent 58%), linear-gradient(180deg,#180b08,#090505); box-shadow:0 18px 42px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.04) inset; overflow:hidden; padding:30px; }
+    .bonus-ticket-main { min-height:194px; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:8px; padding:0; position:relative; }
+    .bonus-ticket-kicker { color:var(--orange); font-size:10px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; }
+    .bonus-card h3 { font-family:var(--font-display); font-size:34px; line-height:.92; margin:0; letter-spacing:.02em; color:#fff; text-transform:uppercase; max-width:270px; }
+    .bonus-card p { color:var(--muted); font-size:13px; line-height:1.42; margin:12px 0 0; font-weight:700; max-width:270px; }
+    .bonus-ticket-value { font-family:var(--font-display); color:var(--orange); font-size:58px; line-height:.82; text-shadow:0 0 22px rgba(255,106,26,.22); }
+    .bonus-card strong { display:block; font-family:var(--font-mono); font-size:12px; letter-spacing:.04em; overflow-wrap:anywhere; color:var(--orange); }
+    .bonus-card em { display:block; font-style:normal; font-weight:900; font-size:10px; color:var(--muted-2); }
+
     @media (max-width: 920px) {
         .line-detail-profile, .line-detail-grid { grid-template-columns:1fr; }
         .line-status-box { width:100%; }
         .line-detail-title h1 { font-size:50px; }
-        .platform-grid { grid-template-columns:1fr; }
+        .platform-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 620px) {
         .line-detail-page { padding-top:28px; }
@@ -71,6 +104,7 @@
         .rating-item { grid-template-columns:1fr; }
         .rating-head { display:block; }
         .rating-date { display:block; margin-top:3px; }
+        .platform-grid { grid-template-columns: 1fr; }
     }
 </style>
 @endpush
@@ -115,7 +149,23 @@
                     </div>
                     <div class="line-status-box">
                         <small>Valoracion general</small>
-                        <strong>★★★★★ {{ number_format($ratingAverage, 1) }}</strong>
+                        <div class="rating-stars" aria-label="Valoracion general {{ number_format($ratingAverage, 1) }} estrellas">
+                            @php
+                                $fullStars = floor($ratingAverage);
+                                $hasHalfStar = ($ratingAverage - $fullStars) >= 0.5;
+                                $emptyStars = 5 - $fullStars - ($hasHalfStar ? 1 : 0);
+                            @endphp
+                            @for($i = 0; $i < $fullStars; $i++)
+                                ★
+                            @endfor
+                            @if($hasHalfStar)
+                                <i class="fa-solid fa-star-half-stroke" style="font-size: 0.9em; vertical-align: middle; margin-top: -2px; display: inline-block;"></i>
+                            @endif
+                            @for($i = 0; $i < $emptyStars; $i++)
+                                <span style="color: rgba(255,255,255,0.15);">★</span>
+                            @endfor
+                            <strong style="margin-left: 4px; color: #fff;">{{ number_format($ratingAverage, 1) }}</strong>
+                        </div>
                     </div>
                 </div>
             </article>
@@ -127,7 +177,16 @@
                     <div class="line-info-row"><span>Estado</span><strong>Activa</strong></div>
                     <div class="line-info-row"><span>Plataformas disponibles</span><strong>{{ $platforms->count() }}</strong></div>
                     <div class="line-info-row"><span>Canales publicados</span><strong>{{ $contacts->count() }}</strong></div>
-                    <div class="line-info-row"><span>Valoraciones</span><strong>{{ $ratingCount }}</strong></div>
+                    <div class="line-info-row">
+                        <span>Valoración</span>
+                        <strong>
+                            @if($ratingCount > 0)
+                                ★ {{ number_format($ratingAverage, 1) }}
+                            @else
+                                Sin valoraciones
+                            @endif
+                        </strong>
+                    </div>
                     @if($line->type)
                         <div class="line-info-row"><span>Tipo</span><strong>{{ ucfirst($line->type) }}</strong></div>
                     @endif
@@ -182,6 +241,73 @@
                     @endif
                 </div>
             </section>
+
+            @if($activeBonuses->count())
+                <section id="bonos" class="fe-section">
+                    <div class="line-panel">
+                        <h2 class="line-panel-title">Bonos activos</h2>
+                        <div class="bonus-carousel" style="margin-top: 10px;">
+                            @foreach($activeBonuses as $bonus)
+                                @include('frontend.components.bonus-card', ['bonus' => $bonus])
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+            @endif
+
+            @if($activeRaffles->count())
+                @foreach($activeRaffles as $activeRaffle)
+                    <section id="sorteo-{{ $activeRaffle->id }}" class="fe-section">
+                        <div class="line-panel" style="padding: 0; overflow: hidden; border-color: rgba(255, 106, 26, 0.3);">
+                            @php
+                                $prizeImage = function (?string $image): ?string {
+                                    if (! $image) return null;
+                                    if (\Illuminate\Support\Str::startsWith($image, ['http://', 'https://', '/storage/'])) return $image;
+                                    return asset('storage/'.$image);
+                                };
+                                $displayPrizes = collect($activeRaffle->prizes)->sortBy(fn ($prize, $index) => (int) ($prize['position'] ?? $index + 1))->values();
+                                $prizeCount = max(1, $displayPrizes->count());
+                                $remaining = now()->diff($activeRaffle->end_date);
+                                $remainingText = $activeRaffle->end_date->isFuture() ? trim(collect([$remaining->d ? $remaining->d.'d' : null, $remaining->h ? $remaining->h.'h' : null, $remaining->i ? $remaining->i.'m' : null])->filter()->take(2)->join(' ')) : 'finalizando';
+                            @endphp
+                            <div class="raffle-banner" style="min-height: auto; padding: 24px;">
+                                <div class="raffle-banner-head" style="padding: 0 0 20px; text-align: left;">
+                                    <h3 style="font-size: 38px;">{{ $activeRaffle->title }}</h3>
+                                    <p>{{ $activeRaffle->description }}</p>
+                                    <div class="raffle-countdown" style="margin-top: 10px;">
+                                        Termina en <strong>{{ $remainingText ?: 'menos de 1m' }}</strong>
+                                    </div>
+                                </div>
+                                <div class="raffle-prize-strip count-{{ min($prizeCount, 3) }}" style="padding-bottom: 0;">
+                                    @foreach($displayPrizes as $index => $prize)
+                                        @php
+                                            $position = (int) ($prize['position'] ?? $index + 1);
+                                            $image = $prizeImage($prize['image'] ?? null);
+                                        @endphp
+                                        <article class="raffle-prize-tile {{ $position === 1 ? 'primary' : '' }}">
+                                            <div class="raffle-rank">{{ $position }}</div>
+                                            <div class="raffle-prize-info">
+                                                <strong>Premio {{ $position }}</strong>
+                                                <span>{{ $prize['name'] ?? 'Premio sorpresa' }}</span>
+                                                @if(!empty($prize['amount']))
+                                                    <b>${{ number_format((float) $prize['amount'], 0, ',', '.') }}</b>
+                                                @endif
+                                            </div>
+                                            <div class="raffle-prize-image">
+                                                @if($image)
+                                                    <img src="{{ $image }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
+                                                @else
+                                                    <span>BET</span>
+                                                @endif
+                                            </div>
+                                        </article>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                @endforeach
+            @endif
 
             <section id="valoracion" class="fe-section">
                 <div class="line-panel line-rating-wrap">

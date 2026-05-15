@@ -80,4 +80,15 @@ class Line extends Model
     {
         return $this->hasMany(LineRating::class);
     }
+
+    public function getAverageRatingAttribute()
+    {
+        $avg = $this->ratings()->avg('rating');
+        return $avg ? round($avg, 1) : 0;
+    }
+
+    public function getRatingsCountAttribute()
+    {
+        return $this->ratings()->count();
+    }
 }

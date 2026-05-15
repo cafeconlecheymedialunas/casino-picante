@@ -64,11 +64,27 @@ class LineShow extends Component
         $ratingAverage = (float) $this->line->ratings()->avg('rating');
         $ratingCount = $this->line->ratings()->count();
 
+        $activeBonuses = \App\Models\Bonus::withoutGlobalScopes()
+            ->where('line_id', $this->line->id)
+            ->where('status', 'active')
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->get();
+
+        $activeRaffles = $this->line->belongsToMany(\App\Models\Raffle::class, 'line_raffle')
+            ->withoutGlobalScopes()
+            ->where('status', 'active')
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->get();
+
         return view('frontend.pages.line-show', [
             'line' => $this->line,
-            'ratingAverage' => $ratingAverage ?: 5,
+            'ratingAverage' => $ratingAverage,
             'ratingCount' => $ratingCount,
             'ratings' => $this->line->ratings()->with('user')->latest()->take(8)->get(),
+            'activeBonuses' => $activeBonuses,
+            'activeRaffles' => $activeRaffles,
         ])->layout('frontend.layouts.app');
     }
 }

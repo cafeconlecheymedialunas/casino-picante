@@ -9,7 +9,7 @@ class LinesIndex extends Component
 {
     public function render()
     {
-        $lines = Line::with(['activePlatforms', 'lineAgents.agent'])
+        $lines = Line::with(['activePlatforms', 'lineAgents.agent', 'ratings'])
             ->where('status', 'active')
             ->orderBy('name')
             ->get();

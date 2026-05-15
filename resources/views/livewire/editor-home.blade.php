@@ -240,4 +240,124 @@
         </div>
 
     </div>
+
+    <div class="eh-page">
+        <div class="eh-section">
+            <div class="eh-section-head">
+                <div class="eh-section-title">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    TEXTOS DE SECCIONES
+                    <span class="eh-section-badge">EDITA TITULOS</span>
+                </div>
+            </div>
+
+            <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
+                @php
+                $sectionLabels = [
+                    'como-empezar' => '¿Cómo Empezar? (3 pasos)',
+                    'lineas' => 'Líneas de Atención',
+                    'sorteo' => 'Sorteos',
+                    'nosotros' => 'Sobre Nosotros',
+                    'bonos' => 'Bonos Activos',
+                    'blog' => 'Novedades / Blog',
+                ];
+                @endphp
+
+                @foreach($sections as $key => $section)
+                <div style="border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);overflow:hidden;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--line);">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span style="font-weight:800;font-size:13px;">{{ $sectionLabels[$key] ?? $key }}</span>
+                            @if(isset($section['enabled']) && !$section['enabled'])
+                            <span style="font-size:9px;background:#ff4757;color:#fff;padding:2px 6px;border-radius:4px;">OCULTO</span>
+                            @endif
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button type="button" wire:click="toggleSectionEnabled('{{ $key }}')" 
+                                style="padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted-2);font-size:10px;cursor:pointer;">
+                                {{ $section['enabled'] ? 'Ocultar' : 'Mostrar' }}
+                            </button>
+                            <button type="button" wire:click="saveSection('{{ $key }}')" 
+                                style="padding:4px 10px;border-radius:6px;border:1px solid var(--orange);background:rgba(255,106,26,.1);color:var(--orange);font-size:10px;font-weight:700;cursor:pointer;">
+                                <i class="fa-solid fa-save"></i> Guardar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;padding:16px;">
+                        <div class="eh-repeater-field">
+                            <label>Kicker (mini titulo)</label>
+                            <input type="text" wire:model="sections.{{ $key }}.kicker" placeholder="Opcional">
+                        </div>
+                        <div class="eh-repeater-field">
+                            <label>Titulo</label>
+                            <input type="text" wire:model="sections.{{ $key }}.title" placeholder="Opcional">
+                        </div>
+                        <div class="eh-repeater-field">
+                            <label>Highlight (palabra destacada)</label>
+                            <input type="text" wire:model="sections.{{ $key }}.highlight" placeholder="Opcional">
+                        </div>
+                        <div class="eh-repeater-field">
+                            <label>Subtitulo</label>
+                            <input type="text" wire:model="sections.{{ $key }}.subtitle" placeholder="Opcional">
+                        </div>
+                        
+                        @if($key === 'nosotros')
+                        <div class="eh-repeater-field" style="grid-column:1 / -1;">
+                            <label>Contenido</label>
+                            <textarea wire:model="sections.{{ $key }}.content" rows="2" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;width:100%;resize:vertical;" placeholder="Texto descriptivo..."></textarea>
+                        </div>
+                        @endif
+
+                        @if($key === 'sorteo')
+                        <div class="eh-repeater-field">
+                            <label>Tipo de Sorteo</label>
+                            <select wire:model="sections.{{ $key }}.raffle_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
+                                <option value="">Todos</option>
+                                <option value="active">Activos</option>
+                                <option value="featured">Destacados</option>
+                            </select>
+                        </div>
+                        <div class="eh-repeater-field">
+                            <label>IDs de Sorteos (separados por coma)</label>
+                            <input type="text" wire:model="sections.{{ $key }}.raffle_ids" placeholder="1,2,3">
+                        </div>
+                        @endif
+
+                        @if($key === 'bonos')
+                        <div class="eh-repeater-field">
+                            <label>Tipo de Bono</label>
+                            <select wire:model="sections.{{ $key }}.bonus_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
+                                <option value="">Todos</option>
+                                <option value="active">Activos</option>
+                                <option value="featured">Destacados</option>
+                            </select>
+                        </div>
+                        <div class="eh-repeater-field">
+                            <label>IDs de Bonos (separados por coma)</label>
+                            <input type="text" wire:model="sections.{{ $key }}.bonus_ids" placeholder="1,2,3">
+                        </div>
+                        @endif
+
+                        @if($key === 'blog')
+                        <div class="eh-repeater-field">
+                            <label>Tipo de Post</label>
+                            <select wire:model="sections.{{ $key }}.post_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
+                                <option value="">Todos</option>
+                                @foreach($categories as $cat)
+                                <option value="{{ $cat['id'] }}">{{ $cat['name'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="eh-repeater-field">
+                            <label>IDs de Posts (separados por coma)</label>
+                            <input type="text" wire:model="sections.{{ $key }}.post_ids" placeholder="1,2,3">
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
 </div>

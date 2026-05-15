@@ -24,6 +24,10 @@ class EditorHome extends Component
 
     public $blogPosts = [];
 
+    public $raffleItems = [];
+
+    public $categories = [];
+
     public $selectedCarousel = [];
 
     public $selectedBonuses = [];
@@ -35,6 +39,10 @@ class EditorHome extends Component
     public $newCarouselLink = '';
 
     public $newCarouselImage = null;
+
+    public $sections = [];
+
+    public $editingSection = null;
 
     public function mount()
     {
@@ -52,6 +60,13 @@ class EditorHome extends Component
             ->get()
             ->toArray();
 
+        $this->raffleItems = Raffle::where('status', 'active')
+            ->orderBy('end_date', 'desc')
+            ->get()
+            ->toArray();
+
+        $this->categories = Category::all()->toArray();
+
         $this->selectedCarousel = HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
             ->orderBy('order')
             ->pluck('item_id')
@@ -66,6 +81,89 @@ class EditorHome extends Component
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
+
+        $this->loadSections();
+    }
+
+    public function loadSections(): void
+    {
+        $defaultSections = [
+            'como-empezar' => ['kicker' => 'Como funciona', 'title' => 'Empeza en', 'highlight' => '3 pasos', 'subtitle' => 'Sin vueltas: contacto, carga y juego. Si necesitás ayuda, una persona te responde.'],
+            'lineas' => ['kicker' => 'Empeza a jugar', 'title' => 'Lineas de', 'highlight' => 'atencion', 'subtitle' => 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.'],
+            'sorteo' => ['kicker' => 'Mas chances para ganar', 'title' => 'Sorteos de', 'highlight' => 'esta semana', 'subtitle' => 'Jugá, participá y seguí los premios disponibles en cada sorteo activo.'],
+            'nosotros' => ['title' => 'Casino online con atencion', 'highlight' => 'real', 'content' => 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompanarte.'],
+            'bonos' => ['kicker' => 'Promos para jugar mas', 'title' => 'Bonos', 'highlight' => 'activos', 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugadas.'],
+            'blog' => ['kicker' => 'Noticias y jugadas', 'highlight' => 'Novedades', 'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.'],
+        ];
+
+        foreach ($defaultSections as $key => $defaults) {
+            $section = HomeSection::where('section_key', $key)->first();
+            if (! $section) {
+                $section = HomeSection::create([
+                    'section_key' => $key,
+                    'enabled' => true,
+                    'order' => array_search($key, array_keys($defaultSections)),
+                ]);
+            }
+
+            $this->sections[$key] = [
+                'id' => $section->id,
+                'kicker' => $section->kicker ?? $defaults['kicker'] ?? '',
+                'title' => $section->title ?? $defaults['title'] ?? '',
+                'highlight' => $section->highlight ?? $defaults['highlight'] ?? '',
+                'subtitle' => $section->subtitle ?? $defaults['subtitle'] ?? '',
+                'content' => $section->content ?? $defaults['content'] ?? '',
+                'raffle_type' => $section->raffle_type ?? '',
+                'raffle_ids' => $section->raffle_ids ? implode(',', $section->raffle_ids) : '',
+                'post_type' => $section->post_type ?? '',
+                'post_ids' => $section->post_ids ? implode(',', $section->post_ids) : '',
+                'bonus_type' => $section->bonus_type ?? '',
+                'bonus_ids' => $section->bonus_ids ? implode(',', $section->bonus_ids) : '',
+                'enabled' => $section->enabled,
+            ];
+        }
+    }
+
+    public function saveSection(string $key): void
+    {
+        $this->ensureCanEditHome();
+
+        $data = $this->sections[$key] ?? [];
+
+        $raffleIds = $data['raffle_ids'] ?? '';
+        $postIds = $data['post_ids'] ?? '';
+        $bonusIds = $data['bonus_ids'] ?? '';
+
+        HomeSection::updateOrCreate(
+            ['section_key' => $key],
+            [
+                'kicker' => $data['kicker'] ?? null,
+                'title' => $data['title'] ?? null,
+                'highlight' => $data['highlight'] ?? null,
+                'subtitle' => $data['subtitle'] ?? null,
+                'content' => $data['content'] ?? null,
+                'raffle_type' => $data['raffle_type'] ?? null,
+                'raffle_ids' => $raffleIds ? array_map('trim', explode(',', $raffleIds)) : null,
+                'post_type' => $data['post_type'] ?? null,
+                'post_ids' => $postIds ? array_map('trim', explode(',', $postIds)) : null,
+                'bonus_type' => $data['bonus_type'] ?? null,
+                'bonus_ids' => $bonusIds ? array_map('trim', explode(',', $bonusIds)) : null,
+                'enabled' => $data['enabled'] ?? true,
+            ]
+        );
+
+        session()->flash('message_success', 'Sección guardada correctamente.');
+    }
+
+    public function toggleSectionEnabled(string $key): void
+    {
+        $this->ensureCanEditHome();
+
+        $section = HomeSection::where('section_key', $key)->first();
+        if ($section) {
+            $section->update(['enabled' => ! $section->enabled]);
+            $this->sections[$key]['enabled'] = ! $section->enabled;
+        }
     }
 
     public function loadCarouselItems(): void

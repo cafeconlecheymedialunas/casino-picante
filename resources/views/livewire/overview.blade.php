@@ -159,8 +159,8 @@
 <div class="mod-section">
     <span class="mod-section-label">💰 VENTAS DEL MES</span>
     <div class="mod-section-line"></div>
-        @if($canViewSales)
-<a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver ventas →</a>
+    @if($canViewSales)
+    <a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver ventas →</a>
     @endif
 </div>
 <div class="kpi-grid-4">
@@ -284,7 +284,9 @@
 <div class="mod-section">
     <span class="mod-section-label">CLIENTES</span>
     <div class="mod-section-line"></div>
+    @if($canViewUsers)
     <a href="{{ route('users.index') }}" wire:navigate class="mod-section-link">Ver clientes →</a>
+    @endif
 </div>
 <div class="kpi-grid-4">
     <div class="kpi {{ $users['todayNew'] > 0 ? 'kpi-good' : '' }}">
@@ -334,7 +336,7 @@
         <div class="kpi-label">Clientes bloqueados</div>
         <div class="kpi-value {{ $users['blocked'] > 0 ? 'c-red' : 'c-muted' }}">{{ $users['blocked'] }}</div>
         <div class="kpi-desc">
-            <span class="{{ $users['blocked'] > 0 ? 'down' : 'neu' }}">{{ $users['blocked'] }}</span> clientes bloqueados ·
+            <span class="{{ $users['blocked'] > 0 ? 'down' : '' }}">{{ $users['blocked'] }}</span> clientes bloqueados ·
             <span class="up">{{ number_format($users['active']) }}</span> activos de <span class="hi">{{ number_format($users['total']) }}</span> totales
         </div>
     </div>
@@ -366,7 +368,9 @@
 <div class="mod-section">
     <span class="mod-section-label">TICKETS DE SOPORTE</span>
     <div class="mod-section-line"></div>
+    @if($canViewTickets)
     <a href="{{ route('tickets') }}" wire:navigate class="mod-section-link">Ver tickets →</a>
+    @endif
 </div>
 <div class="kpi-grid-4">
     <div class="kpi {{ $tickets['open'] > 0 ? 'kpi-urgent' : 'kpi-good' }}">
@@ -430,7 +434,9 @@
 <div class="mod-section">
     <span class="mod-section-label">🎁 BONOS</span>
     <div class="mod-section-line"></div>
+    @if($canViewBonuses)
     <a href="{{ route('bonos') }}" wire:navigate class="mod-section-link">Ver bonos →</a>
+    @endif
 </div>
 <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
     <div class="kpi-grid-3">
@@ -478,7 +484,9 @@
 <div class="mod-section">
     <span class="mod-section-label">🎰 SORTEOS</span>
     <div class="mod-section-line"></div>
+    @if($canViewRaffles)
     <a href="{{ route('sorteos') }}" wire:navigate class="mod-section-link">Ver sorteos →</a>
+    @endif
 </div>
 <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
     <div class="kpi-grid-3">
@@ -530,7 +538,9 @@
         <div class="ov-card-head">
             <span class="ov-card-title">ÚLTIMOS 10 REGISTROS DE CLIENTES</span>
             <span class="ov-card-mod">users</span>
+            @if($canViewUsers)
             <a href="{{ route('users.index') }}" wire:navigate class="ov-card-link">Ver todos →</a>
+            @endif
         </div>
         @forelse($last10Users as $user)
         <div class="row-item row-users">
@@ -559,7 +569,9 @@
         <div class="ov-card-head">
             <span class="ov-card-title">TICKETS ABIERTOS SIN RESPUESTA</span>
             <span class="ov-card-mod">tickets</span>
+            @if($canViewTickets)
             <a href="{{ route('tickets') }}" wire:navigate class="ov-card-link">Ver todos →</a>
+            @endif
         </div>
         @forelse($urgentTickets as $ticket)
         @php $ageHours = $ticket->created_at->diffInHours(now()); @endphp
@@ -582,11 +594,28 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(() => {
+    const chartInstances = window.__overviewChartInstances || {};
+    window.__overviewChartInstances = chartInstances;
+
+    function renderOverviewChart(id, config) {
+        const canvas = document.getElementById(id);
+        if (! canvas || typeof Chart === 'undefined') {
+            return;
+        }
+
+        if (chartInstances[id]) {
+            chartInstances[id].destroy();
+        }
+
+        chartInstances[id] = new Chart(canvas, config);
+    }
+
+    function initOverviewCharts() {
     // 📈 Ventas - Línea principal
     const salesCtx = document.getElementById('salesChart');
     if (salesCtx) {
-        new Chart(salesCtx, {
+        renderOverviewChart('salesChart', {
             type: 'line',
             data: {
                 labels: @json($dailySales['labels']),
@@ -616,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 📊 Plataformas - Barras
     const platformCtx = document.getElementById('platformChart');
     if (platformCtx) {
-        new Chart(platformCtx, {
+        renderOverviewChart('platformChart', {
             type: 'bar',
             data: {
                 labels: @json($platformComparison['labels']),
@@ -643,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 👥 Clientes - Registros 15 días
     const usersCtx = document.getElementById('usersChart');
     if (usersCtx) {
-        new Chart(usersCtx, {
+        renderOverviewChart('usersChart', {
             type: 'bar',
             data: {
                 labels: @json($dailyRegistrations['labels']),
@@ -671,7 +700,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 👥 Estado clientes - Doughnut
     const clientsStatusCtx = document.getElementById('clientsStatusChart');
     if (clientsStatusCtx) {
-        new Chart(clientsStatusCtx, {
+        renderOverviewChart('clientsStatusChart', {
             type: 'doughnut',
             data: {
                 labels: ['Activos', 'Bloqueados', 'Pendientes'],
@@ -692,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 🎫 Tickets - Doughnut
     const ticketsCtx = document.getElementById('ticketsChart');
     if (ticketsCtx) {
-        new Chart(ticketsCtx, {
+        renderOverviewChart('ticketsChart', {
             type: 'doughnut',
             data: {
                 labels: ['Abiertos', 'En proceso', 'Cerrados'],
@@ -713,7 +742,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 🎁 Bonos - Doughnut
     const bonosCtx = document.getElementById('bonosChart');
     if (bonosCtx) {
-        new Chart(bonosCtx, {
+        renderOverviewChart('bonosChart', {
             type: 'doughnut',
             data: {
                 labels: ['Activos', 'Usados', 'Expirados'],
@@ -738,7 +767,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 🎰 Sorteos - Doughnut
     const sorteosCtx = document.getElementById('sorteosChart');
     if (sorteosCtx) {
-        new Chart(sorteosCtx, {
+        renderOverviewChart('sorteosChart', {
             type: 'doughnut',
             data: {
                 labels: ['Activos', 'Próximos', 'Cerrados'],
@@ -759,9 +788,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-});
+    }
+
+    document.addEventListener('DOMContentLoaded', initOverviewCharts);
+    document.addEventListener('livewire:navigated', initOverviewCharts);
+    initOverviewCharts();
+})();
 </script>
-
-
+</div>
 
 
