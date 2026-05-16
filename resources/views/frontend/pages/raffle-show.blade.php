@@ -117,8 +117,20 @@
                 <p class="raffle-detail-subtitle">{{ $raffle->description ?: 'Suma participaciones jugando en las lineas activas y segui los premios publicados.' }}</p>
                 <div class="raffle-detail-clock">
                     <i class="fa-solid fa-clock"></i>
-                    {{ $raffle->end_date?->isFuture() ? 'Termina en' : 'Estado' }}
-                    <strong>{{ $remaining }}</strong>
+                    @if($raffle->status === 'active' && ! $raffle->isFinished())
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>Termina en:</span>
+                            <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}" style="display: flex; gap: 4px; min-width: auto; background: none; box-shadow: none; border: none; padding: 0;">
+                                <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="days" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">D</span></div>
+                                <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="hours" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">H</span></div>
+                                <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="minutes" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">M</span></div>
+                                <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="seconds" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">S</span></div>
+                            </div>
+                        </div>
+                    @else
+                        {{ $raffle->end_date?->isFuture() ? 'Termina en' : 'Estado' }}
+                        <strong>{{ $remaining }}</strong>
+                    @endif
                 </div>
                 @if(! $raffle->isFinished() && $raffle->status !== 'active')
                     <div class="raffle-status-note">Proximamente: registrate y enterate del proximo sorteo disponible.</div>

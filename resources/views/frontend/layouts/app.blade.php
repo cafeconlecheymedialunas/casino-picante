@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? 'RED PICANTES' }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
@@ -145,10 +146,81 @@
     @include('frontend.partials.footer')
 
     @livewireScripts
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
         window.toggleFrontendMenu = function () {
             document.querySelector('[data-fe-mobile-menu]')?.classList.toggle('open');
         };
+        window.initCountdowns = function() {
+            const timers = document.querySelectorAll('[data-raffle-countdown]');
+            if (window.raffleInterval) clearInterval(window.raffleInterval);
+
+            window.raffleInterval = setInterval(() => {
+                timers.forEach(timer => {
+                    const endDate = new Date(timer.getAttribute('data-raffle-countdown')).getTime();
+                    const now = new Date().getTime();
+                    const diff = endDate - now;
+
+                    if (diff <= 0) {
+                        timer.innerHTML = '<div class="timer-unit" style="grid-column: 1/-1; width: 100%;"><span class="timer-label">SORTEO FINALIZADO</span></div>';
+                        return;
+                    }
+
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    const dEl = timer.querySelector('[data-unit="days"]');
+                    const hEl = timer.querySelector('[data-unit="hours"]');
+                    const mEl = timer.querySelector('[data-unit="minutes"]');
+                    const sEl = timer.querySelector('[data-unit="seconds"]');
+
+                    if (dEl) dEl.innerText = String(days).padStart(2, '0');
+                    if (hEl) hEl.innerText = String(hours).padStart(2, '0');
+                    if (mEl) mEl.innerText = String(minutes).padStart(2, '0');
+                    if (sEl) sEl.innerText = String(seconds).padStart(2, '0');
+                });
+            }, 1000);
+        };
+
+        window.initSliders = function() {
+            if (typeof Swiper === 'undefined') return;
+            window.initCountdowns();
+            if (document.querySelector('.raffleSwiper') && !document.querySelector('.raffleSwiper').swiper) {
+                new Swiper('.raffleSwiper', {
+                    loop: false,
+                    slidesPerView: 1,
+                    spaceBetween: 0,
+                    navigation: {
+                        nextEl: '.raffle-swiper-btn-next',
+                        prevEl: '.raffle-swiper-btn-prev',
+                    },
+                });
+            }
+            if (document.querySelector('.bonusSwiper') && !document.querySelector('.bonusSwiper').swiper) {
+                new Swiper('.bonusSwiper', {
+                    loop: false,
+                    slidesPerView: 1.2,
+                    spaceBetween: 16,
+                    breakpoints: {
+                        640: { slidesPerView: 2 },
+                        900: { slidesPerView: 3 },
+                        1200: { slidesPerView: 4 },
+                    },
+                    navigation: {
+                        nextEl: '.bonus-swiper-btn-next',
+                        prevEl: '.bonus-swiper-btn-prev',
+                    },
+                });
+            }
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', window.initSliders);
+        } else {
+            window.initSliders();
+        }
+        document.addEventListener('livewire:navigated', window.initSliders);
     </script>
     @stack('scripts')
 </body>

@@ -98,7 +98,19 @@
                 <div class="raffles-head">
                     <h1 class="raffles-title">{{ $heroRaffle->title }}</h1>
                     <div class="raffles-kicker">
-                        {{ $heroRaffle->status === 'active' ? 'Sorteo activo' : ($heroRaffle->status === 'finished' ? 'Sorteo terminado' : 'Proximo sorteo') }}
+                        @if($heroRaffle->status === 'active' && ! $heroRaffle->isFinished())
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span>Termina en:</span>
+                                <div class="raffle-timer" data-raffle-countdown="{{ $heroRaffle->end_date->toIso8601String() }}" style="display: flex; gap: 4px; min-width: auto; background: none; box-shadow: none; border: none;">
+                                    <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="days" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">D</span></div>
+                                    <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="hours" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">H</span></div>
+                                    <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="minutes" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">M</span></div>
+                                    <div class="timer-unit" style="min-height: auto; padding: 2px 4px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="seconds" style="font-size: 14px;">00</span><span class="timer-label" style="font-size: 7px; margin-top: 2px;">S</span></div>
+                                </div>
+                            </div>
+                        @else
+                            {{ $heroRaffle->status === 'active' ? 'Sorteo activo' : ($heroRaffle->status === 'finished' ? 'Sorteo terminado' : 'Proximo sorteo') }}
+                        @endif
                     </div>
                     <p class="raffles-copy">{{ $heroRaffle->description ?: 'Suma participaciones jugando en las lineas activas y segui los premios publicados.' }}</p>
                     @if($heroRaffle->status !== 'active' && ! $heroRaffle->isFinished())
@@ -174,7 +186,21 @@
                         <div class="raffles-row-meta">
                             <span class="raffles-chip {{ $raffle->status === 'active' ? 'active' : '' }}">{{ $raffle->status === 'active' ? 'Activo' : ($raffle->status === 'finished' ? 'Finalizado' : 'Proximo') }}</span>
                             <span class="raffles-chip">{{ $raffle->numbers_count }} participaciones</span>
-                            <span class="raffles-chip">Termina {{ $raffle->end_date?->format('d/m H:i') }}</span>
+                            <span class="raffles-chip">
+                                @if($raffle->status === 'active' && ! $raffle->isFinished())
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <span>Termina en:</span>
+                                        <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}" style="display: flex; gap: 2px; min-width: auto; background: none; box-shadow: none; border: none; padding: 0;">
+                                            <div class="timer-unit" style="min-height: auto; padding: 1px 3px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="days" style="font-size: 11px;">00</span><span class="timer-label" style="font-size: 6px; margin-top: 1px;">D</span></div>
+                                            <div class="timer-unit" style="min-height: auto; padding: 1px 3px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="hours" style="font-size: 11px;">00</span><span class="timer-label" style="font-size: 6px; margin-top: 1px;">H</span></div>
+                                            <div class="timer-unit" style="min-height: auto; padding: 1px 3px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="minutes" style="font-size: 11px;">00</span><span class="timer-label" style="font-size: 6px; margin-top: 1px;">M</span></div>
+                                            <div class="timer-unit" style="min-height: auto; padding: 1px 3px; background: rgba(255,106,26,0.1); border-color: rgba(255,106,26,0.2);"><span class="timer-val" data-unit="seconds" style="font-size: 11px;">00</span><span class="timer-label" style="font-size: 6px; margin-top: 1px;">S</span></div>
+                                        </div>
+                                    </div>
+                                @else
+                                    Termina {{ $raffle->end_date?->format('d/m H:i') }}
+                                @endif
+                            </span>
                         </div>
                     </div>
                     <span class="fe-btn ghost">Ver detalle</span>

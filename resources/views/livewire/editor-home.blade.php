@@ -88,276 +88,323 @@
 
     <div class="eh-page">
 
-        {{-- CARRUSEL --}}
-        <div class="eh-section">
-            <div class="eh-section-head">
-                <div class="eh-section-title">
-                    <i class="fa-solid fa-images"></i>
-                    IMÁGENES CARROUSEL
-                    <span class="eh-section-badge">SUBI Y ORDENA</span>
-                </div>
-                <div class="eh-counter">
-                    Visibles: <span class="current">{{ count($selectedCarousel) }}</span> / 5 -
-                    Total: {{ count($carouselItems) }}
-                </div>
-            </div>
+        @php
+        $orderedSections = [
+            'carousel' => ['label' => '1. HERO / CARRUSEL', 'icon' => 'fa-images'],
+            'como-empezar' => ['label' => '2. ¿CÓMO EMPEZAR? (3 PASOS)', 'icon' => 'fa-play'],
+            'lineas' => ['label' => '3. LÍNEAS DE ATENCIÓN', 'icon' => 'fa-headset'],
+            'sorteo' => ['label' => '4. PRÓXIMOS SORTEOS', 'icon' => 'fa-calendar-days'],
+            'nosotros' => ['label' => '5. SOBRE NOSOTROS', 'icon' => 'fa-users'],
+            'bonos' => ['label' => '6. BONOS DISPONIBLES', 'icon' => 'fa-gift'],
+            'blog' => ['label' => '7. BLOG / NOVEDADES', 'icon' => 'fa-newspaper'],
+        ];
+        @endphp
 
-            <div class="eh-repeater" x-data="{ open: false }">
-                @forelse($carouselItems as $i => $item)
-                <div class="eh-repeater-item">
-                    <div class="drag-handle"><span></span><span></span><span></span></div>
-                    <img src="{{ $item['image'] }}" class="eh-repeater-thumb" alt="">
-                    <div class="eh-repeater-body">
-                        <div class="eh-repeater-title">{{ $item['title'] ?: 'Sin titulo' }}</div>
-                        <div class="eh-repeater-sub">{{ $item['link'] ?: 'Sin enlace' }}</div>
-                    </div>
-                    <div class="eh-repeater-actions">
-                        <button wire:click="moveCarouselUp({{ $item['id'] }})" title="Subir" {{ $i === 0 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-up"></i></button>
-                        <button wire:click="moveCarouselDown({{ $item['id'] }})" title="Bajar" {{ $i === count($carouselItems) - 1 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-down"></i></button>
-                        <button wire:click="toggleCarousel({{ $item['id'] }})"
-                            class="{{ in_array($item['id'], $selectedCarousel) ? 'btn-visible' : 'btn-hidden' }}"
-                            title="{{ in_array($item['id'], $selectedCarousel) ? 'Ocultar' : 'Mostrar' }}">
-                            <i class="fa-solid {{ in_array($item['id'], $selectedCarousel) ? 'fa-eye' : 'fa-eye-slash' }}"></i>
-                            {{ in_array($item['id'], $selectedCarousel) ? 'Visible' : 'Oculto' }}
-                        </button>
-                        <button wire:click="removeCarouselItem({{ $item['id'] }})" wire:confirm="Eliminar esta imagen?" class="btn-del" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </div>
-                @empty
-                <div style="text-align:center;padding:24px 16px;color:var(--muted-2);font-size:12px;">
-                    <i class="fa-solid fa-image" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3"></i>
-                    No hay imagenes en el carrusel
-                </div>
-                @endforelse
-
-                <button type="button" @click="open = !open" class="eh-repeater-addbtn">
-                    <i class="fa-solid" :class="open ? 'fa-xmark' : 'fa-plus'"></i>
-                    <span x-text="open ? 'Cancelar' : 'Agregar imagen'"></span>
-                </button>
-
-                <template x-if="open">
-                    <div class="eh-repeater-item new-row" style="flex-wrap:wrap;">
-                        <div style="flex:1;min-width:140px;">
-                            <x-upload-image label="" model="newCarouselImage" :value="''" aspect="851/315" hint="Max 5MB">
-                                @error('newCarouselImage') <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
-                            </x-upload-image>
-                        </div>
-                        <div class="eh-repeater-field" style="flex:1;min-width:100px;">
-                            <label>Titulo</label>
-                            <input type="text" wire:model="newCarouselTitle" placeholder="Opcional">
-                        </div>
-                        <div class="eh-repeater-field" style="flex:1;min-width:100px;">
-                            <label>Link</label>
-                            <input type="text" wire:model="newCarouselLink" placeholder="Opcional">
-                        </div>
-                        <button type="button" wire:click="addCarouselItem" wire:loading.attr="disabled" @click="open = false" class="btn-primary" style="height:30px;padding:0 14px;font-size:11px;white-space:nowrap;">
-                            <i class="fa-solid fa-check"></i> Agregar
-                        </button>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        {{-- BONOS --}}
-        <div class="eh-section">
-            <div class="eh-section-head">
-                <div class="eh-section-title">
-                    <i class="fa-solid fa-gift"></i>
-                    BONOS DISPONIBLES
-                    <span class="eh-section-badge">MAX 5</span>
-                </div>
-                <div class="eh-counter">
-                    Seleccionados: <span class="current">{{ count($selectedBonuses) }}</span> / 5
-                </div>
-            </div>
-            @if(count($bonusItems) > 0)
-            <div class="eh-grid">
-                @foreach($bonusItems as $bonus)
-                <div class="eh-card {{ in_array($bonus['id'], $selectedBonuses) ? 'selected' : '' }}"
-                     wire:click="toggleBonus({{ $bonus['id'] }})">
-                    @if(in_array($bonus['id'], $selectedBonuses))
-                        <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
-                    @endif
-                    <div class="eh-bonus-value">
-                        @if($bonus['bonus_percent'])
-                            {{ $bonus['bonus_percent'] }}%
-                        @elseif($bonus['bonus_amount'])
-                            ${{ number_format($bonus['bonus_amount'], 2) }}
-                        @else
-                            <i class="fa-solid fa-gift eh-card-icon"></i>
-                        @endif
-                    </div>
-                    <div class="eh-card-title">{{ $bonus['title'] }}</div>
-                    <div class="eh-card-meta">
-                        <span>{{ $bonus['code'] ?? 'Sin codigo' }}</span>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-            @else
-            <div class="eh-empty">No hay bonos activos disponibles. Crea uno en el modulo de <strong>Bonos</strong>.</div>
-            @endif
-        </div>
-
-        {{-- BLOG --}}
-        <div class="eh-section">
-            <div class="eh-section-head">
-                <div class="eh-section-title">
-                    <i class="fa-solid fa-newspaper"></i>
-                    ENTRADAS DE BLOG
-                    <span class="eh-section-badge">MAX 3</span>
-                </div>
-                <div class="eh-counter">
-                    Seleccionadas: <span class="current">{{ count($selectedBlogs) }}</span> / 3
-                </div>
-            </div>
-            @if(count($blogPosts) > 0)
-            <div class="eh-grid">
-                @foreach($blogPosts as $post)
-                <div class="eh-card {{ in_array($post['id'], $selectedBlogs) ? 'selected' : '' }}"
-                     wire:click="toggleBlog({{ $post['id'] }})">
-                    @if(in_array($post['id'], $selectedBlogs))
-                        <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
-                    @endif
-                    @if($post['image'])
-                    <img src="{{ asset('storage/' . $post['image']) }}" class="eh-card-img" alt="{{ $post['title'] }}">
-                    @else
-                    <div class="eh-card-img placeholder"><i class="fa-solid fa-newspaper"></i></div>
-                    @endif
-                    <div class="eh-card-title">{{ $post['title'] }}</div>
-                    <div class="eh-card-meta">
-                        <span>{{ \Carbon\Carbon::parse($post['published_at'])->format('d/m/Y') }}</span>
-                        @if($post['excerpt'])
-                        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ Str::limit($post['excerpt'], 40) }}</span>
-                        @endif
-                    </div>
-                </div>
-                @endforeach
-            </div>
-            @else
-            <div class="eh-empty">No hay entradas de blog publicadas. Crea una en <strong>Novedades</strong> con tipo "Blog".</div>
-            @endif
-        </div>
-
-    </div>
-
-    <div class="eh-page">
-        <div class="eh-section">
-            <div class="eh-section-head">
-                <div class="eh-section-title">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                    TEXTOS DE SECCIONES
-                    <span class="eh-section-badge">EDITA TITULOS</span>
-                </div>
-            </div>
-
-            <div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">
-                @php
-                $sectionLabels = [
-                    'como-empezar' => '¿Cómo Empezar? (3 pasos)',
-                    'lineas' => 'Líneas de Atención',
-                    'sorteo' => 'Sorteos',
-                    'nosotros' => 'Sobre Nosotros',
-                    'bonos' => 'Bonos Activos',
-                    'blog' => 'Novedades / Blog',
-                ];
-                @endphp
-
-                @foreach($sections as $key => $section)
-                <div style="border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);overflow:hidden;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--line);">
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            <span style="font-weight:800;font-size:13px;">{{ $sectionLabels[$key] ?? $key }}</span>
-                            @if(isset($section['enabled']) && !$section['enabled'])
-                            <span style="font-size:9px;background:#ff4757;color:#fff;padding:2px 6px;border-radius:4px;">OCULTO</span>
+        @foreach($orderedSections as $key => $meta)
+            <div class="eh-section">
+                {{-- HEADER DE SECCIÓN --}}
+                <div class="eh-section-head">
+                    <div class="eh-section-title">
+                        <i class="fa-solid {{ $meta['icon'] }}"></i>
+                        {{ $meta['label'] }}
+                        @if($key !== 'carousel')
+                            @if(isset($sections[$key]['enabled']) && !$sections[$key]['enabled'])
+                                <span class="eh-section-badge" style="background:#ff4757; color:#fff;">OCULTO</span>
                             @endif
-                        </div>
-                        <div style="display:flex;gap:8px;">
+                        @endif
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        @if($key !== 'carousel')
                             <button type="button" wire:click="toggleSectionEnabled('{{ $key }}')" 
                                 style="padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted-2);font-size:10px;cursor:pointer;">
-                                {{ $section['enabled'] ? 'Ocultar' : 'Mostrar' }}
+                                {{ ($sections[$key]['enabled'] ?? true) ? 'Ocultar' : 'Mostrar' }}
                             </button>
                             <button type="button" wire:click="saveSection('{{ $key }}')" 
                                 style="padding:4px 10px;border-radius:6px;border:1px solid var(--orange);background:rgba(255,106,26,.1);color:var(--orange);font-size:10px;font-weight:700;cursor:pointer;">
                                 <i class="fa-solid fa-save"></i> Guardar
                             </button>
-                        </div>
-                    </div>
-                    
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;padding:16px;">
-                        <div class="eh-repeater-field">
-                            <label>Kicker (mini titulo)</label>
-                            <input type="text" wire:model="sections.{{ $key }}.kicker" placeholder="Opcional">
-                        </div>
-                        <div class="eh-repeater-field">
-                            <label>Titulo</label>
-                            <input type="text" wire:model="sections.{{ $key }}.title" placeholder="Opcional">
-                        </div>
-                        <div class="eh-repeater-field">
-                            <label>Highlight (palabra destacada)</label>
-                            <input type="text" wire:model="sections.{{ $key }}.highlight" placeholder="Opcional">
-                        </div>
-                        <div class="eh-repeater-field">
-                            <label>Subtitulo</label>
-                            <input type="text" wire:model="sections.{{ $key }}.subtitle" placeholder="Opcional">
-                        </div>
+                        @endif
                         
-                        @if($key === 'nosotros')
-                        <div class="eh-repeater-field" style="grid-column:1 / -1;">
-                            <label>Contenido</label>
-                            <textarea wire:model="sections.{{ $key }}.content" rows="2" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;width:100%;resize:vertical;" placeholder="Texto descriptivo..."></textarea>
-                        </div>
-                        @endif
-
-                        @if($key === 'sorteo')
-                        <div class="eh-repeater-field">
-                            <label>Tipo de Sorteo</label>
-                            <select wire:model="sections.{{ $key }}.raffle_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
-                                <option value="">Todos</option>
-                                <option value="active">Activos</option>
-                                <option value="featured">Destacados</option>
-                            </select>
-                        </div>
-                        <div class="eh-repeater-field">
-                            <label>IDs de Sorteos (separados por coma)</label>
-                            <input type="text" wire:model="sections.{{ $key }}.raffle_ids" placeholder="1,2,3">
-                        </div>
-                        @endif
-
-                        @if($key === 'bonos')
-                        <div class="eh-repeater-field">
-                            <label>Tipo de Bono</label>
-                            <select wire:model="sections.{{ $key }}.bonus_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
-                                <option value="">Todos</option>
-                                <option value="active">Activos</option>
-                                <option value="featured">Destacados</option>
-                            </select>
-                        </div>
-                        <div class="eh-repeater-field">
-                            <label>IDs de Bonos (separados por coma)</label>
-                            <input type="text" wire:model="sections.{{ $key }}.bonus_ids" placeholder="1,2,3">
-                        </div>
-                        @endif
-
-                        @if($key === 'blog')
-                        <div class="eh-repeater-field">
-                            <label>Tipo de Post</label>
-                            <select wire:model="sections.{{ $key }}.post_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
-                                <option value="">Todos</option>
-                                @foreach($categories as $cat)
-                                <option value="{{ $cat['id'] }}">{{ $cat['name'] }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="eh-repeater-field">
-                            <label>IDs de Posts (separados por coma)</label>
-                            <input type="text" wire:model="sections.{{ $key }}.post_ids" placeholder="1,2,3">
-                        </div>
+                        @if($key === 'carousel')
+                            <div class="eh-counter">
+                                Visibles: <span class="current">{{ count($selectedCarousel) }}</span> / 5
+                            </div>
+                        @elseif($key === 'sorteo')
+                            <div class="eh-counter">
+                                Seleccionados: <span class="current">{{ count($selectedRafflesUpcoming) }}</span> / 5
+                            </div>
+                        @elseif($key === 'bonos')
+                            <div class="eh-counter">
+                                Seleccionados: <span class="current">{{ count($selectedBonuses) }}</span> / 5
+                            </div>
+                        @elseif($key === 'blog')
+                            <div class="eh-counter">
+                                Seleccionadas: <span class="current">{{ count($selectedBlogs) }}</span> / 3
+                            </div>
                         @endif
                     </div>
                 </div>
-                @endforeach
+
+                {{-- CONTENIDO DE SECCIÓN --}}
+                <div style="padding: 16px 20px;">
+                    
+                    {{-- CAMPOS DE TEXTO COMUNES (Kicker, Title, Highlight, Subtitle) --}}
+                    @if($key !== 'carousel')
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px;">
+                            <div class="eh-repeater-field">
+                                <label>Kicker (mini titulo)</label>
+                                <input type="text" wire:model="sections.{{ $key }}.kicker" placeholder="Opcional">
+                            </div>
+                            <div class="eh-repeater-field">
+                                <label>Titulo</label>
+                                <input type="text" wire:model="sections.{{ $key }}.title" placeholder="Opcional">
+                            </div>
+                            <div class="eh-repeater-field">
+                                <label>Highlight (palabra destacada)</label>
+                                <input type="text" wire:model="sections.{{ $key }}.highlight" placeholder="Opcional">
+                            </div>
+                            <div class="eh-repeater-field">
+                                <label>Subtitulo</label>
+                                <input type="text" wire:model="sections.{{ $key }}.subtitle" placeholder="Opcional">
+                            </div>
+
+                            @if($key === 'nosotros')
+                            <div class="eh-repeater-field" style="grid-column:1 / -1;">
+                                <label>Contenido Principal (Sobre Nosotros)</label>
+                                <textarea wire:model="sections.{{ $key }}.subtitle" rows="2" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;width:100%;resize:vertical;" placeholder="Texto descriptivo..."></textarea>
+                            </div>
+                            @endif
+
+                            @if($key === 'sorteo')
+                            <div class="eh-repeater-field">
+                                <label>Tipo de Sorteo</label>
+                                <select wire:model="sections.{{ $key }}.raffle_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
+                                    <option value="">Todos</option>
+                                    <option value="active">Activos</option>
+                                    <option value="featured">Destacados</option>
+                                </select>
+                            </div>
+                            <div class="eh-repeater-field">
+                                <label>IDs de Sorteos (separados por coma)</label>
+                                <input type="text" wire:model="sections.{{ $key }}.raffle_ids" placeholder="1,2,3">
+                            </div>
+                            @endif
+
+                            @if($key === 'bonos')
+                            <div class="eh-repeater-field">
+                                <label>Tipo de Bono (Filtro)</label>
+                                <select wire:model="sections.{{ $key }}.bonus_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
+                                    <option value="">Todos</option>
+                                    <option value="active">Activos</option>
+                                    <option value="featured">Destacados</option>
+                                </select>
+                            </div>
+                            <div class="eh-repeater-field">
+                                <label>IDs de Bonos (Filtro manual)</label>
+                                <input type="text" wire:model="sections.{{ $key }}.bonus_ids" placeholder="1,2,3">
+                            </div>
+                            @endif
+
+                            @if($key === 'blog')
+                            <div class="eh-repeater-field">
+                                <label>Tipo de Post (Filtro)</label>
+                                <select wire:model="sections.{{ $key }}.post_type" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;">
+                                    <option value="">Todos</option>
+                                    @foreach($categories as $cat)
+                                    <option value="{{ $cat['id'] }}">{{ $cat['name'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="eh-repeater-field">
+                                <label>IDs de Posts (Filtro manual)</label>
+                                <input type="text" wire:model="sections.{{ $key }}.post_ids" placeholder="1,2,3">
+                            </div>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- CONTENIDO ESPECÍFICO DE CADA SECCIÓN --}}
+
+                    @if($key === 'carousel')
+                        <div class="eh-repeater" x-data="{ open: false }" style="padding: 0;">
+                            @forelse($carouselItems as $i => $item)
+                            <div class="eh-repeater-item">
+                                <div class="drag-handle"><span></span><span></span><span></span></div>
+                                <img src="{{ $item['image'] }}" class="eh-repeater-thumb" alt="">
+                                <div class="eh-repeater-body">
+                                    <div class="eh-repeater-title">{{ $item['title'] ?: 'Sin titulo' }}</div>
+                                    <div class="eh-repeater-sub">{{ $item['link'] ?: 'Sin enlace' }}</div>
+                                </div>
+                                <div class="eh-repeater-actions">
+                                    <button wire:click="moveCarouselUp({{ $item['id'] }})" title="Subir" {{ $i === 0 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-up"></i></button>
+                                    <button wire:click="moveCarouselDown({{ $item['id'] }})" title="Bajar" {{ $i === count($carouselItems) - 1 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-down"></i></button>
+                                    <button wire:click="toggleCarousel({{ $item['id'] }})"
+                                        class="{{ in_array($item['id'], $selectedCarousel) ? 'btn-visible' : 'btn-hidden' }}"
+                                        title="{{ in_array($item['id'], $selectedCarousel) ? 'Ocultar' : 'Mostrar' }}">
+                                        <i class="fa-solid {{ in_array($item['id'], $selectedCarousel) ? 'fa-eye' : 'fa-eye-slash' }}"></i>
+                                        {{ in_array($item['id'], $selectedCarousel) ? 'Visible' : 'Oculto' }}
+                                    </button>
+                                    <button wire:click="removeCarouselItem({{ $item['id'] }})" wire:confirm="Eliminar esta imagen?" class="btn-del" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                            </div>
+                            @empty
+                            <div style="text-align:center;padding:24px 16px;color:var(--muted-2);font-size:12px;">
+                                <i class="fa-solid fa-image" style="font-size:24px;display:block;margin-bottom:8px;opacity:.3"></i>
+                                No hay imagenes en el carrusel
+                            </div>
+                            @endforelse
+
+                            <button type="button" @click="open = !open" class="eh-repeater-addbtn">
+                                <i class="fa-solid" :class="open ? 'fa-xmark' : 'fa-plus'"></i>
+                                <span x-text="open ? 'Cancelar' : 'Agregar imagen'"></span>
+                            </button>
+
+                            <template x-if="open">
+                                <div class="eh-repeater-item new-row" style="flex-wrap:wrap;">
+                                    <div style="flex:1;min-width:140px;">
+                                        <x-upload-image label="" model="newCarouselImage" :value="''" aspect="851/315" hint="Max 5MB">
+                                            @error('newCarouselImage') <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
+                                        </x-upload-image>
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:1;min-width:100px;">
+                                        <label>Titulo</label>
+                                        <input type="text" wire:model="newCarouselTitle" placeholder="Opcional">
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:1;min-width:100px;">
+                                        <label>Link</label>
+                                        <input type="text" wire:model="newCarouselLink" placeholder="Opcional">
+                                    </div>
+                                    <button type="button" wire:click="addCarouselItem" wire:loading.attr="disabled" @click="open = false" class="btn-primary" style="height:30px;padding:0 14px;font-size:11px;white-space:nowrap;">
+                                        <i class="fa-solid fa-check"></i> Agregar
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    @endif
+
+                    @if(in_array($key, ['como-empezar', 'nosotros']))
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <label style="font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom: 4px; display: block;">
+                                {{ $key === 'como-empezar' ? 'PASOS DINÁMICOS' : 'CARACTERÍSTICAS / BENEFICIOS' }}
+                            </label>
+                            @if(isset($sections[$key]['repeater_data']))
+                                @foreach($sections[$key]['repeater_data'] as $index => $item)
+                                <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 10px; align-items: start; background: rgba(255,255,255,0.02); padding: 10px; border-radius: 8px; border: 1px solid var(--line);">
+                                    <div class="eh-repeater-field">
+                                        <label>Título</label>
+                                        <input type="text" wire:model="sections.{{ $key }}.repeater_data.{{ $index }}.title" placeholder="Ej: Pedí tu usuario">
+                                    </div>
+                                    <div class="eh-repeater-field">
+                                        <label>Descripción</label>
+                                        <input type="text" wire:model="sections.{{ $key }}.repeater_data.{{ $index }}.subtitle" placeholder="Ej: Elegí una línea de atención...">
+                                    </div>
+                                    <button type="button" wire:click="removeRepeaterItem('{{ $key }}', {{ $index }})" style="margin-top: 18px; color: #ff4757; background: transparent; border: none; cursor: pointer;">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                                @endforeach
+                            @endif
+                            <button type="button" wire:click="addRepeaterItem('{{ $key }}')" class="eh-repeater-addbtn" style="width: auto;">
+                                <i class="fa-solid fa-plus"></i> Agregar {{ $key === 'como-empezar' ? 'Paso' : 'Característica' }}
+                            </button>
+                        </div>
+                    @endif
+
+                    @if($key === 'sorteo')
+                        @if(count($raffleItems) > 0)
+                        <div class="eh-grid" style="padding: 0;">
+                            @foreach($raffleItems as $raffle)
+                            <div class="eh-card {{ in_array($raffle['id'], $selectedRafflesUpcoming) ? 'selected' : '' }}"
+                                 wire:click="toggleRaffle({{ $raffle['id'] }})">
+                                @if(in_array($raffle['id'], $selectedRafflesUpcoming))
+                                    <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
+                                    @php $orderIdx = array_search($raffle['id'], $selectedRafflesUpcoming); @endphp
+                                    <div style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 5;" onclick="event.stopPropagation()">
+                                        <button wire:click.stop="moveItemUp('raffles_upcoming', {{ $raffle['id'] }})" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;" {{ $orderIdx === 0 ? 'disabled' : '' }}>↑</button>
+                                        <button wire:click.stop="moveItemDown('raffles_upcoming', {{ $raffle['id'] }})" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;" {{ $orderIdx === count($selectedRafflesUpcoming)-1 ? 'disabled' : '' }}>↓</button>
+                                    </div>
+                                @endif
+                                <div class="eh-card-title">{{ $raffle['title'] }}</div>
+                                <div class="eh-card-meta">
+                                    <span>Vence: {{ \Carbon\Carbon::parse($raffle['end_date'])->format('d/m/Y') }}</span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="eh-empty">No hay sorteos disponibles. Crea uno en el modulo de <strong>Sorteos</strong>.</div>
+                        @endif
+                    @endif
+
+                    @if($key === 'bonos')
+                        @if(count($bonusItems) > 0)
+                        <div class="eh-grid" style="padding: 0;">
+                            @foreach($bonusItems as $bonus)
+                            <div class="eh-card {{ in_array($bonus['id'], $selectedBonuses) ? 'selected' : '' }}"
+                                 wire:click="toggleBonus({{ $bonus['id'] }})">
+                                @if(in_array($bonus['id'], $selectedBonuses))
+                                    <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
+                                    @php $orderIdx = array_search($bonus['id'], $selectedBonuses); @endphp
+                                    <div style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 5;" onclick="event.stopPropagation()">
+                                        <button wire:click.stop="moveItemUp('bonuses', {{ $bonus['id'] }})" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;" {{ $orderIdx === 0 ? 'disabled' : '' }}>↑</button>
+                                        <button wire:click.stop="moveItemDown('bonuses', {{ $bonus['id'] }})" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;" {{ $orderIdx === count($selectedBonuses)-1 ? 'disabled' : '' }}>↓</button>
+                                    </div>
+                                @endif
+                                <div class="eh-bonus-value">
+                                    @if($bonus['bonus_percent'])
+                                        {{ $bonus['bonus_percent'] }}%
+                                    @elseif($bonus['bonus_amount'])
+                                        ${{ number_format($bonus['bonus_amount'], 2) }}
+                                    @else
+                                        <i class="fa-solid fa-gift eh-card-icon"></i>
+                                    @endif
+                                </div>
+                                <div class="eh-card-title">{{ $bonus['title'] }}</div>
+                                <div class="eh-card-meta">
+                                    <span>{{ $bonus['code'] ?? 'Sin codigo' }}</span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="eh-empty">No hay bonos activos disponibles. Crea uno en el modulo de <strong>Bonos</strong>.</div>
+                        @endif
+                    @endif
+
+                    @if($key === 'blog')
+                        @if(count($blogPosts) > 0)
+                        <div class="eh-grid" style="padding: 0;">
+                            @foreach($blogPosts as $post)
+                            <div class="eh-card {{ in_array($post['id'], $selectedBlogs) ? 'selected' : '' }}"
+                                 wire:click="toggleBlog({{ $post['id'] }})">
+                                @if(in_array($post['id'], $selectedBlogs))
+                                    <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
+                                    @php $orderIdx = array_search($post['id'], $selectedBlogs); @endphp
+                                    <div style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 5;" onclick="event.stopPropagation()">
+                                        <button wire:click.stop="moveItemUp('blog', {{ $post['id'] }})" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;" {{ $orderIdx === 0 ? 'disabled' : '' }}>↑</button>
+                                        <button wire:click.stop="moveItemDown('blog', {{ $post['id'] }})" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;" {{ $orderIdx === count($selectedBlogs)-1 ? 'disabled' : '' }}>↓</button>
+                                    </div>
+                                @endif
+                                @if($post['image'])
+                                <img src="{{ asset('storage/' . $post['image']) }}" class="eh-card-img" alt="{{ $post['title'] }}">
+                                @else
+                                <div class="eh-card-img placeholder"><i class="fa-solid fa-newspaper"></i></div>
+                                @endif
+                                <div class="eh-card-title">{{ $post['title'] }}</div>
+                                <div class="eh-card-meta">
+                                    <span>{{ \Carbon\Carbon::parse($post['published_at'])->format('d/m/Y') }}</span>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <div class="eh-empty">No hay entradas de blog publicadas. Crea una en <strong>Novedades</strong> con tipo "Blog".</div>
+                        @endif
+                    @endif
+
+                </div>
             </div>
-        </div>
+        @endforeach
+
     </div>
 </div>

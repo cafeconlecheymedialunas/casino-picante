@@ -30,27 +30,40 @@
     .prize-media span { font-family:var(--font-display); color:var(--orange); font-size:54px; line-height:1; }
     .prize-position { color:var(--orange); font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; margin-bottom:5px; }
     .prize-card h3 { margin:0; font-size:18px; line-height:1.2; }
-    .raffle-banner { 
-        position: relative;
-    overflow: hidden;
-    /* border: 1px solid rgba(255, 106, 26, .45); */
-    border-radius: 10px;
-    min-height: 330px;
-    padding: 18px 22px 22px;
-    }
+    #sorteo { position:relative; overflow:hidden; padding-block:76px; }
+    #sorteo::before { content:""; position:absolute; inset:0; background:radial-gradient(52% 70% at 92% 22%, rgba(255,106,26,.17), transparent 64%), radial-gradient(36% 72% at 0% 45%, rgba(255,106,26,.1), transparent 70%); pointer-events:none; }
+    #sorteo .fe-shell { position:relative; z-index:1; }
+    .raffle-section-head { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:28px; align-items:end; }
+    .raffle-main-title { margin:0 0 40px 0; font-family:var(--font-display); font-size:58px; line-height:.82; letter-spacing:.02em; text-transform:uppercase; text-align:center; }
+    .raffle-main-title span { color:var(--orange); text-shadow:0 0 32px rgba(255,106,26,.28); }
+    .raffle-subtitle { margin:14px 0 0; color:#fff; font-size:clamp(15px, 1.45vw, 22px); line-height:1.35; max-width:960px; text-wrap:balance; }
+    .raffle-section-head .fe-btn { white-space:nowrap; box-shadow:0 18px 42px rgba(255,106,26,.28); }
+    .raffle-info-bar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:22px; align-items:end; margin:0 0 8px; }
+    .raffle-meta h4 { margin:0; color:rgba(255,255,255,.72); font-size:40px; font-weight:600; text-transform:uppercase; }
+    .raffle-meta p { margin:8px 0 0; color:#fff; font-size:clamp(15px, 1.35vw, 20px); line-height:1.35; }
+    .raffle-meta strong { color:#fff; font-weight:950; }
+    .raffle-timer { display:grid; grid-template-columns:repeat(4, minmax(62px,1fr)); gap:8px; min-width:330px; }
+    .timer-unit { min-height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid rgba(255,106,26,.28); border-radius:8px; background:linear-gradient(180deg, rgba(255,106,26,.13), rgba(255,255,255,.035)); box-shadow:0 14px 36px rgba(0,0,0,.28), inset 0 0 20px rgba(255,106,26,.05); }
+    .timer-val { font-family:var(--font-display); color:#fff; font-size:36px; line-height:.9; }
+    .timer-label { margin-top:7px; color:var(--orange); font-size:10px; font-weight:900; letter-spacing:.16em; }
+    .raffle-prizes-carousel { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(360px, 1fr); gap:18px; overflow-x:auto; overscroll-behavior-inline:contain; scroll-snap-type:inline mandatory; padding:22px 0 12px; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.74) rgba(255,255,255,.08); }
+    .raffle-prizes-carousel::-webkit-scrollbar { height:8px; }
+    .raffle-prizes-carousel::-webkit-scrollbar-track { background:rgba(255,255,255,.08); border-radius:999px; }
+    .raffle-prizes-carousel::-webkit-scrollbar-thumb { background:rgba(255,106,26,.74); border-radius:999px; }
+    .raffle-prize-item { position:relative; min-height:390px; border:1px solid rgba(255,106,26,.34); border-radius:10px; background:#0b0504; overflow:hidden; scroll-snap-align:start; box-shadow:0 26px 70px rgba(0,0,0,.46); }
+    .raffle-prize-item img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; transform:scale(1.01); transition:transform .35s ease; }
+    .raffle-prize-item:hover img { transform:scale(1.045); }
+    .raffle-prize-item::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.04) 22%, rgba(0,0,0,.36) 58%, rgba(7,2,2,.94) 100%); }
+    .raffle-prize-overlay { position:absolute; z-index:1; left:0; right:0; bottom:0; padding:24px; }
+    .prize-tag { display:inline-flex; margin-bottom:9px; border:1px solid rgba(255,106,26,.45); border-radius:999px; background:rgba(255,106,26,.14); color:var(--orange); padding:6px 10px; font-size:10px; font-weight:950; letter-spacing:.16em; }
+    .prize-name { margin:0; color:#fff; font-family:var(--font-display); font-size:clamp(32px, 3.4vw, 54px); line-height:.9; text-transform:uppercase; letter-spacing:.02em; }
+    .prize-value { margin-top:9px; color:rgba(255,255,255,.82); font-size:13px; font-weight:800; }
+    .raffle-banner { position: relative;overflow: hidden;border-radius: 10px;min-height: 330px;padding: 18px 22px 22px;}
     .raffle-full { width:100vw; margin-left:calc(50% - 50vw); border-radius:0; }
     .raffle-deco { position:absolute; z-index:0; pointer-events:none; opacity:.66; filter:drop-shadow(0 20px 24px rgba(255,106,26,.22)); }
     .raffle-deco img { width:100%; height:100%; object-fit:contain; display:block; }
-    .raffle-deco.gift-left { left: 34px;
-    bottom: 113px;
-    width: 160px;
-    height: 130px;
-    transform: rotate(3deg);}
-    .raffle-deco.gift-right {     right: 34px;
-    bottom: 113px;
-    width: 160px;
-    height: 130px;
-    transform: scaleX(-1) rotate(0deg); }
+    .raffle-deco.gift-left { left: 34px;bottom: 113px;width: 160px;height: 130px;transform: rotate(3deg);}
+    .raffle-deco.gift-right {     right: 34px;bottom: 113px;width: 160px;height: 130px;transform: scaleX(-1) rotate(0deg); }
     .raffle-banner-head { position:relative; z-index:2; text-align:center; padding:0 150px 18px; }
     .raffle-banner-head h3 { font-family:var(--font-display); font-size:44px; line-height:.9; letter-spacing:.03em; margin:0; }
     .raffle-banner-head h3 span { color:#ff3d12; }
@@ -73,11 +86,26 @@
     .raffle-prize-tile.primary .raffle-prize-image { height:116px; }
     .raffle-prize-image img { width:100%; height:100%; object-fit:cover; }
     .raffle-prize-image span { font-family:var(--font-display); color:rgba(255,255,255,.12); font-size:44px; letter-spacing:.05em; }
-    .bonus-carousel { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px, 360px); gap:16px; overflow-x:auto; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; padding:4px 0 16px; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
+    .sorteo-slider-full { width:100vw; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); }
+    .sorteo-slider-wrapper { position:relative; width:100%; }
+    .raffles-slider { display:flex; overflow:hidden; position:relative; }
+    .raffles-slider-track { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; }
+    .raffles-slider-track::-webkit-scrollbar { display:none; }
+    .raffle-slide { flex:0 0 100%; scroll-snap-align:start; display:flex; flex-direction:column; gap:20px; padding:0 10px; }
+    .raffle-slide-header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; }
+    .raffle-slide-footer { display:flex; justify-content:center; padding-top:8px; }
+    .slider-btn { position:absolute; top:50%; transform:translateY(-50%); z-index:10; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,106,26,.45); background:rgba(0,0,0,.6); backdrop-filter:blur(4px); color:var(--orange); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; }
+    .sorteo-slider-wrapper .slider-btn { top:calc(50% + 40px); }
+    .slider-btn-prev { left:10px; }
+    .slider-btn-next { right:10px; }
+    .slider-btn:hover { background:rgba(255,106,26,.25); transform:translateY(-50%) scale(1.05); }
+    @media (max-width: 768px) {
+        .slider-btn { display:none; }
+    }
+    .bonus-carousel { position:relative; width:100%; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px, 360px); gap:16px; overflow-x:auto; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; padding:4px 0 16px; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
     .bonus-card { min-height:250px; color:#fff; position:relative; border:3px dashed rgba(255,106,26,.9); border-radius:18px; background:
         radial-gradient(90% 100% at 0% 0%, rgba(255,106,26,.2), transparent 58%),
-        linear-gradient(180deg,#180b08,#090505);
-        box-shadow:0 18px 42px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.04) inset; transform:rotate(-1deg); overflow:hidden; padding:30px; scroll-snap-align:start; }
+        linear-gradient(180deg,#180b08,#090505);box-shadow:0 18px 42px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.04) inset; transform:rotate(-1deg); overflow:hidden; padding:30px; scroll-snap-align:start; }
     .bonus-card:nth-child(even) { transform:rotate(1deg); }
     .bonus-card::before, .bonus-card::after { content:none; }
     .bonus-ticket-main { min-height:194px; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; gap:8px; padding:0; position:relative; }
@@ -115,6 +143,12 @@
         .lines-grid, .blog-grid, .steps-grid, .about-box { grid-template-columns:1fr; }
         .about-features { grid-template-columns:1fr; }
         .home-hero-slide { min-height:360px; }
+        #sorteo { padding-block:48px; }
+        .raffle-section-head, .raffle-info-bar { grid-template-columns:1fr; align-items:start; }
+        .raffle-section-head .fe-btn { width:max-content; }
+        .raffle-timer { min-width:0; width:100%; }
+        .raffle-prizes-carousel { grid-auto-columns:minmax(300px, 78vw); }
+        .raffle-prize-item { min-height:330px; }
         .raffle-deco { opacity:.14; }
         .raffle-banner-head { padding:18px 22px 8px; }
         .raffle-banner-head h3 { font-size:34px; }
@@ -127,6 +161,19 @@
     }
     @media (max-width: 560px) {
         .home-hero-slide { min-height:280px; }
+        #sorteo { padding-block:36px; }
+        .raffle-section-head { gap:16px; margin-bottom:16px; }
+        .raffle-main-title { font-size:42px; }
+        .raffle-subtitle { font-size:14px; }
+        .raffle-section-head .fe-btn { width:100%; }
+        .raffle-info-bar { gap:14px; }
+        .raffle-timer { grid-template-columns:repeat(2, minmax(0,1fr)); }
+        .timer-unit { min-height:64px; }
+        .timer-val { font-size:30px; }
+        .raffle-prizes-carousel { grid-auto-columns:minmax(260px, 86vw); gap:12px; padding-top:16px; }
+        .raffle-prize-item { min-height:280px; }
+        .raffle-prize-overlay { padding:18px; }
+        .prize-name { font-size:31px; }
         .raffle-banner { min-height:0; padding:14px 12px 18px; }
         .raffle-deco { display:none; }
         .raffle-banner-head { padding:10px 4px 8px; }
@@ -167,21 +214,13 @@
             ])
 
             <div class="steps-grid">
+                @foreach(($sections['como-empezar']['repeater_data'] ?? []) as $index => $step)
                 <article class="step-card">
-                    <div class="step-num">01</div>
-                    <h3>Pedí tu usuario</h3>
-                    <p>Elegí una línea de atención y solicitá el acceso para empezar a jugar.</p>
+                    <div class="step-num">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</div>
+                    <h3>{{ $step['title'] ?? '' }}</h3>
+                    <p>{{ $step['subtitle'] ?? '' }}</p>
                 </article>
-                <article class="step-card">
-                    <div class="step-num">02</div>
-                    <h3>Cargá saldo</h3>
-                    <p>Consultá medios de carga, promociones disponibles y bonos para tu cuenta.</p>
-                </article>
-                <article class="step-card">
-                    <div class="step-num">03</div>
-                    <h3>Entrá a jugar</h3>
-                    <p>Disfrutá tus juegos favoritos, participá en sorteos y pedí asistencia cuando quieras.</p>
-                </article>
+                @endforeach
             </div>
         </div>
     </section>
@@ -209,159 +248,183 @@
             @endif
         </div>
     </section>
+    @endif
 
+@if(($sections['sorteo']['enabled'] ?? true) && $raffles->count())
     <section id="sorteo" class="fe-section">
         <div class="fe-shell">
-            @include('frontend.components.section-header', [
-                'kicker' => 'Mas chances para ganar',
-                'title' => 'Sorteos de',
-                'highlight' => 'esta semana',
-                'subtitle' => $activeRaffle ? $activeRaffle->title : 'Jugá, participá y seguí los premios disponibles en cada sorteo activo.',
-                'action' => $activeRaffle ? '<a class="fe-btn ghost" href="'.route('sorteo.publico').'" wire:navigate>Ver sorteo</a>' : null,
-            ])
+            <div class="raffle-section-head">
+                <h2 class="raffle-main-title">{{ $sections['sorteo']['title'] ?? 'SORTEOS' }} <span>{{ $sections['sorteo']['highlight'] ?? 'ACTIVOS' }}</span></h2>
+            </div>
 
-            @if($activeRaffle && ! empty($activeRaffle->prizes))
-                @php
-                    $prizeImage = function (?string $image): ?string {
-                        if (! $image) {
-                            return null;
-                        }
-
-                        if (\Illuminate\Support\Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
-                            return $image;
-                        }
-
-                        return asset('storage/'.$image);
-                    };
-
-                    $displayPrizes = collect($activeRaffle->prizes)
-                        ->sortBy(fn ($prize, $index) => (int) ($prize['position'] ?? $index + 1))
-                        ->values();
-                    $prizeCount = max(1, $displayPrizes->count());
-                    $lineNames = $activeRaffle->lines->pluck('name')->filter()->join(', ');
-                    $remaining = now()->diff($activeRaffle->end_date);
-                    $remainingText = $activeRaffle->end_date->isFuture()
-                        ? trim(collect([
-                            $remaining->d ? $remaining->d.'d' : null,
-                            $remaining->h ? $remaining->h.'h' : null,
-                            $remaining->i ? $remaining->i.'m' : null,
-                        ])->filter()->take(2)->join(' '))
-                        : 'finalizando';
-                    $raffleInfo = collect([
-                        $activeRaffle->description,
-                        $lineNames ? 'Lineas: '.$lineNames : null,
-                    ])->filter()->join(' · ');
-                @endphp
-
-                <div class="raffle-banner">
-                    <div class="raffle-deco gift-left" aria-hidden="true">
-                        <img src="{{ asset('frontend/raffle-gift.png') }}" alt="">
-                    </div>
-                    <div class="raffle-deco gift-right" aria-hidden="true">
-                        <img src="{{ asset('frontend/raffle-gift.png') }}" alt="">
-                    </div>
-                    <div class="raffle-banner-head">
-                        <h3>{{ $activeRaffle->title }}</h3>
-                        @if($raffleInfo)
-                            <p>{{ $raffleInfo }}</p>
-                        @endif
-                        <div class="raffle-countdown">
-                            Termina en <strong>{{ $remainingText ?: 'menos de 1m' }}</strong>
+            @if($raffles->count() > 1)
+            <div class="sorteo-slider-wrapper sorteo-slider-full">
+                <button type="button" class="slider-btn slider-btn-prev raffle-swiper-btn-prev">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="raffleSwiper swiper">
+                    <div class="swiper-wrapper">
+                        @foreach($raffles as $index => $raffle)
+                        <div class="swiper-slide raffle-slide">
+                            <div class="raffle-slide-header">
+                                <div class="raffle-meta">
+                                    <h4>{{ strtoupper($raffle->title) }}</h4>
+                                    @if($raffle->description)
+                                        <p>{{ $raffle->description }}</p>
+                                    @endif
+                                </div>
+                                <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
+                                    @php
+                                        $remaining = now()->diff($raffle->end_date);
+                                    @endphp
+                                    <div class="timer-unit"><span class="timer-val" data-unit="days">{{ str_pad($remaining->d, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">DIAS</span></div>
+                                    <div class="timer-unit"><span class="timer-val" data-unit="hours">{{ str_pad($remaining->h, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">HRS</span></div>
+                                    <div class="timer-unit"><span class="timer-val" data-unit="minutes">{{ str_pad($remaining->i, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">MIN</span></div>
+                                    <div class="timer-unit"><span class="timer-val" data-unit="seconds">{{ str_pad($remaining->s, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">SEG</span></div>
+                                </div>
+                            </div>
+                            <div class="raffle-prizes-carousel">
+                                @foreach(collect($raffle->prizes)->sortBy(fn ($prize, $idx) => (int) ($prize['position'] ?? $idx + 1))->values() as $pIndex => $prize)
+                                <article class="raffle-prize-item">
+                                    @php
+                                        $position = (int) ($prize['position'] ?? $pIndex + 1);
+                                        $image = $prize['image'] ?? null;
+                                        if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
+                                            $image = asset('storage/'.$image);
+                                        }
+                                        $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
+                                    @endphp
+                                    <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
+                                    <div class="raffle-prize-overlay">
+                                        <span class="prize-tag">{{ $position }}° PUESTO</span>
+                                        <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
+                                        <div class="prize-value">Valor estimado: ${{ number_format((float) ($prize['amount'] ?? 1000000), 0, ',', '.') }}</div>
+                                    </div>
+                                </article>
+                                @endforeach
+                            </div>
+                            <div class="raffle-slide-footer">
+                                <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
+                            </div>
                         </div>
-                    </div>
-                    <div class="raffle-prize-strip count-{{ min($prizeCount, 3) }}" aria-label="Carousel de premios del sorteo activo">
-                        @foreach($displayPrizes as $index => $prize)
-                            @php
-                                $position = (int) ($prize['position'] ?? $index + 1);
-                                $image = $prizeImage($prize['image'] ?? null);
-                            @endphp
-                            <article class="raffle-prize-tile {{ $position === 1 ? 'primary' : '' }}">
-                                <div class="raffle-rank">{{ $position }}</div>
-                                <div class="raffle-prize-info">
-                                    <strong>Premio {{ $position }}</strong>
-                                    <span>{{ $prize['name'] ?? 'Premio sorpresa' }}</span>
-                                    @if(!empty($prize['amount']))
-                                        <b>${{ number_format((float) $prize['amount'], 0, ',', '.') }}</b>
-                                    @endif
-                                </div>
-                                <div class="raffle-prize-image">
-                                    @if($image)
-                                        <img src="{{ $image }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
-                                    @else
-                                        <span>BET</span>
-                                    @endif
-                                </div>
-                            </article>
                         @endforeach
                     </div>
                 </div>
+                <button type="button" class="slider-btn slider-btn-next raffle-swiper-btn-next">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
             @else
-                <div class="empty-panel">No hay premios publicados para un sorteo activo.</div>
+            @php
+                $raffle = $raffles->first();
+                $remaining = now()->diff($raffle->end_date);
+            @endphp
+            <div class="raffle-single">
+                <div class="raffle-slide-header">
+                    <div class="raffle-meta">
+                        <h4>{{ strtoupper($raffle->title) }}</h4>
+                        @if($raffle->description)
+                            <p>{{ $raffle->description }}</p>
+                        @endif
+                    </div>
+                    <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
+                        <div class="timer-unit"><span class="timer-val" data-unit="days">{{ str_pad($remaining->d, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">DIAS</span></div>
+                        <div class="timer-unit"><span class="timer-val" data-unit="hours">{{ str_pad($remaining->h, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">HRS</span></div>
+                        <div class="timer-unit"><span class="timer-val" data-unit="minutes">{{ str_pad($remaining->i, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">MIN</span></div>
+                        <div class="timer-unit"><span class="timer-val" data-unit="seconds">{{ str_pad($remaining->s, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">SEG</span></div>
+                    </div>
+                </div>
+                <div class="raffle-prizes-carousel">
+                    @foreach(collect($raffle->prizes)->sortBy(fn ($prize, $idx) => (int) ($prize['position'] ?? $idx + 1))->values() as $pIndex => $prize)
+                    <article class="raffle-prize-item">
+                        @php
+                            $position = (int) ($prize['position'] ?? $pIndex + 1);
+                            $image = $prize['image'] ?? null;
+                            if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
+                                $image = asset('storage/'.$image);
+                            }
+                            $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
+                        @endphp
+                        <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
+                        <div class="raffle-prize-overlay">
+                            <span class="prize-tag">{{ $position }}° PUESTO</span>
+                            <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
+                            <div class="prize-value">Valor estimado: ${{ number_format((float) ($prize['amount'] ?? 1000000), 0, ',', '.') }}</div>
+                        </div>
+                    </article>
+                    @endforeach
+                </div>
+                <div class="raffle-slide-footer">
+                    <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
+                </div>
+            </div>
             @endif
         </div>
     </section>
+@endif
 
+    @if(($sections['nosotros']['enabled'] ?? true))
     <section id="nosotros" class="fe-section">
         <div class="fe-shell">
             <div class="about-box">
                 <div>
-                    <div class="fe-kicker">Sobre RED PICANTES</div>
-                    <h2 class="about-title">Casino online con atencion <span>real</span></h2>
+                    <div class="fe-kicker">{{ $sections['nosotros']['kicker'] ?? 'Sobre RED PICANTES' }}</div>
+                    <h2 class="about-title">{{ $sections['nosotros']['title'] ?? 'Casino online con atencion' }} <span>{{ $sections['nosotros']['highlight'] ?? 'real' }}</span></h2>
                     <p class="about-copy">
-                        Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.
+                        {{ $sections['nosotros']['subtitle'] ?? 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.' }}
                     </p>
                 </div>
                 <div class="about-features">
+                    @foreach(($sections['nosotros']['repeater_data'] ?? []) as $feature)
                     <div class="about-feature">
-                        <strong>Alta rapida</strong>
-                        <p>Contactás una línea y pedís tu usuario sin formularios eternos.</p>
+                        <strong>{{ $feature['title'] ?? '' }}</strong>
+                        <p>{{ $feature['subtitle'] ?? '' }}</p>
                     </div>
-                    <div class="about-feature">
-                        <strong>Bonos vigentes</strong>
-                        <p>Promociones para recargar, arrancar con ventaja y jugar más.</p>
-                    </div>
-                    <div class="about-feature">
-                        <strong>Sorteos activos</strong>
-                        <p>Premios y chances extra para usuarios que participan.</p>
-                    </div>
-                    <div class="about-feature">
-                        <strong>Soporte humano</strong>
-                        <p>Atención directa para cargas, retiros, dudas y novedades.</p>
-                    </div>
+                    @endforeach
                 </div>
             </div>
         </div>
     </section>
+    @endif
 
+    @if(($sections['bonos']['enabled'] ?? true))
     <section id="bonos" class="fe-section">
         <div class="fe-shell">
             @include('frontend.components.section-header', [
-                'kicker' => 'Promos para jugar mas',
-                'title' => 'Bonos',
-                'highlight' => 'activos',
-                'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
+                'kicker' => $sections['bonos']['kicker'] ?? 'Promos para jugar mas',
+                'title' => $sections['bonos']['title'] ?? 'Bonos',
+                'highlight' => $sections['bonos']['highlight'] ?? 'activos',
+                'subtitle' => $sections['bonos']['subtitle'] ?? 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
                 'action' => '<a class="fe-btn ghost" href="'.route('frontend.bonuses').'" wire:navigate>Ver todos</a>',
             ])
 
             @if($bonusItems->count())
-                <div class="bonus-carousel" aria-label="Carousel de bonos activos">
+                <div class="bonus-carousel">
+                    <button type="button" class="slider-btn slider-btn-prev bonus-swiper-btn-prev">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
                     @foreach($bonusItems as $bonus)
                         @include('frontend.components.bonus-card', ['bonus' => $bonus])
                     @endforeach
+                    <button type="button" class="slider-btn slider-btn-next bonus-swiper-btn-next">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
                 </div>
             @else
                 <div class="empty-panel">No hay bonos activos vigentes.</div>
             @endif
         </div>
     </section>
+    @endif
 
+    @if(($sections['blog']['enabled'] ?? true))
     <section id="blog" class="fe-section">
         <div class="fe-shell">
             @include('frontend.components.section-header', [
-                'kicker' => 'Noticias y jugadas',
-                'title' => '',
-                'highlight' => 'Novedades',
-                'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.',
+                'kicker' => $sections['blog']['kicker'] ?? 'Noticias y jugadas',
+                'title' => $sections['blog']['title'] ?? '',
+                'highlight' => $sections['blog']['highlight'] ?? 'Novedades',
+                'subtitle' => $sections['blog']['subtitle'] ?? 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.',
                 'action' => '<a class="fe-btn ghost" href="'.route('frontend.blog').'" wire:navigate>Ver novedades</a>',
             ])
 
@@ -376,5 +439,8 @@
             @endif
         </div>
     </section>
+    @endif
 
 </div>
+
+

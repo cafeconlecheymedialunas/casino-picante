@@ -17,4 +17,6 @@ class HomeConfig extends Model
     const SECTION_CAROUSEL = 'carousel';
     const SECTION_BONUSES = 'bonuses';
     const SECTION_BLOG = 'blog';
+    const SECTION_RAFFLES_ACTIVE = 'raffles_active';
+    const SECTION_RAFFLES_UPCOMING = 'raffles_upcoming';
 }

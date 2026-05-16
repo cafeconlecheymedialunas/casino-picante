@@ -23,6 +23,7 @@ class HomeSection extends Model
         'post_ids',
         'bonus_type',
         'bonus_ids',
+        'repeater_data',
         'enabled',
         'order',
     ];
@@ -32,6 +33,7 @@ class HomeSection extends Model
         'raffle_ids' => 'array',
         'post_ids' => 'array',
         'bonus_ids' => 'array',
+        'repeater_data' => 'array',
     ];
 
     public static function getSection(string $key): ?self
@@ -63,6 +65,7 @@ class HomeSection extends Model
             'post_ids' => $section->post_ids,
             'bonus_type' => $section->bonus_type,
             'bonus_ids' => $section->bonus_ids,
+            'repeater_data' => $section->repeater_data ?? ($defaults['repeater_data'] ?? []),
         ];
     }
 }

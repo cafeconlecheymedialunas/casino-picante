@@ -20,7 +20,7 @@ class Home extends Component
         return view('frontend.pages.home', [
             'carouselItems' => $this->carouselItems(),
             'lines' => $this->lines(),
-            'activeRaffle' => $this->activeRaffle(),
+            'raffles' => $this->raffles(),
             'bonusItems' => $this->bonusItems(),
             'blogPosts' => $this->blogPosts(),
             'sections' => $this->sections(),
@@ -50,39 +50,42 @@ class Home extends Component
             ->get();
     }
 
-    private function activeRaffle(): ?Raffle
+    private function raffles(): EloquentCollection
     {
-        $sectionData = HomeSection::getSection('sorteo');
+        $selected = $this->configuredIds(HomeConfig::SECTION_RAFFLES_UPCOMING);
 
         $query = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
-            ->where('status', 'active')
-            ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now());
+            ->where(function($q) {
+                $q->where('status', 'active')->where('start_date', '>', now())
+                  ->orWhere('status', 'upcoming');
+            });
 
-        if ($sectionData && $sectionData->raffle_ids) {
-            return $query->whereIn('id', $sectionData->raffle_ids)->first();
+        if ($selected->isNotEmpty()) {
+            return $this->orderedByConfig(
+                $query->whereIn('id', $selected)->get(),
+                $selected
+            );
         }
 
-        return $query->orderBy('end_date')->first();
+        return $query->orderBy('start_date')->take(3)->get();
     }
 
     private function bonusItems(): EloquentCollection
     {
-        $sectionData = HomeSection::getSection('bonos');
+        $selected = $this->configuredIds(HomeConfig::SECTION_BONUSES);
 
         $baseQuery = Bonus::withoutGlobalScopes()
             ->with(['line', 'platform'])
             ->where('status', 'active')
-            ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
             ->whereHas('line', fn ($line) => $line->where('status', 'active'));
 
-        if ($sectionData && $sectionData->bonus_ids) {
-            $configured = (clone $baseQuery)->whereIn('id', $sectionData->bonus_ids)->get();
-            if ($configured->isNotEmpty()) {
-                return $configured->take(5);
-            }
+        if ($selected->isNotEmpty()) {
+            return $this->orderedByConfig(
+                $baseQuery->whereIn('id', $selected)->get(),
+                $selected
+            );
         }
 
         return $baseQuery->latest('start_date')->take(5)->get();
@@ -90,18 +93,18 @@ class Home extends Component
 
     private function blogPosts(): EloquentCollection
     {
-        $sectionData = HomeSection::getSection('blog');
+        $selected = $this->configuredIds(HomeConfig::SECTION_BLOG);
 
         $baseQuery = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at');
 
-        if ($sectionData && $sectionData->post_ids) {
-            $configured = (clone $baseQuery)->whereIn('id', $sectionData->post_ids)->get();
-            if ($configured->isNotEmpty()) {
-                return $configured->take(3);
-            }
+        if ($selected->isNotEmpty()) {
+            return $this->orderedByConfig(
+                $baseQuery->whereIn('id', $selected)->get(),
+                $selected
+            );
         }
 
         return $baseQuery->latest('published_at')->take(3)->get();
@@ -141,15 +144,16 @@ class Home extends Component
                 'subtitle' => 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.',
             ],
             'sorteo' => [
-                'kicker' => 'Mas chances para ganar',
-                'title' => 'Sorteos de',
-                'highlight' => 'esta semana',
-                'subtitle' => 'Jugá, participá y seguí los premios disponibles en cada sorteo activo.',
+                'kicker' => 'Muy pronto',
+                'title' => 'PRÓXIMOS',
+                'highlight' => 'SORTEOS',
+                'subtitle' => 'Nuevas oportunidades para ganar. Registrate y enterate antes que nadie.',
             ],
             'nosotros' => [
+                'kicker' => 'Sobre RED PICANTES',
                 'title' => 'Casino online con atencion',
                 'highlight' => 'real',
-                'content' => 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompanarte.',
+                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.',
             ],
             'bonos' => [
                 'kicker' => 'Promos para jugar mas',
@@ -159,7 +163,8 @@ class Home extends Component
             ],
             'blog' => [
                 'kicker' => 'Noticias y jugadas',
-                'highlight' => 'Novedades',
+                'title' => 'Noticias y',
+                'highlight' => 'jugadas',
                 'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.',
             ],
         ];
