@@ -2,12 +2,40 @@
 
 namespace App\Services;
 
+use App\Jobs\SendNotificationJob;
 use App\Models\DashboardNotification;
 use App\Models\NotificationPreference;
 
 class NotificationService
 {
     public static function send(
+        string $title,
+        string $message,
+        ?int $agentId = null,
+        ?int $userId = null,
+        string $type = 'info',
+        ?string $link = null,
+        string $module = 'general',
+        bool $sync = false
+    ): ?DashboardNotification {
+        if ($sync) {
+            return self::sendSync($title, $message, $agentId, $userId, $type, $link, $module);
+        }
+
+        SendNotificationJob::dispatch(
+            $agentId,
+            $userId,
+            $title,
+            $message,
+            $type,
+            $link,
+            $module
+        );
+
+        return null;
+    }
+
+    private static function sendSync(
         string $title,
         string $message,
         ?int $agentId = null,
@@ -45,9 +73,10 @@ class NotificationService
         int $userId,
         string $type = 'info',
         ?string $link = null,
-        string $module = 'general'
+        string $module = 'general',
+        bool $sync = false
     ): ?DashboardNotification {
-        return static::send($title, $message, null, $userId, $type, $link, $module);
+        return static::send($title, $message, null, $userId, $type, $link, $module, $sync);
     }
 
     public static function sendToAgent(
@@ -56,9 +85,10 @@ class NotificationService
         ?int $agentId,
         string $type = 'info',
         ?string $link = null,
-        string $module = 'general'
+        string $module = 'general',
+        bool $sync = false
     ): ?DashboardNotification {
-        return static::send($title, $message, $agentId, null, $type, $link, $module);
+        return static::send($title, $message, $agentId, null, $type, $link, $module, $sync);
     }
 
     public static function sendToAll(
@@ -66,9 +96,10 @@ class NotificationService
         string $message,
         string $type = 'info',
         ?string $link = null,
-        string $module = 'general'
+        string $module = 'general',
+        bool $sync = false
     ): void {
-        static::send($title, $message, null, null, $type, $link, $module);
+        static::send($title, $message, null, null, $type, $link, $module, $sync);
     }
 
     public static function info(string $title, string $message, ?int $agentId = null, ?string $link = null, string $module = 'general'): ?DashboardNotification
