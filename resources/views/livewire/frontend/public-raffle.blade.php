@@ -64,8 +64,6 @@
                         <div class="raffle-card-image">
                             @if($prizeImageUrl)
                                 <img src="{{ $prizeImageUrl }}" alt="{{ $firstPrize['name'] ?? 'Premio' }}">
-                            @else
-                                <img src="{{ asset('sorteos-imagen.png') }}" alt="Premio" style="width:80px;height:auto;object-fit:contain;">
                             @endif
                             <span class="raffle-card-badge {{ $raffle->status }}">{{ $statusLabel }}</span>
                         </div>
