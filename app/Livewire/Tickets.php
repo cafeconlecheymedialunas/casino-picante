@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
@@ -28,10 +29,15 @@ class Tickets extends Component
     public $newMessage = '';
 
     public bool $showCreateModal = false;
+
     public string $createSubject = '';
+
     public string $createCategory = 'atencion';
+
     public string $createUserId = '';
+
     public string $createPriority = 'medium';
+
     public string $createMessage = '';
 
     public function openCreateModal(): void
@@ -53,7 +59,7 @@ class Tickets extends Component
         $this->validate([
             'createSubject' => 'required|string|min:3|max:255',
             'createCategory' => 'required|in:juego,bono,sorteo,atencion,otro',
-            'createUserId'  => 'required|integer|exists:users,id',
+            'createUserId' => 'required|integer|exists:users,id',
             'createPriority' => 'required|in:low,medium,high',
             'createMessage' => 'required|string|min:1',
         ]);
@@ -61,18 +67,18 @@ class Tickets extends Component
         $lineId = session('active_line_id');
 
         $ticket = Ticket::create([
-            'user_id'  => (int) $this->createUserId,
-            'line_id'  => $lineId,
-            'subject'  => trim($this->createSubject),
+            'user_id' => (int) $this->createUserId,
+            'line_id' => $lineId,
+            'subject' => trim($this->createSubject),
             'category' => $this->createCategory,
-            'status'   => 'open',
+            'status' => 'open',
             'priority' => $this->createPriority,
         ]);
 
         TicketMessage::create([
             'ticket_id' => $ticket->id,
-            'agent_id'  => $this->getCurrentAgentId(),
-            'message'   => trim($this->createMessage),
+            'agent_id' => $this->getCurrentAgentId(),
+            'message' => trim($this->createMessage),
         ]);
 
         $this->showCreateModal = false;
@@ -121,6 +127,16 @@ class Tickets extends Component
             'agent_id' => $this->getCurrentAgentId(),
             'message' => $this->newMessage,
         ]);
+
+        // Notificar al cliente
+        NotificationService::sendToClient(
+            'Nueva respuesta en tu ticket',
+            "Tienes una nueva respuesta en tu ticket {$this->selectedTicket->tracking_code}: {$this->selectedTicket->subject}",
+            $this->selectedTicket->user_id,
+            'info',
+            route('client.account', [], false).'?tab=tickets',
+            'tickets'
+        );
 
         // Auto-advance to progress when agent first replies
         if ($this->selectedTicket->status === 'open') {
@@ -190,8 +206,8 @@ class Tickets extends Component
 
         TicketMessage::create([
             'ticket_id' => $this->selectedTicket->id,
-            'agent_id'  => $this->getCurrentAgentId(),
-            'message'   => '🔄 Ticket reabierto',
+            'agent_id' => $this->getCurrentAgentId(),
+            'message' => '🔄 Ticket reabierto',
         ]);
 
         $this->selectedTicket = Ticket::withoutGlobalScopes()

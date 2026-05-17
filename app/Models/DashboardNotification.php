@@ -8,6 +8,7 @@ class DashboardNotification extends Model
 {
     protected $fillable = [
         'agent_id',
+        'user_id',
         'title',
         'message',
         'type',

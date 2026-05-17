@@ -18,8 +18,8 @@
                 @auth
                     @if(auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
                         @php
-                            $clientNotifications = \App\Models\UserNotification::where('user_id', auth()->id())->latest()->take(6)->get();
-                            $clientUnreadCount = \App\Models\UserNotification::where('user_id', auth()->id())->whereNull('read_at')->count();
+                            $clientNotifications = \App\Models\DashboardNotification::where('user_id', auth()->id())->latest()->take(6)->get();
+                            $clientUnreadCount = \App\Models\DashboardNotification::where('user_id', auth()->id())->whereNull('read_at')->count();
                         @endphp
                         <details class="fe-notification-menu">
                             <summary class="fe-bell-btn" aria-label="Notificaciones">

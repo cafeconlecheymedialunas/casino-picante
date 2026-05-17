@@ -22,7 +22,7 @@ trait SendsNotifications
 
     protected function notifyAgent(?int $agentId, string $title, string $message, string $module, ?string $link = null, string $type = 'success'): void
     {
-        NotificationService::send($title, $message, $agentId, $type, $link, $module);
+        NotificationService::send($title, $message, $agentId, null, $type, $link, $module);
     }
 
     private function broadcastToEncargados(?int $actingAgentId, string $title, string $message, string $module, ?string $link, string $type): void
@@ -41,7 +41,8 @@ trait SendsNotifications
             ->exists();
 
         if ($isEncargado) {
-            NotificationService::send($title, $message, null, $type, $link, $module);
+            NotificationService::send($title, $message, null, null, $type, $link, $module);
+
             return;
         }
 
@@ -53,11 +54,11 @@ trait SendsNotifications
             ->pluck('agent_id');
 
         foreach ($encargadoIds as $encargadoId) {
-            NotificationService::send($title, $message, $encargadoId, $type, $link, $module);
+            NotificationService::send($title, $message, $encargadoId, null, $type, $link, $module);
         }
 
         // Admin siempre recibe
-        NotificationService::send($title, $message, null, $type, $link, $module);
+        NotificationService::send($title, $message, null, null, $type, $link, $module);
     }
 
     private function currentNotificationAgentId(): ?int

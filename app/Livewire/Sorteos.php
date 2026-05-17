@@ -7,6 +7,7 @@ use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Support\ImageStorage;
 use App\Support\Permissions;
 use App\Support\Roles;
@@ -344,6 +345,15 @@ class Sorteos extends Component
                 'number' => $number,
             ]);
             $createdCount++;
+
+            NotificationService::sendToClient(
+                'Nuevo número de sorteo',
+                'Te asignaron el número '.str_pad($number, 4, '0', STR_PAD_LEFT)." para el sorteo {$raffle->title}",
+                $user->id,
+                'success',
+                route('frontend.raffles.show', $raffle->id),
+                'raffles'
+            );
         }
 
         $changedCount = $createdCount + $updatedCount;

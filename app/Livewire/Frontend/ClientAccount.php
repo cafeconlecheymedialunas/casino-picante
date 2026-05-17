@@ -3,12 +3,12 @@
 namespace App\Livewire\Frontend;
 
 use App\Models\BonusAssignment;
+use App\Models\DashboardNotification;
 use App\Models\Line;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
-use App\Models\UserNotification;
 use App\Support\AvatarLibrary;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -56,6 +56,19 @@ class ClientAccount extends Component
 
     public string $ticket_description = '';
 
+    public ?int $replyTicketId = null;
+
+    public string $replyMessage = '';
+
+    public function reopenTicket(int $ticketId): void
+    {
+        $ticket = Ticket::where('user_id', auth()->id())->whereKey($ticketId)->first();
+        if ($ticket && $ticket->status === 'closed') {
+            $ticket->update(['status' => 'open']);
+            session()->flash('ticket_success', 'Ticket reopened.');
+        }
+    }
+
     public function setTab(string $tab): void
     {
         if (in_array($tab, ['perfil', 'password', 'tickets', 'sorteo', 'bonos', 'todos_bonos', 'notificaciones'], true)) {
@@ -82,17 +95,50 @@ class ClientAccount extends Component
         }
     }
 
+    public function openReplyForm(int $ticketId): void
+    {
+        $this->replyTicketId = $ticketId;
+        $this->replyMessage = '';
+    }
+
+    public function cancelReply(): void
+    {
+        $this->replyTicketId = null;
+        $this->replyMessage = '';
+    }
+
+    public function sendReply(): void
+    {
+        if (! $this->replyTicketId || empty(trim($this->replyMessage))) {
+            return;
+        }
+
+        $ticket = Ticket::where('user_id', auth()->id())->whereKey($this->replyTicketId)->first();
+        if (! $ticket || $ticket->status === 'closed') {
+            return;
+        }
+
+        TicketMessage::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => auth()->id(),
+            'message' => trim($this->replyMessage),
+        ]);
+
+        $this->replyTicketId = null;
+        $this->replyMessage = '';
+        session()->flash('ticket_success', 'Respuesta enviada.');
+    }
+
     public function markNotificationRead(int $notificationId): void
     {
-        UserNotification::where('user_id', auth()->id())
+        DashboardNotification::where('user_id', auth()->id())
             ->whereKey($notificationId)
-            ->first()
-            ?->markRead();
+            ->update(['read_at' => now()]);
     }
 
     public function markAllNotificationsRead(): void
     {
-        UserNotification::where('user_id', auth()->id())
+        DashboardNotification::where('user_id', auth()->id())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
     }
@@ -335,11 +381,11 @@ class ClientAccount extends Component
             'recentBonuses' => $recentBonuses,
             'allBonuses' => $filteredBonuses,
             'allBonusesCount' => $allBonuses->count(),
-            'notifications' => UserNotification::where('user_id', $user->id)
+            'notifications' => DashboardNotification::where('user_id', $user->id)
                 ->latest()
                 ->take(8)
                 ->get(),
-            'unreadNotificationsCount' => UserNotification::where('user_id', $user->id)
+            'unreadNotificationsCount' => DashboardNotification::where('user_id', $user->id)
                 ->whereNull('read_at')
                 ->count(),
             'availableLines' => Line::with('activePlatforms')

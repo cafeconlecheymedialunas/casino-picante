@@ -7,6 +7,7 @@ use App\Models\BonusAssignment;
 use App\Models\Line;
 use App\Models\Platform;
 use App\Models\User;
+use App\Services\NotificationService;
 use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
@@ -312,9 +313,19 @@ class Bonos extends Component
         $assignment = BonusAssignment::with('bonus')->findOrFail($assignmentId);
         $this->authorizeLineChoice((int) $assignment->bonus->line_id);
         $assignment->update(['status' => 'used', 'used_at' => now()]);
-        session()->flash('message', 'Bono marcado como reclamado.');
 
-        $this->notify('Bono reclamado', "El bono {$assignment->bonus->title} fue marcado como reclamado.", 'bonuses', '/bonos', 'info');
+        NotificationService::sendToClient(
+            'Bono activado',
+            "Tu bono {$assignment->bonus->title} ha sido activado",
+            $assignment->user_id,
+            'success',
+            route('frontend.bonuses', [], false),
+            'bonuses'
+        );
+
+        session()->flash('message', 'Bono marcado como reclamoado.');
+
+        $this->notify('Bono activado', "El bono {$assignment->bonus->title} fue marcado como activado.", 'bonuses', '/bonos', 'info');
     }
 
     public function deleteBonus(int $bonusId): void

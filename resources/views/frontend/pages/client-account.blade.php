@@ -297,12 +297,30 @@
                             <strong>{{ $ticket->subject }}</strong>
                             <p class="account-muted">{{ $categoryLabels[$ticket->category] ?? 'Sin categoria' }} @if($ticket->line) - {{ $ticket->line->name }} @endif - {{ $ticket->created_at->format('d/m/Y H:i') }}</p>
                             <div class="account-messages">
-                                @foreach($ticket->messages->take(3) as $message)
-                                    <div class="account-message">{{ $message->message }}</div>
+                                @foreach($ticket->messages as $message)
+                                    <div class="account-message" style="{{ $message->user_id === auth()->id() ? 'background:rgba(255,106,26,0.1);border-left:3px solid var(--orange);' : '' }}">
+                                        <small style="opacity:0.6;display:block;margin-bottom:4px;">{{ $message->user_id === auth()->id() ? 'Vos' : ($message->agent?->name ?? 'Soporte') }} - {{ $message->created_at->format('d/m H:i') }}</small>
+                                        {{ $message->message }}
+                                    </div>
                                 @endforeach
                             </div>
                             @if($ticket->status !== 'closed')
-                                <button type="button" wire:click="closeTicket({{ $ticket->id }})" class="fe-btn ghost" style="margin-top:10px;height:32px;padding:0 12px;font-size:11px;">Cerrar ticket</button>
+                                <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                                    @if($replyTicketId === $ticket->id)
+                                        <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                                            <textarea wire:model.defer="replyMessage" class="account-input" placeholder="Escribe tu respuesta..." rows="2" style="resize:vertical;min-height:60px;"></textarea>
+                                            <div style="display:flex;gap:8px;">
+                                                <button type="button" wire:click="sendReply" wire:loading.attr="disabled" class="fe-btn primary" style="height:32px;padding:0 16px;font-size:12px;">Enviar</button>
+                                                <button type="button" wire:click="cancelReply" class="fe-btn ghost" style="height:32px;padding:0 16px;font-size:12px;">Cancelar</button>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <button type="button" wire:click="openReplyForm({{ $ticket->id }})" class="fe-btn primary" style="height:32px;padding:0 16px;font-size:11px;">Responder</button>
+                                        <button type="button" wire:click="closeTicket({{ $ticket->id }})" class="fe-btn ghost" style="height:32px;padding:0 12px;font-size:11px;">Cerrar</button>
+                                    @endif
+                                </div>
+                            @else
+                                <button type="button" wire:click="reopenTicket({{ $ticket->id }})" class="fe-btn primary" style="margin-top:10px;height:32px;padding:0 16px;font-size:11px;">Reabrir ticket</button>
                             @endif
                         </article>
                     @empty
@@ -404,6 +422,32 @@
                         </article>
                     @empty
                         <div class="account-empty">No hay bonos con ese filtro.</div>
+                    @endforelse
+                </div>
+            @endif
+
+            @if($activeTab === 'notificaciones')
+                <div class="account-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                        <h2 style="margin:0;">Mis notificaciones</h2>
+                        @if($unreadNotificationsCount > 0)
+                            <button type="button" wire:click="markAllNotificationsRead" class="fe-btn ghost" style="height:32px;padding:0 12px;font-size:11px;">Marcar todas como leídas</button>
+                        @endif
+                    </div>
+                    @forelse($notifications as $notification)
+                        <article class="notification-item" style="padding:12px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;gap:12px;align-items:flex-start;">
+                            <span class="notification-dot type-{{ $notification->type }}" style="width:8px;height:8px;border-radius:50%;background:{{ $notification->type === 'success' ? 'var(--green)' : ($notification->type === 'warning' ? 'var(--orange)' : 'var(--blue)') }};flex-shrink:0;margin-top:6px;"></span>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:600;margin-bottom:4px;">{{ $notification->title }}</div>
+                                <div style="font-size:13px;opacity:0.7;margin-bottom:4px;">{{ $notification->message }}</div>
+                                <div style="font-size:11px;opacity:0.5;">{{ $notification->created_at->diffForHumans() }}</div>
+                            </div>
+                            @if(!$notification->read_at)
+                                <button type="button" wire:click="markNotificationRead({{ $notification->id }})" class="fe-btn ghost" style="height:28px;padding:0 8px;font-size:10px;flex-shrink:0;">Marcar</button>
+                            @endif
+                        </article>
+                    @empty
+                        <div class="account-empty">No hay notificaciones.</div>
                     @endforelse
                 </div>
             @endif
