@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HomeSectionController;
 use App\Http\Controllers\PerfilController;
 use App\Livewire\Agentes;
 use App\Livewire\Auth\AdminForgotPassword;
@@ -14,8 +15,8 @@ use App\Livewire\Bonos;
 use App\Livewire\Chats;
 use App\Livewire\EditorHome;
 use App\Livewire\Frontend\Blog;
-use App\Livewire\Frontend\BonusShow;
 use App\Livewire\Frontend\BonusesIndex;
+use App\Livewire\Frontend\BonusShow;
 use App\Livewire\Frontend\ClientAccount;
 use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\LineShow;
@@ -146,7 +147,8 @@ Route::prefix('admin')->group(function () {
             Route::get('/bonos', Bonos::class)->name('bonos');
         });
 
-        Route::get('/editor-home', EditorHome::class)->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home');
+        Route::match(['get', 'post'], '/editor-home', EditorHome::class)->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home');
+        Route::post('/editor-home/save-section', [HomeSectionController::class, 'saveSection'])->name('editor-home.save');
 
         Route::get('/tickets', Tickets::class)->middleware('line.authorize')->name('tickets');
 

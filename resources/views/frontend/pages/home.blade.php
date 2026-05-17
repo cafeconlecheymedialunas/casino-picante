@@ -1,3 +1,247 @@
+<div>
+    <section class="home-hero">
+        <div class="fe-shell">
+            @include('frontend.components.carousel', ['items' => $carouselItems])
+        </div>
+    </section>
+
+    @if(($sections['como-empezar']['enabled'] ?? true))
+    <section id="como-empezar" class="fe-section">
+        <div class="fe-shell">
+            @include('frontend.components.section-header', [
+                'kicker' => $sections['como-empezar']['kicker'] ?? 'Como funciona',
+                'title' => $sections['como-empezar']['title'] ?? 'Empeza en',
+                'highlight' => $sections['como-empezar']['highlight'] ?? '3 pasos',
+                'subtitle' => $sections['como-empezar']['subtitle'] ?? 'Sin vueltas: contacto, carga y juego. Si necesitás ayuda, una persona te responde.',
+            ])
+
+            <div class="steps-grid">
+                @foreach(($sections['como-empezar']['repeater_data'] ?? []) as $index => $step)
+                <article class="step-card">
+                    <div class="step-num">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</div>
+                    <h3>{{ $step['title'] ?? '' }}</h3>
+                    <p>{{ $step['subtitle'] ?? '' }}</p>
+                </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
+
+    @if(($sections['lineas']['enabled'] ?? true))
+    <section id="lineas" class="fe-section">
+        <div class="fe-shell">
+            @include('frontend.components.section-header', [
+                'kicker' => $sections['lineas']['kicker'] ?? 'Empeza a jugar',
+                'title' => $sections['lineas']['title'] ?? 'Lineas de',
+                'highlight' => $sections['lineas']['highlight'] ?? 'atencion',
+                'subtitle' => $sections['lineas']['subtitle'] ?? 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.',
+            ])
+
+            @if($lines->count())
+                <div class="lines-grid">
+                    @foreach($lines as $line)
+                        @include('frontend.components.line-card', ['line' => $line])
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-panel">No hay lineas activas cargadas todavia.</div>
+            @endif
+        </div>
+    </section>
+    @endif
+
+    @if(($sections['sorteo']['enabled'] ?? true) && $raffles->count())
+    <section id="sorteo" class="fe-section">
+        <div class="fe-shell">
+            <div class="raffle-section-head">
+                <h2 class="raffle-main-title">{{ $sections['sorteo']['title'] ?? 'SORTEOS' }} <span>{{ $sections['sorteo']['highlight'] ?? 'ACTIVOS' }}</span></h2>
+            </div>
+
+            @if($raffles->count() > 1)
+            <div class="sorteo-slider-wrapper" x-data="rafflesSlider()" x-init="initSlider()">
+                <button type="button" class="slider-btn slider-btn-prev" @click="prev()">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="raffles-slider-track" x-ref="track">
+                    @foreach($raffles as $index => $raffle)
+                    <div class="raffle-slide" x-ref="slide{{ $index }}">
+                        <div class="raffle-slide-header">
+                            <div class="raffle-meta">
+                                <h4>{{ strtoupper($raffle->title) }}</h4>
+                                @if($raffle->description)
+                                    <p>{{ $raffle->description }}</p>
+                                @endif
+                            </div>
+                            <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
+                                @php
+                                    $remaining = now()->diff($raffle->end_date);
+                                @endphp
+                                <div class="timer-unit"><span class="timer-val" data-unit="days">{{ str_pad($remaining->d, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">DIAS</span></div>
+                                <div class="timer-unit"><span class="timer-val" data-unit="hours">{{ str_pad($remaining->h, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">HRS</span></div>
+                                <div class="timer-unit"><span class="timer-val" data-unit="minutes">{{ str_pad($remaining->i, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">MIN</span></div>
+                                <div class="timer-unit"><span class="timer-val" data-unit="seconds">{{ str_pad($remaining->s, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">SEG</span></div>
+                            </div>
+                        </div>
+                        <div class="raffle-prizes-carousel">
+                            @foreach(collect($raffle->prizes)->sortBy(fn ($prize, $idx) => (int) ($prize['position'] ?? $idx + 1))->values() as $pIndex => $prize)
+                            <article class="raffle-prize-item">
+                                @php
+                                    $position = (int) ($prize['position'] ?? $pIndex + 1);
+                                    $image = $prize['image'] ?? null;
+                                    if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
+                                        $image = asset('storage/'.$image);
+                                    }
+                                    $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
+                                @endphp
+                                <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
+                                <div class="raffle-prize-overlay">
+                                    <span class="prize-tag">{{ $position }}° PUESTO</span>
+                                    <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
+                                    <div class="prize-value">Valor estimado: ${{ number_format((float) ($prize['amount'] ?? 1000000), 0, ',', '.') }}</div>
+                                </div>
+                            </article>
+                            @endforeach
+                        </div>
+                        <div class="raffle-slide-footer">
+                            <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                <button type="button" class="slider-btn slider-btn-next" @click="next()">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+            @else
+            @php
+                $raffle = $raffles->first();
+                $remaining = now()->diff($raffle->end_date);
+            @endphp
+            <div class="raffle-single">
+                <div class="raffle-slide-header">
+                    <div class="raffle-meta">
+                        <h4>{{ strtoupper($raffle->title) }}</h4>
+                        @if($raffle->description)
+                            <p>{{ $raffle->description }}</p>
+                        @endif
+                    </div>
+                    <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
+                        <div class="timer-unit"><span class="timer-val" data-unit="days">{{ str_pad($remaining->d, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">DIAS</span></div>
+                        <div class="timer-unit"><span class="timer-val" data-unit="hours">{{ str_pad($remaining->h, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">HRS</span></div>
+                        <div class="timer-unit"><span class="timer-val" data-unit="minutes">{{ str_pad($remaining->i, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">MIN</span></div>
+                        <div class="timer-unit"><span class="timer-val" data-unit="seconds">{{ str_pad($remaining->s, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">SEG</span></div>
+                    </div>
+                </div>
+                <div class="raffle-prizes-carousel">
+                    @foreach(collect($raffle->prizes)->sortBy(fn ($prize, $idx) => (int) ($prize['position'] ?? $idx + 1))->values() as $pIndex => $prize)
+                    <article class="raffle-prize-item">
+                        @php
+                            $position = (int) ($prize['position'] ?? $pIndex + 1);
+                            $image = $prize['image'] ?? null;
+                            if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
+                                $image = asset('storage/'.$image);
+                            }
+                            $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
+                        @endphp
+                        <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
+                        <div class="raffle-prize-overlay">
+                            <span class="prize-tag">{{ $position }}° PUESTO</span>
+                            <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
+                            <div class="prize-value">Valor estimado: ${{ number_format((float) ($prize['amount'] ?? 1000000), 0, ',', '.') }}</div>
+                        </div>
+                    </article>
+                    @endforeach
+                </div>
+                <div class="raffle-slide-footer">
+                    <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
+                </div>
+            </div>
+            @endif
+        </div>
+    </section>
+    @endif
+
+    @if(($sections['nosotros']['enabled'] ?? true))
+    <section id="nosotros" class="fe-section">
+        <div class="fe-shell">
+            <div class="about-box">
+                <div>
+                    <div class="fe-kicker">{{ $sections['nosotros']['kicker'] ?? 'Sobre RED PICANTES' }}</div>
+                    <h2 class="about-title">{{ $sections['nosotros']['title'] ?? 'Casino online con atencion' }} <span>{{ $sections['nosotros']['highlight'] ?? 'real' }}</span></h2>
+                    <p class="about-copy">
+                        {{ $sections['nosotros']['subtitle'] ?? 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.' }}
+                    </p>
+                </div>
+                <div class="about-features">
+                    @foreach(($sections['nosotros']['repeater_data'] ?? []) as $feature)
+                    <div class="about-feature">
+                        <strong>{{ $feature['title'] ?? '' }}</strong>
+                        <p>{{ $feature['subtitle'] ?? '' }}</p>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </section>
+    @endif
+
+    @if(($sections['bonos']['enabled'] ?? true))
+    <section id="bonos" class="fe-section">
+        <div class="fe-shell">
+            @include('frontend.components.section-header', [
+                'kicker' => $sections['bonos']['kicker'] ?? 'Promos para jugar mas',
+                'title' => $sections['bonos']['title'] ?? 'Bonos',
+                'highlight' => $sections['bonos']['highlight'] ?? 'activos',
+                'subtitle' => $sections['bonos']['subtitle'] ?? 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
+                'action' => '<a class="fe-btn ghost" href="'.route('frontend.bonuses').'" wire:navigate>Ver todos</a>',
+            ])
+
+            @if($bonusItems->count())
+                <div class="bonus-carousel">
+                    <button type="button" class="slider-btn slider-btn-prev bonus-swiper-btn-prev">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    @foreach($bonusItems as $bonus)
+                        @include('frontend.components.bonus-card', ['bonus' => $bonus])
+                    @endforeach
+                    <button type="button" class="slider-btn slider-btn-next bonus-swiper-btn-next">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            @else
+                <div class="empty-panel">No hay bonos activos vigentes.</div>
+            @endif
+        </div>
+    </section>
+    @endif
+
+    @if(($sections['blog']['enabled'] ?? true))
+    <section id="blog" class="fe-section">
+        <div class="fe-shell">
+            @include('frontend.components.section-header', [
+                'kicker' => $sections['blog']['kicker'] ?? 'Noticias y jugadas',
+                'title' => $sections['blog']['title'] ?? '',
+                'highlight' => $sections['blog']['highlight'] ?? 'Novedades',
+                'subtitle' => $sections['blog']['subtitle'] ?? 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.',
+                'action' => '<a class="fe-btn ghost" href="'.route('frontend.blog').'" wire:navigate>Ver novedades</a>',
+            ])
+
+            @if($blogPosts->count())
+                <div class="blog-grid">
+                    @foreach($blogPosts as $post)
+                        @include('frontend.components.blog-card', ['post' => $post])
+                    @endforeach
+                </div>
+            @else
+                <div class="empty-panel">No hay entradas de blog publicadas.</div>
+            @endif
+        </div>
+    </section>
+    @endif
+
+</div>
+
 @push('styles')
 <style>
     .home-hero { padding:0; }
@@ -88,21 +332,21 @@
     .raffle-prize-image span { font-family:var(--font-display); color:rgba(255,255,255,.12); font-size:44px; letter-spacing:.05em; }
     .sorteo-slider-full { width:100vw; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); }
     .sorteo-slider-wrapper { position:relative; width:100%; }
-    .raffles-slider { display:flex; overflow:hidden; position:relative; }
-    .raffles-slider-track { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; }
-    .raffles-slider-track::-webkit-scrollbar { display:none; }
-    .raffle-slide { flex:0 0 100%; scroll-snap-align:start; display:flex; flex-direction:column; gap:20px; padding:0 10px; }
+    .raffles-slider { position: relative; width: 100%; overflow: hidden; }
+    .raffles-slider-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+    .raffles-slider-track::-webkit-scrollbar { display: none; }
+    .raffle-slide { flex: 0 0 100%; scroll-snap-align: start; padding: 0 20px; }
     .raffle-slide-header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; }
     .raffle-slide-footer { display:flex; justify-content:center; padding-top:8px; }
-    .slider-btn { position:absolute; top:50%; transform:translateY(-50%); z-index:10; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,106,26,.45); background:rgba(0,0,0,.6); backdrop-filter:blur(4px); color:var(--orange); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; }
+    .slider-btn { position:absolute; top:50%; transform:translateY(-50%); z-index:20; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,106,26,.45); background:rgba(0,0,0,.6); backdrop-filter:blur(4px); color:var(--orange); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; }
     .sorteo-slider-wrapper .slider-btn { top:calc(50% + 40px); }
     .slider-btn-prev { left:10px; }
     .slider-btn-next { right:10px; }
     .slider-btn:hover { background:rgba(255,106,26,.25); transform:translateY(-50%) scale(1.05); }
     @media (max-width: 768px) {
-        .slider-btn { display:none; }
+        .slider-btn { display: flex !important; width: 36px; height: 36px; top: 30%; }
     }
-    .bonus-carousel { position:relative; width:100%; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px, 360px); gap:16px; overflow-x:auto; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; padding:4px 0 16px; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
+    .bonus-carousel { position:relative; width:100%; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px, 360px); gap:16px; overflow-x:hidden; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; padding:4px 0 16px; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
     .bonus-card { min-height:250px; color:#fff; position:relative; border:3px dashed rgba(255,106,26,.9); border-radius:18px; background:
         radial-gradient(90% 100% at 0% 0%, rgba(255,106,26,.2), transparent 58%),
         linear-gradient(180deg,#180b08,#090505);box-shadow:0 18px 42px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.04) inset; transform:rotate(-1deg); overflow:hidden; padding:30px; scroll-snap-align:start; }
@@ -196,251 +440,49 @@
 </style>
 @endpush
 
-<div>
-    <section class="home-hero">
-        <div class="fe-shell">
-            @include('frontend.components.carousel', ['items' => $carouselItems])
-        </div>
-    </section>
-
-    @if(($sections['como-empezar']['enabled'] ?? true))
-    <section id="como-empezar" class="fe-section">
-        <div class="fe-shell">
-            @include('frontend.components.section-header', [
-                'kicker' => $sections['como-empezar']['kicker'] ?? 'Como funciona',
-                'title' => $sections['como-empezar']['title'] ?? 'Empeza en',
-                'highlight' => $sections['como-empezar']['highlight'] ?? '3 pasos',
-                'subtitle' => $sections['como-empezar']['subtitle'] ?? 'Sin vueltas: contacto, carga y juego. Si necesitás ayuda, una persona te responde.',
-            ])
-
-            <div class="steps-grid">
-                @foreach(($sections['como-empezar']['repeater_data'] ?? []) as $index => $step)
-                <article class="step-card">
-                    <div class="step-num">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</div>
-                    <h3>{{ $step['title'] ?? '' }}</h3>
-                    <p>{{ $step['subtitle'] ?? '' }}</p>
-                </article>
-                @endforeach
-            </div>
-        </div>
-    </section>
-    @endif
-
-    @if(($sections['lineas']['enabled'] ?? true))
-    <section id="lineas" class="fe-section">
-        <div class="fe-shell">
-            @include('frontend.components.section-header', [
-                'kicker' => $sections['lineas']['kicker'] ?? 'Empeza a jugar',
-                'title' => $sections['lineas']['title'] ?? 'Lineas de',
-                'highlight' => $sections['lineas']['highlight'] ?? 'atencion',
-                'subtitle' => $sections['lineas']['subtitle'] ?? 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.',
-
-                ])
-
-            @if($lines->count())
-                <div class="lines-grid">
-                    @foreach($lines as $line)
-                        @include('frontend.components.line-card', ['line' => $line])
-                    @endforeach
-                </div>
-            @else
-                <div class="empty-panel">No hay lineas activas cargadas todavia.</div>
-            @endif
-        </div>
-    </section>
-    @endif
-
-@if(($sections['sorteo']['enabled'] ?? true) && $raffles->count())
-    <section id="sorteo" class="fe-section">
-        <div class="fe-shell">
-            <div class="raffle-section-head">
-                <h2 class="raffle-main-title">{{ $sections['sorteo']['title'] ?? 'SORTEOS' }} <span>{{ $sections['sorteo']['highlight'] ?? 'ACTIVOS' }}</span></h2>
-            </div>
-
-            @if($raffles->count() > 1)
-            <div class="sorteo-slider-wrapper sorteo-slider-full">
-                <button type="button" class="slider-btn slider-btn-prev raffle-swiper-btn-prev">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <div class="raffleSwiper swiper">
-                    <div class="swiper-wrapper">
-                        @foreach($raffles as $index => $raffle)
-                        <div class="swiper-slide raffle-slide">
-                            <div class="raffle-slide-header">
-                                <div class="raffle-meta">
-                                    <h4>{{ strtoupper($raffle->title) }}</h4>
-                                    @if($raffle->description)
-                                        <p>{{ $raffle->description }}</p>
-                                    @endif
-                                </div>
-                                <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
-                                    @php
-                                        $remaining = now()->diff($raffle->end_date);
-                                    @endphp
-                                    <div class="timer-unit"><span class="timer-val" data-unit="days">{{ str_pad($remaining->d, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">DIAS</span></div>
-                                    <div class="timer-unit"><span class="timer-val" data-unit="hours">{{ str_pad($remaining->h, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">HRS</span></div>
-                                    <div class="timer-unit"><span class="timer-val" data-unit="minutes">{{ str_pad($remaining->i, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">MIN</span></div>
-                                    <div class="timer-unit"><span class="timer-val" data-unit="seconds">{{ str_pad($remaining->s, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">SEG</span></div>
-                                </div>
-                            </div>
-                            <div class="raffle-prizes-carousel">
-                                @foreach(collect($raffle->prizes)->sortBy(fn ($prize, $idx) => (int) ($prize['position'] ?? $idx + 1))->values() as $pIndex => $prize)
-                                <article class="raffle-prize-item">
-                                    @php
-                                        $position = (int) ($prize['position'] ?? $pIndex + 1);
-                                        $image = $prize['image'] ?? null;
-                                        if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
-                                            $image = asset('storage/'.$image);
-                                        }
-                                        $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
-                                    @endphp
-                                    <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
-                                    <div class="raffle-prize-overlay">
-                                        <span class="prize-tag">{{ $position }}° PUESTO</span>
-                                        <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
-                                        <div class="prize-value">Valor estimado: ${{ number_format((float) ($prize['amount'] ?? 1000000), 0, ',', '.') }}</div>
-                                    </div>
-                                </article>
-                                @endforeach
-                            </div>
-                            <div class="raffle-slide-footer">
-                                <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                <button type="button" class="slider-btn slider-btn-next raffle-swiper-btn-next">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-            @else
-            @php
-                $raffle = $raffles->first();
-                $remaining = now()->diff($raffle->end_date);
-            @endphp
-            <div class="raffle-single">
-                <div class="raffle-slide-header">
-                    <div class="raffle-meta">
-                        <h4>{{ strtoupper($raffle->title) }}</h4>
-                        @if($raffle->description)
-                            <p>{{ $raffle->description }}</p>
-                        @endif
-                    </div>
-                    <div class="raffle-timer" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
-                        <div class="timer-unit"><span class="timer-val" data-unit="days">{{ str_pad($remaining->d, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">DIAS</span></div>
-                        <div class="timer-unit"><span class="timer-val" data-unit="hours">{{ str_pad($remaining->h, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">HRS</span></div>
-                        <div class="timer-unit"><span class="timer-val" data-unit="minutes">{{ str_pad($remaining->i, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">MIN</span></div>
-                        <div class="timer-unit"><span class="timer-val" data-unit="seconds">{{ str_pad($remaining->s, 2, '0', STR_PAD_LEFT) }}</span><span class="timer-label">SEG</span></div>
-                    </div>
-                </div>
-                <div class="raffle-prizes-carousel">
-                    @foreach(collect($raffle->prizes)->sortBy(fn ($prize, $idx) => (int) ($prize['position'] ?? $idx + 1))->values() as $pIndex => $prize)
-                    <article class="raffle-prize-item">
-                        @php
-                            $position = (int) ($prize['position'] ?? $pIndex + 1);
-                            $image = $prize['image'] ?? null;
-                            if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
-                                $image = asset('storage/'.$image);
-                            }
-                            $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
-                        @endphp
-                        <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
-                        <div class="raffle-prize-overlay">
-                            <span class="prize-tag">{{ $position }}° PUESTO</span>
-                            <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
-                            <div class="prize-value">Valor estimado: ${{ number_format((float) ($prize['amount'] ?? 1000000), 0, ',', '.') }}</div>
-                        </div>
-                    </article>
-                    @endforeach
-                </div>
-                <div class="raffle-slide-footer">
-                    <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
-                </div>
-            </div>
-            @endif
-        </div>
-    </section>
-@endif
-
-    @if(($sections['nosotros']['enabled'] ?? true))
-    <section id="nosotros" class="fe-section">
-        <div class="fe-shell">
-            <div class="about-box">
-                <div>
-                    <div class="fe-kicker">{{ $sections['nosotros']['kicker'] ?? 'Sobre RED PICANTES' }}</div>
-                    <h2 class="about-title">{{ $sections['nosotros']['title'] ?? 'Casino online con atencion' }} <span>{{ $sections['nosotros']['highlight'] ?? 'real' }}</span></h2>
-                    <p class="about-copy">
-                        {{ $sections['nosotros']['subtitle'] ?? 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.' }}
-                    </p>
-                </div>
-                <div class="about-features">
-                    @foreach(($sections['nosotros']['repeater_data'] ?? []) as $feature)
-                    <div class="about-feature">
-                        <strong>{{ $feature['title'] ?? '' }}</strong>
-                        <p>{{ $feature['subtitle'] ?? '' }}</p>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </section>
-    @endif
-
-    @if(($sections['bonos']['enabled'] ?? true))
-    <section id="bonos" class="fe-section">
-        <div class="fe-shell">
-            @include('frontend.components.section-header', [
-                'kicker' => $sections['bonos']['kicker'] ?? 'Promos para jugar mas',
-                'title' => $sections['bonos']['title'] ?? 'Bonos',
-                'highlight' => $sections['bonos']['highlight'] ?? 'activos',
-                'subtitle' => $sections['bonos']['subtitle'] ?? 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
-                'action' => '<a class="fe-btn ghost" href="'.route('frontend.bonuses').'" wire:navigate>Ver todos</a>',
-            ])
-
-            @if($bonusItems->count())
-                <div class="bonus-carousel">
-                    <button type="button" class="slider-btn slider-btn-prev bonus-swiper-btn-prev">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    @foreach($bonusItems as $bonus)
-                        @include('frontend.components.bonus-card', ['bonus' => $bonus])
-                    @endforeach
-                    <button type="button" class="slider-btn slider-btn-next bonus-swiper-btn-next">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-            @else
-                <div class="empty-panel">No hay bonos activos vigentes.</div>
-            @endif
-        </div>
-    </section>
-    @endif
-
-    @if(($sections['blog']['enabled'] ?? true))
-    <section id="blog" class="fe-section">
-        <div class="fe-shell">
-            @include('frontend.components.section-header', [
-                'kicker' => $sections['blog']['kicker'] ?? 'Noticias y jugadas',
-                'title' => $sections['blog']['title'] ?? '',
-                'highlight' => $sections['blog']['highlight'] ?? 'Novedades',
-                'subtitle' => $sections['blog']['subtitle'] ?? 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.',
-                'action' => '<a class="fe-btn ghost" href="'.route('frontend.blog').'" wire:navigate>Ver novedades</a>',
-            ])
-
-            @if($blogPosts->count())
-                <div class="blog-grid">
-                    @foreach($blogPosts as $post)
-                        @include('frontend.components.blog-card', ['post' => $post])
-                    @endforeach
-                </div>
-            @else
-                <div class="empty-panel">No hay entradas de blog publicadas.</div>
-            @endif
-        </div>
-    </section>
-    @endif
-
-</div>
-
-
+@push('scripts')
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('rafflesSlider', () => ({
+            currentIndex: 0,
+            slideCount: 0,
+            slides: [],
+            
+            initSlider() {
+                this.slides = Array.from(this.$refs.track.children);
+                this.slideCount = this.slides.length;
+                this.updateSliderPosition();
+            },
+            
+            updateSliderPosition() {
+                const slideWidth = this.slides[0]?.offsetWidth || 0;
+                this.$refs.track.scrollTo({
+                    left: this.currentIndex * slideWidth,
+                    behavior: 'smooth'
+                });
+            },
+            
+            next() {
+                if (this.currentIndex < this.slideCount - 1) {
+                    this.currentIndex++;
+                    this.updateSliderPosition();
+                }
+            },
+            
+            prev() {
+                if (this.currentIndex > 0) {
+                    this.currentIndex--;
+                    this.updateSliderPosition();
+                }
+            },
+            
+            goTo(index) {
+                if (index >= 0 && index < this.slideCount) {
+                    this.currentIndex = index;
+                    this.updateSliderPosition();
+                }
+            }
+        }));
+    });
+</script>
+@endpush

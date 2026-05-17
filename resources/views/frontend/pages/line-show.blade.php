@@ -84,6 +84,24 @@
     .bonus-card strong { display:block; font-family:var(--font-mono); font-size:12px; letter-spacing:.04em; overflow-wrap:anywhere; color:var(--orange); }
     .bonus-card em { display:block; font-style:normal; font-weight:900; font-size:10px; color:var(--muted-2); }
 
+    /* Raffle Cards */
+    .raffles-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:16px; margin-top:16px; }
+    .raffle-card { border:1px solid var(--line); border-radius:var(--r-lg); background:linear-gradient(180deg,#180b08,#0d0707); overflow:hidden; transition:transform .2s, border-color .2s; }
+    .raffle-card:hover { transform:translateY(-4px); border-color:var(--orange); }
+    .raffle-card-image { position:relative; height:160px; background:radial-gradient(80% 50% at 50% 0%, rgba(255,106,26,.2), transparent 70%); }
+    .raffle-card-image img { width:100%; height:100%; object-fit:cover; }
+    .raffle-card-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:rgba(255,106,26,.1); color:var(--orange); font-size:48px; }
+    .raffle-card-timer { position:absolute; bottom:12px; left:12px; display:inline-flex; align-items:center; gap:6px; background:rgba(0,0,0,.7); backdrop-filter:blur(4px); padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800; color:#fff; }
+    .raffle-card-timer i { color:var(--orange); }
+    .raffle-card-body { padding:16px; }
+    .raffle-card-body h3 { font-family:var(--font-display); font-size:20px; margin:0 0 6px; letter-spacing:.02em; }
+    .raffle-card-desc { color:var(--muted); font-size:12px; line-height:1.4; margin:0 0 12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .raffle-card-prizes { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+    .prize-badge { display:inline-block; padding:4px 8px; background:rgba(255,106,26,.12); border:1px solid rgba(255,106,26,.3); border-radius:6px; font-size:10px; font-weight:800; color:var(--orange); }
+    .prize-badge.more { background:rgba(255,255,255,.06); border-color:var(--line); color:var(--muted); }
+    .raffle-card-btn { display:block; text-align:center; padding:10px 16px; border:1px solid var(--orange); border-radius:var(--r-md); background:rgba(255,106,26,.08); color:var(--orange); font-size:12px; font-weight:800; text-decoration:none; transition:all .2s; }
+    .raffle-card-btn:hover { background:var(--orange); color:#190702; }
+
     @media (max-width: 920px) {
         .line-detail-profile, .line-detail-grid { grid-template-columns:1fr; }
         .line-status-box { width:100%; }
@@ -256,57 +274,61 @@
             @endif
 
             @if($activeRaffles->count())
-                @foreach($activeRaffles as $activeRaffle)
-                    <section id="sorteo-{{ $activeRaffle->id }}" class="fe-section">
-                        <div class="line-panel" style="padding: 0; overflow: hidden; border-color: rgba(255, 106, 26, 0.3);">
-                            @php
-                                $prizeImage = function (?string $image): ?string {
-                                    if (! $image) return null;
-                                    if (\Illuminate\Support\Str::startsWith($image, ['http://', 'https://', '/storage/'])) return $image;
-                                    return asset('storage/'.$image);
-                                };
-                                $displayPrizes = collect($activeRaffle->prizes)->sortBy(fn ($prize, $index) => (int) ($prize['position'] ?? $index + 1))->values();
-                                $prizeCount = max(1, $displayPrizes->count());
-                                $remaining = now()->diff($activeRaffle->end_date);
-                                $remainingText = $activeRaffle->end_date->isFuture() ? trim(collect([$remaining->d ? $remaining->d.'d' : null, $remaining->h ? $remaining->h.'h' : null, $remaining->i ? $remaining->i.'m' : null])->filter()->take(2)->join(' ')) : 'finalizando';
-                            @endphp
-                            <div class="raffle-banner" style="min-height: auto; padding: 24px;">
-                                <div class="raffle-banner-head" style="padding: 0 0 20px; text-align: left;">
-                                    <h3 style="font-size: 38px;">{{ $activeRaffle->title }}</h3>
-                                    <p>{{ $activeRaffle->description }}</p>
-                                    <div class="raffle-countdown" style="margin-top: 10px;">
-                                        Termina en <strong>{{ $remainingText ?: 'menos de 1m' }}</strong>
+                <section id="sorteos" class="fe-section">
+                    <div class="line-panel">
+                        <h2 class="line-panel-title">Sorteos activos</h2>
+                        <div class="raffles-grid">
+                            @foreach($activeRaffles as $raffle)
+                                @php
+                                    $prizeImage = function (?string $image): ?string {
+                                        if (! $image) return null;
+                                        if (\Illuminate\Support\Str::startsWith($image, ['http://', 'https://', '/storage/'])) return $image;
+                                        return asset('storage/'.$image);
+                                    };
+                                    $displayPrizes = collect($raffle->prizes)->sortBy(fn ($prize, $index) => (int) ($prize['position'] ?? $index + 1))->values();
+                                    $firstPrize = $displayPrizes->first();
+                                    $firstPrizeImage = $prizeImage($firstPrize['image'] ?? null);
+                                    $remaining = now()->diff($raffle->end_date);
+                                    $remainingText = $raffle->end_date->isFuture() 
+                                        ? trim(collect([$remaining->d ? $remaining->d.' días' : null, $remaining->h ? $remaining->h.'h' : null])->filter()->take(2)->join(' ')) 
+                                        : 'Finalizando';
+                                @endphp
+                                <article class="raffle-card">
+                                    <div class="raffle-card-image">
+                                        @if($firstPrizeImage)
+                                            <img src="{{ $firstPrizeImage }}" alt="{{ $firstPrize['name'] ?? 'Premio' }}">
+                                        @else
+                                            <div class="raffle-card-placeholder">
+                                                <i class="fa-solid fa-trophy"></i>
+                                            </div>
+                                        @endif
+                                        <div class="raffle-card-timer">
+                                            <i class="fa-regular fa-clock"></i>
+                                            {{ $remainingText }}
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="raffle-prize-strip count-{{ min($prizeCount, 3) }}" style="padding-bottom: 0;">
-                                    @foreach($displayPrizes as $index => $prize)
-                                        @php
-                                            $position = (int) ($prize['position'] ?? $index + 1);
-                                            $image = $prizeImage($prize['image'] ?? null);
-                                        @endphp
-                                        <article class="raffle-prize-tile {{ $position === 1 ? 'primary' : '' }}">
-                                            <div class="raffle-rank">{{ $position }}</div>
-                                            <div class="raffle-prize-info">
-                                                <strong>Premio {{ $position }}</strong>
-                                                <span>{{ $prize['name'] ?? 'Premio sorpresa' }}</span>
-                                                @if(!empty($prize['amount']))
-                                                    <b>${{ number_format((float) $prize['amount'], 0, ',', '.') }}</b>
-                                                @endif
-                                            </div>
-                                            <div class="raffle-prize-image">
-                                                @if($image)
-                                                    <img src="{{ $image }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
-                                                @else
-                                                    <span>BET</span>
-                                                @endif
-                                            </div>
-                                        </article>
-                                    @endforeach
-                                </div>
-                            </div>
+                                    <div class="raffle-card-body">
+                                        <h3>{{ $raffle->title }}</h3>
+                                        <p class="raffle-card-desc">{{ $raffle->description }}</p>
+                                        <div class="raffle-card-prizes">
+                                            @foreach($displayPrizes->take(3) as $idx => $prize)
+                                                <span class="prize-badge">
+                                                    {{ $prize['position'] ?? $idx + 1 }}° {{ $prize['name'] ?? 'Premio' }}
+                                                </span>
+                                            @endforeach
+                                            @if($displayPrizes->count() > 3)
+                                                <span class="prize-badge more">+{{ $displayPrizes->count() - 3 }}</span>
+                                            @endif
+                                        </div>
+                                        <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="raffle-card-btn">
+                                            Ver detalles
+                                        </a>
+                                    </div>
+                                </article>
+                            @endforeach
                         </div>
-                    </section>
-                @endforeach
+                    </div>
+                </section>
             @endif
 
             <section id="valoracion" class="fe-section">

@@ -4,7 +4,6 @@
     <a href="{{ route('frontend.bonuses') }}" wire:navigate>Bonos</a>
     <a href="{{ route('frontend.raffles') }}" wire:navigate>Sorteo</a>
     <a href="{{ route('frontend.blog') }}" wire:navigate>Novedades</a>
-    <a href="{{ route('frontend.home') }}#como-empezar">Como empezar</a>
     @auth
         @if(auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
             <a href="{{ route('client.account') }}" wire:navigate>Mi cuenta</a>

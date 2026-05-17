@@ -12,7 +12,6 @@
                 <a href="{{ route('frontend.bonuses') }}" wire:navigate class="{{ request()->routeIs('frontend.bonuses*') ? 'active' : '' }}">Bonos</a>
                 <a href="{{ route('frontend.raffles') }}" wire:navigate class="{{ request()->routeIs('frontend.raffles*') || request()->routeIs('sorteo.publico') ? 'active' : '' }}">Sorteo</a>
                 <a href="{{ route('frontend.blog') }}" wire:navigate class="{{ request()->routeIs('frontend.blog') ? 'active' : '' }}">Novedades</a>
-                <a href="{{ route('frontend.home') }}#como-empezar">Como empezar</a>
             </nav>
 
             <div class="fe-nav-actions">
@@ -50,17 +49,37 @@
                                 </div>
                             </div>
                         </details>
-                        <a href="{{ route('client.account') }}" wire:navigate class="fe-btn ghost">Mi cuenta</a>
+                        <details class="fe-user-menu">
+                            <summary class="fe-user-btn">
+                                <i class="fa-solid fa-user"></i>
+                                <span>{{ auth()->user()->name }}</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i>
+                            </summary>
+                            <div class="fe-user-dropdown">
+                                <a href="{{ route('client.account') }}" wire:navigate>
+                                    <i class="fa-solid fa-user-circle"></i> Mi cuenta
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit">
+                                        <i class="fa-solid fa-sign-out-alt"></i> Salir
+                                    </button>
+                                </form>
+                            </div>
+                        </details>
                     @endif
                     @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE))
                         <a href="{{ route('dashboard') }}" wire:navigate class="fe-btn ghost">Panel</a>
                     @endif
-                    <form method="POST" action="{{ route('logout') }}" style="display:inline">
-                        @csrf
-                        <button type="submit" class="fe-btn ghost" style="cursor:pointer">Salir</button>
-                    </form>
+                    @if(!auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
+                        <form method="POST" action="{{ route('logout') }}" style="display:inline">
+                            @csrf
+                            <button type="submit" class="fe-btn ghost" style="cursor:pointer">Salir</button>
+                        </form>
+                    @endif
                 @else
                     <a href="{{ route('login') }}" wire:navigate class="fe-btn ghost">Ingresar</a>
+                    <a href="{{ route('client.register') }}" wire:navigate class="fe-btn primary">Registrarme</a>
                 @endauth
                 <a href="{{ route('frontend.lines') }}" wire:navigate class="fe-btn primary">Atencion</a>
             </div>

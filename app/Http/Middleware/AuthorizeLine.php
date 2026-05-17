@@ -20,6 +20,10 @@ class AuthorizeLine
 
         $user = $request->user();
 
+        if ($user->hasRole(Roles::CLIENTE)) {
+            return redirect()->route('client.account');
+        }
+
         if ($user->hasRole(Roles::ADMIN)) {
             return $next($request);
         }

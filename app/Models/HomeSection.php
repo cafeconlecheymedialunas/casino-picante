@@ -60,12 +60,30 @@ class HomeSection extends Model
                 : ($defaults['action'] ?? null),
             'enabled' => $section->enabled,
             'raffle_type' => $section->raffle_type,
-            'raffle_ids' => $section->raffle_ids,
+            'raffle_ids' => self::ensureArray($section->raffle_ids),
             'post_type' => $section->post_type,
-            'post_ids' => $section->post_ids,
+            'post_ids' => self::ensureArray($section->post_ids),
             'bonus_type' => $section->bonus_type,
-            'bonus_ids' => $section->bonus_ids,
-            'repeater_data' => $section->repeater_data ?? ($defaults['repeater_data'] ?? []),
+            'bonus_ids' => self::ensureArray($section->bonus_ids),
+            'repeater_data' => self::ensureArray($section->repeater_data, $defaults['repeater_data'] ?? []),
         ];
+    }
+
+    private static function ensureArray($value, array $default = []): array
+    {
+        if ($value === null || $value === '') {
+            return $default;
+        }
+        if (is_array($value)) {
+            return $value;
+        }
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return $default;
     }
 }

@@ -33,12 +33,6 @@ class EditorHome extends Component
 
     public $selectedCarousel = [];
 
-    public $selectedBonuses = [];
-
-    public $selectedBlogs = [];
-
-    public $selectedRafflesUpcoming = [];
-
     public $newCarouselTitle = '';
 
     public $newCarouselLink = '';
@@ -48,6 +42,8 @@ class EditorHome extends Component
     public $sections = [];
 
     public $editingSection = null;
+
+    public $pendingSave = [];
 
     public function mount()
     {
@@ -107,7 +103,7 @@ class EditorHome extends Component
                     ['title' => 'Pedí tu usuario', 'subtitle' => 'Elegí una línea de atención y solicitá el acceso para empezar a jugar.'],
                     ['title' => 'Cargá saldo', 'subtitle' => 'Consultá medios de carga, promociones disponibles y bonos para tu cuenta.'],
                     ['title' => 'Entrá a jugar', 'subtitle' => 'Disfrutá tus juegos favoritos, participá en sorteos y pedí asistencia cuando quieras.'],
-                ]
+                ],
             ],
             'lineas' => ['kicker' => 'Empeza a jugar', 'title' => 'Lineas de', 'highlight' => 'atencion', 'subtitle' => 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.'],
             'sorteo' => ['kicker' => 'Muy pronto', 'title' => 'PRÓXIMOS', 'highlight' => 'SORTEOS', 'subtitle' => 'Nuevas oportunidades para ganar. Registrate y enterate antes que nadie.'],
@@ -121,7 +117,7 @@ class EditorHome extends Component
                     ['title' => 'Bonos vigentes', 'subtitle' => 'Promociones para recargar, arrancar con ventaja y jugar más.'],
                     ['title' => 'Sorteos activos', 'subtitle' => 'Premios y chances extra para usuarios que participan.'],
                     ['title' => 'Soporte humano', 'subtitle' => 'Atención directa para cargas, retiros, dudas y novedades.'],
-                ]
+                ],
             ],
             'bonos' => ['kicker' => 'Promos para jugar mas', 'title' => 'Bonos', 'highlight' => 'activos', 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.'],
             'blog' => ['kicker' => 'Noticias y jugadas', 'title' => 'Noticias y', 'highlight' => 'jugadas', 'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.'],
@@ -138,7 +134,7 @@ class EditorHome extends Component
                     'title' => $defaults['title'] ?? null,
                     'highlight' => $defaults['highlight'] ?? null,
                     'subtitle' => $defaults['subtitle'] ?? null,
-                    'repeater_data' => $defaults['repeater_data'] ?? null,
+                    'repeater_data' => isset($defaults['repeater_data']) ? json_encode($defaults['repeater_data']) : null,
                 ]);
             }
 
@@ -149,13 +145,13 @@ class EditorHome extends Component
                 'highlight' => $section->highlight ?? $defaults['highlight'] ?? '',
                 'subtitle' => $section->subtitle ?? $defaults['subtitle'] ?? '',
                 'content' => $section->content ?? $defaults['content'] ?? '',
-                'repeater_data' => $section->repeater_data ?? $defaults['repeater_data'] ?? [],
+                'repeater_data' => is_array($section->repeater_data) ? $section->repeater_data : ($defaults['repeater_data'] ?? []),
                 'raffle_type' => $section->raffle_type ?? '',
-                'raffle_ids' => $section->raffle_ids ? implode(',', $section->raffle_ids) : '',
+                'raffle_ids' => is_array($section->raffle_ids) ? implode(',', $section->raffle_ids) : '',
                 'post_type' => $section->post_type ?? '',
-                'post_ids' => $section->post_ids ? implode(',', $section->post_ids) : '',
+                'post_ids' => is_array($section->post_ids) ? implode(',', $section->post_ids) : '',
                 'bonus_type' => $section->bonus_type ?? '',
-                'bonus_ids' => $section->bonus_ids ? implode(',', $section->bonus_ids) : '',
+                'bonus_ids' => is_array($section->bonus_ids) ? implode(',', $section->bonus_ids) : '',
                 'enabled' => $section->enabled,
             ];
         }
@@ -171,6 +167,20 @@ class EditorHome extends Component
         $postIds = $data['post_ids'] ?? '';
         $bonusIds = $data['bonus_ids'] ?? '';
 
+        $parseToArray = function ($str) {
+            if (empty($str)) {
+                return null;
+            }
+            $arr = array_filter(array_map('trim', explode(',', $str)));
+
+            return count($arr) ? $arr : null;
+        };
+
+        $repeaterData = $data['repeater_data'] ?? null;
+        if (! is_array($repeaterData)) {
+            $repeaterData = null;
+        }
+
         HomeSection::updateOrCreate(
             ['section_key' => $key],
             [
@@ -179,22 +189,26 @@ class EditorHome extends Component
                 'highlight' => $data['highlight'] ?? null,
                 'subtitle' => $data['subtitle'] ?? null,
                 'content' => $data['content'] ?? null,
-                'repeater_data' => $data['repeater_data'] ?? null,
+                'repeater_data' => $repeaterData,
                 'raffle_type' => $data['raffle_type'] ?? null,
-                'raffle_ids' => $raffleIds ? array_map('trim', explode(',', $raffleIds)) : null,
+                'raffle_ids' => $parseToArray($raffleIds),
                 'post_type' => $data['post_type'] ?? null,
-                'post_ids' => $postIds ? array_map('trim', explode(',', $postIds)) : null,
+                'post_ids' => $parseToArray($postIds),
                 'bonus_type' => $data['bonus_type'] ?? null,
-                'bonus_ids' => $bonusIds ? array_map('trim', explode(',', $bonusIds)) : null,
+                'bonus_ids' => $parseToArray($bonusIds),
                 'enabled' => $data['enabled'] ?? true,
             ]
         );
 
+        $this->loadSections();
         session()->flash('message_success', 'Sección guardada correctamente.');
     }
 
     public function addRepeaterItem(string $key): void
     {
+        if (! isset($this->sections[$key]['repeater_data']) || ! is_array($this->sections[$key]['repeater_data'])) {
+            $this->sections[$key]['repeater_data'] = [];
+        }
         $this->sections[$key]['repeater_data'][] = ['title' => '', 'subtitle' => ''];
     }
 
@@ -316,11 +330,6 @@ class EditorHome extends Component
                 ->delete();
             $this->selectedCarousel = array_values(array_diff($this->selectedCarousel, [$itemId]));
         } else {
-            if (count($this->selectedCarousel) >= 5) {
-                session()->flash('message_error', 'Máximo 5 imágenes en el carrusel.');
-
-                return;
-            }
             $order = count($this->selectedCarousel);
             HomeConfig::create([
                 'section' => HomeConfig::SECTION_CAROUSEL,
@@ -335,83 +344,113 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        if (in_array($itemId, $this->selectedRafflesUpcoming)) {
-            HomeConfig::where('section', HomeConfig::SECTION_RAFFLES_UPCOMING)
-                ->where('item_id', $itemId)
-                ->delete();
-            $this->selectedRafflesUpcoming = array_values(array_diff($this->selectedRafflesUpcoming, [$itemId]));
-            $this->reorderSection(HomeConfig::SECTION_RAFFLES_UPCOMING);
+        $current = array_filter(array_map('trim', explode(',', $this->sections['sorteo']['raffle_ids'] ?? '')));
+        $itemId = (string) $itemId;
+
+        if (in_array($itemId, $current)) {
+            $current = array_values(array_filter($current, fn ($id) => $id !== $itemId));
         } else {
-            if (count($this->selectedRafflesUpcoming) >= 5) {
-                session()->flash('message_error', 'Máximo 5 sorteos en esta sección.');
-                return;
-            }
-            $order = count($this->selectedRafflesUpcoming);
-            HomeConfig::create([
-                'section' => HomeConfig::SECTION_RAFFLES_UPCOMING,
-                'item_id' => $itemId,
-                'order' => $order,
-            ]);
-            $this->selectedRafflesUpcoming[] = (int) $itemId;
+            $current[] = $itemId;
         }
+
+        $this->sections['sorteo']['raffle_ids'] = implode(',', $current);
     }
 
     public function toggleBonus($itemId)
     {
         $this->ensureCanEditHome();
 
-        if (in_array($itemId, $this->selectedBonuses)) {
-            HomeConfig::where('section', HomeConfig::SECTION_BONUSES)
-                ->where('item_id', $itemId)
-                ->delete();
-            $this->selectedBonuses = array_values(array_diff($this->selectedBonuses, [$itemId]));
-            $this->reorderSection(HomeConfig::SECTION_BONUSES);
+        $current = array_filter(array_map('trim', explode(',', $this->sections['bonos']['bonus_ids'] ?? '')));
+        $itemId = (string) $itemId;
+
+        if (in_array($itemId, $current)) {
+            $current = array_values(array_filter($current, fn ($id) => $id !== $itemId));
         } else {
-            if (count($this->selectedBonuses) >= 5) {
-                session()->flash('message_error', 'Máximo 5 bonos en la home.');
-                return;
-            }
-            $order = count($this->selectedBonuses);
-            HomeConfig::create([
-                'section' => HomeConfig::SECTION_BONUSES,
-                'item_id' => $itemId,
-                'order' => $order,
-            ]);
-            $this->selectedBonuses[] = (int) $itemId;
+            $current[] = $itemId;
         }
+
+        $this->sections['bonos']['bonus_ids'] = implode(',', $current);
     }
 
-    public function toggleBlog($itemId)
+    public function togglePost($itemId)
     {
         $this->ensureCanEditHome();
 
-        if (in_array($itemId, $this->selectedBlogs)) {
-            HomeConfig::where('section', HomeConfig::SECTION_BLOG)
-                ->where('item_id', $itemId)
-                ->delete();
-            $this->selectedBlogs = array_values(array_diff($this->selectedBlogs, [$itemId]));
-            $this->reorderSection(HomeConfig::SECTION_BLOG);
+        $current = array_filter(array_map('trim', explode(',', $this->sections['blog']['post_ids'] ?? '')));
+        $itemId = (string) $itemId;
+
+        if (in_array($itemId, $current)) {
+            $current = array_values(array_filter($current, fn ($id) => $id !== $itemId));
         } else {
-            if (count($this->selectedBlogs) >= 3) {
-                session()->flash('message_error', 'Máximo 3 entradas de blog en la home.');
-                return;
-            }
-            $order = count($this->selectedBlogs);
-            HomeConfig::create([
-                'section' => HomeConfig::SECTION_BLOG,
-                'item_id' => $itemId,
-                'order' => $order,
-            ]);
-            $this->selectedBlogs[] = (int) $itemId;
+            $current[] = $itemId;
         }
+
+        $this->sections['blog']['post_ids'] = implode(',', $current);
+    }
+
+    public function saveAllSelections(): void
+    {
+        $this->ensureCanEditHome();
+
+        $this->saveSection('sorteo');
+        $this->saveSection('bonos');
+        $this->saveSection('blog');
+    }
+
+    public function saveSingleSection(string $key): void
+    {
+        $this->ensureCanEditHome();
+        $this->saveSection($key);
+    }
+
+    public function moveRaffleUp($itemId)
+    {
+        $this->ensureCanEditHome();
+
+        $current = array_filter(array_map('trim', explode(',', $this->sections['sorteo']['raffle_ids'] ?? '')));
+        $itemId = (string) $itemId;
+        $idx = array_search($itemId, $current);
+
+        if ($idx === false || $idx === 0) {
+            return;
+        }
+
+        $values = array_values($current);
+        $tmp = $values[$idx];
+        $values[$idx] = $values[$idx - 1];
+        $values[$idx - 1] = $tmp;
+
+        $this->sections['sorteo']['raffle_ids'] = implode(',', $values);
+    }
+
+    public function moveRaffleDown($itemId)
+    {
+        $this->ensureCanEditHome();
+
+        $current = array_filter(array_map('trim', explode(',', $this->sections['sorteo']['raffle_ids'] ?? '')));
+        $itemId = (string) $itemId;
+        $idx = array_search($itemId, $current);
+
+        if ($idx === false || $idx === count($current) - 1) {
+            return;
+        }
+
+        $values = array_values($current);
+        $tmp = $values[$idx];
+        $values[$idx] = $values[$idx + 1];
+        $values[$idx + 1] = $tmp;
+
+        $this->sections['sorteo']['raffle_ids'] = implode(',', $values);
     }
 
     public function moveItemUp($section, $itemId)
     {
         $this->ensureCanEditHome();
-        
+
         $item = HomeConfig::where('section', $section)->where('item_id', $itemId)->first();
-        if (!$item || $item->order === 0) return;
+        if (! $item || $item->order === 0) {
+            return;
+        }
 
         $prev = HomeConfig::where('section', $section)
             ->where('order', $item->order - 1)
@@ -430,10 +469,14 @@ class EditorHome extends Component
         $this->ensureCanEditHome();
 
         $item = HomeConfig::where('section', $section)->where('item_id', $itemId)->first();
-        if (!$item) return;
+        if (! $item) {
+            return;
+        }
 
         $maxOrder = HomeConfig::where('section', $section)->max('order');
-        if ($item->order >= $maxOrder) return;
+        if ($item->order >= $maxOrder) {
+            return;
+        }
 
         $next = HomeConfig::where('section', $section)
             ->where('order', $item->order + 1)
@@ -461,6 +504,73 @@ class EditorHome extends Component
         $this->selectedBonuses = HomeConfig::where('section', HomeConfig::SECTION_BONUSES)->orderBy('order')->pluck('item_id')->toArray();
         $this->selectedBlogs = HomeConfig::where('section', HomeConfig::SECTION_BLOG)->orderBy('order')->pluck('item_id')->toArray();
         $this->selectedRafflesUpcoming = HomeConfig::where('section', HomeConfig::SECTION_RAFFLES_UPCOMING)->orderBy('order')->pluck('item_id')->toArray();
+    }
+
+    public function saveSectionAjax()
+    {
+        $this->ensureCanEditHome();
+
+        $key = request()->input('section_key');
+        if (! in_array($key, ['sorteo', 'bonos', 'blog'])) {
+            return response()->json(['message' => 'Sección inválida'], 400);
+        }
+
+        $parseToArray = function ($str) {
+            if (empty($str)) {
+                return null;
+            }
+            $arr = array_filter(array_map('trim', explode(',', $str)));
+
+            return count($arr) ? $arr : null;
+        };
+
+        HomeSection::updateOrCreate(
+            ['section_key' => $key],
+            [
+                'raffle_ids' => $key === 'sorteo' ? $parseToArray(request()->input('raffle_ids', '')) : null,
+                'bonus_ids' => $key === 'bonos' ? $parseToArray(request()->input('bonus_ids', '')) : null,
+                'post_ids' => $key === 'blog' ? $parseToArray(request()->input('post_ids', '')) : null,
+            ]
+        );
+
+        return response()->json(['message' => 'Sección guardada correctamente']);
+    }
+
+    public function saveSelections()
+    {
+        $this->ensureCanEditHome();
+
+        $parseToArray = function ($str) {
+            if (empty($str)) {
+                return null;
+            }
+            $arr = array_filter(array_map('trim', explode(',', $str)));
+
+            return count($arr) ? $arr : null;
+        };
+
+        $sorteoIds = $parseToArray(request()->input('sorteo', ''));
+        $bonosIds = $parseToArray(request()->input('bonos', ''));
+        $blogIds = $parseToArray(request()->input('blog', ''));
+
+        HomeSection::updateOrCreate(
+            ['section_key' => 'sorteo'],
+            ['raffle_ids' => $sorteoIds]
+        );
+
+        HomeSection::updateOrCreate(
+            ['section_key' => 'bonos'],
+            ['bonus_ids' => $bonosIds]
+        );
+
+        HomeSection::updateOrCreate(
+            ['section_key' => 'blog'],
+            ['post_ids' => $blogIds]
+        );
+
+        session()->flash('message_success', 'Selecciones guardadas correctamente.');
+
+        return redirect()->route('editor-home');
     }
 
     public function render()

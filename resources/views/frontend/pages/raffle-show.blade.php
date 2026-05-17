@@ -13,11 +13,11 @@
     .raffle-detail-clock strong { color:var(--orange); font-family:var(--font-mono); }
     .raffle-actions { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:16px; }
     .raffle-status-note { max-width:680px; margin:12px auto 0; color:rgba(255,255,255,.66); font-size:13px; line-height:1.45; }
-    .raffle-prize-board { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.28fr) minmax(0,1fr); gap:14px; align-items:end; padding:22px 24px 18px; }
+    .raffle-prize-board { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.28fr) minmax(0,1fr); gap:14px; align-items:end; padding:50px 24px 18px; }
     .raffle-prize-cell { min-height:138px; display:grid; grid-template-columns:78px minmax(0,.85fr) minmax(128px,1fr); align-items:center; gap:12px; border:1px solid rgba(255,106,26,.76); border-radius:8px; background:#0b0605; box-shadow:inset 0 0 22px rgba(255,106,26,.08), 0 0 18px rgba(255,106,26,.11); padding:12px 14px; overflow:hidden; }
-    .raffle-prize-cell.main { min-height:172px; border-color:rgba(255,179,71,.82); background:#100705; transform:translateY(-12px); }
+    .raffle-prize-cell.main { min-height:150px; border-color:rgba(255,179,71,.82); background:#100705; transform:translateY(-12px); }
     .raffle-prize-rank { font-family:var(--font-display); color:var(--orange); font-size:96px; line-height:.8; text-align:center; text-shadow:0 0 20px rgba(255,106,26,.42); }
-    .raffle-prize-cell.main .raffle-prize-rank { font-size:124px; color:#ff8a1f; }
+    .raffle-prize-cell.main .raffle-prize-rank { font-size:80px; color:#ff8a1f; }
     .raffle-prize-copy small { display:block; color:#fff; font-size:12px; font-weight:900; text-transform:uppercase; }
     .raffle-prize-copy strong { display:block; margin-top:5px; color:#fff; font-size:14px; line-height:1.18; }
     .raffle-prize-copy b { display:block; margin-top:5px; color:var(--orange); font-size:13px; }
@@ -109,8 +109,8 @@
 <section class="raffle-detail" x-data="{ showPrizes: false }">
     <div class="fe-shell">
         <div class="raffle-arena">
-            <img class="raffle-detail-gift left" src="{{ asset('frontend/raffle-gift.png') }}" alt="">
-            <img class="raffle-detail-gift right" src="{{ asset('frontend/raffle-gift.png') }}" alt="">
+            <img class="raffle-detail-gift left" src="{{ asset('frontend/gift-box.webp') }}" alt="">
+            <img class="raffle-detail-gift right" src="{{ asset('frontend/gift-box.webp') }}" alt="">
 
             <div class="raffle-detail-head">
                 <h1 class="raffle-detail-title">{{ $raffle->title }}</h1>

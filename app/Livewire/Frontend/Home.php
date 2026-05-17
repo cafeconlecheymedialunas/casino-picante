@@ -10,7 +10,6 @@ use App\Models\Line;
 use App\Models\Post;
 use App\Models\Raffle;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class Home extends Component
@@ -29,13 +28,13 @@ class Home extends Component
 
     private function carouselItems(): EloquentCollection
     {
-        $selected = $this->configuredIds(HomeConfig::SECTION_CAROUSEL);
+        $ids = HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
+            ->orderBy('order')
+            ->pluck('item_id')
+            ->toArray();
 
-        if ($selected->isNotEmpty()) {
-            return $this->orderedByConfig(
-                CarouselItem::whereIn('id', $selected)->get(),
-                $selected
-            );
+        if (! empty($ids)) {
+            return CarouselItem::whereIn('id', $ids)->get()->sortBy(fn ($c) => array_search($c->id, $ids))->values();
         }
 
         return CarouselItem::orderBy('order')->take(5)->get();
@@ -52,40 +51,44 @@ class Home extends Component
 
     private function raffles(): EloquentCollection
     {
-        $selected = $this->configuredIds(HomeConfig::SECTION_RAFFLES_UPCOMING);
+        $section = HomeSection::where('section_key', 'sorteo')->first();
+        $ids = $this->ensureArray($section?->raffle_ids);
+        $raffleType = $section?->raffle_type ?? '';
 
         $query = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
-            ->where(function($q) {
-                $q->where('status', 'active')->where('start_date', '>', now())
-                  ->orWhere('status', 'upcoming');
-            });
+            ->where('status', 'active')
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now());
 
-        if ($selected->isNotEmpty()) {
-            return $this->orderedByConfig(
-                $query->whereIn('id', $selected)->get(),
-                $selected
-            );
+        if ($raffleType === 'active') {
+            $query->where('status', 'active');
         }
 
-        return $query->orderBy('start_date')->take(3)->get();
+        if (! empty($ids)) {
+            return $query->whereIn('id', $ids)->get()->sortBy(fn ($r) => array_search($r->id, $ids))->values();
+        }
+
+        return $query->orderBy('start_date', 'asc')->take(3)->get();
     }
 
     private function bonusItems(): EloquentCollection
     {
-        $selected = $this->configuredIds(HomeConfig::SECTION_BONUSES);
+        $section = HomeSection::where('section_key', 'bonos')->first();
+        $ids = $this->ensureArray($section?->bonus_ids);
+        $bonusType = $section?->bonus_type ?? '';
 
         $baseQuery = Bonus::withoutGlobalScopes()
             ->with(['line', 'platform'])
             ->where('status', 'active')
-            ->where('end_date', '>=', now())
-            ->whereHas('line', fn ($line) => $line->where('status', 'active'));
+            ->where('end_date', '>=', now());
 
-        if ($selected->isNotEmpty()) {
-            return $this->orderedByConfig(
-                $baseQuery->whereIn('id', $selected)->get(),
-                $selected
-            );
+        if ($bonusType === 'active') {
+            $baseQuery->where('status', 'active');
+        }
+
+        if (! empty($ids)) {
+            return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($b) => array_search($b->id, $ids))->values();
         }
 
         return $baseQuery->latest('start_date')->take(5)->get();
@@ -93,39 +96,24 @@ class Home extends Component
 
     private function blogPosts(): EloquentCollection
     {
-        $selected = $this->configuredIds(HomeConfig::SECTION_BLOG);
+        $section = HomeSection::where('section_key', 'blog')->first();
+        $ids = $this->ensureArray($section?->post_ids);
+        $postType = $section?->post_type ?? '';
 
         $baseQuery = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at');
 
-        if ($selected->isNotEmpty()) {
-            return $this->orderedByConfig(
-                $baseQuery->whereIn('id', $selected)->get(),
-                $selected
-            );
+        if ($postType && is_numeric($postType)) {
+            $baseQuery->where('category_id', $postType);
+        }
+
+        if (! empty($ids)) {
+            return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($p) => array_search($p->id, $ids))->values();
         }
 
         return $baseQuery->latest('published_at')->take(3)->get();
-    }
-
-    private function configuredIds(string $section): Collection
-    {
-        return HomeConfig::where('section', $section)
-            ->orderBy('order')
-            ->pluck('item_id')
-            ->map(fn ($id) => (int) $id)
-            ->values();
-    }
-
-    private function orderedByConfig(EloquentCollection $items, Collection $ids): EloquentCollection
-    {
-        $positions = $ids->flip();
-
-        return $items
-            ->sortBy(fn ($item) => $positions[$item->id] ?? PHP_INT_MAX)
-            ->values();
     }
 
     private function sections(): array
@@ -176,5 +164,23 @@ class Home extends Component
         }
 
         return $sections;
+    }
+
+    private function ensureArray($value): array
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+        if (is_array($value)) {
+            return $value;
+        }
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+
+        return [];
     }
 }

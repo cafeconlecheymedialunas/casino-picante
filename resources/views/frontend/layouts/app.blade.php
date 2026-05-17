@@ -83,6 +83,15 @@
         .fe-notification-content small { color:var(--muted); font-size:11px; line-height:1.35; margin-top:2px; }
         .fe-notification-content em { color:var(--muted-2); font-size:10px; margin-top:5px; font-style:normal; }
         .fe-dropdown-empty { padding:22px 14px; color:var(--muted-2); text-align:center; font-size:12px; }
+        .fe-user-menu { position:relative; }
+        .fe-user-menu summary { list-style:none; cursor:pointer; }
+        .fe-user-menu summary::-webkit-details-marker { display:none; }
+        .fe-user-btn { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid var(--line-2); background:rgba(255,255,255,.04); color:#fff; font-size:12px; font-weight:800; }
+        .fe-user-btn:hover { border-color:var(--orange); background:rgba(255,106,26,.1); }
+        .fe-user-dropdown { position:absolute; top:48px; right:0; width:180px; max-width:calc(100vw - 32px); border:1px solid var(--line-2); border-radius:10px; background:#140909; box-shadow:0 18px 45px rgba(0,0,0,.45); z-index:90; overflow:hidden; }
+        .fe-user-dropdown a, .fe-user-dropdown button { display:flex; align-items:center; gap:10px; width:100%; padding:12px 14px; color:#fff; font-size:12px; font-weight:800; text-decoration:none; background:none; border:none; cursor:pointer; text-align:left; }
+        .fe-user-dropdown a:hover, .fe-user-dropdown button:hover { background:rgba(255,106,26,.1); color:var(--orange); }
+        .fe-user-dropdown i { width:16px; text-align:center; }
         .fe-mobile-toggle { display:none; width:38px; height:38px; border-radius:8px; border:1px solid var(--line-2); background:rgba(255,255,255,.04); color:#fff; }
         .fe-mobile-menu { display:none; border-top:1px solid var(--line); padding:12px 0 16px; }
         .fe-mobile-menu a { display:block; padding:11px 0; color:var(--muted); text-decoration:none; font-weight:800; font-size:13px; }
