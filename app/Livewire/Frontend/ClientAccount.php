@@ -18,6 +18,14 @@ class ClientAccount extends Component
 {
     public string $activeTab = 'perfil';
 
+    public string $ticketFilter = 'all';
+
+    public string $bonusFilter = 'all';
+
+    public int $numbersPage = 1;
+
+    public bool $showTicketForm = true;
+
     public string $name = '';
 
     public string $apellido = '';
@@ -50,8 +58,27 @@ class ClientAccount extends Component
 
     public function setTab(string $tab): void
     {
-        if (in_array($tab, ['perfil', 'password', 'tickets', 'sorteo', 'bonos'], true)) {
+        if (in_array($tab, ['perfil', 'password', 'tickets', 'sorteo', 'bonos', 'todos_bonos', 'notificaciones'], true)) {
             $this->activeTab = $tab;
+        }
+    }
+
+    public function setTicketFilter(string $filter): void
+    {
+        $this->ticketFilter = $filter;
+    }
+
+    public function setBonusFilter(string $filter): void
+    {
+        $this->bonusFilter = $filter;
+    }
+
+    public function closeTicket(int $ticketId): void
+    {
+        $ticket = Ticket::where('user_id', auth()->id())->whereKey($ticketId)->first();
+        if ($ticket && $ticket->status !== 'closed') {
+            $ticket->update(['status' => 'closed']);
+            session()->flash('ticket_success', 'Ticket cerrado correctamente.');
         }
     }
 
@@ -240,6 +267,12 @@ class ClientAccount extends Component
 
         $this->reset('ticket_subject', 'ticket_category', 'ticket_line_id', 'ticket_description');
         session()->flash('ticket_success', 'Ticket creado. Código: '.$ticket->tracking_code);
+        $this->showTicketForm = false;
+    }
+
+    public function showTicketForm(): void
+    {
+        $this->showTicketForm = true;
     }
 
     public function render()
@@ -252,25 +285,56 @@ class ClientAccount extends Component
             ->where('end_date', '>=', now())
             ->pluck('id');
 
+        $bonusQuery = BonusAssignment::where('user_id', $user->id)->with('bonus.line');
+
+        $recentBonuses = (clone $bonusQuery)
+            ->where('created_at', '>=', now()->subWeek())
+            ->latest()
+            ->get();
+
+        $allBonuses = (clone $bonusQuery)->latest()->get()->map(function ($assignment) {
+            $bonus = $assignment->bonus;
+            $status = $assignment->status;
+            if ($status === 'active' && $bonus?->end_date?->isPast()) {
+                $status = 'expired';
+            }
+            $assignment->computed_status = $status;
+
+            return $assignment;
+        });
+
+        $filteredBonuses = $allBonuses->filter(function ($assignment) {
+            if ($this->bonusFilter === 'all') {
+                return true;
+            }
+
+            return $assignment->computed_status === $this->bonusFilter;
+        })->take(50);
+
+        $ticketQuery = Ticket::where('user_id', $user->id)->with(['line', 'messages']);
+        $myTickets = (clone $ticketQuery)->latest()->take(20)->get();
+        $filteredTickets = $myTickets->filter(function ($ticket) {
+            if ($this->ticketFilter === 'all') {
+                return true;
+            }
+
+            return $ticket->status === $this->ticketFilter;
+        })->take(20);
+
         return view('frontend.pages.client-account', [
             'myNumbers' => RaffleNumber::with(['raffle', 'line'])
                 ->where('user_id', $user->id)
                 ->latest()
-                ->take(12)
+                ->take(50)
                 ->get(),
             'activeNumbersCount' => RaffleNumber::where('user_id', $user->id)
                 ->whereIn('raffle_id', $activeRaffleIds)
                 ->count(),
-            'myTickets' => Ticket::where('user_id', $user->id)
-                ->with(['line', 'messages'])
-                ->latest()
-                ->take(6)
-                ->get(),
-            'recentBonuses' => BonusAssignment::where('user_id', $user->id)
-                ->where('created_at', '>=', now()->subWeek())
-                ->with('bonus.line')
-                ->latest()
-                ->get(),
+            'myTickets' => $filteredTickets,
+            'allTicketsCount' => $myTickets->count(),
+            'recentBonuses' => $recentBonuses,
+            'allBonuses' => $filteredBonuses,
+            'allBonusesCount' => $allBonuses->count(),
             'notifications' => UserNotification::where('user_id', $user->id)
                 ->latest()
                 ->take(8)

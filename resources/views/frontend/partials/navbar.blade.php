@@ -81,7 +81,6 @@
                     <a href="{{ route('login') }}" wire:navigate class="fe-btn ghost">Ingresar</a>
                     <a href="{{ route('client.register') }}" wire:navigate class="fe-btn primary">Registrarme</a>
                 @endauth
-                <a href="{{ route('frontend.lines') }}" wire:navigate class="fe-btn primary">Atencion</a>
             </div>
 
             <button type="button" class="fe-mobile-toggle" onclick="toggleFrontendMenu()" aria-label="Abrir menu">

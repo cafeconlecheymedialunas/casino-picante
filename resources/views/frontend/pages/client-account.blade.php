@@ -126,13 +126,19 @@
         <div class="account-tabs">
             <button type="button" wire:click="setTab('perfil')" class="account-tab {{ $activeTab === 'perfil' ? 'active' : '' }}">Perfil</button>
             <button type="button" wire:click="setTab('password')" class="account-tab {{ $activeTab === 'password' ? 'active' : '' }}">Contrasena</button>
-            <button type="button" wire:click="setTab('tickets')" class="account-tab {{ $activeTab === 'tickets' ? 'active' : '' }}">Tickets</button>
+            <button type="button" wire:click="setTab('tickets')" class="account-tab {{ $activeTab === 'tickets' ? 'active' : '' }}">Tickets <span class="account-tab-count">{{ $allTicketsCount ?? 0 }}</span></button>
             <button type="button" wire:click="setTab('sorteo')" class="account-tab {{ $activeTab === 'sorteo' ? 'active' : '' }}">Mi sorteo</button>
-            <button type="button" wire:click="setTab('bonos')" class="account-tab {{ $activeTab === 'bonos' ? 'active' : '' }}">Mis bonos</button>
-            @if($unreadNotificationsCount > 0)
-                <button type="button" wire:click="markAllNotificationsRead" class="account-tab">Notificaciones <span class="account-tab-alert">{{ $unreadNotificationsCount }}</span></button>
-            @endif
+            <button type="button" wire:click="setTab('bonos')" class="account-tab {{ $activeTab === 'bonos' ? 'active' : '' }}">Bonos semana</button>
+            <button type="button" wire:click="setTab('todos_bonos')" class="account-tab {{ $activeTab === 'todos_bonos' ? 'active' : '' }}">Todos los bonos <span class="account-tab-count">{{ $allBonusesCount ?? 0 }}</span></button>
+            <button type="button" wire:click="setTab('notificaciones')" class="account-tab {{ $activeTab === 'notificaciones' ? 'active' : '' }}">Notificaciones @if($unreadNotificationsCount > 0)<span class="account-tab-alert">{{ $unreadNotificationsCount }}</span>@endif</button>
         </div>
+        <style>
+            .account-tab-count { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; margin-left:6px; border-radius:999px; background:rgba(255,255,255,.15); color:var(--muted); font-size:10px; }
+            .account-filters { display:flex; gap:6px; flex-wrap:wrap; }
+            .account-filter-btn { padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800; background:rgba(255,255,255,.05); color:var(--muted); border:1px solid transparent; cursor:pointer; }
+            .account-filter-btn:hover { background:rgba(255,106,26,.1); color:var(--orange); }
+            .account-filter-btn.active { background:rgba(255,106,26,.2); color:var(--orange); border-color:rgba(255,106,26,.3); }
+        </style>
 
         <div class="account-grid">
             @if($activeTab === 'perfil')
@@ -175,6 +181,11 @@
                                 </select>
                                 @error('preferred_line_id') <div class="account-error">{{ $message }}</div> @enderror
                             </div>
+                            <div class="account-field full">
+                                <label class="account-label" for="contact">Contacto extra (WhatsApp, Telegram, etc)</label>
+                                <input id="contact" class="account-input" type="text" wire:model.defer="contact" placeholder="Ej: +54 9 11 1234-5678">
+                                @error('contact') <div class="account-error">{{ $message }}</div> @enderror
+                            </div>
                             <div class="avatar-panel">
                                 <x-avatar-library label="Foto de perfil" model="avatar" :selected="$avatar" />
                                 @error('avatar') <div class="account-error">{{ $message }}</div> @enderror
@@ -212,8 +223,9 @@
             @endif
 
             @if($activeTab === 'tickets')
+                @if($showTicketForm)
                 <div class="account-card">
-                    <h2>Nuevo reclamo</h2>
+                    <h2>Nuevo ticket</h2>
                     <form wire:submit.prevent="createTicket" class="account-form-grid">
                         <div class="account-field">
                             <label class="account-label" for="ticket_subject">Asunto</label>
@@ -245,14 +257,37 @@
                             <textarea id="ticket_description" class="ticket-textarea" wire:model.defer="ticket_description"></textarea>
                             @error('ticket_description') <div class="account-error">{{ $message }}</div> @enderror
                         </div>
-                        <div class="account-field full">
-                            <button type="submit" class="fe-btn primary">Enviar ticket</button>
+                        <div class="account-field full" style="display:flex;gap:10px;">
+                            <button type="submit" class="fe-btn primary" wire:loading.attr="disabled" style="flex:1;">
+                                <span wire:loading.remove wire:target="createTicket">Enviar ticket</span>
+                                <span wire:loading wire:target="createTicket">Enviando...</span>
+                            </button>
+                            <button type="button" class="fe-btn ghost" wire:click="$set('showTicketForm', false)" style="flex:0 0 auto;">Cancelar</button>
                         </div>
                     </form>
                 </div>
+                @else
+                <div class="account-card">
+                    <button type="button" class="fe-btn primary" wire:click="showTicketForm" style="width:100%;">Crear nuevo ticket</button>
+                </div>
+                @endif
 
                 <div class="account-card">
-                    <h2>Mensajeria</h2>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                        <h2 style="margin:0;">Mis Tickets</h2>
+                        <div class="account-filters">
+                            <button type="button" wire:click="setTicketFilter('all')" class="account-filter-btn {{ $ticketFilter === 'all' ? 'active' : '' }}">Todos</button>
+                            <button type="button" wire:click="setTicketFilter('open')" class="account-filter-btn {{ $ticketFilter === 'open' ? 'active' : '' }}">Abiertos</button>
+                            <button type="button" wire:click="setTicketFilter('progress')" class="account-filter-btn {{ $ticketFilter === 'progress' ? 'active' : '' }}">En proceso</button>
+                            <button type="button" wire:click="setTicketFilter('closed')" class="account-filter-btn {{ $ticketFilter === 'closed' ? 'active' : '' }}">Cerrados</button>
+                        </div>
+                    </div>
+                    <style>
+                        .account-filters { display:flex; gap:6px; flex-wrap:wrap; }
+                        .account-filter-btn { padding:6px 12px; border-radius:999px; font-size:11px; font-weight:800; background:rgba(255,255,255,.05); color:var(--muted); border:1px solid transparent; cursor:pointer; }
+                        .account-filter-btn:hover { background:rgba(255,106,26,.1); color:var(--orange); }
+                        .account-filter-btn.active { background:rgba(255,106,26,.2); color:var(--orange); border-color:rgba(255,106,26,.3); }
+                    </style>
                     @forelse($myTickets as $ticket)
                         <article class="ticket-item">
                             <div class="ticket-header">
@@ -266,9 +301,12 @@
                                     <div class="account-message">{{ $message->message }}</div>
                                 @endforeach
                             </div>
+                            @if($ticket->status !== 'closed')
+                                <button type="button" wire:click="closeTicket({{ $ticket->id }})" class="fe-btn ghost" style="margin-top:10px;height:32px;padding:0 12px;font-size:11px;">Cerrar ticket</button>
+                            @endif
                         </article>
                     @empty
-                        <div class="account-empty">Todavia no tenes tickets registrados.</div>
+                        <div class="account-empty">No hay tickets con ese filtro.</div>
                     @endforelse
                 </div>
             @endif
@@ -334,6 +372,38 @@
                         </article>
                     @empty
                         <div class="account-empty">No hay bonos reclamados en los ultimos 7 dias.</div>
+                    @endforelse
+                </div>
+            @endif
+
+            @if($activeTab === 'todos_bonos')
+                <div class="account-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+                        <h2 style="margin:0;">Todos los bonos</h2>
+                        <div class="account-filters">
+                            <button type="button" wire:click="setBonusFilter('all')" class="account-filter-btn {{ $bonusFilter === 'all' ? 'active' : '' }}">Todos</button>
+                            <button type="button" wire:click="setBonusFilter('active')" class="account-filter-btn {{ $bonusFilter === 'active' ? 'active' : '' }}">Disponibles</button>
+                            <button type="button" wire:click="setBonusFilter('used')" class="account-filter-btn {{ $bonusFilter === 'used' ? 'active' : '' }}">Usados</button>
+                            <button type="button" wire:click="setBonusFilter('expired')" class="account-filter-btn {{ $bonusFilter === 'expired' ? 'active' : '' }}">Vencidos</button>
+                        </div>
+                    </div>
+                    @forelse($allBonuses as $assignment)
+                        @php
+                            $bonus = $assignment->bonus;
+                            $status = $assignment->computed_status;
+                        @endphp
+                        <article class="bonus-item">
+                            <div class="bonus-item-info">
+                                <div class="bonus-item-title">{{ $bonus?->title ?? 'Bono eliminado' }}</div>
+                                <div class="account-muted">
+                                    {{ $bonus?->line?->name ?? 'Sin linea' }} -iado {{ $assignment->created_at->format('d/m/Y H:i') }}
+                                    @if($bonus?->end_date) - vence {{ $bonus->end_date->format('d/m/Y') }} @endif
+                                </div>
+                            </div>
+                            <span class="badge {{ $statusClasses[$status] ?? 'badge-used' }}">{{ $statusLabels[$status] ?? $status }}</span>
+                        </article>
+                    @empty
+                        <div class="account-empty">No hay bonos con ese filtro.</div>
                     @endforelse
                 </div>
             @endif
