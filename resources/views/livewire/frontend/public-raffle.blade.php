@@ -65,7 +65,7 @@
                             @if($prizeImageUrl)
                                 <img src="{{ $prizeImageUrl }}" alt="{{ $firstPrize['name'] ?? 'Premio' }}">
                             @else
-                                <img src="{{ asset('frontend/gift-box.webp') }}" alt="Premio" style="width:80px;height:auto;object-fit:contain;">
+                                <img src="{{ asset('sorteos-imagen.png') }}" alt="Premio" style="width:80px;height:auto;object-fit:contain;">
                             @endif
                             <span class="raffle-card-badge {{ $raffle->status }}">{{ $statusLabel }}</span>
                         </div>
