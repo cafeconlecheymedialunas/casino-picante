@@ -82,6 +82,7 @@ class SorteosNumberCrudTest extends TestCase
             'prizes' => [],
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->call('openEdit', $raffle->id)
@@ -176,6 +177,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)
@@ -243,6 +245,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)
@@ -344,6 +347,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)
@@ -439,6 +443,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)

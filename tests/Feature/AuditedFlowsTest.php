@@ -19,6 +19,7 @@ use App\Models\Raffle;
 use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\LineRoles;
 use App\Support\Permissions;
 use App\Support\Roles;
@@ -33,7 +34,9 @@ class AuditedFlowsTest extends TestCase
     public function test_published_blog_posts_get_a_publication_date(): void
     {
         $admin = $this->userWithRole(Roles::ADMIN);
+        $line = Line::create(['name' => 'Linea Blog', 'status' => 'active']);
         $this->actingAs($admin);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Novedades::class)
             ->set('title', 'Post visible')
@@ -177,6 +180,75 @@ class AuditedFlowsTest extends TestCase
             ->get(route('frontend.blog.show', $post->slug))
             ->assertOk()
             ->assertSee('Post publico multi linea');
+    }
+
+    public function test_public_blog_respects_active_vendor_scope_when_present(): void
+    {
+        $firstVendor = Vendor::create([
+            'user_id' => User::factory()->create()->id,
+            'name' => 'Vendor A '.uniqid(),
+            'slug' => 'vendor-a-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $secondVendor = Vendor::create([
+            'user_id' => User::factory()->create()->id,
+            'name' => 'Vendor B '.uniqid(),
+            'slug' => 'vendor-b-'.uniqid(),
+            'is_active' => true,
+        ]);
+
+        Post::withoutGlobalScopes()->create([
+            'vendor_id' => $firstVendor->id,
+            'title' => 'Post Vendor A',
+            'slug' => 'post-vendor-a-'.uniqid(),
+            'status' => Post::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+        Post::withoutGlobalScopes()->create([
+            'vendor_id' => $secondVendor->id,
+            'title' => 'Post Vendor B',
+            'slug' => 'post-vendor-b-'.uniqid(),
+            'status' => Post::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+
+        $this->withSession(['active_vendor_id' => $firstVendor->id]);
+
+        Livewire::test(\App\Livewire\Frontend\Blog::class)
+            ->assertSee('Post Vendor A')
+            ->assertDontSee('Post Vendor B');
+    }
+
+    public function test_public_cajero_slug_sets_vendor_scope_for_guest_home(): void
+    {
+        $firstVendor = Vendor::create([
+            'user_id' => User::factory()->create()->id,
+            'name' => 'Cajero Uno',
+            'slug' => 'cajero-uno',
+            'is_active' => true,
+        ]);
+        $secondVendor = Vendor::create([
+            'user_id' => User::factory()->create()->id,
+            'name' => 'Cajero Dos',
+            'slug' => 'cajero-dos',
+            'is_active' => true,
+        ]);
+
+        Line::create([
+            'vendor_id' => $firstVendor->id,
+            'name' => 'Linea Cajero Uno Visible',
+            'status' => 'active',
+        ]);
+        Line::create([
+            'vendor_id' => $secondVendor->id,
+            'name' => 'Linea Cajero Dos Oculta',
+            'status' => 'active',
+        ]);
+
+        $this->get(route('frontend.vendor.home', $firstVendor->slug))
+            ->assertOk()
+            ->assertSee('Linea Cajero Uno Visible')
+            ->assertDontSee('Linea Cajero Dos Oculta');
     }
 
     public function test_public_agent_registration_route_is_not_available(): void
