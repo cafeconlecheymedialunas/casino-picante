@@ -64,7 +64,7 @@ class Tickets extends Component
             'createMessage' => 'required|string|min:1',
         ]);
 
-        $lineId = session('active_line_id');
+        $lineId = $this->requireLineIdForScopedCreate();
 
         $ticket = Ticket::create([
             'user_id' => (int) $this->createUserId,
@@ -89,7 +89,7 @@ class Tickets extends Component
     public function selectTicket($id)
     {
         $this->checkLinePermission(Permissions::TICKET_READ);
-        $ticket = Ticket::withoutGlobalScopes()
+        $ticket = $this->ticketQuery()
             ->with(['user', 'line', 'messages.agent', 'messages.user'])
             ->findOrFail($id);
 
@@ -144,7 +144,7 @@ class Tickets extends Component
         }
 
         $this->newMessage = '';
-        $this->selectedTicket = Ticket::withoutGlobalScopes()
+        $this->selectedTicket = $this->ticketQuery()
             ->with(['user', 'line', 'messages.agent', 'messages.user'])
             ->find($this->selectedTicket->id);
 
@@ -184,7 +184,7 @@ class Tickets extends Component
             $this->notify('Ticket resuelto', "El ticket {$this->selectedTicket->subject} fue marcado como resuelto.", 'tickets', '/tickets', 'success');
         }
 
-        $this->selectedTicket = Ticket::withoutGlobalScopes()
+        $this->selectedTicket = $this->ticketQuery()
             ->with(['user', 'line', 'messages.agent', 'messages.user'])
             ->find($this->selectedTicket->id);
         $this->dispatch('messageSent');
@@ -210,7 +210,7 @@ class Tickets extends Component
             'message' => '🔄 Ticket reabierto',
         ]);
 
-        $this->selectedTicket = Ticket::withoutGlobalScopes()
+        $this->selectedTicket = $this->ticketQuery()
             ->with(['user', 'line', 'messages.agent', 'messages.user'])
             ->find($this->selectedTicket->id);
         $this->dispatch('messageSent');
@@ -229,7 +229,7 @@ class Tickets extends Component
             }
 
             $this->selectedTicket->update(['status' => $status]);
-            $this->selectedTicket = Ticket::withoutGlobalScopes()
+            $this->selectedTicket = $this->ticketQuery()
                 ->with(['user', 'line', 'messages.agent', 'messages.user'])
                 ->find($this->selectedTicket->id);
 
@@ -241,7 +241,7 @@ class Tickets extends Component
     {
         $this->checkLinePermission(Permissions::TICKET_READ);
 
-        $query = Ticket::withoutGlobalScopes()->with(['user', 'line']);
+        $query = $this->ticketQuery()->with(['user', 'line']);
 
         $lineIds = $this->visibleLineIds();
         if ($lineIds !== null) {
@@ -272,7 +272,7 @@ class Tickets extends Component
     {
         $lineIds = $this->visibleLineIds();
 
-        $base = Ticket::withoutGlobalScopes();
+        $base = $this->ticketQuery();
         if ($lineIds !== null) {
             $base->where(fn ($ticket) => $ticket
                 ->whereIn('line_id', $lineIds)
@@ -316,10 +316,20 @@ class Tickets extends Component
 
     private function ticketIsVisible(Ticket $ticket): bool
     {
+        if (($vendorId = session('active_vendor_id')) && (int) $ticket->vendor_id !== (int) $vendorId) {
+            return false;
+        }
+
         $visibleLineIds = $this->visibleLineIds();
 
         return $visibleLineIds === null
             || $ticket->line_id === null
             || in_array((int) $ticket->line_id, $visibleLineIds, true);
+    }
+
+    private function ticketQuery()
+    {
+        return Ticket::withoutGlobalScopes()
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId));
     }
 }

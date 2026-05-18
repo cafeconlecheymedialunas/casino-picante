@@ -118,6 +118,15 @@ class Login extends Component
             return true;
         }
 
+        if ($user?->hasRole(Roles::CAJERO) && $user->vendor_id && $user->vendor?->is_active) {
+            session()->forget(['active_agent_id', 'active_line_id']);
+            session(['active_vendor_id' => $user->vendor_id]);
+
+            $this->redirect(route('dashboard'), navigate: false);
+
+            return true;
+        }
+
         Auth::logout();
         $this->addGenericError();
 

@@ -124,7 +124,7 @@ class Promociones extends Component
             $promo->update($data);
             $this->notify('Promoción actualizada', "La promoción {$promo->title} fue actualizada.", 'promotions', '/promociones', 'info');
         } else {
-            $data['line_id'] = session('active_line_id');
+            $data['line_id'] = $this->requireLineIdForScopedCreate();
             $promo = Promotion::create($data);
             $this->notify('Nueva promoción creada', "La promoción {$promo->title} fue creada exitosamente.", 'promotions', '/promociones', 'success');
         }

@@ -10,6 +10,7 @@ use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -83,7 +84,12 @@ class Novedades extends Component
     {
         $this->checkLinePermission(Permissions::NEWS_CREATE);
         $this->validate([
-            'newCategoryName' => 'required|min:2|unique:categories,name',
+            'newCategoryName' => [
+                'required',
+                'min:2',
+                Rule::unique('categories', 'name')
+                    ->where(fn ($query) => $query->where('vendor_id', session('active_vendor_id'))),
+            ],
         ]);
 
         \App\Models\Category::create([
@@ -122,6 +128,7 @@ class Novedades extends Component
             ...$this->rules,
             'imageUpload' => 'nullable|image|max:4096',
         ]);
+        $this->authorizeCategoryChoice($this->category_id);
         $this->authorizeAuthorChoice($this->author_agent_id);
 
         $imagePath = null;
@@ -139,7 +146,7 @@ class Novedades extends Component
             'category_id' => $this->category_id ?: null,
             'author_agent_id' => $this->author_agent_id ?: null,
             'image' => $imagePath,
-            'line_id' => session('active_line_id'),
+            'line_id' => $this->requireLineIdForScopedCreate(),
         ]);
 
         session()->flash('message', 'Post creado correctamente');
@@ -229,5 +236,14 @@ class Novedades extends Component
             ->contains((int) $authorAgentId);
 
         abort_unless($allowed, 403, 'No podes asignar un autor fuera de tu alcance.');
+    }
+
+    private function authorizeCategoryChoice($categoryId): void
+    {
+        if (! $categoryId || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(\App\Models\Category::whereKey((int) $categoryId)->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
     }
 }

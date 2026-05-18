@@ -7,6 +7,7 @@ use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
 use App\Support\Roles;
+use Illuminate\Validation\ValidationException;
 
 trait HasLinePermissions
 {
@@ -93,10 +94,12 @@ trait HasLinePermissions
         return auth()->user()?->agent;
     }
 
-    // Returns true when the authenticated user has the global admin role.
+    // Returns true when the authenticated user owns a whole panel scope.
     public function isAdminMode(): bool
     {
-        return auth()->user()?->hasRole(Roles::ADMIN) ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasRole(Roles::ADMIN) || $user?->hasRole(Roles::CAJERO)) ?? false;
     }
 
     // True if current agent has the given permission on the active line.
@@ -207,4 +210,28 @@ trait HasLinePermissions
 
         return $lineIds;
     }
+
+    public function lineIdForScopedCreate(): ?int
+    {
+        $activeLineId = session('active_line_id');
+        if ($activeLineId && Line::whereKey($activeLineId)->where('status', 'active')->exists()) {
+            return (int) $activeLineId;
+        }
+
+        return null;
+    }
+
+    public function requireLineIdForScopedCreate(string $field = 'line_id'): int
+    {
+        $lineId = $this->lineIdForScopedCreate();
+
+        if (! $lineId) {
+            throw ValidationException::withMessages([
+                $field => 'Selecciona una linea activa antes de crear.',
+            ]);
+        }
+
+        return $lineId;
+    }
+
 }

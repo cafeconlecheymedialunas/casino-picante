@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Platform;
 use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -88,7 +89,13 @@ class PlatformsMaster extends Component
 
         $rules = [
             'name' => 'required|min:2',
-            'slug' => 'required|min:2|unique:platforms,slug'.($this->editingPlatform ? ','.$this->editingPlatform->id : ''),
+            'slug' => [
+                'required',
+                'min:2',
+                Rule::unique('platforms', 'slug')
+                    ->where(fn ($query) => $query->where('vendor_id', session('active_vendor_id')))
+                    ->ignore($this->editingPlatform?->id),
+            ],
             'logoUpload' => 'nullable|image|max:4096',
             'website_url' => 'nullable|url',
         ];
@@ -167,7 +174,7 @@ class PlatformsMaster extends Component
     private function ensureAdmin(): void
     {
         if (! $this->isAdminMode()) {
-            abort(403, 'Solo el administrador general puede gestionar plataformas.');
+            abort(403, 'Solo administradores y cajeros pueden gestionar plataformas.');
         }
     }
 }

@@ -272,10 +272,13 @@ class LineDetail extends Component
         $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
 
         if ($this->inlineEncargadoId) {
+            $this->authorizeAgentChoice((int) $this->inlineEncargadoId);
+
             if ($encargadoLA) {
-                $encargadoLA->update(['agent_id' => $this->inlineEncargadoId]);
+                $encargadoLA->update(['agent_id' => $this->inlineEncargadoId, 'vendor_id' => $this->line->vendor_id ?: session('active_vendor_id')]);
             } else {
                 $this->line->lineAgents()->create([
+                    'vendor_id' => $this->line->vendor_id ?: session('active_vendor_id'),
                     'agent_id' => $this->inlineEncargadoId,
                     'role' => LineRoles::ENCARGADO,
                     'is_active' => true,
@@ -358,6 +361,7 @@ class LineDetail extends Component
     public function saveLineEdit(): void
     {
         $this->checkLinePermission(Permissions::LINE_EDIT);
+        $this->authorizePlatformChoices($this->editPlatforms);
 
         $this->line->update([
             'name' => $this->editName,
@@ -374,6 +378,7 @@ class LineDetail extends Component
         foreach ($this->editPlatforms as $p) {
             if (! empty($p['platform_id'])) {
                 $this->line->platforms()->attach($p['platform_id'], [
+                    'vendor_id' => $this->line->vendor_id ?: session('active_vendor_id'),
                     'custom_message' => $p['custom_message'] ?? '',
                     'is_active' => $p['is_active'] ?? true,
                 ]);
@@ -402,6 +407,7 @@ class LineDetail extends Component
     public function togglePlatform(int $platformId): void
     {
         $this->checkLinePermission(Permissions::LINE_EDIT);
+        $this->authorizePlatformChoice($platformId);
 
         $found = false;
         foreach ($this->editPlatforms as &$p) {
@@ -440,6 +446,7 @@ class LineDetail extends Component
     public function togglePlatformActivation($platformId): void
     {
         $this->checkLinePermission(Permissions::LINE_EDIT);
+        $this->authorizePlatformChoice((int) $platformId);
 
         $platform = Platform::find($platformId);
         if (! $platform) {
@@ -456,6 +463,7 @@ class LineDetail extends Component
         } else {
             // attach as active
             $this->line->platforms()->attach($platformId, [
+                'vendor_id' => $this->line->vendor_id ?: session('active_vendor_id'),
                 'is_active' => true,
                 'custom_message' => '',
             ]);
@@ -506,10 +514,11 @@ class LineDetail extends Component
         if (! $this->assignAgentId) {
             return;
         }
+        $this->authorizeAgentChoice((int) $this->assignAgentId);
 
         LineAgent::updateOrCreate(
             ['line_id' => $this->lineId, 'agent_id' => $this->assignAgentId],
-            ['role' => $this->assignRole, 'is_active' => true]
+            ['vendor_id' => $this->line->vendor_id ?: session('active_vendor_id'), 'role' => $this->assignRole, 'is_active' => true]
         );
 
         $this->showAssignModal = false;
@@ -723,11 +732,14 @@ class LineDetail extends Component
         $deleteQuery->delete();
 
         foreach ($toGrant as $perm) {
-            LineAgentPermission::firstOrCreate([
-                'line_id' => $this->lineId,
-                'agent_id' => $this->editingPermAgentId,
-                'permission' => $perm,
-            ]);
+            LineAgentPermission::firstOrCreate(
+                [
+                    'line_id' => $this->lineId,
+                    'agent_id' => $this->editingPermAgentId,
+                    'permission' => $perm,
+                ],
+                ['vendor_id' => $this->line->vendor_id ?: session('active_vendor_id')]
+            );
         }
 
         // If the edited agent is the encargado, ensure no other agent keeps permissions outside the encargado's set
@@ -973,10 +985,13 @@ class LineDetail extends Component
         $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
 
         if ($agentId) {
+            $this->authorizeAgentChoice((int) $agentId);
+
             if ($encargadoLA) {
-                $encargadoLA->update(['agent_id' => $agentId]);
+                $encargadoLA->update(['agent_id' => $agentId, 'vendor_id' => $this->line->vendor_id ?: session('active_vendor_id')]);
             } else {
                 $this->line->lineAgents()->create([
+                    'vendor_id' => $this->line->vendor_id ?: session('active_vendor_id'),
                     'agent_id' => $agentId,
                     'role' => LineRoles::ENCARGADO,
                     'is_active' => true,
@@ -1048,5 +1063,32 @@ class LineDetail extends Component
 
         view()->share('activeLine', $this->line);
         view()->share('currentLineAgent', $lineAgent);
+    }
+
+    private function authorizeAgentChoice(int $agentId): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(Agent::whereKey($agentId)->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+    }
+
+    private function authorizePlatformChoice(int $platformId): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(Platform::whereKey($platformId)->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+    }
+
+    private function authorizePlatformChoices(array $platforms): void
+    {
+        foreach ($platforms as $platform) {
+            if (! empty($platform['platform_id'])) {
+                $this->authorizePlatformChoice((int) $platform['platform_id']);
+            }
+        }
     }
 }

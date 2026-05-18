@@ -78,6 +78,7 @@ class BlogEdit extends Component
             ...$this->rules,
             'imageUpload' => 'nullable|image|max:4096',
         ]);
+        $this->authorizeCategoryChoice($this->category_id);
         $this->authorizeAuthorChoice($this->author_agent_id);
 
         $imagePath = $this->image;
@@ -231,5 +232,14 @@ class BlogEdit extends Component
             ->contains((int) $authorAgentId);
 
         abort_unless($allowed, 403, 'No podes asignar un autor fuera de tu alcance.');
+    }
+
+    private function authorizeCategoryChoice($categoryId): void
+    {
+        if (! $categoryId || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(Category::whereKey((int) $categoryId)->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
     }
 }

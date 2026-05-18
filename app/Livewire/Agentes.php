@@ -89,7 +89,7 @@ class Agentes extends Component
     {
         $this->checkLinePermission(Permissions::AGENT_CREATE);
         $this->resetForm();
-        $this->lineIds = array_filter([(int) (session('active_line_id') ?: Line::orderBy('name')->value('id'))]);
+        $this->lineIds = array_filter([(int) $this->lineIdForScopedCreate()]);
         $this->showModal = true;
     }
 
@@ -117,7 +117,7 @@ class Agentes extends Component
 
         $this->lineIds = ! empty($assignedLineIds)
             ? $assignedLineIds
-            : array_filter([(int) (session('active_line_id') ?: Line::orderBy('name')->value('id'))]);
+            : array_filter([(int) $this->lineIdForScopedCreate()]);
 
         $this->showModal = true;
         $this->showDetailModal = false;
@@ -443,6 +443,7 @@ class Agentes extends Component
             LineAgent::updateOrCreate(
                 ['line_id' => $lineId, 'agent_id' => $agent->id],
                 [
+                    'vendor_id' => \App\Models\Line::find($lineId)?->vendor_id ?: session('active_vendor_id'),
                     'role' => $existing ? $existing->role : LineRoles::MIEMBRO,
                     'is_active' => $this->status === 'active',
                 ]
@@ -548,7 +549,7 @@ class Agentes extends Component
 
     private function authorizeSelectedLines(): void
     {
-        if ($this->isAdminMode()) {
+        if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
         }
 

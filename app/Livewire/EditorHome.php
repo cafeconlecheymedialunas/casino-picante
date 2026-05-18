@@ -167,11 +167,14 @@ class EditorHome extends Component
         $postIds = $data['post_ids'] ?? '';
         $bonusIds = $data['bonus_ids'] ?? '';
 
-        $parseToArray = function ($str) {
+        $parseToArray = function ($str, ?string $model = null) {
             if (empty($str)) {
                 return null;
             }
             $arr = array_filter(array_map('trim', explode(',', $str)));
+            if ($model && session('active_vendor_id')) {
+                $arr = $this->filterScopedIds($model, $arr);
+            }
 
             return count($arr) ? $arr : null;
         };
@@ -191,11 +194,11 @@ class EditorHome extends Component
                 'content' => $data['content'] ?? null,
                 'repeater_data' => $repeaterData,
                 'raffle_type' => $data['raffle_type'] ?? null,
-                'raffle_ids' => $parseToArray($raffleIds),
+                'raffle_ids' => $parseToArray($raffleIds, Raffle::class),
                 'post_type' => $data['post_type'] ?? null,
-                'post_ids' => $parseToArray($postIds),
+                'post_ids' => $parseToArray($postIds, Post::class),
                 'bonus_type' => $data['bonus_type'] ?? null,
-                'bonus_ids' => $parseToArray($bonusIds),
+                'bonus_ids' => $parseToArray($bonusIds, Bonus::class),
                 'enabled' => $data['enabled'] ?? true,
             ]
         );
@@ -253,7 +256,7 @@ class EditorHome extends Component
             'title' => $this->newCarouselTitle,
             'link' => $this->newCarouselLink,
             'order' => $maxOrder + 1,
-            'line_id' => session('active_line_id'),
+            'line_id' => $this->requireLineIdForScopedCreate(),
         ]);
 
         $this->newCarouselTitle = '';
@@ -323,6 +326,7 @@ class EditorHome extends Component
     public function toggleCarousel($itemId)
     {
         $this->ensureCanEditHome();
+        $this->authorizeScopedItem(CarouselItem::class, $itemId);
 
         if (in_array($itemId, $this->selectedCarousel)) {
             HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
@@ -343,6 +347,7 @@ class EditorHome extends Component
     public function toggleRaffle($itemId)
     {
         $this->ensureCanEditHome();
+        $this->authorizeScopedItem(Raffle::class, $itemId);
 
         $current = array_filter(array_map('trim', explode(',', $this->sections['sorteo']['raffle_ids'] ?? '')));
         $itemId = (string) $itemId;
@@ -359,6 +364,7 @@ class EditorHome extends Component
     public function toggleBonus($itemId)
     {
         $this->ensureCanEditHome();
+        $this->authorizeScopedItem(Bonus::class, $itemId);
 
         $current = array_filter(array_map('trim', explode(',', $this->sections['bonos']['bonus_ids'] ?? '')));
         $itemId = (string) $itemId;
@@ -375,6 +381,7 @@ class EditorHome extends Component
     public function togglePost($itemId)
     {
         $this->ensureCanEditHome();
+        $this->authorizeScopedItem(Post::class, $itemId);
 
         $current = array_filter(array_map('trim', explode(',', $this->sections['blog']['post_ids'] ?? '')));
         $itemId = (string) $itemId;
@@ -515,11 +522,14 @@ class EditorHome extends Component
             return response()->json(['message' => 'Sección inválida'], 400);
         }
 
-        $parseToArray = function ($str) {
+        $parseToArray = function ($str, ?string $model = null) {
             if (empty($str)) {
                 return null;
             }
             $arr = array_filter(array_map('trim', explode(',', $str)));
+            if ($model && session('active_vendor_id')) {
+                $arr = $this->filterScopedIds($model, $arr);
+            }
 
             return count($arr) ? $arr : null;
         };
@@ -527,9 +537,9 @@ class EditorHome extends Component
         HomeSection::updateOrCreate(
             ['section_key' => $key],
             [
-                'raffle_ids' => $key === 'sorteo' ? $parseToArray(request()->input('raffle_ids', '')) : null,
-                'bonus_ids' => $key === 'bonos' ? $parseToArray(request()->input('bonus_ids', '')) : null,
-                'post_ids' => $key === 'blog' ? $parseToArray(request()->input('post_ids', '')) : null,
+                'raffle_ids' => $key === 'sorteo' ? $parseToArray(request()->input('raffle_ids', ''), Raffle::class) : null,
+                'bonus_ids' => $key === 'bonos' ? $parseToArray(request()->input('bonus_ids', ''), Bonus::class) : null,
+                'post_ids' => $key === 'blog' ? $parseToArray(request()->input('post_ids', ''), Post::class) : null,
             ]
         );
 
@@ -540,18 +550,21 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $parseToArray = function ($str) {
+        $parseToArray = function ($str, ?string $model = null) {
             if (empty($str)) {
                 return null;
             }
             $arr = array_filter(array_map('trim', explode(',', $str)));
+            if ($model && session('active_vendor_id')) {
+                $arr = $this->filterScopedIds($model, $arr);
+            }
 
             return count($arr) ? $arr : null;
         };
 
-        $sorteoIds = $parseToArray(request()->input('sorteo', ''));
-        $bonosIds = $parseToArray(request()->input('bonos', ''));
-        $blogIds = $parseToArray(request()->input('blog', ''));
+        $sorteoIds = $parseToArray(request()->input('sorteo', ''), Raffle::class);
+        $bonosIds = $parseToArray(request()->input('bonos', ''), Bonus::class);
+        $blogIds = $parseToArray(request()->input('blog', ''), Post::class);
 
         HomeSection::updateOrCreate(
             ['section_key' => 'sorteo'],
@@ -585,5 +598,32 @@ class EditorHome extends Component
         if (! $this->hasLinePermission(Permissions::HOME_EDIT)) {
             abort(403, 'Sin permiso para editar la home.');
         }
+    }
+
+    private function authorizeScopedItem(string $model, $id): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless($model::whereKey((int) $id)->exists(), 403, 'No podes seleccionar contenido fuera de tu vendor.');
+    }
+
+    private function filterScopedIds(string $model, array $ids): array
+    {
+        $ids = collect($ids)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        return $model::whereIn('id', $ids)
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
     }
 }

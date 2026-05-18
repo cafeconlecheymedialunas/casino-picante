@@ -164,6 +164,7 @@ class Lineas extends Component
         }
 
         $this->validate();
+        $this->authorizePlatformChoices();
 
         $portadaPath = $this->portada_url;
         $perfilPath = $this->perfil_url;
@@ -186,6 +187,9 @@ class Lineas extends Component
 
         $encargadoId = $this->encargadoId !== '' ? (int) $this->encargadoId : null;
         $percent = (float) $this->encargadoPercent;
+        if ($encargadoId) {
+            $this->authorizeAgentChoice($encargadoId);
+        }
 
         $data = [
             'name' => trim($this->name),
@@ -433,10 +437,11 @@ class Lineas extends Component
     {
         $line = Line::findOrFail($this->editingLineId);
         $this->authorizeLineEdit($line);
+        $this->authorizeAgentChoice($agentId);
 
         $result = LineAgent::firstOrCreate(
             ['line_id' => $line->id, 'agent_id' => $agentId],
-            ['role' => LineRoles::MIEMBRO, 'is_active' => true]
+            ['vendor_id' => $line->vendor_id ?: session('active_vendor_id'), 'role' => LineRoles::MIEMBRO, 'is_active' => true]
         );
 
         // Agente gets all permissions except line and agent administration
@@ -662,7 +667,7 @@ class Lineas extends Component
 
         $lineAgent = LineAgent::updateOrCreate(
             ['line_id' => $line->id, 'agent_id' => $agentId],
-            ['role' => LineRoles::ENCARGADO, 'is_active' => true, 'porcentaje_ganancia' => $percent]
+            ['vendor_id' => $line->vendor_id ?: session('active_vendor_id'), 'role' => LineRoles::ENCARGADO, 'is_active' => true, 'porcentaje_ganancia' => $percent]
         );
 
         // Encargado gets all permissions by default
@@ -673,10 +678,41 @@ class Lineas extends Component
     {
         $sync = array_fill_keys(
             array_map('intval', $this->selectedPlatformIds),
-            ['is_active' => true]
+            ['vendor_id' => $line->vendor_id ?: session('active_vendor_id'), 'is_active' => true]
         );
 
         $line->platforms()->sync($sync);
+    }
+
+    private function authorizePlatformChoices(): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        $selected = collect($this->selectedPlatformIds)
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique();
+
+        if ($selected->isEmpty()) {
+            return;
+        }
+
+        $allowed = Platform::whereIn('id', $selected)->pluck('id');
+
+        if ($selected->diff($allowed)->isNotEmpty()) {
+            abort(403, 'No podes asignar plataformas fuera de tu vendor.');
+        }
+    }
+
+    private function authorizeAgentChoice(int $agentId): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(Agent::whereKey($agentId)->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
     }
 
     private function mapChannels(array $links): array
