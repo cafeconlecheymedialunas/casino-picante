@@ -9,9 +9,9 @@
                 @endforeach
             </select>
             <input 
-                type="url" 
+                type="text" 
                 wire:model="{{ $fieldName }}.{{ $index }}.value" 
-                placeholder="https://..." 
+                placeholder="URL, email, telefono o usuario" 
                 class="contact-value"
             >
             <input 

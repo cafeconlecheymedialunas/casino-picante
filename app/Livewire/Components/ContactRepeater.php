@@ -13,14 +13,14 @@ class ContactRepeater extends Component
     public string $fieldName = 'contacts';
 
     public array $types = [
-        'whatsapp' => '💬 WhatsApp',
-        'telegram' => '✈️ Telegram',
-        'email' => '✉️ Email',
-        'instagram' => '📷 Instagram',
-        'facebook' => '📘 Facebook',
-        'phone' => '📞 Teléfono',
-        'web' => '🌐 Web',
-        'other' => '🔗 Otro',
+        'whatsapp' => 'WhatsApp',
+        'telegram' => 'Telegram',
+        'email' => 'Email',
+        'instagram' => 'Instagram',
+        'facebook' => 'Facebook',
+        'phone' => 'Telefono',
+        'web' => 'Web',
+        'other' => 'Otro',
     ];
 
     public function mount(string $fieldName = 'contacts')
