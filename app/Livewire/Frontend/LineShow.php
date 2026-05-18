@@ -53,6 +53,7 @@ class LineShow extends Component
         LineRating::updateOrCreate(
             ['line_id' => $this->line->id, 'user_id' => auth()->id()],
             [
+                'vendor_id' => $this->line->vendor_id,
                 'rating' => $validated['selectedRating'],
                 'message' => trim($validated['ratingMessage'] ?? '') ?: null,
             ]

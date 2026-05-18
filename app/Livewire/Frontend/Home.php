@@ -57,6 +57,7 @@ class Home extends Component
 
         $query = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now());
@@ -80,6 +81,7 @@ class Home extends Component
 
         $baseQuery = Bonus::withoutGlobalScopes()
             ->with(['line', 'platform'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('end_date', '>=', now());
 
@@ -102,6 +104,7 @@ class Home extends Component
 
         $baseQuery = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at');
 

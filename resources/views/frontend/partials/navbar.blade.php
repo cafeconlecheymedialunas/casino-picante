@@ -68,7 +68,7 @@
                             </div>
                         </details>
                     @endif
-                    @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE))
+                    @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE) || auth()->user()?->hasRole(\App\Support\Roles::CAJERO))
                         <a href="{{ route('dashboard') }}" wire:navigate class="fe-btn ghost">Panel</a>
                     @endif
                     @if(!auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))

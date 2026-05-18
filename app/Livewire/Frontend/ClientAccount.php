@@ -326,6 +326,7 @@ class ClientAccount extends Component
         $user = auth()->user();
 
         $activeRaffleIds = Raffle::withoutGlobalScopes()
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())

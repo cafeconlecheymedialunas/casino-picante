@@ -8,7 +8,7 @@
         @if(auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
             <a href="{{ route('client.account') }}" wire:navigate>Mi cuenta</a>
         @endif
-        @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE))
+        @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE) || auth()->user()?->hasRole(\App\Support\Roles::CAJERO))
             <a href="{{ route('dashboard') }}" wire:navigate>Panel</a>
         @endif
         <form method="POST" action="{{ route('logout') }}" style="display:inline">
