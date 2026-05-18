@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Promotion extends Model
 {
+    use HasVendorScope;
+
     protected static function booted(): void
     {
         static::addGlobalScope(new LineScope);
     }
 
     protected $fillable = [
+        'vendor_id',
         'title',
         'description',
         'code',
@@ -41,6 +45,11 @@ class Promotion extends Model
         'min_deposit' => 'decimal:2',
         'max_bonus' => 'decimal:2',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public function getComputedStatusAttribute()
     {

@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Line extends Model
 {
+    use HasVendorScope;
+
     protected $fillable = [
+        'vendor_id',
         'name',
         'type',
         'phone',
@@ -25,6 +29,11 @@ class Line extends Model
         'best_sales' => 'decimal:2',
     ];
 
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
     public function lineAgents()
     {
         return $this->hasMany(LineAgent::class);
@@ -33,7 +42,7 @@ class Line extends Model
     public function agents()
     {
         return $this->belongsToMany(Agent::class, 'line_agents')
-            ->withPivot(['role', 'is_active', 'parent_id'])
+            ->withPivot(['vendor_id', 'role', 'is_active', 'parent_id'])
             ->withTimestamps();
     }
 
@@ -62,7 +71,7 @@ class Line extends Model
     public function platforms()
     {
         return $this->belongsToMany(Platform::class, 'line_platform')
-            ->withPivot('custom_message', 'is_active')
+            ->withPivot('vendor_id', 'custom_message', 'is_active')
             ->withTimestamps();
     }
 

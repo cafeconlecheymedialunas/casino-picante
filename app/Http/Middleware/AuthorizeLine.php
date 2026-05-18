@@ -28,6 +28,21 @@ class AuthorizeLine
             return $next($request);
         }
 
+        if ($user->hasRole(Roles::CAJERO)) {
+            $lineId = session('active_line_id');
+
+            if ($lineId) {
+                $line = Line::where('status', 'active')->find($lineId);
+                if ($line) {
+                    view()->share('activeLine', $line);
+                } else {
+                    session()->forget('active_line_id');
+                }
+            }
+
+            return $next($request);
+        }
+
         if (! $user->hasRole(Roles::AGENTE)) {
             abort(403, 'No tenes acceso al panel.');
         }

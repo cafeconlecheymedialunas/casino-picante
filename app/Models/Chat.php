@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Chat extends Model
 {
+    use HasVendorScope;
+
     protected $fillable = [
+        'vendor_id',
         'user_id',
         'agent_id',
         'subject',
@@ -17,6 +21,11 @@ class Chat extends Model
         'context_phone',
         'context_label',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public function user()
     {

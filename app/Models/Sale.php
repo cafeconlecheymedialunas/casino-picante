@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Sale extends Model
 {
+    use HasVendorScope;
+
     protected $fillable = [
+        'vendor_id',
         'line_id',
         'agent_id',
         'client_id',
@@ -25,6 +29,11 @@ class Sale extends Model
         'monto_fichas'         => 'decimal:2',
         'ganancia_superagente' => 'decimal:2',
     ];
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public static function getMeses(): array
     {

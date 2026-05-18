@@ -402,6 +402,13 @@
             
             {{-- Active line selector (only shown when an agent is in session) --}}
             @php
+                $sidebarUser = auth()->user();
+                $sidebarIsAdmin = $sidebarUser?->hasRole(\App\Support\Roles::ADMIN) ?? false;
+                $sidebarIsPanelOwner = $sidebarIsAdmin || ($sidebarUser?->hasRole(\App\Support\Roles::CAJERO) ?? false);
+                $activeVendorId = session('active_vendor_id');
+                $sidebarVendors = $sidebarIsAdmin
+                    ? \App\Models\Vendor::query()->orderBy('name')->get()
+                    : collect();
                 $sessionAgentId = session('active_agent_id');
                 $sessionLineId  = session('active_line_id');
                 $sidebarLineAgent = $currentLineAgent ?? null;
@@ -431,6 +438,23 @@
                         ->pluck('line')
                     : \App\Models\Line::where('status', 'active')->get();
             @endphp
+            @if($sidebarIsAdmin && $sidebarVendors->count() > 0)
+            <div class="sidebar-line-selector">
+                <div class="sidebar-line-label">VENDOR ACTIVO</div>
+                <form method="POST" id="vendor-selector-form">
+                    @csrf
+                    <select class="sidebar-line-select" onchange="switchVendor(this.value)">
+                        <option value="0" {{ !$activeVendorId ? 'selected' : '' }}>Global - todos</option>
+                        @foreach($sidebarVendors as $vendorOption)
+                        <option value="{{ $vendorOption->id }}" {{ (int) $activeVendorId === (int) $vendorOption->id ? 'selected' : '' }}>
+                            {{ $vendorOption->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+            @endif
+
             @if($allLines->count() > 0)
             <div class="sidebar-line-selector">
                 <div class="sidebar-line-label">LÍNEA ACTIVA</div>
@@ -442,7 +466,7 @@
                             {{ $sl->name }}
                         </option>
                         @endforeach
-                        @if(!$sessionAgentId)
+                        @if($sidebarIsPanelOwner)
                         <option value="0" {{ !$sessionLineId ? 'selected' : '' }}>Todas las líneas</option>
                         @endif
                     </select>
@@ -474,7 +498,7 @@
             </a>
             @endif
 
-            @if(! $sessionAgentId)
+            @if($sidebarIsPanelOwner)
             <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-server"></i></span> Plataformas
             </a>
@@ -516,7 +540,13 @@
             </a>
             @endif
 
-            @if(! $sessionAgentId)
+            @if($sidebarIsAdmin)
+            <a href="{{ route('admin.vendors') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.vendors') ? 'active' : '' }}">
+                <span class="sidebar-item-icon"><i class="fa-solid fa-cash-register"></i></span> Cajeros
+            </a>
+            @endif
+
+            @if($sidebarIsPanelOwner)
             <a href="{{ route('settings') }}" wire:navigate class="sidebar-item {{ request()->routeIs('settings*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-gear"></i></span> Configuracion
             </a>
@@ -555,6 +585,20 @@
             const switchLineUrl = @json(route('session.line', ['id' => '__LINE_ID__'])).replace('__LINE_ID__', lineId);
 
             fetch(switchLineUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')
+                        ? document.querySelector('meta[name=csrf-token]').content
+                        : '{{ csrf_token() }}',
+                    'Content-Type': 'application/json',
+                },
+            }).then(() => window.location.reload());
+        }
+
+        function switchVendor(vendorId) {
+            const switchVendorUrl = @json(route('session.vendor', ['id' => '__VENDOR_ID__'])).replace('__VENDOR_ID__', vendorId);
+
+            fetch(switchVendorUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')

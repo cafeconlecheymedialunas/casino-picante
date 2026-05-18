@@ -2,18 +2,26 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use App\Support\Permissions;
 use Illuminate\Database\Eloquent\Model;
 
 class LineAgent extends Model
 {
-    protected $fillable = ['line_id', 'agent_id', 'role', 'is_active', 'parent_id', 'porcentaje_ganancia'];
+    use HasVendorScope;
+
+    protected $fillable = ['vendor_id', 'line_id', 'agent_id', 'role', 'is_active', 'parent_id', 'porcentaje_ganancia'];
 
     protected $casts = ['is_active' => 'boolean'];
 
     public function line()
     {
         return $this->belongsTo(Line::class);
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function agent()
@@ -54,11 +62,14 @@ class LineAgent extends Model
 
     public function grantPermission(string $permission): void
     {
-        LineAgentPermission::firstOrCreate([
-            'line_id' => $this->line_id,
-            'agent_id' => $this->agent_id,
-            'permission' => $permission,
-        ]);
+        LineAgentPermission::firstOrCreate(
+            [
+                'line_id' => $this->line_id,
+                'agent_id' => $this->agent_id,
+                'permission' => $permission,
+            ],
+            ['vendor_id' => $this->vendor_id]
+        );
     }
 
     public function revokePermission(string $permission): void
@@ -77,6 +88,7 @@ class LineAgent extends Model
 
         foreach ($permissions as $perm) {
             LineAgentPermission::create([
+                'vendor_id' => $this->vendor_id,
                 'line_id' => $this->line_id,
                 'agent_id' => $this->agent_id,
                 'permission' => $perm,

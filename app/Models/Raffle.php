@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Raffle extends Model
 {
+    use HasVendorScope;
+
     protected static function booted(): void
     {
         static::addGlobalScope(new LineScope);
     }
 
     protected $fillable = [
+        'vendor_id',
         'title', 'description', 'status', 'start_date', 'end_date',
         'end_number', 'line_id', 'platform_id', 'start_number',
         'winner_user_id', 'winner_number', 'prizes', 'numbers_limit',
@@ -24,9 +28,16 @@ class Raffle extends Model
         'prizes' => 'array',
     ];
 
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
     public function lines()
     {
-        return $this->belongsToMany(Line::class, 'line_raffle')->withTimestamps();
+        return $this->belongsToMany(Line::class, 'line_raffle')
+            ->withPivot('vendor_id')
+            ->withTimestamps();
     }
 
     public function platform()
@@ -78,6 +89,7 @@ class Raffle extends Model
         while (count($assigned) < $count && $current <= $end) {
             if (! in_array($current, $occupied)) {
                 RaffleNumber::create([
+                    'vendor_id' => $this->vendor_id ?: session('active_vendor_id'),
                     'raffle_id' => $this->id,
                     'user_id' => $userId,
                     'line_id' => $lineId,

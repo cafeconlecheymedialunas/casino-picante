@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model
 {
+    use HasVendorScope;
+
     protected static function booted(): void
     {
         static::addGlobalScope(new LineScope);
     }
 
     protected $fillable = [
+        'vendor_id',
         'title',
         'slug',
         'content',
@@ -28,6 +32,11 @@ class Post extends Model
     protected $casts = [
         'published_at' => 'datetime',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public function category()
     {

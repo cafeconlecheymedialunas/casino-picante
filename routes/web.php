@@ -37,6 +37,7 @@ use App\Livewire\Users\UsersIndex;
 use App\Livewire\Ventas;
 use App\Models\Line;
 use App\Models\LineAgent;
+use App\Models\Vendor;
 use App\Support\Permissions;
 use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
@@ -50,6 +51,7 @@ Route::get('/registro', ClientRegister::class)->name('client.register')->middlew
 Route::get('/recuperar-password', ClientForgotPassword::class)->name('client.password.request')->middleware('guest_or_agent');
 Route::get('/recuperar-password/{token}', ClientResetPassword::class)->name('client.password.reset')->middleware('guest_or_agent');
 Route::get('/', Home::class)->name('frontend.home');
+Route::get('/cajero/{vendor:slug}', Home::class)->middleware('public.vendor')->name('frontend.vendor.home');
 Route::get('/lineas', LinesIndex::class)->name('frontend.lines');
 Route::get('/lineas/{line}', LineShow::class)->name('frontend.lines.show');
 Route::get('/bonos', BonusesIndex::class)->name('frontend.bonuses');
@@ -86,7 +88,17 @@ Route::prefix('admin')->group(function () {
 
         if ($user->hasRole(Roles::ADMIN)) {
             if ($id !== 0) {
-                Line::findOrFail($id);
+                Line::where('status', 'active')->findOrFail($id);
+            }
+
+            session(['active_line_id' => $id ?: null]);
+
+            return back();
+        }
+
+        if ($user->hasRole(Roles::CAJERO)) {
+            if ($id !== 0) {
+                Line::where('status', 'active')->findOrFail($id);
             }
 
             session(['active_line_id' => $id ?: null]);
@@ -109,6 +121,33 @@ Route::prefix('admin')->group(function () {
         return back();
     })->middleware('auth')->name('session.line');
 
+    Route::post('/session/vendor/{id}', function (int $id) {
+        $user = auth()->user();
+
+        if (! $user) {
+            return redirect()->route('admin.login');
+        }
+
+        if (! $user->hasRole(Roles::ADMIN)) {
+            abort(403, 'Solo el administrador general puede cambiar de vendor.');
+        }
+
+        if ($id === 0) {
+            session()->forget(['active_vendor_id', 'active_line_id']);
+
+            return back();
+        }
+
+        Vendor::query()->where('is_active', true)->findOrFail($id);
+
+        session([
+            'active_vendor_id' => $id,
+            'active_line_id' => null,
+        ]);
+
+        return back();
+    })->middleware(['auth', 'admin'])->name('session.vendor');
+
     // Dashboard – no line restriction (admin mode passes through)
     Route::middleware('line.authorize')->group(function () {
         Route::get('/dashboard', Overview::class)->middleware('line.authorize:'.Permissions::DASHBOARD_READ)->name('dashboard');
@@ -124,7 +163,7 @@ Route::prefix('admin')->group(function () {
             Permissions::TICKET_READ,
             Permissions::USER_READ,
         ]))->name('chats');
-        Route::get('/platforms', PlatformsMaster::class)->middleware('admin')->name('platforms.master');
+        Route::get('/platforms', PlatformsMaster::class)->middleware('panel.owner')->name('platforms.master');
         Route::get('/ventas/{line?}', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
 
         Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_READ)->name('lineas');
@@ -157,7 +196,8 @@ Route::prefix('admin')->group(function () {
         });
 
         // Settings – admin only
-        Route::get('/settings', Settings::class)->middleware('admin')->name('settings');
+        Route::get('/settings', Settings::class)->middleware('panel.owner')->name('settings');
+        Route::get('/vendors', \App\Livewire\Admin\Vendors\VendorsIndex::class)->middleware('admin')->name('admin.vendors');
 
     });
 });

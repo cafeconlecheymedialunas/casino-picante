@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Comment extends Model
 {
+    use HasVendorScope;
+
     protected $fillable = [
+        'vendor_id',
         'post_id',
         'parent_id',
         'user_id',
@@ -17,6 +21,11 @@ class Comment extends Model
     protected $casts = [
         'is_approved' => 'boolean',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public function post()
     {

@@ -2,17 +2,27 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Ticket extends Model
 {
+    use HasVendorScope;
+
     protected static function booted(): void
     {
         static::addGlobalScope(new LineScope());
+
+        static::creating(function (self $ticket) {
+            if (empty($ticket->tracking_code)) {
+                $ticket->tracking_code = static::generateTrackingCode();
+            }
+        });
     }
 
     protected $fillable = [
+        'vendor_id',
         'user_id',
         'line_id',
         'tracking_code',
@@ -22,13 +32,9 @@ class Ticket extends Model
         'priority',
     ];
 
-    protected static function booting(): void
+    public function vendor()
     {
-        static::creating(function (self $ticket) {
-            if (empty($ticket->tracking_code)) {
-                $ticket->tracking_code = static::generateTrackingCode();
-            }
-        });
+        return $this->belongsTo(Vendor::class);
     }
 
     public static function generateTrackingCode(): string

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Bonus extends Model
 {
+    use HasVendorScope;
+
     public const CLAIMED_STATUSES = ['used'];
 
     public const CONSUMED_STATUSES = ['active', 'used'];
@@ -17,6 +20,7 @@ class Bonus extends Model
     }
 
     protected $fillable = [
+        'vendor_id',
         'code', 'title', 'description', 'start_date', 'end_date',
         'type', 'user_id', 'status', 'created_by',
         'bonus_percent', 'bonus_amount', 'min_deposit', 'max_bonus',
@@ -32,6 +36,11 @@ class Bonus extends Model
         'min_deposit' => 'decimal:2',
         'max_bonus' => 'decimal:2',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public function user()
     {

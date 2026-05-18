@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 
 class NotificationPreference extends Model
 {
-    protected $fillable = ['module', 'is_enabled', 'agent_id'];
+    use HasVendorScope;
+
+    protected $fillable = ['vendor_id', 'module', 'is_enabled', 'agent_id'];
 
     public $timestamps = true;
 
