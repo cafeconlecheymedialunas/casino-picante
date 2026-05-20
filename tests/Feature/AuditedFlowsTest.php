@@ -255,7 +255,7 @@ class AuditedFlowsTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->get(route('frontend.vendor.home', $firstVendor->slug))
+        $this->get(route('frontend.cajero.inicio', $firstVendor->slug))
             ->assertOk()
             ->assertSee('Linea Cajero Uno Visible')
             ->assertDontSee('Linea Cajero Dos Oculta');

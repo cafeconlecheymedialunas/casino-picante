@@ -943,7 +943,7 @@ class AuthPermissionSecurityTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->get(route('frontend.lines'))
+        $this->get(route('frontend.lineas'))
             ->assertOk()
             ->assertSee($line->name);
     }
@@ -958,7 +958,7 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
 
         $this->withSession(['active_vendor_id' => $vendor->id])
-            ->get(route('frontend.lines'))
+            ->get(route('frontend.lineas'))
             ->assertOk()
             ->assertSee($line->name);
     }
@@ -978,7 +978,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($client)
             ->withSession(['active_vendor_id' => $vendor->id])
-            ->get(route('frontend.vendor.home', $otherVendor->slug))
+            ->get(route('frontend.cajero.inicio', $otherVendor->slug))
             ->assertForbidden();
 
         $this->assertSame($vendor->id, session('active_vendor_id'));
@@ -997,7 +997,7 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
 
         $this->actingAs($client)
-            ->get(route('frontend.vendor.home', $vendor->slug))
+            ->get(route('frontend.cajero.inicio', $vendor->slug))
             ->assertOk();
 
         $this->assertSame($vendor->id, session('active_vendor_id'));
