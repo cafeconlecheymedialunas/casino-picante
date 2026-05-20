@@ -223,9 +223,9 @@
                                         @if($lineContact)
                                             <a href="{{ $contactHref($lineContact) }}" target="_blank" rel="noopener">Jugar ahora</a>
                                         @endif
-                                        <a href="{{ route('frontend.lines.show', $line) }}" wire:navigate>Detalle</a>
+                                        <a href="{{ route('frontend.cajero.lineas.detalle', [$vendor, $line]) }}" wire:navigate>Detalle</a>
                                         @if($line->activePlatforms->count())
-                                            <a href="{{ route('frontend.vendor.lines.platforms', [$vendor, $line]) }}" target="_blank" rel="noopener">Plataformas</a>
+                                            <a href="{{ route('frontend.cajero.lineas.plataformas', [$vendor, $line]) }}" target="_blank" rel="noopener">Plataformas</a>
                                         @endif
                                     </div>
                                 </div>

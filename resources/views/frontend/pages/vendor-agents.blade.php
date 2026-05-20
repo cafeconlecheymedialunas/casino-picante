@@ -22,13 +22,7 @@
         @if($agents->count())
             <div class="agents-grid">
                 @foreach($agents as $agent)
-                    <article class="agent-card">
-                        <h3>{{ $agent->name }}</h3>
-                        <p>{{ $agent->email ?? '' }}</p>
-                        @if(filled($agent->phone))
-                            <p>Tel: {{ $agent->phone }}</p>
-                        @endif
-                    </article>
+                    @include('frontend.components.agent-card', ['agent' => $agent])
                 @endforeach
             </div>
         @else
