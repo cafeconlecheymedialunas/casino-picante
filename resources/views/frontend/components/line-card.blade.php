@@ -4,12 +4,10 @@
     $contacts = collect($line->contact_links ?? [])->filter(fn ($contact) => filled($contact['value'] ?? null))->values();
     $manager = $line->lineAgents->first(fn ($lineAgent) => $lineAgent->role === 'encargado' && $lineAgent->is_active);
     $platforms = $line->activePlatforms;
-    
-    // Dynamic rating calculation
-    $avgRating = $line->average_rating; // from Model attribute
-    $fullStars = floor($avgRating);
-    $hasHalfStar = ($avgRating - $fullStars) >= 0.5;
-    $emptyStars = 5 - $fullStars - ($hasHalfStar ? 1 : 0);
+    $avgRating = (float) $line->average_rating;
+    $platformsUrl = $line->vendor
+        ? route('frontend.vendor.lines.platforms', [$line->vendor, $line])
+        : route('frontend.lines.platforms', $line);
 
     $channelIcons = [
         'wsp' => 'fa-brands fa-whatsapp', 'wsap' => 'fa-brands fa-whatsapp', 'wa' => 'fa-brands fa-whatsapp', 'whatsapp' => 'fa-brands fa-whatsapp',
@@ -40,9 +38,6 @@
     .public-line-name { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
     .public-line-name h2 { margin:0; font-family:var(--font-display); font-size:34px; line-height:.95; letter-spacing:.02em; }
     
-    .rating-stars { color:var(--amber); font-size:13px; white-space:nowrap; letter-spacing:.04em; }
-    .rating-stars .empty-star { color: rgba(255,255,255,0.15); }
-    
     .public-line-meta { margin-top:8px; color:var(--muted); font-size:13px; line-height:1.45; }
     
     .public-line-manager { margin-top:14px; padding:10px 12px; border:1px solid var(--line); border-radius:var(--r-sm); background:rgba(255,255,255,.035); color:#fff; font-size:12px; font-weight:800; }
@@ -62,7 +57,7 @@
     @media (max-width: 620px) {
         .public-line-cover { height:140px; }
         .public-line-name { display:block; }
-        .rating-stars { margin-top:8px; display:block; }
+        .public-rating { margin-top:8px; }
         .line-channel { width:100%; grid-template-columns:34px minmax(0, 1fr); border-radius:12px; }
         .line-channel strong { white-space:normal; overflow-wrap:anywhere; }
         .line-card-actions .fe-btn { width:100%; min-width:0; }
@@ -88,20 +83,14 @@
     <div class="public-line-body">
         <div class="public-line-name">
             <h2>{{ $line->name }}</h2>
-            <div class="rating-stars" aria-label="Valoracion general {{ $avgRating }} estrellas">
-                @for($i = 0; $i < $fullStars; $i++)
-                    ★
-                @endfor
-                @if($hasHalfStar)
-                    <i class="fa-solid fa-star-half-stroke" style="font-size: 0.9em; vertical-align: middle; margin-top: -2px; display: inline-block;"></i>
-                @endif
-                @for($i = 0; $i < $emptyStars; $i++)
-                    <span class="empty-star">★</span>
-                @endfor
-                <span style="font-size: 0.85em; opacity: 0.6; margin-left: 4px; font-family: var(--font-body); font-weight: 500;">({{ $line->ratings_count }})</span>
-            </div>
+            @include('frontend.components.rating', [
+                'rating' => $avgRating,
+                'count' => $line->ratings_count,
+                'showValue' => false,
+                'size' => 'sm',
+            ])
         </div>
-        <div class="public-line-meta">{{ $line->description ?: 'Alta rápida, carga de saldo y atención directa para jugar online.' }}</div>
+        <div class="public-line-meta">{{ $line->description ?: 'Alta rapida, carga de saldo y atencion directa para jugar online.' }}</div>
         <div class="public-line-manager">
             Encargado:
             <span>{{ $manager?->agent?->username ?: $manager?->agent?->name ?: 'A confirmar' }}</span>
@@ -128,7 +117,13 @@
         </div>
 
         <div class="line-card-actions">
-            <a href="{{ route('frontend.lines.show', $line) }}" wire:navigate class="fe-btn ghost" style="width:100%;">Ver detalle</a>
+            <a href="{{ route('frontend.lines.show', $line) }}" wire:navigate class="fe-btn ghost">Ver detalle</a>
+            @if($platforms->count())
+                <a href="{{ $platformsUrl }}" target="_blank" rel="noopener" class="fe-btn primary">
+                    Plataformas
+                </a>
+            @endif
         </div>
     </div>
 </article>
+

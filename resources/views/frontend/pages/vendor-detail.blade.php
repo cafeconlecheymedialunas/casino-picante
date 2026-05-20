@@ -185,51 +185,7 @@
                 @if($lines->count())
                     <div class="vd-lines-grid">
                         @foreach($lines as $line)
-                            @php
-                                $cover = $assetUrl($line->portada_url);
-                                $avatar = $assetUrl($line->perfil_url);
-                                $lineContact = collect($line->contact_links ?? [])->first(fn ($contact) => filled($contact['value'] ?? null));
-                            @endphp
-                            <article class="vd-line-card">
-                                <div class="vd-line-media">
-                                    @if($cover)
-                                        <img src="{{ $cover }}" alt="{{ $line->name }}">
-                                    @endif
-                                    <span class="vd-line-avatar">
-                                        @if($avatar)
-                                            <img src="{{ $avatar }}" alt="">
-                                        @else
-                                            {{ strtoupper(mb_substr($line->name, 0, 2)) }}
-                                        @endif
-                                    </span>
-                                </div>
-                                <div class="vd-line-body">
-                                    <div>
-                                        <h3>{{ $line->name }}</h3>
-                                        <p>{{ $line->description ?: 'Alta rapida, cargas y soporte directo.' }}</p>
-                                    </div>
-                                    <div class="vd-line-meta">
-                                        <span>{{ $line->activePlatforms->count() }} plataformas</span>
-                                        <span>
-                                            @include('frontend.components.rating', [
-                                                'rating' => (float) $line->average_rating,
-                                                'count' => $line->ratings_count,
-                                                'showValue' => true,
-                                                'size' => 'sm',
-                                            ])
-                                        </span>
-                                    </div>
-                                    <div class="vd-line-actions">
-                                        @if($lineContact)
-                                            <a href="{{ $contactHref($lineContact) }}" target="_blank" rel="noopener">Jugar ahora</a>
-                                        @endif
-                                        <a href="{{ route('frontend.cajero.lineas.detalle', [$vendor, $line]) }}" wire:navigate>Detalle</a>
-                                        @if($line->activePlatforms->count())
-                                            <a href="{{ route('frontend.cajero.lineas.plataformas', [$vendor, $line]) }}" target="_blank" rel="noopener">Plataformas</a>
-                                        @endif
-                                    </div>
-                                </div>
-                            </article>
+                            @include('frontend.components.line-card', ['line' => $line])
                         @endforeach
                     </div>
                 @else
@@ -248,14 +204,7 @@
                     </div>
                     <div class="vd-mini-list">
                         @forelse($bonuses as $bonus)
-                            <article class="vd-bonus">
-                                <i class="fa-solid fa-star"></i>
-                                <div>
-                                    <strong>{{ $bonus->title }}</strong>
-                                    <span>{{ $bonus->bonus_percent ? number_format((float) $bonus->bonus_percent, 0).'% extra' : ($bonus->bonus_amount ? '$'.number_format((float) $bonus->bonus_amount, 0, ',', '.') : 'Bono disponible') }}</span>
-                                    <em>{{ $bonus->description ?: 'Aprovechalo antes de que termine.' }}</em>
-                                </div>
-                            </article>
+                            @include('frontend.components.bonus-public-card', ['bonus' => $bonus])
                         @empty
                             <div class="vd-empty compact">Sin bonos activos por ahora.</div>
                         @endforelse
