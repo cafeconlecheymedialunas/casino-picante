@@ -19,6 +19,7 @@ use App\Livewire\Frontend\BonusesIndex;
 use App\Livewire\Frontend\BonusShow;
 use App\Livewire\Frontend\ClientAccount;
 use App\Livewire\Frontend\Home;
+use App\Livewire\Frontend\LinePlatforms;
 use App\Livewire\Frontend\LineShow;
 use App\Livewire\Frontend\LinesIndex;
 use App\Livewire\Frontend\PostShow;
@@ -44,44 +45,164 @@ use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/admin/login', Login::class)->name('admin.login')->middleware('guest_or_agent');
-Route::get('/admin/forgot-password', AdminForgotPassword::class)->name('admin.password.request')->middleware('guest_or_agent');
-Route::get('/admin/reset-password/{token}', AdminResetPassword::class)->name('admin.password.reset')->middleware('guest_or_agent');
-Route::get('/login', ClientLogin::class)->name('login')->middleware('guest_or_agent');
-Route::get('/registro', ClientRegister::class)->name('client.register')->middleware('guest_or_agent');
-Route::get('/recuperar-password', ClientForgotPassword::class)->name('client.password.request')->middleware('guest_or_agent');
-Route::get('/recuperar-password/{token}', ClientResetPassword::class)->name('client.password.reset')->middleware('guest_or_agent');
-Route::get('/', Home::class)->name('frontend.home');
-Route::get('/cajeros', VendorsIndex::class)->name('frontend.vendors');
-Route::get('/cajero/{vendor:slug}', VendorDetail::class)->middleware('public.vendor')->name('frontend.vendor.home');
-Route::get('/lineas', LinesIndex::class)->name('frontend.lines');
-Route::get('/lineas/{line}', LineShow::class)->name('frontend.lines.show');
-Route::get('/bonos', BonusesIndex::class)->name('frontend.bonuses');
-Route::get('/bonos/{bonusId}', BonusShow::class)->name('frontend.bonuses.show');
-Route::get('/sorteo', PublicRaffle::class)->name('sorteo.publico');
-Route::get('/sorteos', PublicRaffle::class)->name('frontend.raffles');
-Route::get('/sorteos/{raffleId}', RaffleShow::class)->name('frontend.raffles.show');
-Route::get('/blog', Blog::class)->name('frontend.blog');
-Route::get('/blog/{slug}', PostShow::class)->name('frontend.blog.show');
-Route::get('/mi-cuenta', ClientAccount::class)->middleware('auth')->name('client.account');
+/*
+|--------------------------------------------------------------------------
+| Auth
+|--------------------------------------------------------------------------
+*/
 
-Route::post('/logout', function () {
+Route::get('/admin/login', Login::class)
+    ->name('admin.login')
+    ->middleware('guest_or_agent');
+
+Route::get('/admin/olvide-password', AdminForgotPassword::class)
+    ->name('admin.password.request')
+    ->middleware('guest_or_agent');
+
+Route::get('/admin/restablecer-password/{token}', AdminResetPassword::class)
+    ->name('admin.password.reset')
+    ->middleware('guest_or_agent');
+
+Route::get('/ingresar', ClientLogin::class)
+    ->name('login')
+    ->middleware('guest_or_agent');
+
+Route::get('/registro', ClientRegister::class)
+    ->name('client.register')
+    ->middleware('guest_or_agent');
+
+Route::get('/recuperar-password', ClientForgotPassword::class)
+    ->name('client.password.request')
+    ->middleware('guest_or_agent');
+
+Route::get('/recuperar-password/{token}', ClientResetPassword::class)
+    ->name('client.password.reset')
+    ->middleware('guest_or_agent');
+
+/*
+|--------------------------------------------------------------------------
+| Frontend
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', Home::class)
+    ->name('frontend.home');
+
+/*
+|--------------------------------------------------------------------------
+| Cajeros
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/cajeros', VendorsIndex::class)
+    ->name('frontend.cajeros');
+
+Route::prefix('cajeros/{vendor:slug}')
+    ->middleware('public.vendor')
+    ->name('frontend.cajero.')
+    ->group(function () {
+        Route::get('/', VendorDetail::class)
+            ->name('inicio');
+
+        Route::get('/lineas', LinesIndex::class)
+            ->name('lineas');
+
+        Route::get('/lineas/{line}', LineShow::class)
+            ->name('lineas.detalle');
+
+        Route::get('/lineas/{line}/plataformas', LinePlatforms::class)
+            ->name('lineas.plataformas');
+
+        Route::get('/plataformas', LinePlatforms::class)
+            ->name('plataformas');
+
+        Route::get('/bonos', BonusesIndex::class)
+            ->name('bonos');
+
+        Route::get('/bonos/{bonusId}', BonusShow::class)
+            ->name('bonos.detalle');
+
+        Route::get('/sorteos', PublicRaffle::class)
+            ->name('sorteos');
+
+        Route::get('/sorteos/{raffleId}', RaffleShow::class)
+            ->name('sorteos.detalle');
+
+        Route::get('/blog', Blog::class)
+            ->name('blog');
+
+        Route::get('/blog/{slug}', PostShow::class)
+            ->name('blog.detalle');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Globales
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/lineas', LinesIndex::class)
+    ->name('frontend.lineas');
+
+Route::get('/lineas/{line}', LineShow::class)
+    ->name('frontend.lineas.detalle');
+
+Route::get('/lineas/{line}/plataformas', LinePlatforms::class)
+    ->name('frontend.lineas.plataformas');
+
+Route::get('/plataformas', LinePlatforms::class)
+    ->name('frontend.plataformas');
+
+Route::get('/bonos', BonusesIndex::class)
+    ->name('frontend.bonos');
+
+Route::get('/bonos/{bonusId}', BonusShow::class)
+    ->name('frontend.bonos.detalle');
+
+Route::get('/sorteos', PublicRaffle::class)
+    ->name('frontend.sorteos');
+
+Route::get('/sorteos/{raffleId}', RaffleShow::class)
+    ->name('frontend.sorteos.detalle');
+
+Route::get('/blog', Blog::class)
+    ->name('frontend.blog');
+
+Route::get('/blog/{slug}', PostShow::class)
+    ->name('frontend.blog.detalle');
+
+Route::get('/mi-cuenta', ClientAccount::class)
+    ->middleware('auth')
+    ->name('client.account');
+
+Route::post('/salir', function () {
     Auth::logout();
+
     session()->invalidate();
     session()->regenerateToken();
 
     return redirect()->route('frontend.home');
 })->name('logout');
 
-Route::prefix('admin')->group(function () {
+/*
+|--------------------------------------------------------------------------
+| Admin
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('auth')->group(function () {
-        Route::get('/perfil', [PerfilController::class, 'index'])->name('perfil');
-        Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
-        Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])->name('perfil.password');
+        Route::get('/perfil', [PerfilController::class, 'index'])
+            ->name('perfil');
+
+        Route::put('/perfil', [PerfilController::class, 'update'])
+            ->name('perfil.update');
+
+        Route::put('/perfil/password', [PerfilController::class, 'updatePassword'])
+            ->name('perfil.password');
     });
 
-    // Switch active line only to a line the current panel user can access.
-    Route::post('/session/line/{id}', function (int $id) {
+    Route::post('/sesion/linea/{id}', function (int $id) {
         $user = auth()->user();
 
         if (! $user) {
@@ -90,14 +211,13 @@ Route::prefix('admin')->group(function () {
 
         if ($user->hasRole(Roles::ADMIN)) {
             if (! session('active_vendor_id')) {
-                abort(403, 'Selecciona un vendor antes de operar lineas.');
+                abort(403, 'Selecciona un cajero antes de operar lineas.');
             }
 
             if ($id !== 0) {
-                $query = Line::where('status', 'active')
-                    ->where('vendor_id', session('active_vendor_id'));
-
-                $query->findOrFail($id);
+                Line::where('status', 'active')
+                    ->where('vendor_id', session('active_vendor_id'))
+                    ->findOrFail($id);
             }
 
             session(['active_line_id' => $id ?: null]);
@@ -107,8 +227,11 @@ Route::prefix('admin')->group(function () {
 
         if ($user->hasRole(Roles::CAJERO)) {
             if ($id !== 0) {
-                $line = Line::where('status', 'active')
-                    ->when($user->vendor_id, fn ($q) => $q->where('vendor_id', $user->vendor_id))
+                Line::where('status', 'active')
+                    ->when(
+                        $user->vendor_id,
+                        fn ($q) => $q->where('vendor_id', $user->vendor_id)
+                    )
                     ->findOrFail($id);
             }
 
@@ -122,17 +245,26 @@ Route::prefix('admin')->group(function () {
         }
 
         $agentId = session('active_agent_id') ?: $user->agent?->id;
-        if (! $agentId || ! LineAgent::where('agent_id', $agentId)->where('line_id', $id)->where('is_active', true)->exists()) {
+
+        if (
+            ! $agentId ||
+            ! LineAgent::where('agent_id', $agentId)
+                ->where('line_id', $id)
+                ->where('is_active', true)
+                ->exists()
+        ) {
             abort(403, 'No podes cambiar a una linea que no tenes asignada.');
         }
 
-        session(['active_agent_id' => $agentId]);
-        session(['active_line_id' => $id]);
+        session([
+            'active_agent_id' => $agentId,
+            'active_line_id' => $id,
+        ]);
 
         return back();
     })->middleware('auth')->name('session.line');
 
-    Route::post('/session/vendor/{id}', function (int $id) {
+    Route::post('/sesion/cajero/{id}', function (int $id) {
         $user = auth()->user();
 
         if (! $user) {
@@ -140,28 +272,21 @@ Route::prefix('admin')->group(function () {
         }
 
         if (! $user->hasRole(Roles::ADMIN)) {
-            abort(403, 'Solo el administrador general puede cambiar de vendor.');
+            abort(403, 'Solo el administrador puede cambiar de cajero.');
         }
 
         if ($id === 0) {
-            \Illuminate\Support\Facades\Log::channel('daily')->info('Admin switched to global view', [
-                'user_id' => $user->id,
-                'previous_vendor_id' => session('active_vendor_id'),
+            session()->forget([
+                'active_vendor_id',
+                'active_line_id',
             ]);
 
-            session()->forget(['active_vendor_id', 'active_line_id']);
-
-            return redirect()->route('admin.vendors');
+            return redirect()->route('admin.cajeros');
         }
 
-        $vendor = Vendor::query()->where('is_active', true)->findOrFail($id);
-
-        \Illuminate\Support\Facades\Log::channel('daily')->info('Admin switched vendor context', [
-            'user_id' => $user->id,
-            'previous_vendor_id' => session('active_vendor_id'),
-            'new_vendor_id' => $id,
-            'vendor_name' => $vendor->name,
-        ]);
+        Vendor::query()
+            ->where('is_active', true)
+            ->findOrFail($id);
 
         session([
             'active_vendor_id' => $id,
@@ -171,52 +296,89 @@ Route::prefix('admin')->group(function () {
         return back();
     })->middleware(['auth', 'admin'])->name('session.vendor');
 
-    // Dashboard – no line restriction (admin mode passes through)
     Route::middleware('line.authorize')->group(function () {
-        Route::get('/dashboard', Overview::class)->middleware('line.authorize:'.Permissions::DASHBOARD_READ)->name('dashboard');
-        Route::get('/clientes', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('clientes');
-        Route::get('/usuarios', UsersIndex::class)->middleware('line.authorize:'.Permissions::USER_READ)->name('users.index');
-        Route::get('/agentes', Agentes::class)->middleware('line.authorize:'.implode('|', [
-            Permissions::AGENT_CREATE,
-            Permissions::AGENT_ASSIGN,
-            Permissions::AGENT_UPDATE,
-            Permissions::AGENT_PERMISSIONS,
-        ]))->name('agentes');
-        Route::get('/chats', Chats::class)->middleware('line.authorize:'.implode('|', [
-            Permissions::TICKET_READ,
-            Permissions::USER_READ,
-        ]))->name('chats');
-        Route::get('/platforms', PlatformsMaster::class)->middleware('panel.owner')->name('platforms.master');
-        Route::get('/ventas/{line?}', Ventas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('ventas');
+        Route::get('/dashboard', Overview::class)
+            ->middleware('line.authorize:' . Permissions::DASHBOARD_READ)
+            ->name('dashboard');
 
-        Route::get('/lineas', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_READ)->name('lineas');
-        Route::get('/lineas/{id}/edit', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('lineas.edit');
-        Route::get('/lineas/{id}', LineDetail::class)->middleware('line.authorize')->name('lineas.detail');
+        Route::get('/clientes', UsersIndex::class)
+            ->middleware('line.authorize:' . Permissions::USER_READ)
+            ->name('clientes');
 
-        Route::middleware('line.authorize:'.Permissions::NEWS_READ)->group(function () {
-            Route::get('/novedades', Novedades::class)->name('novedades');
-        });
+        Route::get('/usuarios', UsersIndex::class)
+            ->middleware('line.authorize:' . Permissions::USER_READ)
+            ->name('usuarios');
 
-        Route::middleware('line.authorize:'.Permissions::NEWS_UPDATE)->group(function () {
-            Route::get('/blog/{id}/edit', BlogEdit::class)->name('blog.edit');
-        });
+        Route::get('/agentes', Agentes::class)
+            ->middleware('line.authorize:' . implode('|', [
+                Permissions::AGENT_CREATE,
+                Permissions::AGENT_ASSIGN,
+                Permissions::AGENT_UPDATE,
+                Permissions::AGENT_PERMISSIONS,
+            ]))
+            ->name('agentes');
 
-        Route::middleware('line.authorize:'.Permissions::BONO_READ)->group(function () {
-            Route::get('/bonos', Bonos::class)->name('bonos');
-        });
+        Route::get('/chats', Chats::class)
+            ->middleware('line.authorize:' . implode('|', [
+                Permissions::TICKET_READ,
+                Permissions::USER_READ,
+            ]))
+            ->name('chats');
 
-        Route::match(['get', 'post'], '/editor-home', EditorHome::class)->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home');
-        Route::post('/editor-home/save-section', [HomeSectionController::class, 'saveSection'])->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home.save');
+        Route::get('/plataformas', PlatformsMaster::class)
+            ->middleware('panel.owner')
+            ->name('plataformas');
 
-        Route::get('/tickets', Tickets::class)->middleware('line.authorize')->name('tickets');
+        Route::get('/ventas/{line?}', Ventas::class)
+            ->middleware('line.authorize:' . Permissions::LINE_EDIT)
+            ->name('ventas');
 
-        Route::middleware('line.authorize:'.Permissions::SORTEO_READ)->group(function () {
-            Route::get('/sorteos', Sorteos::class)->name('sorteos');
-        });
+        Route::get('/lineas', Lineas::class)
+            ->middleware('line.authorize:' . Permissions::LINE_READ)
+            ->name('lineas');
 
-        // Settings – admin only
-        Route::get('/settings', Settings::class)->middleware('panel.owner')->name('settings');
+        Route::get('/lineas/{id}/editar', Lineas::class)
+            ->middleware('line.authorize:' . Permissions::LINE_EDIT)
+            ->name('lineas.editar');
+
+        Route::get('/lineas/{id}', LineDetail::class)
+            ->middleware('line.authorize')
+            ->name('lineas.detalle');
+
+        Route::get('/novedades', Novedades::class)
+            ->middleware('line.authorize:' . Permissions::NEWS_READ)
+            ->name('novedades');
+
+        Route::get('/blog/{id}/editar', BlogEdit::class)
+            ->middleware('line.authorize:' . Permissions::NEWS_UPDATE)
+            ->name('blog.editar');
+
+        Route::get('/bonos', Bonos::class)
+            ->middleware('line.authorize:' . Permissions::BONO_READ)
+            ->name('bonos');
+
+        Route::match(['get', 'post'], '/editor-inicio', EditorHome::class)
+            ->middleware('line.authorize:' . Permissions::HOME_EDIT)
+            ->name('editor.inicio');
+
+        Route::post('/editor-inicio/guardar-seccion', [HomeSectionController::class, 'saveSection'])
+            ->middleware('line.authorize:' . Permissions::HOME_EDIT)
+            ->name('editor.inicio.guardar');
+
+        Route::get('/tickets', Tickets::class)
+            ->middleware('line.authorize')
+            ->name('tickets');
+
+        Route::get('/sorteos', Sorteos::class)
+            ->middleware('line.authorize:' . Permissions::SORTEO_READ)
+            ->name('sorteos');
+
+        Route::get('/configuracion', Settings::class)
+            ->middleware('panel.owner')
+            ->name('configuracion');
     });
 
-    Route::get('/vendors', \App\Livewire\Admin\Vendors\VendorsIndex::class)->middleware('admin')->name('admin.vendors');
+    Route::get('/cajeros', \App\Livewire\Admin\Vendors\VendorsIndex::class)
+        ->middleware('admin')
+        ->name('cajeros');
 });
