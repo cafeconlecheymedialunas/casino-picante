@@ -133,6 +133,17 @@ Route::prefix('cajeros/{vendor:slug}')
 
         Route::get('/blog/{slug}', PostShow::class)
             ->name('blog.detalle');
+
+        Route::get('/agentes', function (App\Models\Vendor $vendor) {
+            $agents = \App\Models\Agent::whereHas('lines', function ($q) use ($vendor) {
+                $q->where('vendor_id', $vendor->id);
+            })->get();
+
+            return view('frontend.pages.vendor-agents', [
+                'vendor' => $vendor,
+                'agents' => $agents,
+            ]);
+        })->name('agentes');
     });
 
 /*

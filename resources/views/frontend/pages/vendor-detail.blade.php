@@ -16,9 +16,34 @@
     $portraitImageUrl = $assetUrl($vendor->portrait_image) ?: $logoUrl;
     $primaryContact = $contacts->first();
     $primaryContactUrl = $primaryContact['value'] ?? null;
-    $displayName = trim(($cajero?->name ?? '').' '.($cajero?->apellido ?? '')) ?: $vendor->name;
-    $phone = $cajero?->phone ?: ($primaryContact['value'] ?? null);
-    $rating = $averageRating > 0 ? $averageRating : 4.9;
+    $cajeroDisplayName = trim(($cajero?->name ?? '').' '.($cajero?->apellido ?? ''));
+    $displayName = $cajeroDisplayName ?: $vendor->name;
+    $phone = $cajero?->phone;
+    $rating = (float) $averageRating;
+    $vendorFeatures = collect($vendor->features ?? [])
+        ->filter(fn ($feature) => filled($feature['title'] ?? null))
+        ->map(fn ($feature) => [
+            'icon' => trim((string) ($feature['icon'] ?? 'fa-solid fa-star')) ?: 'fa-solid fa-star',
+            'title' => trim((string) ($feature['title'] ?? '')),
+            'description' => trim((string) ($feature['description'] ?? '')),
+        ])
+        ->values();
+
+    $profileData = collect([
+        ['label' => 'Nombre publico', 'value' => $vendor->name],
+        ['label' => 'Slug', 'value' => $vendor->slug],
+        ['label' => 'Usuario', 'value' => $cajero?->username],
+        ['label' => 'Email', 'value' => $cajero?->email],
+        ['label' => 'Telefono', 'value' => $phone],
+    ])->filter(fn ($item) => filled($item['value'] ?? null));
+
+    $benefits = $vendorFeatures->isNotEmpty()
+        ? $vendorFeatures
+        : collect([
+            ['icon' => 'fa-solid fa-bolt', 'title' => 'Pagos rapidos', 'description' => 'Cargas y retiros al instante.'],
+            ['icon' => 'fa-solid fa-lock', 'title' => '100% confiable', 'description' => 'Operacion clara y segura.'],
+            ['icon' => 'fa-solid fa-headset', 'title' => 'Atencion 24/7', 'description' => 'Soporte cuando lo necesites.'],
+        ]);
 
     $channelIcons = [
         'wsp' => 'fa-brands fa-whatsapp',
@@ -90,9 +115,13 @@
                     <p class="vd-lead">{{ $vendor->description ?: 'Atencion personalizada, pagos rapidos y lineas listas para que empieces a jugar sin vueltas.' }}</p>
 
                     <div class="vd-benefits">
-                        <div><i class="fa-solid fa-bolt"></i><strong>Pagos rapidos</strong><span>Cargas y retiros al instante.</span></div>
-                        <div><i class="fa-solid fa-lock"></i><strong>100% confiable</strong><span>Operacion clara y segura.</span></div>
-                        <div><i class="fa-solid fa-headset"></i><strong>Atencion 24/7</strong><span>Soporte cuando lo necesites.</span></div>
+                        @foreach($benefits as $benefit)
+                            <div>
+                                <i class="{{ $benefit['icon'] }}"></i>
+                                <strong>{{ $benefit['title'] }}</strong>
+                                <span>{{ $benefit['description'] }}</span>
+                            </div>
+                        @endforeach
                     </div>
 
                     <div class="vd-actions">
@@ -110,27 +139,31 @@
 
                     <aside class="vd-profile-card">
                         <div class="vd-avatar">
-                            @php
-                            var_dump($vendor->features);
-                            @endphp
                             @if($portraitImageUrl)
                                 <img src="{{ $portraitImageUrl }}" alt="{{ $vendor->name }}">
                             @endif
                         </div>
                         <div>
                             <h2>{{ $displayName }}</h2>
-                            <p>{{ $vendor->username }}</p>
-                            @if($vendor->email)
-                                <div><dt>Email</dt><dd>{{ $vendor->email }}</dd></div>  
-                            @endif
-                            @if($phone)
-                                <div><dt>Telefono</dt><dd>{{ $phone }}</dd></div>
+                            @if(filled($cajero?->username))
+                                <p>{{ $cajero->username }}</p>
                             @endif
                         </div>
+                        @if($profileData->isNotEmpty())
+                            <dl class="vd-profile-data">
+                                @foreach($profileData as $item)
+                                    <div><dt>{{ $item['label'] }}</dt><dd>{{ $item['value'] }}</dd></div>
+                                @endforeach
+                            </dl>
+                        @endif
                         <div class="vd-rating">
                             <span>Calificacion</span>
-                            <strong>★★★★★</strong>
-                            <em>{{ number_format($rating, 1) }} ({{ $ratingsCount ?: 125 }})</em>
+                            @include('frontend.components.rating', [
+                                'rating' => $rating,
+                                'count' => $ratingsCount,
+                                'showValue' => true,
+                                'size' => 'sm',
+                            ])
                         </div>
                     </aside>
                 </div>
@@ -146,7 +179,7 @@
                         <p>Lineas disponibles</p>
                         <h2>{{ $lines->count() }} lineas para jugar</h2>
                     </div>
-                    <a href="{{ route('frontend.lines') }}" wire:navigate>Ver todas</a>
+                    <a href="{{ route('frontend.cajero.lineas', $vendor) }}" wire:navigate>Ver todas</a>
                 </div>
 
                 @if($lines->count())
@@ -177,13 +210,23 @@
                                     </div>
                                     <div class="vd-line-meta">
                                         <span>{{ $line->activePlatforms->count() }} plataformas</span>
-                                        <span>{{ number_format((float) ($line->average_rating ?: 4.8), 1) }} ★</span>
+                                        <span>
+                                            @include('frontend.components.rating', [
+                                                'rating' => (float) $line->average_rating,
+                                                'count' => $line->ratings_count,
+                                                'showValue' => true,
+                                                'size' => 'sm',
+                                            ])
+                                        </span>
                                     </div>
                                     <div class="vd-line-actions">
                                         @if($lineContact)
                                             <a href="{{ $contactHref($lineContact) }}" target="_blank" rel="noopener">Jugar ahora</a>
                                         @endif
                                         <a href="{{ route('frontend.lines.show', $line) }}" wire:navigate>Detalle</a>
+                                        @if($line->activePlatforms->count())
+                                            <a href="{{ route('frontend.vendor.lines.platforms', [$vendor, $line]) }}" target="_blank" rel="noopener">Plataformas</a>
+                                        @endif
                                     </div>
                                 </div>
                             </article>
@@ -201,6 +244,7 @@
                             <p>Bonos exclusivos</p>
                             <h2>Beneficios activos</h2>
                         </div>
+                        <a href="{{ route('frontend.cajero.bonos', $vendor) }}" wire:navigate>Ver todas</a>
                     </div>
                     <div class="vd-mini-list">
                         @forelse($bonuses as $bonus)
@@ -224,6 +268,7 @@
                             <p>Sorteos activos</p>
                             <h2>Premios vigentes</h2>
                         </div>
+                        <a href="{{ route('frontend.cajero.sorteos', $vendor) }}" wire:navigate>Ver todas</a>
                     </div>
                     <div class="vd-mini-list">
                         @forelse($raffles as $raffle)
@@ -232,7 +277,7 @@
                                 <div>
                                     <strong>{{ $raffle->title }}</strong>
                                     <span>Finaliza {{ $raffle->end_date->format('d/m H:i') }}</span>
-                                    <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate>Participar ahora</a>
+                                    <a href="{{ route('frontend.cajero.sorteos.detalle', [$vendor, $raffle->id]) }}" wire:navigate>Participar ahora</a>
                                 </div>
                             </article>
                         @empty
@@ -244,6 +289,17 @@
         </main>
 
         <aside class="vd-side-stack">
+            <section class="vd-panel">
+                <div class="vd-panel-head">
+                    <div>
+                        <p>Agentes</p>
+                        <h2>Equipo</h2>
+                    </div>
+                    <a href="{{ route('frontend.cajero.agentes', $vendor) }}" wire:navigate>Ver agentes</a>
+                </div>
+                <div class="vd-empty compact">Ver agentes del cajero</div>
+            </section>
+
             <section class="vd-panel">
                 <div class="vd-panel-head">
                     <div>
@@ -271,22 +327,6 @@
                 </div>
             </section>
 
-            <section class="vd-panel vd-data-card">
-                <div class="vd-panel-head">
-                    <div>
-                        <p>Datos del cajero</p>
-                        <h2>Ficha</h2>
-                    </div>
-                </div>
-                <dl>
-                    <div><dt>Nombre publico</dt><dd>{{ $vendor->name }}</dd></div>
-                    <div><dt>Slug</dt><dd>{{ $vendor->slug }}</dd></div>
-                    <div><dt>Usuario</dt><dd>{{ $cajero?->username ?: 'No asignado' }}</dd></div>
-                    <div><dt>Email</dt><dd>{{ $cajero?->email ?: 'No publicado' }}</dd></div>
-                    <div><dt>Telefono</dt><dd>{{ $phone ?: 'No publicado' }}</dd></div>
-                    <div><dt>Estado</dt><dd>{{ $vendor->is_active ? 'Activo' : 'Inactivo' }}</dd></div>
-                </dl>
-            </section>
         </aside>
     </section>
 
@@ -346,6 +386,10 @@
     .vd-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .vd-profile-card h2 { margin: 0; font-size: 26px; line-height: 1; }
     .vd-profile-card p { margin: 5px 0 18px; color: var(--orange); font-size: 12px; font-weight: 900; }
+    .vd-profile-data { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .vd-profile-data div { min-width: 0; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: rgba(255,255,255,.045); padding: 9px 10px; }
+    .vd-profile-data dt { color: rgba(255,255,255,.48); font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: .07em; }
+    .vd-profile-data dd { margin: 3px 0 0; color: #fff; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
     .vd-profile-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; color: rgba(255,255,255,.76); font-size: 12px; font-weight: 800; }
     .vd-profile-list li { display: flex; align-items: center; gap: 10px; }
     .vd-profile-list i { color: var(--orange); width: 16px; }
@@ -388,10 +432,6 @@
     .vd-contact strong { font-size: 12px; }
     .vd-contact em { color: rgba(255,255,255,.52); font-size: 10px; font-style: normal; margin-top: 2px; }
     .vd-contact b { color: var(--orange); font-size: 10px; }
-    .vd-data-card dl { margin: 0; display: grid; gap: 10px; }
-    .vd-data-card dl div { border-bottom: 1px solid rgba(255,255,255,.08); padding-bottom: 9px; }
-    .vd-data-card dt { color: rgba(255,255,255,.48); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-    .vd-data-card dd { margin: 4px 0 0; color: #fff; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
     .vd-empty { border: 1px dashed rgba(255,255,255,.12); border-radius: 8px; padding: 18px; color: rgba(255,255,255,.6); font-size: 13px; text-align: center; }
     .vd-empty.compact { padding: 12px; font-size: 12px; }
     .vd-trust-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 14px; border: 1px solid var(--vd-stroke); border-radius: 8px; background: rgba(255,255,255,.05); overflow: hidden; }
@@ -417,6 +457,7 @@
         .vd-visual-stack::before { width: min(310px, 82vw); top: 46px; }
         .vd-portrait { height: 340px; width: min(300px, 92%); }
         .vd-profile-card { margin-top: -24px; }
+        .vd-profile-data { grid-template-columns: 1fr; }
         .vd-benefits, .vd-split, .vd-side-stack, .vd-trust-row { grid-template-columns: 1fr; }
         .vd-lines-grid { grid-template-columns: 1fr; }
         .vd-actions .vd-btn { width: 100%; }
