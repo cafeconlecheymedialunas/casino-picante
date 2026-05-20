@@ -12,6 +12,10 @@ class ImageStorage
     {
         self::delete($oldPath);
 
+        if ($vendorId = session('active_vendor_id')) {
+            $directory = 'vendors/'.(int) $vendorId.'/'.trim($directory, '/');
+        }
+
         return '/storage/'.$file->store($directory, 'public');
     }
 

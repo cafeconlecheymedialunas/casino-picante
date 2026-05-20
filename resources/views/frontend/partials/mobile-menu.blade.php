@@ -1,5 +1,6 @@
 <nav class="fe-mobile-menu" data-fe-mobile-menu aria-label="Navegacion movil">
     <a href="{{ route('frontend.home') }}" wire:navigate>Inicio</a>
+    <a href="{{ route('frontend.vendors') }}" wire:navigate>Cajeros</a>
     <a href="{{ route('frontend.lines') }}" wire:navigate>Lineas de atencion</a>
     <a href="{{ route('frontend.bonuses') }}" wire:navigate>Bonos</a>
     <a href="{{ route('frontend.raffles') }}" wire:navigate>Sorteo</a>
@@ -8,7 +9,7 @@
         @if(auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
             <a href="{{ route('client.account') }}" wire:navigate>Mi cuenta</a>
         @endif
-        @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE))
+        @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE) || auth()->user()?->hasRole(\App\Support\Roles::CAJERO))
             <a href="{{ route('dashboard') }}" wire:navigate>Panel</a>
         @endif
         <form method="POST" action="{{ route('logout') }}" style="display:inline">

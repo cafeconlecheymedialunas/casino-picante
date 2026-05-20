@@ -135,6 +135,58 @@
         .ap-claim-btn:hover { background:var(--orange);color:#190702;border-color:var(--orange); }
         .btn-badge { position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:var(--orange);color:#190702;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center; }
         .btn-icon { position:relative; }
+
+        [data-dashboard-theme="light"] .bonus-page .stat-card,
+        [data-dashboard-theme="light"] .bonus-page .table-card,
+        [data-dashboard-theme="light"] .bonus-page .modal-panel,
+        [data-dashboard-theme="light"] .bonus-page .ap-panel {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .bonus-page .table-top,
+        [data-dashboard-theme="light"] .bonus-page .modal-head,
+        [data-dashboard-theme="light"] .bonus-page .ap-head {
+            background: rgba(255,250,243,.94) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .bonus-page .t-head {
+            background: rgba(244,234,220,.88) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .bonus-page .t-row,
+        [data-dashboard-theme="light"] .bonus-page .ap-row {
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .bonus-page .t-row:hover,
+        [data-dashboard-theme="light"] .bonus-page .ap-row:hover {
+            background: rgba(255,106,26,.08) !important;
+        }
+        [data-dashboard-theme="light"] .bonus-page .search-input,
+        [data-dashboard-theme="light"] .bonus-page .filter-select,
+        [data-dashboard-theme="light"] .bonus-page .form-input {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
+        [data-dashboard-theme="light"] .bonus-page .btn-icon,
+        [data-dashboard-theme="light"] .bonus-page .btn-soft,
+        [data-dashboard-theme="light"] .bonus-page .type-btn,
+        [data-dashboard-theme="light"] .bonus-page .b-inactive,
+        [data-dashboard-theme="light"] .bonus-page .ms-dropdown,
+        [data-dashboard-theme="light"] .bonus-page .ms-option,
+        [data-dashboard-theme="light"] .bonus-page .ap-badge.expired {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .bonus-page .ms-option:hover,
+        [data-dashboard-theme="light"] .bonus-page .ms-option.selected {
+            background: rgba(255,106,26,.10) !important;
+            color: var(--orange) !important;
+        }
     </style>
 
 @section('header')

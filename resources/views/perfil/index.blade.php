@@ -28,6 +28,35 @@
         .form-input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,106,26,.12); }
         .section-title { color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; margin:0 0 14px; }
         .flash-message { background:rgba(37,196,107,.12); border:1px solid var(--good); border-radius:8px; padding:12px 16px; color:var(--good); font-size:13px; font-weight:700; }
+
+        [data-dashboard-theme="light"] .profile-card {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .profile-tabs {
+            background: rgba(255,250,243,.94) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .profile-tabs label {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] #tab-profile:checked ~ .profile-card .tabs-profile,
+        [data-dashboard-theme="light"] #tab-security:checked ~ .profile-card .tabs-security,
+        [data-dashboard-theme="light"] #tab-chats:checked ~ .profile-card .tabs-chats {
+            background: rgba(255,106,26,.12) !important;
+            border-color: var(--orange) !important;
+            color: var(--orange-deep) !important;
+        }
+        [data-dashboard-theme="light"] .form-input {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
         @media (max-width:860px) { .form-grid { grid-template-columns:1fr; } .profile-tabs { overflow-x:auto; } }
     </style>
 

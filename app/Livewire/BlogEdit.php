@@ -58,6 +58,7 @@ class BlogEdit extends Component
     {
         $this->checkLinePermission(Permissions::NEWS_UPDATE);
         $this->post = Post::findOrFail($id);
+        $this->authorizeVendorRecord($this->post);
 
         $this->title = $this->post->title;
         $this->content = $this->post->content ?? '';
@@ -78,6 +79,7 @@ class BlogEdit extends Component
             ...$this->rules,
             'imageUpload' => 'nullable|image|max:4096',
         ]);
+        $this->authorizeCategoryChoice($this->category_id);
         $this->authorizeAuthorChoice($this->author_agent_id);
 
         $imagePath = $this->image;
@@ -142,6 +144,7 @@ class BlogEdit extends Component
         $this->validate(['replyContent' => 'required|string|min:1|max:2000']);
 
         $parent = Comment::findOrFail($this->replyTo);
+        abort_unless((int) $parent->post_id === (int) $this->post->id, 403, 'No podes responder comentarios de otro post.');
 
         Comment::create([
             'post_id' => $parent->post_id,
@@ -159,14 +162,18 @@ class BlogEdit extends Component
     public function approveComment(int $commentId): void
     {
         $this->checkLinePermission(Permissions::NEWS_UPDATE);
-        Comment::findOrFail($commentId)->update(['is_approved' => true]);
+        $comment = Comment::findOrFail($commentId);
+        abort_unless((int) $comment->post_id === (int) $this->post->id, 403, 'No podes moderar comentarios de otro post.');
+        $comment->update(['is_approved' => true]);
         $this->refreshComments();
     }
 
     public function deleteComment(int $commentId): void
     {
         $this->checkLinePermission(Permissions::NEWS_DELETE);
-        Comment::findOrFail($commentId)->delete();
+        $comment = Comment::findOrFail($commentId);
+        abort_unless((int) $comment->post_id === (int) $this->post->id, 403, 'No podes moderar comentarios de otro post.');
+        $comment->delete();
         $this->refreshComments();
     }
 
@@ -207,6 +214,7 @@ class BlogEdit extends Component
     private function availableAuthors()
     {
         $query = Agent::orderBy('name');
+        $query->when(session('active_vendor_id'), fn ($q, $vendorId) => $q->where('vendor_id', (int) $vendorId));
         $lineIds = $this->visibleLineIds();
 
         if ($lineIds !== null) {
@@ -231,5 +239,23 @@ class BlogEdit extends Component
             ->contains((int) $authorAgentId);
 
         abort_unless($allowed, 403, 'No podes asignar un autor fuera de tu alcance.');
+    }
+
+    private function authorizeCategoryChoice($categoryId): void
+    {
+        if (! $categoryId || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(Category::whereKey((int) $categoryId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
+    }
+
+    private function authorizeVendorRecord($model): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless((int) $model->vendor_id === (int) session('active_vendor_id'), 403, 'No podes operar contenido fuera del vendor activo.');
     }
 }

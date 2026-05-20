@@ -23,7 +23,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('line_id')->constrained()->cascadeOnDelete();
             $table->foreignId('agent_id')->constrained()->cascadeOnDelete();
-            $table->string('permission'); // resource.action, e.g. "promo.create"
+            $table->string('permission'); // resource.action, e.g. "bono.create"
             $table->unique(['line_id', 'agent_id', 'permission'], 'lap_unique');
         });
     }

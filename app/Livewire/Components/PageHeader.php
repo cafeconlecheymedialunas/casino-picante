@@ -57,7 +57,7 @@ class PageHeader extends Component
 
         $notifications = $this->notificationsQuery()->latest()->take(8)->get();
         $unreadCount = $this->notificationsQuery()->whereNull('read_at')->count();
-        $canOpenSettings = $currentUser?->hasRole(Roles::ADMIN) ?? false;
+        $canOpenSettings = ($currentUser?->hasRole(Roles::ADMIN) || $currentUser?->hasRole(Roles::CAJERO)) ?? false;
 
         return view('livewire.components.page-header', compact(
             'displayName',

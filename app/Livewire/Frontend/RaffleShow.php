@@ -15,6 +15,7 @@ class RaffleShow extends Component
     {
         $this->raffle = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform', 'winner'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->findOrFail($raffleId);
     }
 

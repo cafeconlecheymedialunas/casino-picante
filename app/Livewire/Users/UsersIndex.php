@@ -333,6 +333,7 @@ class UsersIndex extends Component
 
         foreach ($lineIds as $lineId) {
             DB::table('line_clients')->insert([
+                'vendor_id' => session('active_vendor_id') ?: Line::find($lineId)?->vendor_id,
                 'line_id' => $lineId,
                 'user_id' => $userId,
                 'is_active' => $status === 'active',
@@ -434,7 +435,7 @@ class UsersIndex extends Component
 
     private function authorizeSelectedLines(): void
     {
-        if ($this->isAdminMode()) {
+        if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
         }
 
@@ -443,6 +444,8 @@ class UsersIndex extends Component
             ->filter()
             ->map(fn ($lineId) => (int) $lineId)
             ->unique();
+
+        $selected->each(fn ($lineId) => $this->ensureLineMatchesActiveVendor($lineId, 'No podes asignar clientes a lineas fuera del vendor activo.'));
 
         if ($selected->diff($this->availableLineIds())->isNotEmpty()) {
             abort(403, 'No podes asignar clientes a lineas fuera de tu alcance.');

@@ -74,6 +74,41 @@
         .modal-head { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; border-bottom:1px solid var(--line); }
         .modal-head h3 { margin:0; font-family:var(--font-display); font-size:24px; letter-spacing:.03em; }
         .modal-close { width:32px; height:32px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer; }
+
+        [data-dashboard-theme="light"] .stat-card,
+        [data-dashboard-theme="light"] .modal-panel,
+        [data-dashboard-theme="light"] .sales-table {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .sales-row.head,
+        [data-dashboard-theme="light"] .modal-head {
+            background: rgba(244,234,220,.88) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .sales-row {
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .sales-row:hover {
+            background: rgba(255,106,26,.08) !important;
+        }
+        [data-dashboard-theme="light"] .input,
+        [data-dashboard-theme="light"] .form-input,
+        [data-dashboard-theme="light"] .filter-select {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
+        [data-dashboard-theme="light"] .btn-icon,
+        [data-dashboard-theme="light"] .btn-soft,
+        [data-dashboard-theme="light"] .modal-close {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+            border-color: var(--line) !important;
+        }
         .modal-form { padding:22px; }
         .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
         .form-group { margin-bottom:14px; }

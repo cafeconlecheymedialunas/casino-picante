@@ -4,14 +4,6 @@ namespace App\Support;
 
 final class Permissions
 {
-    public const PROMO_READ = 'promo.read';
-
-    public const PROMO_CREATE = 'promo.create';
-
-    public const PROMO_UPDATE = 'promo.update';
-
-    public const PROMO_DELETE = 'promo.delete';
-
     public const TICKET_READ = 'ticket.read';
 
     public const TICKET_UPDATE = 'ticket.update';
@@ -81,11 +73,6 @@ final class Permissions
     {
         return [
             self::DASHBOARD_READ => ['fa-solid fa-chart-line',     'Ver dashboard'],
-            // Promociones
-            self::PROMO_READ => ['fa-solid fa-tags',             'Ver promociones'],
-            self::PROMO_CREATE => ['fa-solid fa-tag',              'Crear promociones'],
-            self::PROMO_UPDATE => ['fa-solid fa-pen-to-square',    'Editar promociones'],
-            self::PROMO_DELETE => ['fa-solid fa-trash',            'Eliminar promociones'],
             // Tickets
             self::TICKET_READ => ['fa-solid fa-ticket',           'Ver tickets'],
             self::TICKET_UPDATE => ['fa-solid fa-ticket-simple',    'Editar tickets'],
@@ -125,7 +112,6 @@ final class Permissions
     public static function catalog(): array
     {
         return [
-            'promo' => [self::PROMO_READ, self::PROMO_CREATE, self::PROMO_UPDATE, self::PROMO_DELETE],
             'ticket' => [self::TICKET_READ, self::TICKET_UPDATE, self::TICKET_CLOSE],
             'line' => [self::LINE_READ, self::LINE_EDIT],
             'agent' => [self::AGENT_CREATE, self::AGENT_READ, self::AGENT_ASSIGN, self::AGENT_UPDATE, self::AGENT_PERMISSIONS],

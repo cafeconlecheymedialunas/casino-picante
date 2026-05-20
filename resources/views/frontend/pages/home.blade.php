@@ -170,7 +170,7 @@
                     <div class="fe-kicker">{{ $sections['nosotros']['kicker'] ?? 'Sobre RED PICANTES' }}</div>
                     <h2 class="about-title">{{ $sections['nosotros']['title'] ?? 'Casino online con atencion' }} <span>{{ $sections['nosotros']['highlight'] ?? 'real' }}</span></h2>
                     <p class="about-copy">
-                        {{ $sections['nosotros']['subtitle'] ?? 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.' }}
+                        {{ $sections['nosotros']['subtitle'] ?? 'Una experiencia pensada para jugar facil: acceso rapido, bonos claros, sorteos activos y soporte humano para acompaniarte.' }}
                     </p>
                 </div>
                 <div class="about-features">
@@ -190,7 +190,7 @@
     <section id="bonos" class="fe-section">
         <div class="fe-shell">
             @include('frontend.components.section-header', [
-                'kicker' => $sections['bonos']['kicker'] ?? 'Promos para jugar mas',
+                'kicker' => $sections['bonos']['kicker'] ?? 'Bonos para jugar mas',
                 'title' => $sections['bonos']['title'] ?? 'Bonos',
                 'highlight' => $sections['bonos']['highlight'] ?? 'activos',
                 'subtitle' => $sections['bonos']['subtitle'] ?? 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
@@ -223,7 +223,7 @@
                 'kicker' => $sections['blog']['kicker'] ?? 'Noticias y jugadas',
                 'title' => $sections['blog']['title'] ?? '',
                 'highlight' => $sections['blog']['highlight'] ?? 'Novedades',
-                'subtitle' => $sections['blog']['subtitle'] ?? 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.',
+                'subtitle' => $sections['blog']['subtitle'] ?? 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.',
                 'action' => '<a class="fe-btn ghost" href="'.route('frontend.blog').'" wire:navigate>Ver novedades</a>',
             ])
 

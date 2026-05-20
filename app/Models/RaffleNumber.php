@@ -2,15 +2,23 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 
 class RaffleNumber extends Model
 {
-    protected $fillable = ['raffle_id', 'user_id', 'line_id', 'number'];
+    use HasVendorScope;
+
+    protected $fillable = ['vendor_id', 'raffle_id', 'user_id', 'line_id', 'number'];
 
     public function raffle()
     {
         return $this->belongsTo(Raffle::class);
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function user()

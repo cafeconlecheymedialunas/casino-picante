@@ -2,18 +2,29 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use App\Support\Permissions;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class LineAgent extends Model
 {
-    protected $fillable = ['line_id', 'agent_id', 'role', 'is_active', 'parent_id', 'porcentaje_ganancia'];
+    use HasVendorScope;
+
+    protected $fillable = ['vendor_id', 'line_id', 'agent_id', 'role', 'is_active', 'parent_id', 'porcentaje_ganancia'];
 
     protected $casts = ['is_active' => 'boolean'];
+
+    protected $permissionsCache = [];
 
     public function line()
     {
         return $this->belongsTo(Line::class);
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function agent()
@@ -34,10 +45,14 @@ class LineAgent extends Model
 
     public function getPermissionsListAttribute(): array
     {
-        return LineAgentPermission::where('line_id', $this->line_id)
-            ->where('agent_id', $this->agent_id)
-            ->pluck('permission')
-            ->toArray();
+        $cacheKey = "line_agent_permissions:{$this->line_id}:{$this->agent_id}";
+
+        return Cache::remember($cacheKey, 300, function () {
+            return LineAgentPermission::where('line_id', $this->line_id)
+                ->where('agent_id', $this->agent_id)
+                ->pluck('permission')
+                ->toArray();
+        });
     }
 
     public function hasPermission(string $permission): bool
@@ -46,19 +61,25 @@ class LineAgent extends Model
             return false;
         }
 
-        return LineAgentPermission::where('line_id', $this->line_id)
-            ->where('agent_id', $this->agent_id)
-            ->where('permission', $permission)
-            ->exists();
+        if (! isset($this->permissionsCache[$this->line_id])) {
+            $this->permissionsCache[$this->line_id] = $this->getPermissionsListAttribute();
+        }
+
+        return in_array($permission, $this->permissionsCache[$this->line_id], true);
     }
 
     public function grantPermission(string $permission): void
     {
-        LineAgentPermission::firstOrCreate([
-            'line_id' => $this->line_id,
-            'agent_id' => $this->agent_id,
-            'permission' => $permission,
-        ]);
+        LineAgentPermission::firstOrCreate(
+            [
+                'line_id' => $this->line_id,
+                'agent_id' => $this->agent_id,
+                'permission' => $permission,
+            ],
+            ['vendor_id' => $this->vendor_id]
+        );
+
+        $this->clearPermissionsCache();
     }
 
     public function revokePermission(string $permission): void
@@ -67,6 +88,8 @@ class LineAgent extends Model
             ->where('agent_id', $this->agent_id)
             ->where('permission', $permission)
             ->delete();
+
+        $this->clearPermissionsCache();
     }
 
     public function syncPermissions(array $permissions): void
@@ -77,16 +100,16 @@ class LineAgent extends Model
 
         foreach ($permissions as $perm) {
             LineAgentPermission::create([
+                'vendor_id' => $this->vendor_id,
                 'line_id' => $this->line_id,
                 'agent_id' => $this->agent_id,
                 'permission' => $perm,
             ]);
         }
+
+        $this->clearPermissionsCache();
     }
 
-    /**
-     * Sync permissions for a regular agent (all except line and agent administration)
-     */
     public function syncRegularAgentPermissions(): void
     {
         $allPermissions = LineAgentPermission::allPermissions();
@@ -105,5 +128,12 @@ class LineAgent extends Model
     public function syncEncargadoPermissions(): void
     {
         $this->syncPermissions(LineAgentPermission::allPermissions());
+    }
+
+    protected function clearPermissionsCache(): void
+    {
+        $cacheKey = "line_agent_permissions:{$this->line_id}:{$this->agent_id}";
+        Cache::forget($cacheKey);
+        unset($this->permissionsCache[$this->line_id]);
     }
 }

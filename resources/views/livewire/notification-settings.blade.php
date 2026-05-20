@@ -119,4 +119,21 @@
     font-size: 13px;
     color: var(--muted, #888);
 }
+
+[data-dashboard-theme="light"] .notification-settings-content .setting-card {
+    background: #fffdf8 !important;
+    border-color: var(--line) !important;
+    color: var(--white);
+    box-shadow: 0 12px 28px rgba(42,20,20,.06);
+}
+[data-dashboard-theme="light"] .notification-settings-content .content-header h2,
+[data-dashboard-theme="light"] .notification-settings-content .setting-label,
+[data-dashboard-theme="light"] .notification-settings-content .toggle-switch {
+    color: var(--white) !important;
+}
+[data-dashboard-theme="light"] .notification-settings-content .setting-icon,
+[data-dashboard-theme="light"] .notification-settings-content .toggle-track {
+    background: rgba(244,234,220,.78) !important;
+    border-color: var(--line) !important;
+}
 </style>

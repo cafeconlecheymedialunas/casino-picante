@@ -10,20 +10,32 @@
 
 @php $refName = 'input_' . md5($model); @endphp
 
-<div x-data="{ preview: '{{ $value }}' }">
+<div class="upload-image-field" x-data="{ preview: '{{ $value }}' }">
+    @once
+        <style>
+            [data-dashboard-theme="light"] .upload-image-field .upload-image-drop {
+                background: #ffffff !important;
+                border-color: var(--line-2) !important;
+            }
+            [data-dashboard-theme="light"] .upload-image-field .upload-image-empty {
+                color: var(--muted) !important;
+            }
+        </style>
+    @endonce
+
     <label class="form-label">
         {{ $label }}
         @if($hint) <span style="font-weight:400;color:var(--muted-2);text-transform:none;letter-spacing:0;font-size:10px">{{ $hint }}</span> @endif
     </label>
 
-    <div style="position:relative;cursor:pointer;border:1px dashed var(--line-2);border-radius:8px;overflow:hidden;{{ $aspect ? 'aspect-ratio:'.$aspect.';' : 'min-height:90px;' }}background:rgba(255,255,255,.03);transition:border-color .15s"
+    <div class="upload-image-drop" style="position:relative;cursor:pointer;border:1px dashed var(--line-2);border-radius:8px;overflow:hidden;{{ $aspect ? 'aspect-ratio:'.$aspect.';' : 'min-height:90px;' }}background:rgba(255,255,255,.03);transition:border-color .15s"
          @mouseover="$el.style.borderColor='var(--orange)'"
          @mouseout="$el.style.borderColor=''"
          @click="$refs.{{ $refName }}.click()">
 
         <img x-show="preview" :src="preview" style="width:100%;height:100%;object-fit:cover;display:block">
 
-        <div x-show="!preview" style="height:100%;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted-2);font-size:12px;padding:16px">
+        <div class="upload-image-empty" x-show="!preview" style="height:100%;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted-2);font-size:12px;padding:16px">
             <i class="{{ $icon }}" style="font-size:24px;opacity:.4"></i>
             Clic para seleccionar
         </div>

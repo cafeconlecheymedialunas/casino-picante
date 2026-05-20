@@ -20,6 +20,7 @@ class BonusShow extends Component
         $bonus = Bonus::withoutGlobalScopes()
             ->with(['line.activePlatforms', 'platform'])
             ->withCount(['assignments as active_assignments_count' => fn ($query) => $query->whereIn('status', Bonus::CONSUMED_STATUSES)])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->findOrFail($this->bonusId);
 
         $assignment = auth()->id()

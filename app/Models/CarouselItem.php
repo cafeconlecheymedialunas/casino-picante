@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 
 class CarouselItem extends Model
 {
+    use HasVendorScope;
+
     protected $fillable = [
+        'vendor_id',
         'image',
         'title',
         'link',
@@ -17,4 +21,9 @@ class CarouselItem extends Model
     protected $casts = [
         'order' => 'integer',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 }

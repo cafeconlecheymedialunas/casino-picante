@@ -72,9 +72,10 @@ class AdminResetPassword extends Component
             return;
         }
 
-        $agent = Agent::where('email', $email)->first();
-        $user = User::where('email', $email)
-            ->whereHas('role', fn ($role) => $role->whereIn('name', [Roles::ADMIN, Roles::AGENTE]))
+        $agent = Agent::withoutGlobalScopes()->where('email', $email)->first();
+        $user = User::withoutGlobalScopes()
+            ->where('email', $email)
+            ->whereHas('role', fn ($role) => $role->whereIn('name', [Roles::ADMIN, Roles::AGENTE, Roles::CAJERO]))
             ->first();
 
         if (! $agent && ! $user) {

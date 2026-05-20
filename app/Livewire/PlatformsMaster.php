@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Platform;
 use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -53,6 +54,7 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
+        $this->authorizeVendorRecord($platform);
         $this->editingPlatform = $platform;
         $this->name = $platform->name;
         $this->slug = $platform->slug;
@@ -88,7 +90,13 @@ class PlatformsMaster extends Component
 
         $rules = [
             'name' => 'required|min:2',
-            'slug' => 'required|min:2|unique:platforms,slug'.($this->editingPlatform ? ','.$this->editingPlatform->id : ''),
+            'slug' => [
+                'required',
+                'min:2',
+                Rule::unique('platforms', 'slug')
+                    ->where(fn ($query) => $query->where('vendor_id', session('active_vendor_id')))
+                    ->ignore($this->editingPlatform?->id),
+            ],
             'logoUpload' => 'nullable|image|max:4096',
             'website_url' => 'nullable|url',
         ];
@@ -111,6 +119,7 @@ class PlatformsMaster extends Component
         ];
 
         if ($this->editingPlatform) {
+            $this->authorizeVendorRecord($this->editingPlatform);
             $this->editingPlatform->update($data);
             session()->flash('message', 'Plataforma actualizada.');
         } else {
@@ -126,6 +135,7 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
+        $this->authorizeVendorRecord($platform);
         $platform->update(['is_active' => ! $platform->is_active]);
     }
 
@@ -134,6 +144,7 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
+        $this->authorizeVendorRecord($platform);
         ImageStorage::delete($platform?->logo_url);
         $platform->delete();
         if ($this->editingPlatform && $this->editingPlatform->id == $platformId) {
@@ -167,7 +178,16 @@ class PlatformsMaster extends Component
     private function ensureAdmin(): void
     {
         if (! $this->isAdminMode()) {
-            abort(403, 'Solo el administrador general puede gestionar plataformas.');
+            abort(403, 'Solo administradores y cajeros pueden gestionar plataformas.');
         }
+    }
+
+    private function authorizeVendorRecord(?Platform $platform): void
+    {
+        if (! $platform || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless((int) $platform->vendor_id === (int) session('active_vendor_id'), 403, 'No podes operar plataformas fuera del vendor activo.');
     }
 }

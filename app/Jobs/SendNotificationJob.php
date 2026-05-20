@@ -25,7 +25,8 @@ class SendNotificationJob implements ShouldQueue
         public string $message,
         public string $type,
         public ?string $link,
-        public string $module
+        public string $module,
+        public ?int $vendorId = null
     ) {}
 
     public function handle(): void
@@ -37,6 +38,7 @@ class SendNotificationJob implements ShouldQueue
         }
 
         DashboardNotification::create([
+            'vendor_id' => $this->vendorId,
             'agent_id' => $this->agentId,
             'user_id' => $this->userId,
             'title' => $this->title,

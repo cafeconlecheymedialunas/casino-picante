@@ -42,20 +42,63 @@ class DemoDataSeeder extends Seeder
         }
         $this->command->info('Plataformas listas.');
 
-        // ── 2. LINEAS ──
+        // ── 2. ROLES (incluye CAJERO) ──
+        $roleCajero = Role::firstOrCreate(['name' => \App\Support\Roles::CAJERO], ['display_name' => 'Cajero']);
+
+        // ── 3. VENDORS (4 vendors + usuarios cajero) ──
+        $vendorData = [
+            ['name' => 'Casino Royale', 'slug' => 'casino-royale', 'logo' => 'https://picsum.photos/id/1011/200/200', 'hero' => 'https://picsum.photos/id/1015/1200/400', 'portrait' => 'https://picsum.photos/id/1005/300/400'],
+            ['name' => 'BetMaster', 'slug' => 'betmaster', 'logo' => 'https://picsum.photos/id/106/200/200', 'hero' => 'https://picsum.photos/id/160/1200/400', 'portrait' => 'https://picsum.photos/id/201/300/400'],
+            ['name' => 'Lucky Spin', 'slug' => 'lucky-spin', 'logo' => 'https://picsum.photos/id/133/200/200', 'hero' => 'https://picsum.photos/id/251/1200/400', 'portrait' => 'https://picsum.photos/id/29/300/400'],
+            ['name' => 'Golden Palace', 'slug' => 'golden-palace', 'logo' => 'https://picsum.photos/id/180/200/200', 'hero' => 'https://picsum.photos/id/312/1200/400', 'portrait' => 'https://picsum.photos/id/48/300/400'],
+        ];
+        $vendors = [];
+        foreach ($vendorData as $i => $vd) {
+            $cajeroUser = User::updateOrCreate(
+                ['email' => 'cajero'.($i+1).'@demo.com'],
+                [
+                    'name' => 'Cajero ' . ($i+1),
+                    'password' => bcrypt('demo123'),
+                    'username' => 'cajero'.($i+1),
+                    'phone' => '+54911000000'.($i+1),
+                    'role_id' => $roleCajero->id,
+                    'status' => 'active',
+                ]
+            );
+            $vendors[] = \App\Models\Vendor::updateOrCreate(
+                ['slug' => $vd['slug']],
+                [
+                    'user_id' => $cajeroUser->id,
+                    'name' => $vd['name'],
+                    'logo' => $vd['logo'] ?? null,
+                    'hero_image' => $vd['hero'] ?? null,
+                    'portrait_image' => $vd['portrait'] ?? null,
+                    'is_active' => true,
+                    'description' => 'Demo vendor ' . $vd['name'],
+                ]
+            );
+        }
+        $this->command->info('Vendors listos.');
+
+        // ── 3. LINEAS (asociadas a vendors) ──
         $lineData = [
-            ['name' => 'VIP Casino', 'icon' => '🔴', 'type' => 'whatsapp', 'phone' => '+5491112345678'],
-            ['name' => 'Gold Sports', 'icon' => '🟡', 'type' => 'whatsapp', 'phone' => '+5491123456789'],
-            ['name' => 'Platinum Club', 'icon' => '🔵', 'type' => 'whatsapp', 'phone' => '+5491134567890'],
+            ['name' => 'VIP Casino', 'icon' => '🔴', 'type' => 'whatsapp', 'phone' => '+5491112345678', 'vendor' => 0, 'portada' => 'https://picsum.photos/id/1016/800/600', 'perfil' => 'https://picsum.photos/id/1009/400/400'],
+            ['name' => 'Gold Sports', 'icon' => '🟡', 'type' => 'whatsapp', 'phone' => '+5491123456789', 'vendor' => 0, 'portada' => 'https://picsum.photos/id/160/800/600', 'perfil' => 'https://picsum.photos/id/201/400/400'],
+            ['name' => 'Platinum Club', 'icon' => '🔵', 'type' => 'whatsapp', 'phone' => '+5491134567890', 'vendor' => 1, 'portada' => 'https://picsum.photos/id/251/800/600', 'perfil' => 'https://picsum.photos/id/29/400/400'],
+            ['name' => 'Elite Bet', 'icon' => '🟢', 'type' => 'whatsapp', 'phone' => '+5491145678901', 'vendor' => 2, 'portada' => 'https://picsum.photos/id/312/800/600', 'perfil' => 'https://picsum.photos/id/48/400/400'],
+            ['name' => 'Royal Spin', 'icon' => '🟣', 'type' => 'whatsapp', 'phone' => '+5491156789012', 'vendor' => 3, 'portada' => 'https://picsum.photos/id/133/800/600', 'perfil' => 'https://picsum.photos/id/106/400/400'],
         ];
         $lines = [];
         foreach ($lineData as $ld) {
             $lines[] = Line::updateOrCreate(
                 ['name' => $ld['name']],
                 [
+                    'vendor_id' => $vendors[$ld['vendor']]->id,
                     'icon' => $ld['icon'],
                     'type' => $ld['type'],
                     'phone' => $ld['phone'],
+                    'portada_url' => $ld['portada'] ?? null,
+                    'perfil_url' => $ld['perfil'] ?? null,
                     'status' => 'active',
                     'contact_links' => [['type' => 'whatsapp', 'value' => $ld['phone'], 'name' => 'WhatsApp']],
                 ]
@@ -177,7 +220,7 @@ class DemoDataSeeder extends Seeder
                     'excerpt' => 'Resumen demo: '.$title,
                     'status' => Post::STATUS_PUBLISHED,
                     'published_at' => Carbon::now()->subDays($i),
-                    'line_id' => $lines[0]->id,
+                    'line_id' => $lines[array_rand($lines)]->id,
                 ]
             );
         }
@@ -203,7 +246,7 @@ class DemoDataSeeder extends Seeder
                     'max_bonus' => $bd['max'],
                     'status' => 'active',
                     'user_id' => $bonusUser->id,
-                    'line_id' => $lines[0]->id,
+                    'line_id' => $lines[array_rand($lines)]->id,
                 ]
             );
         }
@@ -304,7 +347,7 @@ class DemoDataSeeder extends Seeder
                     'end_date' => $rd['end_date'],
                     'end_number' => $rd['end'],
                     'start_number' => 1,
-                    'line_id' => $lines[0]->id,
+                    'line_id' => $lines[array_rand($lines)]->id,
                     'platform_id' => $platforms[0]->id,
                     'prizes' => [['name' => 'Premio principal', 'value' => 50000]],
                 ]
@@ -325,11 +368,11 @@ class DemoDataSeeder extends Seeder
         // ── 12. CAROUSEL ITEMS ──
         CarouselItem::firstOrCreate(
             ['title' => 'Bienvenido a RED PICANTES'],
-            ['image' => '/storage/carousel/demo1.jpg', 'link' => route('bonos'), 'order' => 1, 'line_id' => $lines[0]->id]
+            ['image' => '/storage/carousel/demo1.jpg', 'link' => route('bonos'), 'order' => 1, 'line_id' => $lines[array_rand($lines)]->id]
         );
         CarouselItem::firstOrCreate(
             ['title' => 'Bonos exclusivos'],
-            ['image' => '/storage/carousel/demo2.jpg', 'link' => route('sorteos'), 'order' => 2, 'line_id' => $lines[0]->id]
+            ['image' => '/storage/carousel/demo2.jpg', 'link' => route('sorteos'), 'order' => 2, 'line_id' => $lines[array_rand($lines)]->id]
         );
         $this->command->info('Carousel items listos.');
 

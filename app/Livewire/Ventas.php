@@ -124,6 +124,7 @@ class Ventas extends Component
 
         $line = Line::with(['platforms', 'lineAgents.agent'])->findOrFail((int) $this->saleLineId);
         $this->authorizeLineEdit($line);
+        $this->authorizePlatformChoice($this->salePlatformId);
 
         $amount = (float) $this->saleMontoFichas;
         $percent = (float) $line->lineAgents()
@@ -266,6 +267,10 @@ class Ventas extends Component
         }
 
         if ($this->isAdminMode()) {
+            $this->ensureLineMatchesActiveVendor($line, 'No podes cargar ventas en lineas fuera del vendor activo.');
+        }
+
+        if ($this->isAdminMode()) {
             return;
         }
 
@@ -305,5 +310,14 @@ class Ventas extends Component
                 ->where('is_active', true)
                 ->select('line_id'))
             ->pluck('line_id');
+    }
+
+    private function authorizePlatformChoice(string $platformId): void
+    {
+        if ($platformId === '' || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(Platform::whereKey((int) $platformId)->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
     }
 }

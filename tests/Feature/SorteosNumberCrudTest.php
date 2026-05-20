@@ -11,6 +11,7 @@ use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\Permissions;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,7 +30,20 @@ class SorteosNumberCrudTest extends TestCase
             ['name' => Roles::ADMIN],
             ['label' => 'Administrador']
         );
+        $cajeroRole = Role::firstOrCreate(
+            ['name' => Roles::CAJERO],
+            ['label' => 'Cajero']
+        );
+        $cajero = User::factory()->create(['role_id' => $cajeroRole->id]);
+        $vendor = Vendor::create([
+            'user_id' => $cajero->id,
+            'name' => 'Vendor Test '.uniqid(),
+            'slug' => 'vendor-test-'.uniqid(),
+            'is_active' => true,
+        ]);
+
         $this->actingAs(User::factory()->create(['role_id' => $role->id]));
+        session(['active_vendor_id' => $vendor->id]);
     }
 
     public function test_raffle_can_be_created_without_optional_prizes(): void
@@ -82,6 +96,7 @@ class SorteosNumberCrudTest extends TestCase
             'prizes' => [],
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->call('openEdit', $raffle->id)
@@ -176,6 +191,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)
@@ -243,6 +259,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)
@@ -260,6 +277,61 @@ class SorteosNumberCrudTest extends TestCase
             'raffle_id' => $raffle->id,
             'user_id' => $client->id,
             'line_id' => $line->id,
+            'number' => 5,
+        ]);
+    }
+
+    public function test_admin_active_vendor_cannot_assign_other_vendor_client_to_raffle_number(): void
+    {
+        $clientRole = Role::firstOrCreate(
+            ['name' => Roles::CLIENTE],
+            ['label' => 'Cliente']
+        );
+        $activeVendorId = session('active_vendor_id');
+        $otherCajero = User::factory()->create();
+        $otherVendor = Vendor::create([
+            'user_id' => $otherCajero->id,
+            'name' => 'Vendor Ajeno '.uniqid(),
+            'slug' => 'vendor-ajeno-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $line = Line::create([
+            'vendor_id' => $activeVendorId,
+            'name' => 'Linea Test',
+            'status' => 'active',
+        ]);
+        $otherClient = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'vendor_id' => $otherVendor->id,
+            'username' => 'cliente_sorteo_ajeno',
+            'status' => 'active',
+        ]);
+
+        $raffle = Raffle::withoutGlobalScopes()->create([
+            'vendor_id' => $activeVendorId,
+            'title' => 'Sorteo Test',
+            'description' => 'Test',
+            'status' => 'active',
+            'start_date' => now()->subMinute(),
+            'end_date' => now()->addDay(),
+            'start_number' => 1,
+            'end_number' => 20,
+            'numbers_limit' => 20,
+            'line_id' => $line->id,
+        ]);
+        $raffle->lines()->sync([$line->id => ['vendor_id' => $activeVendorId]]);
+        session(['active_line_id' => $line->id]);
+
+        Livewire::test(Sorteos::class)
+            ->set('selectedRaffleId', $raffle->id)
+            ->set('assignUserId', (string) $otherClient->id)
+            ->set('selectedNumbers', [5])
+            ->call('saveSelectedNumbers')
+            ->assertHasErrors(['assignUserId']);
+
+        $this->assertDatabaseMissing('raffle_numbers', [
+            'raffle_id' => $raffle->id,
+            'user_id' => $otherClient->id,
             'number' => 5,
         ]);
     }
@@ -344,6 +416,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)
@@ -439,6 +512,7 @@ class SorteosNumberCrudTest extends TestCase
             'line_id' => $line->id,
         ]);
         $raffle->lines()->sync([$line->id]);
+        session(['active_line_id' => $line->id]);
 
         Livewire::test(Sorteos::class)
             ->set('selectedRaffleId', $raffle->id)

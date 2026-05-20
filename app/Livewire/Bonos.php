@@ -110,7 +110,7 @@ class Bonos extends Component
         $this->resetForm();
         $this->startDate = now()->format('Y-m-d');
         $this->endDate = now()->addWeek()->format('Y-m-d');
-        $this->lineId = (string) (session('active_line_id') ?: $this->availableLines()->first()?->id);
+        $this->lineId = (string) ($this->lineIdForScopedCreate() ?: '');
         $this->showModal = true;
     }
 
@@ -157,6 +157,7 @@ class Bonos extends Component
 
         $this->validate();
         $this->authorizeLineChoice((int) $this->lineId);
+        $this->authorizePlatformChoice($this->platformId);
 
         $start = Carbon::parse($this->startDate.' '.$this->startTime);
         $end = Carbon::parse($this->endDate.' '.$this->endTime);
@@ -287,6 +288,7 @@ class Bonos extends Component
             }
 
             BonusAssignment::create([
+                'vendor_id' => $bonus->vendor_id ?: session('active_vendor_id'),
                 'bonus_id' => $bonus->id,
                 'user_id' => $user->id,
                 'status' => 'active',
@@ -344,7 +346,7 @@ class Bonos extends Component
     public function render()
     {
         $panelBonus = $this->bonusForAssignments
-            ? Bonus::withoutGlobalScopes()->with('line')->find($this->bonusForAssignments)
+            ? $this->accessibleBonusesQuery()->with('line')->find($this->bonusForAssignments)
             : null;
 
         $panelAssignments = $this->getAssignmentsForPanel();
@@ -353,7 +355,7 @@ class Bonos extends Component
             'bonuses' => $this->bonuses(),
             'metrics' => $this->metrics(),
             'platforms' => Platform::orderBy('name')->get(),
-            'selectedBonus' => $this->selectedBonusId ? Bonus::withoutGlobalScopes()->with('line')->find($this->selectedBonusId) : null,
+            'selectedBonus' => $this->selectedBonusId ? $this->accessibleBonusesQuery()->with('line')->find($this->selectedBonusId) : null,
             'canCreateBonus' => $this->hasLinePermission(Permissions::BONO_CREATE),
             'panelBonus' => $panelBonus,
             'panelAssignments' => $panelAssignments,
@@ -430,9 +432,20 @@ class Bonos extends Component
 
     private function authorizeLineChoice(int $lineId): void
     {
+        $this->ensureLineMatchesActiveVendor($lineId, 'No podes operar bonos en lineas fuera del vendor activo.');
+
         if (! $this->availableLines()->pluck('id')->contains($lineId)) {
             abort(403, 'No podes operar bonos fuera de tus lineas.');
         }
+    }
+
+    private function authorizePlatformChoice(string $platformId): void
+    {
+        if ($platformId === '' || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(Platform::whereKey((int) $platformId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
     }
 
     public function openAssignmentsPanel(int $bonusId): void
@@ -473,7 +486,7 @@ class Bonos extends Component
     public function getUsersForAssign(): array
     {
         $lineId = $this->selectedBonusId
-            ? (int) Bonus::withoutGlobalScopes()->find($this->selectedBonusId)?->line_id
+            ? (int) $this->accessibleBonusesQuery()->find($this->selectedBonusId)?->line_id
             : (int) session('active_line_id');
 
         return User::where(function ($query) use ($lineId) {
@@ -491,6 +504,12 @@ class Bonos extends Component
     {
         return (int) $user->line_id === $lineId
             || $user->lines()->where('lines.id', $lineId)->wherePivot('is_active', true)->exists();
+    }
+
+    private function accessibleBonusesQuery()
+    {
+        return Bonus::withoutGlobalScopes()
+            ->whereIn('line_id', $this->availableLines()->pluck('id'));
     }
 
     private function refreshOperationalStatuses(): void

@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
 
 class HomeSection extends Model
 {
+    use HasVendorScope;
+
     protected $table = 'home_sections';
 
     protected $fillable = [
+        'vendor_id',
         'section_key',
         'title',
         'subtitle',
@@ -35,6 +39,11 @@ class HomeSection extends Model
         'bonus_ids' => 'array',
         'repeater_data' => 'array',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
 
     public static function getSection(string $key): ?self
     {

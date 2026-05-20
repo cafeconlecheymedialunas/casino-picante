@@ -107,6 +107,30 @@
     .priority-section.high { border-left-color: var(--orange); }
     .priority-section.medium { border-left-color: var(--warn); }
 
+    [data-dashboard-theme="light"] .kpi,
+    [data-dashboard-theme="light"] .ov-card {
+        background: #fffdf8 !important;
+        border-color: var(--line) !important;
+        color: var(--white);
+        box-shadow: 0 12px 28px rgba(42,20,20,.06);
+    }
+    [data-dashboard-theme="light"] .kpi-mod,
+    [data-dashboard-theme="light"] .ov-card-mod,
+    [data-dashboard-theme="light"] .growth-badge.neutral {
+        background: rgba(244,234,220,.88) !important;
+        color: var(--muted) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .row-item {
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .row-item:hover {
+        background: rgba(255,106,26,.08) !important;
+    }
+    [data-dashboard-theme="light"] .mod-section-line {
+        background: var(--line);
+    }
+
     @media (max-width: 1024px) {
         .kpi-grid-4 { grid-template-columns: repeat(2,1fr); }
         .kpi-grid-3 { grid-template-columns: repeat(2,1fr); }

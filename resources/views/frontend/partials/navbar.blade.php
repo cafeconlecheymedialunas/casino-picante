@@ -8,6 +8,7 @@
 
             <nav class="fe-nav-links" aria-label="Navegacion principal">
                 <a href="{{ route('frontend.home') }}" wire:navigate class="{{ request()->routeIs('frontend.home') ? 'active' : '' }}">Inicio</a>
+                <a href="{{ route('frontend.vendors') }}" wire:navigate class="{{ request()->routeIs('frontend.vendors') || request()->routeIs('frontend.vendor.home') ? 'active' : '' }}">Cajeros</a>
                 <a href="{{ route('frontend.lines') }}" wire:navigate class="{{ request()->routeIs('frontend.lines*') ? 'active' : '' }}">Lineas</a>
                 <a href="{{ route('frontend.bonuses') }}" wire:navigate class="{{ request()->routeIs('frontend.bonuses*') ? 'active' : '' }}">Bonos</a>
                 <a href="{{ route('frontend.raffles') }}" wire:navigate class="{{ request()->routeIs('frontend.raffles*') || request()->routeIs('sorteo.publico') ? 'active' : '' }}">Sorteo</a>
@@ -68,7 +69,7 @@
                             </div>
                         </details>
                     @endif
-                    @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE))
+                    @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE) || auth()->user()?->hasRole(\App\Support\Roles::CAJERO))
                         <a href="{{ route('dashboard') }}" wire:navigate class="fe-btn ghost">Panel</a>
                     @endif
                     @if(!auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))

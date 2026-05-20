@@ -272,6 +272,38 @@
     .nv-reply { margin-top:10px;margin-left:36px;padding:10px 12px;border-radius:8px;background:rgba(255,106,26,.05);border-left:2px solid rgba(255,106,26,.4); }
     .nv-reply-form { margin-top:10px;margin-left:36px; }
     .be-new-comment { padding:12px 16px;border-bottom:1px solid var(--line);margin-bottom:4px; }
+
+    [data-dashboard-theme="light"] .be-card,
+    [data-dashboard-theme="light"] .wysiwyg,
+    [data-dashboard-theme="light"] .nv-comment {
+        background: #fffdf8 !important;
+        background-image: none !important;
+        border-color: var(--line) !important;
+        color: var(--white);
+        box-shadow: 0 12px 28px rgba(42,20,20,.06);
+    }
+    [data-dashboard-theme="light"] .be-card-head,
+    [data-dashboard-theme="light"] .wysiwyg-toolbar,
+    [data-dashboard-theme="light"] .be-new-comment {
+        background: rgba(255,250,243,.94) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .form-input,
+    [data-dashboard-theme="light"] .wysiwyg-editor {
+        background: #fff !important;
+        color: var(--white) !important;
+        border-color: var(--line-2) !important;
+    }
+    [data-dashboard-theme="light"] .wysiwyg-toolbar button,
+    [data-dashboard-theme="light"] .nv-comment-btn.reply {
+        background: rgba(244,234,220,.78) !important;
+        color: var(--muted) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .nv-comment.pending,
+    [data-dashboard-theme="light"] .nv-reply {
+        background: rgba(255,193,7,.08) !important;
+    }
     @media (max-width:768px){
         .be-wrap{ padding:0 14px 20px; }
         .be-card-head{ padding:12px 14px;font-size:14px;flex-wrap:wrap;gap:8px; }

@@ -7,6 +7,7 @@ use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
 use App\Support\Roles;
+use Illuminate\Validation\ValidationException;
 
 trait HasLinePermissions
 {
@@ -93,10 +94,12 @@ trait HasLinePermissions
         return auth()->user()?->agent;
     }
 
-    // Returns true when the authenticated user has the global admin role.
+    // Returns true when the authenticated user owns a whole panel scope.
     public function isAdminMode(): bool
     {
-        return auth()->user()?->hasRole(Roles::ADMIN) ?? false;
+        $user = auth()->user();
+
+        return ($user?->hasRole(Roles::ADMIN) || $user?->hasRole(Roles::CAJERO)) ?? false;
     }
 
     // True if current agent has the given permission on the active line.
@@ -206,5 +209,45 @@ trait HasLinePermissions
         }
 
         return $lineIds;
+    }
+
+    public function lineIdForScopedCreate(): ?int
+    {
+        $activeLineId = session('active_line_id');
+        $activeVendorId = session('active_vendor_id');
+
+        if ($activeLineId && Line::whereKey($activeLineId)
+            ->where('status', 'active')
+            ->when($activeVendorId, fn ($query) => $query->where('vendor_id', (int) $activeVendorId))
+            ->exists()) {
+            return (int) $activeLineId;
+        }
+
+        return null;
+    }
+
+    public function requireLineIdForScopedCreate(string $field = 'line_id'): int
+    {
+        $lineId = $this->lineIdForScopedCreate();
+
+        if (! $lineId) {
+            throw ValidationException::withMessages([
+                $field => 'Selecciona una linea activa antes de crear.',
+            ]);
+        }
+
+        return $lineId;
+    }
+
+    public function ensureLineMatchesActiveVendor(Line|int $line, string $message = 'La linea no pertenece al vendor activo.'): Line
+    {
+        $lineModel = $line instanceof Line ? $line : Line::withoutGlobalScopes()->findOrFail($line);
+        $activeVendorId = session('active_vendor_id');
+
+        if ($activeVendorId && (int) $lineModel->vendor_id !== (int) $activeVendorId) {
+            abort(403, $message);
+        }
+
+        return $lineModel;
     }
 }

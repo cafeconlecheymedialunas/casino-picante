@@ -18,7 +18,6 @@ use App\Models\LineAgentPermission;
 use App\Models\LineRating;
 use App\Models\Platform;
 use App\Models\Post;
-use App\Models\Promotion;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Role;
@@ -78,7 +77,6 @@ class DatabaseSeeder extends Seeder
         $posts = $this->seedPosts($categories, $lines, $clients);
         $bonuses = $this->seedBonuses($lines, $platforms, $adminAgent, $clients);
         $this->seedRaffles($lines, $platforms, $clients);
-        $this->seedPromotions($lines, $platforms);
         $this->seedCarousel($lines);
         $this->seedHomeConfig($posts, $bonuses);
         $this->seedSupportData($lines, $agents, $clients, $posts, $platforms);
@@ -138,7 +136,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'VIP Casino', 'slug' => 'vip-casino', 'description' => 'Slots, ruleta en vivo y mesas premium con carga rapida.', 'contacts' => [['name' => 'Soporte VIP', 'type' => 'whatsapp', 'value' => 'https://wa.me/5491151003301']]],
             ['name' => 'Hybrid Club', 'slug' => 'hybrid-club', 'description' => 'Casino online con torneos diarios y juegos en vivo.', 'contacts' => [['name' => 'Alta Hybrid', 'type' => 'telegram', 'value' => 'https://t.me/redpicantes']]],
             ['name' => 'Etoile Play', 'slug' => 'etoile-play', 'description' => 'Experiencia simple para cargar, jugar y retirar sin vueltas.', 'contacts' => [['name' => 'Mesa Etoile', 'type' => 'instagram', 'value' => 'https://instagram.com/redpicantes']]],
-            ['name' => 'Golden Bet', 'slug' => 'golden-bet', 'description' => 'Promos de recarga, ruleta y premios semanales.', 'contacts' => [['name' => 'Golden Atencion', 'type' => 'web', 'value' => 'https://redpicantes.test']]],
+            ['name' => 'Golden Bet', 'slug' => 'golden-bet', 'description' => 'Bonos de recarga, ruleta y premios semanales.', 'contacts' => [['name' => 'Golden Atencion', 'type' => 'web', 'value' => 'https://redpicantes.test']]],
         ])->map(fn ($platform) => Platform::create([
             ...$platform,
             'logo_url' => $this->avatar($platform['name'], 'ff6a1a', '120909'),
@@ -167,7 +165,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Linea Ruleta Pro',
                 'type' => 'pro',
-                'description' => 'Linea enfocada en ruleta en vivo, mesas rapidas y seguimiento de promociones.',
+                'description' => 'Linea enfocada en ruleta en vivo, mesas rapidas y seguimiento de bonos.',
                 'portada_url' => $this->image('roulette-pro-cover', 1200, 420),
                 'perfil_url' => $this->avatar('Ruleta Pro', 'ff8a3d', '120909'),
                 'contact_links' => [
@@ -181,7 +179,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Linea Slots Express',
                 'type' => 'express',
-                'description' => 'Alta rapida, cargas chicas y promos pensadas para jugar slots todos los dias.',
+                'description' => 'Alta rapida, cargas chicas y bonos pensados para jugar slots todos los dias.',
                 'portada_url' => $this->image('slots-express-cover', 1200, 420),
                 'perfil_url' => $this->avatar('Slots Express', 'ffb347', '180b08'),
                 'contact_links' => [
@@ -315,7 +313,7 @@ class DatabaseSeeder extends Seeder
 
     private function seedCategories(): \Illuminate\Support\Collection
     {
-        return collect(['Sorteos', 'Promos', 'Casino online', 'Ganadores'])->map(fn ($name) => Category::create([
+        return collect(['Sorteos', 'Bonos', 'Casino online', 'Ganadores'])->map(fn ($name) => Category::create([
             'name' => $name,
             'slug' => Str::slug($name),
         ]));
@@ -325,10 +323,10 @@ class DatabaseSeeder extends Seeder
     {
         $posts = [
             ['Ganadores del sorteo semanal de Julio', 'Resumen demo: estos fueron los premios entregados y las proximas fechas de participacion.', 'Sorteos', 0, 'post-sorteo-julio'],
-            ['Promocion especial de fin de semana', 'Recargas con beneficio extra para jugar slots y ruleta en vivo hasta el domingo.', 'Promos', 1, 'post-promo-finde'],
+            ['Bono especial de fin de semana', 'Recargas con beneficio extra para jugar slots y ruleta en vivo hasta el domingo.', 'Bonos', 1, 'post-bono-finde'],
             ['Como pedir tu usuario y empezar a jugar', 'Guia simple para elegir linea, solicitar alta y cargar saldo con atencion real.', 'Casino online', 2, 'post-como-empezar'],
             ['Nueva ronda de premios VIP', 'El sorteo VIP suma premios principales para usuarios activos de la semana.', 'Sorteos', 0, 'post-premios-vip'],
-            ['Consejos para aprovechar tus bonos', 'Usa tus codigos a tiempo y consulta las condiciones con tu linea asignada.', 'Promos', 1, 'post-bonos'],
+            ['Consejos para aprovechar tus bonos', 'Usa tus codigos a tiempo y consulta las condiciones con tu linea asignada.', 'Bonos', 1, 'post-bonos'],
             ['Historia de una carga rapida', 'Un caso demo de atencion resuelto en minutos por el equipo de RED PICANTES.', 'Ganadores', 3, 'post-carga-rapida'],
         ];
 
@@ -447,34 +445,6 @@ class DatabaseSeeder extends Seeder
             ],
         ]);
         $finished->lines()->sync([$lines[2]->id]);
-    }
-
-    private function seedPromotions(\Illuminate\Support\Collection $lines, \Illuminate\Support\Collection $platforms): void
-    {
-        foreach ([
-            ['Recarga caliente', 'Carga de viernes con beneficio extra para ruleta en vivo.', 'HOT30', 30],
-            ['Noche VIP', 'Promocion para usuarios con actividad semanal.', 'VIPNIGHT', 50],
-            ['Slots diarios', 'Bonificacion para jugar slots seleccionados.', 'SLOTS20', 20],
-        ] as $index => $promo) {
-            Promotion::withoutGlobalScopes()->create([
-                'title' => $promo[0],
-                'description' => $promo[1],
-                'code' => $promo[2],
-                'icon' => 'fa-solid fa-fire',
-                'type' => 'percent',
-                'bonus_percent' => $promo[3],
-                'bonus_amount' => 0,
-                'min_deposit' => 0,
-                'max_bonus' => 70000,
-                'is_recurring' => true,
-                'recurring_days' => ['friday', 'saturday'],
-                'start_date' => now()->subDays(2),
-                'end_date' => now()->addDays(20),
-                'status' => 'published',
-                'line_id' => $lines[$index]->id,
-                'platform_id' => $platforms[$index]->id,
-            ]);
-        }
     }
 
     private function seedCarousel(\Illuminate\Support\Collection $lines): void

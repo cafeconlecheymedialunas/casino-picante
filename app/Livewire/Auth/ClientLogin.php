@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\User;
 use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
 
 class ClientLogin extends Component
@@ -25,55 +27,64 @@ class ClientLogin extends Component
 
     private const MAX_ATTEMPTS = 5;
 
-    private const LOCKOUT_MINUTES = 1;
+    private const LOCKOUT_SECONDS = 60;
 
     public function login(): void
     {
-        if ($this->isLockedOut()) {
-            $this->addError('username', 'Demasiados intentos. Intenta nuevamente en un minuto.');
-
-            return;
-        }
-
         $this->validate();
 
-        if ($this->attemptClientLogin('username') || $this->attemptClientLogin('email')) {
-            $this->clearAttempts();
+        if ($this->isLockedOut()) {
+            $seconds = $this->secondsUntilAvailable();
+            $this->addError('username', "Demasiados intentos. Intenta nuevamente en {$seconds} segundos.");
 
             return;
         }
 
-        $this->incrementAttempts();
-        $remaining = self::MAX_ATTEMPTS - $this->getAttempts();
-        $this->addError('username', 'Usuario o contrasena incorrectos. ('.$remaining.' intentos restantes)');
+        $user = $this->findUserForLogin();
+
+        if ($user && $user->status !== 'active') {
+            RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
+            $this->addError('username', 'Usuario o contrasena incorrectos.');
+            $this->reset('password');
+
+            return;
+        }
+
+        if ($this->attemptClientLogin('username') || $this->attemptClientLogin('email')) {
+            RateLimiter::clear($this->throttleKey());
+
+            return;
+        }
+
+        RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
+        $remaining = self::MAX_ATTEMPTS - RateLimiter::attempts($this->throttleKey());
+        $this->addError('username', "Usuario o contrasena incorrectos. ({$remaining} intentos restantes)");
         $this->reset('password');
+    }
+
+    private function findUserForLogin(): ?User
+    {
+        return User::withoutGlobalScopes()
+            ->where('username', $this->username)
+            ->orWhere('email', $this->username)
+            ->first();
     }
 
     private function isLockedOut(): bool
     {
-        $lockedUntil = Session::get('client_login_locked_until');
-
-        return $lockedUntil && now()->timestamp < $lockedUntil;
+        return RateLimiter::tooManyAttempts($this->throttleKey(), self::MAX_ATTEMPTS);
     }
 
-    private function getAttempts(): int
+    private function secondsUntilAvailable(): int
     {
-        return Session::get('client_login_attempts', 0);
+        return RateLimiter::availableIn($this->throttleKey());
     }
 
-    private function incrementAttempts(): void
+    private function throttleKey(): string
     {
-        $attempts = $this->getAttempts() + 1;
-        Session::put('client_login_attempts', $attempts);
+        $ip = request()->ip();
 
-        if ($attempts >= self::MAX_ATTEMPTS) {
-            Session::put('client_login_locked_until', now()->addMinutes(self::LOCKOUT_MINUTES)->timestamp);
-        }
-    }
-
-    private function clearAttempts(): void
-    {
-        Session::forget(['client_login_attempts', 'client_login_locked_until']);
+        return "client-login:{$ip}:{$this->username}";
     }
 
     public function render()
@@ -83,22 +94,27 @@ class ClientLogin extends Component
 
     private function attemptClientLogin(string $field): bool
     {
-        if (! Auth::attempt([$field => $this->username, 'password' => $this->password], false)) {
+        $user = $this->findUserForLogin();
+
+        if (! $user || ! Hash::check($this->password, $user->password)) {
             return false;
         }
 
-        $user = Auth::user()?->loadMissing('role');
-
-        if ($user?->status !== 'active') {
-            Auth::logout();
-            $this->addGenericError();
-
-            return true;
-        }
+        Auth::login($user, false);
 
         if ($user?->hasRole(Roles::CLIENTE)) {
+            if (! $user->vendor_id || ! $user->vendor?->is_active) {
+                Auth::logout();
+                $this->addGenericError();
+
+                return true;
+            }
+
             session()->forget(['active_agent_id', 'active_line_id']);
             session()->regenerate();
+
+            session(['active_vendor_id' => $user->vendor_id]);
+
             $this->redirect(route('client.account'), navigate: true);
 
             return true;

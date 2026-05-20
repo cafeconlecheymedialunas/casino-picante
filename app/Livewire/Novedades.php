@@ -10,6 +10,7 @@ use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -83,7 +84,12 @@ class Novedades extends Component
     {
         $this->checkLinePermission(Permissions::NEWS_CREATE);
         $this->validate([
-            'newCategoryName' => 'required|min:2|unique:categories,name',
+            'newCategoryName' => [
+                'required',
+                'min:2',
+                Rule::unique('categories', 'name')
+                    ->where(fn ($query) => $query->where('vendor_id', session('active_vendor_id'))),
+            ],
         ]);
 
         \App\Models\Category::create([
@@ -98,7 +104,11 @@ class Novedades extends Component
     public function deleteCategory(int $id): void
     {
         $this->checkLinePermission(Permissions::NEWS_DELETE);
-        \App\Models\Category::find($id)?->delete();
+        $category = \App\Models\Category::find($id);
+        if ($category) {
+            $this->authorizeVendorRecord($category);
+            $category->delete();
+        }
         session()->flash('category_message', 'Categoría eliminada');
     }
 
@@ -122,6 +132,7 @@ class Novedades extends Component
             ...$this->rules,
             'imageUpload' => 'nullable|image|max:4096',
         ]);
+        $this->authorizeCategoryChoice($this->category_id);
         $this->authorizeAuthorChoice($this->author_agent_id);
 
         $imagePath = null;
@@ -139,7 +150,7 @@ class Novedades extends Component
             'category_id' => $this->category_id ?: null,
             'author_agent_id' => $this->author_agent_id ?: null,
             'image' => $imagePath,
-            'line_id' => session('active_line_id'),
+            'line_id' => $this->requireLineIdForScopedCreate(),
         ]);
 
         session()->flash('message', 'Post creado correctamente');
@@ -158,6 +169,9 @@ class Novedades extends Component
     {
         $this->checkLinePermission(Permissions::NEWS_DELETE);
         $post = Post::find($postId);
+        if ($post) {
+            $this->authorizeVendorRecord($post);
+        }
         ImageStorage::delete($post?->image);
         $postTitle = $post?->title;
         $post?->delete();
@@ -205,6 +219,7 @@ class Novedades extends Component
     private function availableAuthors()
     {
         $query = Agent::orderBy('name');
+        $query->when(session('active_vendor_id'), fn ($q, $vendorId) => $q->where('vendor_id', (int) $vendorId));
         $lineIds = $this->visibleLineIds();
 
         if ($lineIds !== null) {
@@ -229,5 +244,23 @@ class Novedades extends Component
             ->contains((int) $authorAgentId);
 
         abort_unless($allowed, 403, 'No podes asignar un autor fuera de tu alcance.');
+    }
+
+    private function authorizeCategoryChoice($categoryId): void
+    {
+        if (! $categoryId || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(\App\Models\Category::whereKey((int) $categoryId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
+    }
+
+    private function authorizeVendorRecord($model): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless((int) $model->vendor_id === (int) session('active_vendor_id'), 403, 'No podes operar contenido fuera del vendor activo.');
     }
 }

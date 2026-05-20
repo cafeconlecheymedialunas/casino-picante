@@ -17,6 +17,8 @@ class LineShow extends Component
     public function mount(Line $line): void
     {
         abort_unless($line->status === 'active', 404);
+        $vendorId = session('active_vendor_id');
+        abort_unless(! $vendorId || (int) $line->vendor_id === (int) $vendorId, 404);
 
         $this->line = $line->load(['activePlatforms', 'lineAgents.agent']);
 
@@ -53,6 +55,7 @@ class LineShow extends Component
         LineRating::updateOrCreate(
             ['line_id' => $this->line->id, 'user_id' => auth()->id()],
             [
+                'vendor_id' => $this->line->vendor_id,
                 'rating' => $validated['selectedRating'],
                 'message' => trim($validated['ratingMessage'] ?? '') ?: null,
             ]

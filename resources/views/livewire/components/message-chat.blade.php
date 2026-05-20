@@ -28,6 +28,34 @@
         .new-chat input, .new-chat textarea { width: 100%; background: rgba(255,255,255,.05); border: 1px solid var(--line-2); border-radius: 8px; padding: 10px 12px; color: var(--white); font-size: 13px; }
         .chat-empty { color: var(--muted-2); text-align: center; padding: 38px 16px; }
         .chat-flash { margin-bottom: 10px; border: 1px solid rgba(37,196,107,.35); background: rgba(37,196,107,.12); color: var(--good); border-radius: 8px; padding: 10px 12px; font-size: 12px; font-weight: 800; }
+
+        [data-dashboard-theme="light"] .message-chat .chat-panel,
+        [data-dashboard-theme="light"] .message-chat .bubble {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .message-chat .chat-head,
+        [data-dashboard-theme="light"] .message-chat .chat-form,
+        [data-dashboard-theme="light"] .message-chat .new-chat,
+        [data-dashboard-theme="light"] .message-chat .chat-pill {
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .message-chat .chat-pill:hover,
+        [data-dashboard-theme="light"] .message-chat .chat-pill.active,
+        [data-dashboard-theme="light"] .message-chat .bubble.mine {
+            background: rgba(255,106,26,.08) !important;
+            border-color: var(--orange) !important;
+        }
+        [data-dashboard-theme="light"] .message-chat .chat-input,
+        [data-dashboard-theme="light"] .message-chat .new-chat input,
+        [data-dashboard-theme="light"] .message-chat .new-chat textarea {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
         @media (max-width: 860px) { .message-chat { grid-template-columns: 1fr; } }
     </style>
 

@@ -4,7 +4,10 @@ namespace App\Livewire\Components;
 
 use App\Models\Agent;
 use App\Models\Chat;
+use App\Models\LineAgent;
+use App\Models\User;
 use App\Support\Permissions;
+use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use Livewire\Component;
 
@@ -50,6 +53,8 @@ class AgentMessaging extends Component
 
     private function findExistingChat(int $agentId): ?Chat
     {
+        $this->authorizeDirectAgent($agentId);
+
         $query = Chat::where('agent_id', $agentId);
 
         if ($this->targetUserId) {
@@ -71,6 +76,7 @@ class AgentMessaging extends Component
         if (! $agentId) {
             return null;
         }
+        $this->authorizeDirectAgent($agentId);
 
         return $this->findExistingChat($agentId) ?: Chat::create([
             'user_id' => $this->targetUserId,
@@ -88,6 +94,8 @@ class AgentMessaging extends Component
     private function directAgentId(): ?int
     {
         if ($this->targetAgentId) {
+            $this->authorizeDirectAgent((int) $this->targetAgentId);
+
             return $this->targetAgentId;
         }
 
@@ -111,6 +119,8 @@ class AgentMessaging extends Component
     {
         if ($this->targetUserId) {
             $this->checkLinePermission(Permissions::USER_READ);
+            $this->authorizeTargetUser((int) $this->targetUserId);
+
             return;
         }
 
@@ -120,6 +130,64 @@ class AgentMessaging extends Component
             && ! $this->hasLinePermission(Permissions::TICKET_READ)
         ) {
             abort(403, 'Sin permiso para enviar mensajes.');
+        }
+
+        if ($this->targetAgentId) {
+            $this->authorizeDirectAgent((int) $this->targetAgentId);
+        }
+    }
+
+    private function authorizeTargetUser(int $userId): void
+    {
+        if (auth()->user()?->hasRole(Roles::ADMIN)) {
+            return;
+        }
+
+        $user = User::findOrFail($userId);
+        $activeVendorId = session('active_vendor_id');
+
+        if ($activeVendorId && (int) $user->vendor_id !== (int) $activeVendorId) {
+            abort(403, 'No podes enviar mensajes a clientes de otro vendor.');
+        }
+
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $lineIds = $this->visibleLineIds();
+        $allowed = ($user->line_id && in_array((int) $user->line_id, $lineIds ?? [], true))
+            || $user->lines()->whereIn('lines.id', $lineIds ?? [])->wherePivot('is_active', true)->exists();
+
+        if (! $allowed) {
+            abort(403, 'No podes enviar mensajes a clientes fuera de tus lineas.');
+        }
+    }
+
+    private function authorizeDirectAgent(int $agentId): void
+    {
+        if (auth()->user()?->hasRole(Roles::ADMIN)) {
+            return;
+        }
+
+        $agent = Agent::findOrFail($agentId);
+        $activeVendorId = session('active_vendor_id');
+
+        if ($activeVendorId && (int) $agent->vendor_id !== (int) $activeVendorId) {
+            abort(403, 'No podes enviar mensajes a agentes de otro vendor.');
+        }
+
+        if ($this->isAdminMode()) {
+            return;
+        }
+
+        $lineIds = $this->visibleLineIds();
+        $allowed = LineAgent::where('agent_id', $agentId)
+            ->whereIn('line_id', $lineIds ?? [])
+            ->where('is_active', true)
+            ->exists();
+
+        if (! $allowed) {
+            abort(403, 'No podes enviar mensajes a agentes fuera de tus lineas.');
         }
     }
 }

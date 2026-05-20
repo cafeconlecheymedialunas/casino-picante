@@ -122,7 +122,7 @@ class PostgresConnector extends Connector implements ConnectorInterface
     protected function configureIsolationLevel($connection, array $config)
     {
         if (isset($config['isolation_level'])) {
-            $connection->prepare("set session characteristics as transaction isolation level {$config['isolation_level']}")->execute();
+            $connection->prepare("set session features as transaction isolation level {$config['isolation_level']}")->execute();
         }
     }
 

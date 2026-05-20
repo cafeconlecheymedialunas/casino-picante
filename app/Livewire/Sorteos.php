@@ -108,7 +108,7 @@ class Sorteos extends Component
         $this->resetForm();
         $this->start_date = now()->format('Y-m-d');
         $this->end_date = now()->addDays(30)->format('Y-m-d');
-        $this->lineIds = array_filter([(int) (session('active_line_id') ?: $this->availableLines()->first()?->id)]);
+        $this->lineIds = array_filter([(int) $this->lineIdForScopedCreate()]);
         $this->showModal = true;
     }
 
@@ -182,6 +182,7 @@ class Sorteos extends Component
             ->toArray();
         $this->validate();
         $this->authorizeLineChoices();
+        $this->authorizePlatformChoice();
 
         $start = Carbon::parse($this->start_date.' '.$this->start_time);
         $end = Carbon::parse($this->end_date.' '.$this->end_time);
@@ -213,7 +214,7 @@ class Sorteos extends Component
             if ($this->editingRaffle) {
                 $this->checkLinePermission(Permissions::SORTEO_UPDATE);
                 $this->editingRaffle->update($data);
-                $this->editingRaffle->lines()->sync($this->lineIds);
+                $this->syncRaffleLines($this->editingRaffle);
                 session()->flash('message', 'Sorteo actualizado');
                 $this->notify('Sorteo actualizado', "El sorteo {$this->editingRaffle->title} fue actualizado.", 'raffles', route('sorteos', [], false), 'info');
 
@@ -222,7 +223,7 @@ class Sorteos extends Component
 
             $this->checkLinePermission(Permissions::SORTEO_CREATE);
             $raffle = Raffle::create($data);
-            $raffle->lines()->sync($this->lineIds);
+            $this->syncRaffleLines($raffle);
             session()->flash('message', 'Sorteo creado');
             $this->notify('Nuevo sorteo creado', "El sorteo {$raffle->title} fue creado exitosamente.", 'raffles', route('sorteos', [], false), 'success');
         });
@@ -312,6 +313,12 @@ class Sorteos extends Component
         $createdCount = 0;
         $updatedCount = 0;
         $lineId = $this->assignmentLineId($raffle);
+        if (! $lineId) {
+            $this->addError('lineIds', 'Selecciona una linea activa antes de asignar numeros.');
+
+            return;
+        }
+
         $occupied = RaffleNumber::where('raffle_id', $raffle->id)
             ->whereIn('number', $numbers)
             ->get()
@@ -331,6 +338,7 @@ class Sorteos extends Component
                     $existingNumber->update([
                         'user_id' => $user->id,
                         'line_id' => $lineId,
+                        'vendor_id' => $raffle->vendor_id ?: session('active_vendor_id'),
                     ]);
                     $updatedCount++;
                 }
@@ -339,6 +347,7 @@ class Sorteos extends Component
             }
 
             RaffleNumber::create([
+                'vendor_id' => $raffle->vendor_id ?: session('active_vendor_id'),
                 'raffle_id' => $raffle->id,
                 'user_id' => $user->id,
                 'line_id' => $lineId,
@@ -662,7 +671,7 @@ class Sorteos extends Component
         $selectedRaffle = $this->getSelectedRaffle();
         $users = $this->assignableUsers($selectedRaffle);
         $participants = $this->participants();
-        $totalHistorical = Raffle::withoutGlobalScopes()->count();
+        $totalHistorical = (clone $this->accessibleRafflesQuery())->count();
         $availableLines = $this->availableLines();
         $assignmentLine = Line::find($this->assignmentLineId($selectedRaffle));
 
@@ -753,6 +762,10 @@ class Sorteos extends Component
     {
         $query = Raffle::withoutGlobalScopes();
 
+        if ($vendorId = session('active_vendor_id')) {
+            $query->where('vendor_id', (int) $vendorId);
+        }
+
         if (! $this->isAdminMode()) {
             $allowedLineIds = $this->availableLines()->pluck('id')->map(fn ($id) => (int) $id)->values();
 
@@ -775,10 +788,22 @@ class Sorteos extends Component
     private function authorizeLineChoices(): void
     {
         $allowed = $this->availableLines()->pluck('id');
+        collect($this->lineIds)
+            ->map(fn ($id) => (int) $id)
+            ->each(fn ($lineId) => $this->ensureLineMatchesActiveVendor($lineId, 'No podes crear sorteos para lineas fuera del vendor activo.'));
 
         if (collect($this->lineIds)->map(fn ($id) => (int) $id)->diff($allowed)->isNotEmpty()) {
             abort(403, 'No podes crear sorteos para lineas fuera de tu alcance.');
         }
+    }
+
+    private function authorizePlatformChoice(): void
+    {
+        if ($this->platform_id === '' || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless(\App\Models\Platform::whereKey((int) $this->platform_id)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
     }
 
     private function assignmentLineId(?Raffle $raffle = null): ?int
@@ -789,13 +814,7 @@ class Sorteos extends Component
             return (int) $lineId;
         }
 
-        if ($raffle) {
-            $raffleLineId = $raffle->lines()->value('lines.id') ?: $raffle->line_id;
-
-            return $raffleLineId ? (int) $raffleLineId : null;
-        }
-
-        return (int) ($this->availableLines()->first()?->id ?: 0) ?: null;
+        return null;
     }
 
     private function lineParticipates(Raffle $raffle, ?int $lineId): bool
@@ -831,9 +850,11 @@ class Sorteos extends Component
     private function assignableUsers(?Raffle $raffle)
     {
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
+        $vendorId = $raffle?->vendor_id ?: session('active_vendor_id');
 
         return User::query()
             ->when($clientRoleId, fn ($query) => $query->where('role_id', $clientRoleId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', (int) $vendorId))
             ->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'username', 'name', 'email']);
@@ -848,9 +869,11 @@ class Sorteos extends Component
         }
 
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
+        $vendorId = $raffle->vendor_id ?: session('active_vendor_id');
 
         return (! $clientRoleId || (int) $user->role_id === (int) $clientRoleId)
-            && $user->status === 'active';
+            && $user->status === 'active'
+            && (! $vendorId || (int) $user->vendor_id === (int) $vendorId);
     }
 
     private function participants()
@@ -885,9 +908,21 @@ class Sorteos extends Component
     private function backfillRaffleLines(): void
     {
         Raffle::withoutGlobalScopes()
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
             ->whereDoesntHave('lines')
             ->whereNotNull('line_id')
             ->get()
-            ->each(fn (Raffle $raffle) => $raffle->lines()->syncWithoutDetaching([(int) $raffle->line_id]));
+            ->each(fn (Raffle $raffle) => $this->syncRaffleLines($raffle, [(int) $raffle->line_id], false));
+    }
+
+    private function syncRaffleLines(Raffle $raffle, ?array $lineIds = null, bool $detaching = true): void
+    {
+        $lineIds = $lineIds ?? $this->lineIds;
+        $vendorId = $raffle->vendor_id ?: session('active_vendor_id');
+        $sync = collect($lineIds)
+            ->mapWithKeys(fn ($lineId) => [(int) $lineId => ['vendor_id' => $vendorId]])
+            ->all();
+
+        $raffle->lines()->sync($sync, $detaching);
     }
 }

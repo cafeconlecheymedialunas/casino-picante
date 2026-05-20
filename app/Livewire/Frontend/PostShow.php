@@ -22,6 +22,7 @@ class PostShow extends Component
     {
         $post = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('slug', $slug)
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at')

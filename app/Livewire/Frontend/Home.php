@@ -29,20 +29,29 @@ class Home extends Component
     private function carouselItems(): EloquentCollection
     {
         $ids = HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
 
         if (! empty($ids)) {
-            return CarouselItem::whereIn('id', $ids)->get()->sortBy(fn ($c) => array_search($c->id, $ids))->values();
+            return CarouselItem::whereIn('id', $ids)
+                ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+                ->get()
+                ->sortBy(fn ($c) => array_search($c->id, $ids))
+                ->values();
         }
 
-        return CarouselItem::orderBy('order')->take(5)->get();
+        return CarouselItem::when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->orderBy('order')
+            ->take(5)
+            ->get();
     }
 
     private function lines(): EloquentCollection
     {
         return Line::with(['activePlatforms', 'lineAgents.agent', 'ratings'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->orderBy('name')
             ->take(6)
@@ -51,12 +60,15 @@ class Home extends Component
 
     private function raffles(): EloquentCollection
     {
-        $section = HomeSection::where('section_key', 'sorteo')->first();
+        $section = HomeSection::where('section_key', 'sorteo')
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->first();
         $ids = $this->ensureArray($section?->raffle_ids);
         $raffleType = $section?->raffle_type ?? '';
 
         $query = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now());
@@ -74,12 +86,15 @@ class Home extends Component
 
     private function bonusItems(): EloquentCollection
     {
-        $section = HomeSection::where('section_key', 'bonos')->first();
+        $section = HomeSection::where('section_key', 'bonos')
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->first();
         $ids = $this->ensureArray($section?->bonus_ids);
         $bonusType = $section?->bonus_type ?? '';
 
         $baseQuery = Bonus::withoutGlobalScopes()
             ->with(['line', 'platform'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('end_date', '>=', now());
 
@@ -96,12 +111,15 @@ class Home extends Component
 
     private function blogPosts(): EloquentCollection
     {
-        $section = HomeSection::where('section_key', 'blog')->first();
+        $section = HomeSection::where('section_key', 'blog')
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->first();
         $ids = $this->ensureArray($section?->post_ids);
         $postType = $section?->post_type ?? '';
 
         $baseQuery = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at');
 
@@ -141,10 +159,10 @@ class Home extends Component
                 'kicker' => 'Sobre RED PICANTES',
                 'title' => 'Casino online con atencion',
                 'highlight' => 'real',
-                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.',
+                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, bonos claros, sorteos activos y soporte humano para acompaniarte.',
             ],
             'bonos' => [
-                'kicker' => 'Promos para jugar mas',
+                'kicker' => 'Bonos para jugar mas',
                 'title' => 'Bonos',
                 'highlight' => 'activos',
                 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
@@ -153,14 +171,35 @@ class Home extends Component
                 'kicker' => 'Noticias y jugadas',
                 'title' => 'Noticias y',
                 'highlight' => 'jugadas',
-                'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.',
+                'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.',
             ],
         ];
 
         $sections = [];
 
         foreach ($defaultSections as $key => $defaults) {
-            $sections[$key] = HomeSection::getSectionData($key, $defaults);
+            $section = HomeSection::where('section_key', $key)
+                ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+                ->first();
+
+            $sections[$key] = $section ? [
+                'kicker' => $section->kicker ?? $defaults['kicker'] ?? null,
+                'title' => $section->title ?? $defaults['title'] ?? null,
+                'highlight' => $section->highlight ?? $defaults['highlight'] ?? null,
+                'subtitle' => $section->subtitle ?? $defaults['subtitle'] ?? null,
+                'content' => $section->content ?? $defaults['content'] ?? null,
+                'action' => $section->action_text && $section->action_url
+                    ? '<a class="fe-btn ghost" href="'.$section->action_url.'" wire:navigate>'.$section->action_text.'</a>'
+                    : ($defaults['action'] ?? null),
+                'enabled' => $section->enabled,
+                'raffle_type' => $section->raffle_type,
+                'raffle_ids' => $this->ensureArray($section->raffle_ids),
+                'post_type' => $section->post_type,
+                'post_ids' => $this->ensureArray($section->post_ids),
+                'bonus_type' => $section->bonus_type,
+                'bonus_ids' => $this->ensureArray($section->bonus_ids),
+                'repeater_data' => $this->ensureArray($section->repeater_data ?: ($defaults['repeater_data'] ?? [])),
+            ] : $defaults;
         }
 
         return $sections;

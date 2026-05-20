@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Concerns\HasVendorScope;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasVendorScope, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -20,6 +21,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'role_id',
+        'vendor_id',
         'username',
         'name',
         'apellido',
@@ -72,6 +74,16 @@ class User extends Authenticatable
         return $this->hasOne(Agent::class);
     }
 
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function assignedVendor()
+    {
+        return $this->hasOne(Vendor::class, 'user_id');
+    }
+
     public function hasRole(string $role): bool
     {
         return $this->role?->name === $role;
@@ -80,7 +92,7 @@ class User extends Authenticatable
     public function lines()
     {
         return $this->belongsToMany(Line::class, 'line_clients')
-            ->withPivot('is_active')
+            ->withPivot('vendor_id', 'is_active')
             ->withTimestamps();
     }
 }

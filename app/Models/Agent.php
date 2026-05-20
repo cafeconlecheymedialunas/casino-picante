@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Agent extends Model
 {
-    use HasFactory;
+    use HasFactory, HasVendorScope;
 
     protected $fillable = [
+        'vendor_id',
         'user_id',
         'username',
         'name',
@@ -35,6 +37,11 @@ class Agent extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
     public function children()

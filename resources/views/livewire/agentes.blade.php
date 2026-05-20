@@ -116,6 +116,55 @@
         .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px 20px 20px; }
         .detail-item label { display: block; margin-bottom: 3px; color: var(--muted-2); font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
         .detail-item p { margin: 0; color: var(--white); font-size: 13px; word-break: break-word; }
+
+        [data-dashboard-theme="light"] .stat-card,
+        [data-dashboard-theme="light"] .table-card,
+        [data-dashboard-theme="light"] .modal-panel {
+            background: #fffdf8 !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .table-top,
+        [data-dashboard-theme="light"] .table-footer,
+        [data-dashboard-theme="light"] .modal-head {
+            background: rgba(255,250,243,.94) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .t-head {
+            background: rgba(244,234,220,.88) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .t-row,
+        [data-dashboard-theme="light"] .line-check,
+        [data-dashboard-theme="light"] .ag-perm-off {
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .t-row:hover {
+            background: rgba(255,106,26,.08) !important;
+        }
+        [data-dashboard-theme="light"] .search-input,
+        [data-dashboard-theme="light"] .filter-select,
+        [data-dashboard-theme="light"] .form-input {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
+        [data-dashboard-theme="light"] .btn-icon,
+        [data-dashboard-theme="light"] .pg-btn,
+        [data-dashboard-theme="light"] .line-check,
+        [data-dashboard-theme="light"] .ag-perm-off {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+        }
+        [data-dashboard-theme="light"] .role-agent,
+        [data-dashboard-theme="light"] .line-badge {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+        }
+        [data-dashboard-theme="light"] .table-avatar {
+            background: #fffaf3 !important;
+        }
         @media (max-width: 860px) {
             .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .form-grid, .line-check-grid, .detail-grid { grid-template-columns: 1fr; }

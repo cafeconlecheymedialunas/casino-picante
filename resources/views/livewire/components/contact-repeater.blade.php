@@ -9,9 +9,9 @@
                 @endforeach
             </select>
             <input 
-                type="url" 
+                type="text" 
                 wire:model="{{ $fieldName }}.{{ $index }}.value" 
-                placeholder="https://..." 
+                placeholder="URL, email, telefono o usuario" 
                 class="contact-value"
             >
             <input 
@@ -131,6 +131,35 @@
     .contact-add:hover {
         background: rgba(255,106,26,0.1);
         border-style: solid;
+    }
+
+    [data-dashboard-theme="light"] .contact-row {
+        background: #ffffff;
+        border-color: var(--line);
+        box-shadow: var(--shadow-sm);
+    }
+
+    [data-dashboard-theme="light"] .contact-row-header {
+        color: var(--muted);
+    }
+
+    [data-dashboard-theme="light"] .contact-type,
+    [data-dashboard-theme="light"] .contact-value,
+    [data-dashboard-theme="light"] .contact-name {
+        background: #ffffff;
+        border-color: var(--line-2);
+        color: var(--white);
+    }
+
+    [data-dashboard-theme="light"] .contact-remove,
+    [data-dashboard-theme="light"] .contact-add {
+        background: #ffffff;
+        border-color: var(--line);
+    }
+
+    [data-dashboard-theme="light"] .contact-add:hover {
+        background: #fff7ed;
+        border-color: var(--orange);
     }
 
     @media (max-width: 720px) {

@@ -201,6 +201,39 @@
         .pm-switch-thumb { position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s; }
         .pm-switch input:checked ~ .pm-switch-track .pm-switch-thumb { transform:translateX(20px);background:var(--orange); }
 
+        [data-dashboard-theme="light"] .platforms-page .pm-card,
+        [data-dashboard-theme="light"] .platforms-page .modal-panel,
+        [data-dashboard-theme="light"] .platforms-page .pm-empty {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .platforms-page .modal-head {
+            background: rgba(255,250,243,.94) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .platforms-page .pm-card:hover {
+            background: rgba(255,106,26,.06) !important;
+            border-color: var(--orange) !important;
+        }
+        [data-dashboard-theme="light"] .platforms-page .pm-logo,
+        [data-dashboard-theme="light"] .platforms-page .pm-logo-placeholder,
+        [data-dashboard-theme="light"] .platforms-page .pm-status.inactive,
+        [data-dashboard-theme="light"] .platforms-page .pm-toggle,
+        [data-dashboard-theme="light"] .platforms-page .modal-close,
+        [data-dashboard-theme="light"] .platforms-page .pm-switch-track {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .platforms-page .form-input {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
+
         @media (max-width: 768px) {
             .platforms-page .module-top-bar { justify-content:stretch;padding:10px 12px 8px; }
             .platforms-page .module-top-bar .btn-primary { width:100%;justify-content:center; }

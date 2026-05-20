@@ -12,6 +12,7 @@
                 <div class="fe-footer-title">Secciones</div>
                 <ul>
                     <li><a href="{{ route('frontend.home') }}" wire:navigate>Inicio</a></li>
+                    <li><a href="{{ route('frontend.vendors') }}" wire:navigate>Cajeros</a></li>
                     <li><a href="{{ route('frontend.lines') }}" wire:navigate>Lineas</a></li>
                     <li><a href="{{ route('frontend.bonuses') }}" wire:navigate>Bonos</a></li>
                     <li><a href="{{ route('frontend.blog') }}" wire:navigate>Novedades</a></li>
