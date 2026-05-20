@@ -161,7 +161,7 @@
                 <div>
                     <div class="fe-kicker">Noticias y jugadas</div>
                     <h1 class="blog-page-title">Novedades de <span>RED PICANTES</span></h1>
-                    <p class="fe-subtitle">Promos, sorteos activos, recomendaciones para jugar mejor y avisos importantes del casino.</p>
+                    <p class="fe-subtitle">Bonos, sorteos activos, recomendaciones para jugar mejor y avisos importantes del casino.</p>
                 </div>
 
                 <input

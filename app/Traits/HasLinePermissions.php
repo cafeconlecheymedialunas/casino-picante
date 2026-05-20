@@ -214,7 +214,12 @@ trait HasLinePermissions
     public function lineIdForScopedCreate(): ?int
     {
         $activeLineId = session('active_line_id');
-        if ($activeLineId && Line::whereKey($activeLineId)->where('status', 'active')->exists()) {
+        $activeVendorId = session('active_vendor_id');
+
+        if ($activeLineId && Line::whereKey($activeLineId)
+            ->where('status', 'active')
+            ->when($activeVendorId, fn ($query) => $query->where('vendor_id', (int) $activeVendorId))
+            ->exists()) {
             return (int) $activeLineId;
         }
 
@@ -234,4 +239,15 @@ trait HasLinePermissions
         return $lineId;
     }
 
+    public function ensureLineMatchesActiveVendor(Line|int $line, string $message = 'La linea no pertenece al vendor activo.'): Line
+    {
+        $lineModel = $line instanceof Line ? $line : Line::withoutGlobalScopes()->findOrFail($line);
+        $activeVendorId = session('active_vendor_id');
+
+        if ($activeVendorId && (int) $lineModel->vendor_id !== (int) $activeVendorId) {
+            abort(403, $message);
+        }
+
+        return $lineModel;
+    }
 }

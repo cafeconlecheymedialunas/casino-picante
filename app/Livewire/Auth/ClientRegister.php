@@ -4,8 +4,11 @@ namespace App\Livewire\Auth;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\Roles;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
@@ -41,6 +44,13 @@ class ClientRegister extends Component
     public function register(): void
     {
         $validated = $this->validate();
+        $vendorId = session('active_vendor_id');
+
+        if (! $vendorId || ! Vendor::query()->whereKey($vendorId)->where('is_active', true)->exists()) {
+            throw ValidationException::withMessages([
+                'username' => 'Ingresá desde el link de un cajero activo para registrarte.',
+            ]);
+        }
 
         $role = Role::firstOrCreate(
             ['name' => Roles::CLIENTE],
@@ -49,6 +59,7 @@ class ClientRegister extends Component
 
         $user = User::create([
             'role_id' => $role->id,
+            'vendor_id' => (int) $vendorId,
             'name' => $validated['name'],
             'apellido' => $validated['apellido'] ?? null,
             'username' => $validated['username'],
@@ -58,6 +69,8 @@ class ClientRegister extends Component
             'password' => $validated['password'],
             'status' => 'active',
         ]);
+
+        event(new Registered($user));
 
         Auth::login($user);
         session()->forget(['active_agent_id', 'active_line_id']);
@@ -79,7 +92,14 @@ class ClientRegister extends Component
             'username' => ['required', 'string', 'min:3', 'max:40', 'alpha_dash', 'unique:users,username'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(8)
+                    ->mixedCase()
+                    ->letters()
+                    ->numbers(),
+            ],
             'recibir_bonos' => ['boolean'],
         ];
     }

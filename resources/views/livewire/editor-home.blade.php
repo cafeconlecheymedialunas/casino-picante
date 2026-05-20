@@ -152,6 +152,43 @@
         .eh-toast.success { background:var(--good,#25c46b); color:#fff; }
         .eh-toast.error { background:#ff4757; color:#fff; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+        [data-dashboard-theme="light"] .eh-section,
+        [data-dashboard-theme="light"] .eh-card,
+        [data-dashboard-theme="light"] .eh-repeater-item {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .eh-section-head {
+            background: rgba(255,250,243,.94) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .eh-card:hover,
+        [data-dashboard-theme="light"] .eh-card.selected,
+        [data-dashboard-theme="light"] .eh-repeater-item:hover,
+        [data-dashboard-theme="light"] .eh-repeater-item.new-row {
+            background: rgba(255,106,26,.08) !important;
+            border-color: var(--orange) !important;
+        }
+        [data-dashboard-theme="light"] .eh-card-img,
+        [data-dashboard-theme="light"] .eh-repeater-thumb {
+            background: rgba(244,234,220,.78) !important;
+        }
+        [data-dashboard-theme="light"] .eh-repeater-field input {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
+        [data-dashboard-theme="light"] .eh-repeater-actions button,
+        [data-dashboard-theme="light"] .eh-repeater-addbtn,
+        [data-dashboard-theme="light"] button[style*="background:transparent"] {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+            border-color: var(--line) !important;
+        }
         @media (max-width: 768px) {
             .page-container:has(.eh-page) { overflow-x:hidden; }
             .eh-page { gap:16px; }

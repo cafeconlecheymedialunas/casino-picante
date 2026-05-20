@@ -31,8 +31,57 @@
         .settings-error { color: #ff5050; font-size: 12px; margin-top: 5px; }
         .settings-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
         .settings-alert { margin-bottom: 16px; border: 1px solid rgba(37,196,107,.35); background: rgba(37,196,107,.1); color: #77e6a1; border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 700; }
+        .theme-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .theme-option { position: relative; display: flex; align-items: center; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.035); cursor: pointer; transition: all .15s; }
+        .theme-option:hover { border-color: var(--orange); background: rgba(255,106,26,.08); }
+        .theme-option input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .theme-swatch { width: 46px; height: 34px; border-radius: 7px; border: 1px solid var(--line-2); display: grid; grid-template-columns: 15px 1fr; overflow: hidden; flex-shrink: 0; }
+        .theme-swatch::before { content: ""; display: block; border-right: 1px solid var(--line-2); }
+        .theme-swatch.dark { background: #120909; }
+        .theme-swatch.dark::before { background: #0a0606; }
+        .theme-swatch.light { background: #fffaf3; }
+        .theme-swatch.light::before { background: #1a0d0d; }
+        .theme-copy strong { display: block; color: var(--white); font-size: 13px; }
+        .theme-copy small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+        .theme-option:has(input:checked) { border-color: var(--orange); background: rgba(255,106,26,.12); box-shadow: 0 0 0 1px rgba(255,106,26,.18) inset; }
+        [data-dashboard-theme="light"] .settings-sidebar,
+        [data-dashboard-theme="light"] .settings-panel {
+            background: var(--panel);
+            border-color: var(--line);
+            box-shadow: var(--shadow-sm);
+        }
+        [data-dashboard-theme="light"] .settings-panel-head {
+            background: var(--panel-2);
+            border-bottom-color: var(--line);
+        }
+        [data-dashboard-theme="light"] .sidebar-tab,
+        [data-dashboard-theme="light"] .settings-panel-title,
+        [data-dashboard-theme="light"] .theme-copy strong {
+            color: var(--white);
+        }
+        [data-dashboard-theme="light"] .settings-panel-subtitle,
+        [data-dashboard-theme="light"] .settings-label,
+        [data-dashboard-theme="light"] .theme-copy small {
+            color: var(--muted);
+        }
+        [data-dashboard-theme="light"] .settings-input,
+        [data-dashboard-theme="light"] .theme-option {
+            background: #ffffff;
+            border-color: var(--line-2);
+            color: var(--white);
+        }
+        [data-dashboard-theme="light"] .theme-option:hover,
+        [data-dashboard-theme="light"] .theme-option:has(input:checked) {
+            background: #fff7ed;
+            border-color: var(--orange);
+        }
+        [data-dashboard-theme="light"] .settings-alert {
+            background: #ecfdf3;
+            border-color: #b7efc9;
+            color: #167344;
+        }
         @media (max-width: 780px) { .settings-layout { flex-direction: column; } .settings-sidebar { width: 100%; } }
-        @media (max-width: 760px) { .settings-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 760px) { .settings-grid, .theme-options { grid-template-columns: 1fr; } }
     </style>
 
     <div class="settings-layout page-container">
@@ -46,6 +95,9 @@
                 @endif
                 <button type="button" wire:click="setTab('notifications')" class="sidebar-tab {{ $activeTab === 'notifications' ? 'active' : '' }}">
                     <span>NO</span> Notificaciones
+                </button>
+                <button type="button" wire:click="setTab('appearance')" class="sidebar-tab {{ $activeTab === 'appearance' ? 'active' : '' }}">
+                    <span>AP</span> Apariencia
                 </button>
             </nav>
         </aside>
@@ -80,6 +132,16 @@
                             <div class="settings-field full">
                                 <x-upload-image label="Logo del Cajero" model="logoUpload" :value="$logo" removeAction="removeLogo" aspect="1" hint="PNG/JPG cuadrado" />
                                 @error('logoUpload') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+
+                            <div class="settings-field">
+                                <x-upload-image label="Imagen hero publica" model="heroImageUpload" :value="$heroImage" removeAction="removeHeroImage" aspect="16/9" hint="Fondo de /cajero/slug" />
+                                @error('heroImageUpload') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+
+                            <div class="settings-field">
+                                <x-upload-image label="Imagen perfil publica" model="portraitImageUpload" :value="$portraitImage" removeAction="removePortraitImage" aspect="3/4" hint="Figura/tarjeta del cajero" />
+                                @error('portraitImageUpload') <div class="settings-error">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="settings-field full">
@@ -173,6 +235,47 @@
                 @endif
             @elseif($activeTab === 'notifications')
                 @livewire('notification-settings')
+            @elseif($activeTab === 'appearance')
+                <section class="settings-panel">
+                    <div class="settings-panel-head">
+                        <div>
+                            <h3 class="settings-panel-title">Tema del dashboard</h3>
+                            <p class="settings-panel-subtitle">Elegi la apariencia global para todas las pantallas internas.</p>
+                        </div>
+                    </div>
+
+                    <form wire:submit.prevent="saveDashboardTheme" class="settings-form">
+                        @if(session('theme_message'))
+                            <div class="settings-alert">{{ session('theme_message') }}</div>
+                        @endif
+
+                        <div class="theme-options">
+                            <label class="theme-option">
+                                <input type="radio" wire:model="dashboardTheme" value="dark">
+                                <span class="theme-swatch dark"></span>
+                                <span class="theme-copy">
+                                    <strong>Oscuro</strong>
+                                    <small>Fondo profundo con acentos naranja.</small>
+                                </span>
+                            </label>
+
+                            <label class="theme-option">
+                                <input type="radio" wire:model="dashboardTheme" value="light">
+                                <span class="theme-swatch light"></span>
+                                <span class="theme-copy">
+                                    <strong>Claro</strong>
+                                    <small>Superficies claras para operar de dia.</small>
+                                </span>
+                            </label>
+                        </div>
+
+                        @error('dashboardTheme') <div class="settings-error">{{ $message }}</div> @enderror
+
+                        <div class="settings-actions">
+                            <button type="submit" class="btn-primary">Guardar apariencia</button>
+                        </div>
+                    </form>
+                </section>
             @endif
         </main>
     </div>

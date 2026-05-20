@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Support\Roles;
@@ -17,6 +18,8 @@ class Settings extends Component
 
     public string $activeTab = 'notifications';
 
+    public string $dashboardTheme = 'dark';
+
     public ?int $vendorId = null;
 
     public string $name = '';
@@ -26,6 +29,14 @@ class Settings extends Component
     public ?string $logo = null;
 
     public $logoUpload = null;
+
+    public ?string $heroImage = null;
+
+    public $heroImageUpload = null;
+
+    public ?string $portraitImage = null;
+
+    public $portraitImageUpload = null;
 
     public string $description = '';
 
@@ -54,6 +65,7 @@ class Settings extends Component
         $this->ensureAdmin();
         $this->loadVendorForm();
         $this->loadCajeroUserForm();
+        $this->loadDashboardTheme();
 
         if ($this->currentVendor()) {
             $this->activeTab = 'vendor';
@@ -78,6 +90,23 @@ class Settings extends Component
         $this->activeTab = $tab;
     }
 
+    public function saveDashboardTheme(): void
+    {
+        $this->ensureAdmin();
+
+        $this->validate([
+            'dashboardTheme' => ['required', Rule::in(['dark', 'light'])],
+        ]);
+
+        Setting::updateOrCreate(
+            ['key' => 'dashboard_theme'],
+            ['value' => $this->dashboardTheme],
+        );
+
+        session()->flash('theme_message', 'Apariencia actualizada correctamente.');
+        $this->dispatch('dashboard-theme-updated', theme: $this->dashboardTheme);
+    }
+
     public function saveVendor(): void
     {
         $this->ensureAdmin();
@@ -88,6 +117,8 @@ class Settings extends Component
             'name' => ['required', 'string', 'min:3', 'max:160'],
             'slug' => ['required', 'string', 'max:180', Rule::unique('vendors', 'slug')->ignore($vendor->id)],
             'logoUpload' => ['nullable', 'image', 'max:5120'],
+            'heroImageUpload' => ['nullable', 'image', 'max:5120'],
+            'portraitImageUpload' => ['nullable', 'image', 'max:5120'],
             'description' => ['nullable', 'string', 'max:1200'],
             'contacts' => ['array'],
             'contacts.*.type' => ['nullable', 'string', 'max:40'],
@@ -98,15 +129,27 @@ class Settings extends Component
 
         $branding = $this->decodeBranding();
         $logo = $this->logo;
+        $heroImage = $this->heroImage;
+        $portraitImage = $this->portraitImage;
 
         if ($this->logoUpload) {
             $logo = $this->logoUpload->store("vendors/{$vendor->id}/logos", 'public');
+        }
+
+        if ($this->heroImageUpload) {
+            $heroImage = $this->heroImageUpload->store("vendors/{$vendor->id}/public", 'public');
+        }
+
+        if ($this->portraitImageUpload) {
+            $portraitImage = $this->portraitImageUpload->store("vendors/{$vendor->id}/public", 'public');
         }
 
         $vendor->update([
             'name' => trim($this->name),
             'slug' => Str::slug($this->slug),
             'logo' => $logo,
+            'hero_image' => $heroImage,
+            'portrait_image' => $portraitImage,
             'description' => trim($this->description) ?: null,
             'contacts' => $this->normalizedContacts(),
             'branding' => $branding,
@@ -114,6 +157,10 @@ class Settings extends Component
 
         $this->logo = $logo;
         $this->logoUpload = null;
+        $this->heroImage = $heroImage;
+        $this->heroImageUpload = null;
+        $this->portraitImage = $portraitImage;
+        $this->portraitImageUpload = null;
         session()->flash('vendor_message', 'Cajero actualizado correctamente.');
     }
 
@@ -160,6 +207,28 @@ class Settings extends Component
         $vendor->update(['logo' => null]);
         $this->logo = null;
         $this->logoUpload = null;
+    }
+
+    public function removeHeroImage(): void
+    {
+        $this->ensureAdmin();
+        $vendor = $this->currentVendor();
+        abort_unless($vendor, 403, 'No hay cajero activo para editar.');
+
+        $vendor->update(['hero_image' => null]);
+        $this->heroImage = null;
+        $this->heroImageUpload = null;
+    }
+
+    public function removePortraitImage(): void
+    {
+        $this->ensureAdmin();
+        $vendor = $this->currentVendor();
+        abort_unless($vendor, 403, 'No hay cajero activo para editar.');
+
+        $vendor->update(['portrait_image' => null]);
+        $this->portraitImage = null;
+        $this->portraitImageUpload = null;
     }
 
     public function render()
@@ -214,6 +283,8 @@ class Settings extends Component
         $this->name = $vendor->name;
         $this->slug = $vendor->slug;
         $this->logo = $vendor->logo;
+        $this->heroImage = $vendor->hero_image;
+        $this->portraitImage = $vendor->portrait_image;
         $this->description = $vendor->description ?? '';
         $this->contacts = $vendor->contacts ?? [];
         $this->brandingJson = json_encode($vendor->branding ?: new \stdClass(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -234,6 +305,13 @@ class Settings extends Component
         $this->cajeroPhone = $user->phone ?? '';
         $this->cajeroContact = $user->contact ?? '';
         $this->cajeroPassword = '';
+    }
+
+    private function loadDashboardTheme(): void
+    {
+        $theme = Setting::query()->where('key', 'dashboard_theme')->value('value');
+
+        $this->dashboardTheme = in_array($theme, ['dark', 'light'], true) ? $theme : 'dark';
     }
 
     private function decodeBranding(): array

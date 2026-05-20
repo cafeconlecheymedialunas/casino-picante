@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Auth;
 
+use App\Models\Agent;
 use App\Models\User;
 use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Component;
 
 class Login extends Component
@@ -26,55 +28,64 @@ class Login extends Component
 
     private const MAX_ATTEMPTS = 5;
 
-    private const LOCKOUT_MINUTES = 1;
+    private const LOCKOUT_SECONDS = 60;
 
     public function login(): void
     {
-        if ($this->isLockedOut()) {
-            $this->addError('username', 'Demasiados intentos. Intenta nuevamente en un minuto.');
-
-            return;
-        }
-
         $this->validate();
 
-        if ($this->attemptPanelLogin('username') || $this->attemptPanelLogin('email')) {
-            $this->clearAttempts();
+        if ($this->isLockedOut()) {
+            $seconds = $this->secondsUntilAvailable();
+            $this->addError('username', "Demasiados intentos. Intenta nuevamente en {$seconds} segundos.");
 
             return;
         }
 
-        $this->incrementAttempts();
-        $remaining = self::MAX_ATTEMPTS - $this->getAttempts();
+        $user = $this->findUserForLogin();
+
+        if ($user && $user->status !== 'active') {
+            RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
+            $this->addError('username', 'Usuario o contrasena incorrectos.');
+            $this->reset('password');
+
+            return;
+        }
+
+        if ($this->attemptPanelLogin('username') || $this->attemptPanelLogin('email')) {
+            RateLimiter::clear($this->throttleKey());
+
+            return;
+        }
+
+        RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
+        $remaining = self::MAX_ATTEMPTS - RateLimiter::attempts($this->throttleKey());
         $this->addError('username', 'Usuario o contrasena incorrectos.');
         $this->reset('password');
     }
 
+    private function findUserForLogin(): ?User
+    {
+        return User::withoutGlobalScopes()
+            ->where('username', $this->username)
+            ->orWhere('email', $this->username)
+            ->first();
+    }
+
     private function isLockedOut(): bool
     {
-        $lockedUntil = Session::get('login_locked_until');
-
-        return $lockedUntil && now()->timestamp < $lockedUntil;
+        return RateLimiter::tooManyAttempts($this->throttleKey(), self::MAX_ATTEMPTS);
     }
 
-    private function getAttempts(): int
+    private function secondsUntilAvailable(): int
     {
-        return Session::get('login_attempts', 0);
+        return RateLimiter::availableIn($this->throttleKey());
     }
 
-    private function incrementAttempts(): void
+    private function throttleKey(): string
     {
-        $attempts = $this->getAttempts() + 1;
-        Session::put('login_attempts', $attempts);
+        $ip = request()->ip();
 
-        if ($attempts >= self::MAX_ATTEMPTS) {
-            Session::put('login_locked_until', now()->addMinutes(self::LOCKOUT_MINUTES)->timestamp);
-        }
-    }
-
-    private function clearAttempts(): void
-    {
-        Session::forget(['login_attempts', 'login_locked_until']);
+        return "panel-login:{$ip}:{$this->username}";
     }
 
     public function render()
@@ -87,31 +98,27 @@ class Login extends Component
 
     private function attemptPanelLogin(string $field): bool
     {
-        $result = Auth::attempt([$field => $this->username, 'password' => $this->password], false);
+        $user = $this->findUserForLogin();
 
-        if (! $result) {
+        if (! $user || ! Hash::check($this->password, $user->password)) {
             return false;
         }
 
-        $user = User::with(['role', 'agent'])->find(Auth::id());
-
-        if ($user?->status !== 'active') {
-            Auth::logout();
-            $this->addGenericError();
-
-            return true;
-        }
+        Auth::login($user, false);
+        session()->regenerate();
 
         if ($user?->hasRole(Roles::ADMIN)) {
-            session()->forget(['active_agent_id', 'active_line_id']);
+            session()->forget(['active_agent_id', 'active_line_id', 'active_vendor_id']);
 
             $this->redirect(route('dashboard'), navigate: false);
 
             return true;
         }
 
-        if ($user?->hasRole(Roles::AGENTE) && $user->agent?->status === 'active') {
-            session(['active_agent_id' => $user->agent->id]);
+        $agent = Agent::withoutGlobalScopes()->where('user_id', $user->id)->first();
+        if ($user?->hasRole(Roles::AGENTE) && $agent?->status === 'active') {
+            session()->forget(['active_vendor_id']);
+            session(['active_agent_id' => $agent->id]);
 
             $this->redirect(route('dashboard'), navigate: false);
 

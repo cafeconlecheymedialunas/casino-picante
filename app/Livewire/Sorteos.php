@@ -788,6 +788,9 @@ class Sorteos extends Component
     private function authorizeLineChoices(): void
     {
         $allowed = $this->availableLines()->pluck('id');
+        collect($this->lineIds)
+            ->map(fn ($id) => (int) $id)
+            ->each(fn ($lineId) => $this->ensureLineMatchesActiveVendor($lineId, 'No podes crear sorteos para lineas fuera del vendor activo.'));
 
         if (collect($this->lineIds)->map(fn ($id) => (int) $id)->diff($allowed)->isNotEmpty()) {
             abort(403, 'No podes crear sorteos para lineas fuera de tu alcance.');
@@ -800,7 +803,7 @@ class Sorteos extends Component
             return;
         }
 
-        abort_unless(\App\Models\Platform::whereKey((int) $this->platform_id)->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+        abort_unless(\App\Models\Platform::whereKey((int) $this->platform_id)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
     }
 
     private function assignmentLineId(?Raffle $raffle = null): ?int
@@ -847,9 +850,11 @@ class Sorteos extends Component
     private function assignableUsers(?Raffle $raffle)
     {
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
+        $vendorId = $raffle?->vendor_id ?: session('active_vendor_id');
 
         return User::query()
             ->when($clientRoleId, fn ($query) => $query->where('role_id', $clientRoleId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', (int) $vendorId))
             ->where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'username', 'name', 'email']);
@@ -864,9 +869,11 @@ class Sorteos extends Component
         }
 
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
+        $vendorId = $raffle->vendor_id ?: session('active_vendor_id');
 
         return (! $clientRoleId || (int) $user->role_id === (int) $clientRoleId)
-            && $user->status === 'active';
+            && $user->status === 'active'
+            && (! $vendorId || (int) $user->vendor_id === (int) $vendorId);
     }
 
     private function participants()

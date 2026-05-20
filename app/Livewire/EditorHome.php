@@ -68,22 +68,22 @@ class EditorHome extends Component
 
         $this->categories = Category::all()->toArray();
 
-        $this->selectedCarousel = HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
+        $this->selectedCarousel = $this->homeConfigQuery(HomeConfig::SECTION_CAROUSEL)
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
 
-        $this->selectedBonuses = HomeConfig::where('section', HomeConfig::SECTION_BONUSES)
+        $this->selectedBonuses = $this->homeConfigQuery(HomeConfig::SECTION_BONUSES)
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
 
-        $this->selectedBlogs = HomeConfig::where('section', HomeConfig::SECTION_BLOG)
+        $this->selectedBlogs = $this->homeConfigQuery(HomeConfig::SECTION_BLOG)
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
 
-        $this->selectedRafflesUpcoming = HomeConfig::where('section', HomeConfig::SECTION_RAFFLES_UPCOMING)
+        $this->selectedRafflesUpcoming = $this->homeConfigQuery(HomeConfig::SECTION_RAFFLES_UPCOMING)
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
@@ -101,7 +101,7 @@ class EditorHome extends Component
                 'subtitle' => 'Sin vueltas: contacto, carga y juego. Si necesitás ayuda, una persona te responde.',
                 'repeater_data' => [
                     ['title' => 'Pedí tu usuario', 'subtitle' => 'Elegí una línea de atención y solicitá el acceso para empezar a jugar.'],
-                    ['title' => 'Cargá saldo', 'subtitle' => 'Consultá medios de carga, promociones disponibles y bonos para tu cuenta.'],
+                    ['title' => 'Cargá saldo', 'subtitle' => 'Consultá medios de carga y bonos disponibles para tu cuenta.'],
                     ['title' => 'Entrá a jugar', 'subtitle' => 'Disfrutá tus juegos favoritos, participá en sorteos y pedí asistencia cuando quieras.'],
                 ],
             ],
@@ -111,22 +111,23 @@ class EditorHome extends Component
                 'kicker' => 'Sobre RED PICANTES',
                 'title' => 'Casino online con atencion',
                 'highlight' => 'real',
-                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, promos claras, sorteos activos y soporte humano para acompaniarte.',
+                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, bonos claros, sorteos activos y soporte humano para acompaniarte.',
                 'repeater_data' => [
                     ['title' => 'Alta rapida', 'subtitle' => 'Contactás una línea y pedís tu usuario sin formularios eternos.'],
-                    ['title' => 'Bonos vigentes', 'subtitle' => 'Promociones para recargar, arrancar con ventaja y jugar más.'],
+                    ['title' => 'Bonos vigentes', 'subtitle' => 'Bonos para recargar, arrancar con ventaja y jugar más.'],
                     ['title' => 'Sorteos activos', 'subtitle' => 'Premios y chances extra para usuarios que participan.'],
                     ['title' => 'Soporte humano', 'subtitle' => 'Atención directa para cargas, retiros, dudas y novedades.'],
                 ],
             ],
-            'bonos' => ['kicker' => 'Promos para jugar mas', 'title' => 'Bonos', 'highlight' => 'activos', 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.'],
-            'blog' => ['kicker' => 'Noticias y jugadas', 'title' => 'Noticias y', 'highlight' => 'jugadas', 'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y promos nuevas antes de que pasen.'],
+            'bonos' => ['kicker' => 'Bonos para jugar mas', 'title' => 'Bonos', 'highlight' => 'activos', 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.'],
+            'blog' => ['kicker' => 'Noticias y jugadas', 'title' => 'Noticias y', 'highlight' => 'jugadas', 'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.'],
         ];
 
         foreach ($defaultSections as $key => $defaults) {
-            $section = HomeSection::where('section_key', $key)->first();
+            $section = $this->homeSectionQuery($key)->first();
             if (! $section) {
                 $section = HomeSection::create([
+                    'vendor_id' => $this->activeVendorId(),
                     'section_key' => $key,
                     'enabled' => true,
                     'order' => array_search($key, array_keys($defaultSections)),
@@ -185,7 +186,7 @@ class EditorHome extends Component
         }
 
         HomeSection::updateOrCreate(
-            ['section_key' => $key],
+            ['vendor_id' => $this->activeVendorId(), 'section_key' => $key],
             [
                 'kicker' => $data['kicker'] ?? null,
                 'title' => $data['title'] ?? null,
@@ -227,7 +228,7 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $section = HomeSection::where('section_key', $key)->first();
+        $section = $this->homeSectionQuery($key)->first();
         if ($section) {
             $section->update(['enabled' => ! $section->enabled]);
             $this->sections[$key]['enabled'] = ! $section->enabled;
@@ -236,7 +237,7 @@ class EditorHome extends Component
 
     public function loadCarouselItems(): void
     {
-        $this->carouselItems = CarouselItem::orderBy('order')->get()->toArray();
+        $this->carouselItems = CarouselItem::where('vendor_id', $this->activeVendorId())->orderBy('order')->get()->toArray();
     }
 
     public function addCarouselItem(): void
@@ -249,10 +250,11 @@ class EditorHome extends Component
             'newCarouselLink' => 'nullable|string|max:500',
         ]);
 
-        $maxOrder = CarouselItem::max('order') ?? 0;
+        $maxOrder = CarouselItem::where('vendor_id', $this->activeVendorId())->max('order') ?? 0;
 
         CarouselItem::create([
             'image' => ImageStorage::store($this->newCarouselImage, 'carousel'),
+            'vendor_id' => $this->activeVendorId(),
             'title' => $this->newCarouselTitle,
             'link' => $this->newCarouselLink,
             'order' => $maxOrder + 1,
@@ -270,7 +272,8 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $item = CarouselItem::find($itemId);
+        $this->authorizeScopedItem(CarouselItem::class, $itemId);
+        $item = CarouselItem::where('vendor_id', $this->activeVendorId())->find($itemId);
         if ($item) {
             ImageStorage::delete($item->image);
             $item->delete();
@@ -283,12 +286,14 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $item = CarouselItem::find($itemId);
+        $this->authorizeScopedItem(CarouselItem::class, $itemId);
+        $item = CarouselItem::where('vendor_id', $this->activeVendorId())->find($itemId);
         if (! $item) {
             return;
         }
 
-        $prev = CarouselItem::where('order', '<', $item->order)
+        $prev = CarouselItem::where('vendor_id', $this->activeVendorId())
+            ->where('order', '<', $item->order)
             ->orderBy('order', 'desc')
             ->first();
 
@@ -305,12 +310,14 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $item = CarouselItem::find($itemId);
+        $this->authorizeScopedItem(CarouselItem::class, $itemId);
+        $item = CarouselItem::where('vendor_id', $this->activeVendorId())->find($itemId);
         if (! $item) {
             return;
         }
 
-        $next = CarouselItem::where('order', '>', $item->order)
+        $next = CarouselItem::where('vendor_id', $this->activeVendorId())
+            ->where('order', '>', $item->order)
             ->orderBy('order', 'asc')
             ->first();
 
@@ -329,13 +336,14 @@ class EditorHome extends Component
         $this->authorizeScopedItem(CarouselItem::class, $itemId);
 
         if (in_array($itemId, $this->selectedCarousel)) {
-            HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
+            $this->homeConfigQuery(HomeConfig::SECTION_CAROUSEL)
                 ->where('item_id', $itemId)
                 ->delete();
             $this->selectedCarousel = array_values(array_diff($this->selectedCarousel, [$itemId]));
         } else {
             $order = count($this->selectedCarousel);
             HomeConfig::create([
+                'vendor_id' => $this->activeVendorId(),
                 'section' => HomeConfig::SECTION_CAROUSEL,
                 'item_id' => $itemId,
                 'order' => $order,
@@ -454,12 +462,12 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $item = HomeConfig::where('section', $section)->where('item_id', $itemId)->first();
+        $item = $this->homeConfigQuery($section)->where('item_id', $itemId)->first();
         if (! $item || $item->order === 0) {
             return;
         }
 
-        $prev = HomeConfig::where('section', $section)
+        $prev = $this->homeConfigQuery($section)
             ->where('order', $item->order - 1)
             ->first();
 
@@ -475,17 +483,17 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $item = HomeConfig::where('section', $section)->where('item_id', $itemId)->first();
+        $item = $this->homeConfigQuery($section)->where('item_id', $itemId)->first();
         if (! $item) {
             return;
         }
 
-        $maxOrder = HomeConfig::where('section', $section)->max('order');
+        $maxOrder = $this->homeConfigQuery($section)->max('order');
         if ($item->order >= $maxOrder) {
             return;
         }
 
-        $next = HomeConfig::where('section', $section)
+        $next = $this->homeConfigQuery($section)
             ->where('order', $item->order + 1)
             ->first();
 
@@ -499,7 +507,7 @@ class EditorHome extends Component
 
     private function reorderSection($section)
     {
-        $items = HomeConfig::where('section', $section)->orderBy('order')->get();
+        $items = $this->homeConfigQuery($section)->orderBy('order')->get();
         foreach ($items as $index => $item) {
             $item->update(['order' => $index]);
         }
@@ -508,9 +516,9 @@ class EditorHome extends Component
 
     private function refreshSelections()
     {
-        $this->selectedBonuses = HomeConfig::where('section', HomeConfig::SECTION_BONUSES)->orderBy('order')->pluck('item_id')->toArray();
-        $this->selectedBlogs = HomeConfig::where('section', HomeConfig::SECTION_BLOG)->orderBy('order')->pluck('item_id')->toArray();
-        $this->selectedRafflesUpcoming = HomeConfig::where('section', HomeConfig::SECTION_RAFFLES_UPCOMING)->orderBy('order')->pluck('item_id')->toArray();
+        $this->selectedBonuses = $this->homeConfigQuery(HomeConfig::SECTION_BONUSES)->orderBy('order')->pluck('item_id')->toArray();
+        $this->selectedBlogs = $this->homeConfigQuery(HomeConfig::SECTION_BLOG)->orderBy('order')->pluck('item_id')->toArray();
+        $this->selectedRafflesUpcoming = $this->homeConfigQuery(HomeConfig::SECTION_RAFFLES_UPCOMING)->orderBy('order')->pluck('item_id')->toArray();
     }
 
     public function saveSectionAjax()
@@ -535,7 +543,7 @@ class EditorHome extends Component
         };
 
         HomeSection::updateOrCreate(
-            ['section_key' => $key],
+            ['vendor_id' => $this->activeVendorId(), 'section_key' => $key],
             [
                 'raffle_ids' => $key === 'sorteo' ? $parseToArray(request()->input('raffle_ids', ''), Raffle::class) : null,
                 'bonus_ids' => $key === 'bonos' ? $parseToArray(request()->input('bonus_ids', ''), Bonus::class) : null,
@@ -567,17 +575,17 @@ class EditorHome extends Component
         $blogIds = $parseToArray(request()->input('blog', ''), Post::class);
 
         HomeSection::updateOrCreate(
-            ['section_key' => 'sorteo'],
+            ['vendor_id' => $this->activeVendorId(), 'section_key' => 'sorteo'],
             ['raffle_ids' => $sorteoIds]
         );
 
         HomeSection::updateOrCreate(
-            ['section_key' => 'bonos'],
+            ['vendor_id' => $this->activeVendorId(), 'section_key' => 'bonos'],
             ['bonus_ids' => $bonosIds]
         );
 
         HomeSection::updateOrCreate(
-            ['section_key' => 'blog'],
+            ['vendor_id' => $this->activeVendorId(), 'section_key' => 'blog'],
             ['post_ids' => $blogIds]
         );
 
@@ -598,6 +606,8 @@ class EditorHome extends Component
         if (! $this->hasLinePermission(Permissions::HOME_EDIT)) {
             abort(403, 'Sin permiso para editar la home.');
         }
+
+        $this->activeVendorId();
     }
 
     private function authorizeScopedItem(string $model, $id): void
@@ -606,7 +616,7 @@ class EditorHome extends Component
             return;
         }
 
-        abort_unless($model::whereKey((int) $id)->exists(), 403, 'No podes seleccionar contenido fuera de tu vendor.');
+        abort_unless($model::whereKey((int) $id)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes seleccionar contenido fuera de tu vendor.');
     }
 
     private function filterScopedIds(string $model, array $ids): array
@@ -622,8 +632,30 @@ class EditorHome extends Component
         }
 
         return $model::whereIn('id', $ids)
+            ->where('vendor_id', (int) session('active_vendor_id'))
             ->pluck('id')
             ->map(fn ($id) => (string) $id)
             ->all();
+    }
+
+    private function activeVendorId(): int
+    {
+        abort_unless(session('active_vendor_id'), 403, 'Selecciona un vendor antes de editar la home.');
+
+        return (int) session('active_vendor_id');
+    }
+
+    private function homeConfigQuery(?string $section = null)
+    {
+        return HomeConfig::query()
+            ->where('vendor_id', $this->activeVendorId())
+            ->when($section, fn ($query) => $query->where('section', $section));
+    }
+
+    private function homeSectionQuery(string $key)
+    {
+        return HomeSection::query()
+            ->where('vendor_id', $this->activeVendorId())
+            ->where('section_key', $key);
     }
 }

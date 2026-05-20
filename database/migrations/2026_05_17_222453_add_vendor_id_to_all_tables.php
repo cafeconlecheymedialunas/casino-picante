@@ -14,7 +14,6 @@ return new class extends Migration
         'platforms',
         'bonuses',
         'raffles',
-        'promotions',
         'posts',
         'sales',
         'chats',

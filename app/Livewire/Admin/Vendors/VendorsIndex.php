@@ -29,8 +29,8 @@ class VendorsIndex extends Component
     public $vendorId = null;
 
     // Form fields
-    public $name, $slug, $user_id, $is_active = true, $description, $logo;
-    public $logoUpload;
+    public $name, $slug, $user_id, $is_active = true, $description, $logo, $heroImage, $portraitImage;
+    public $logoUpload, $heroImageUpload, $portraitImageUpload;
     public $contacts = [], $branding = [];
     public $brandingJson = '{}';
     
@@ -59,6 +59,8 @@ class VendorsIndex extends Component
             'is_active' => 'boolean',
             'description' => 'nullable|string',
             'logoUpload' => 'nullable|image|max:5120',
+            'heroImageUpload' => 'nullable|image|max:5120',
+            'portraitImageUpload' => 'nullable|image|max:5120',
             'contacts' => 'array',
             'contacts.*.type' => 'required_with:contacts.*.value|string|max:40',
             'contacts.*.value' => 'nullable|string|max:255',
@@ -94,14 +96,14 @@ class VendorsIndex extends Component
                     ['label' => 'Cajero']
                 );
 
-                $user = User::withoutGlobalScopes()->create([
+                $user = User::withoutEvents(fn () => User::withoutGlobalScopes()->create([
                     'name' => $this->username,
                     'username' => $this->username,
                     'email' => $this->email,
                     'password' => $this->password,
                     'role_id' => $role->id,
                     'status' => 'active',
-                ]);
+                ]));
 
                 $this->user_id = $user->id;
             } else {
@@ -113,6 +115,8 @@ class VendorsIndex extends Component
                 'slug' => $this->slug,
                 'user_id' => $this->user_id,
                 'logo' => $this->logo,
+                'hero_image' => $this->heroImage,
+                'portrait_image' => $this->portraitImage,
                 'description' => $this->description,
                 'contacts' => $this->normalizedContacts(),
                 'branding' => $branding,
@@ -122,6 +126,16 @@ class VendorsIndex extends Component
             if ($this->logoUpload) {
                 $this->logo = $this->logoUpload->store("vendors/{$vendor->id}/logos", 'public');
                 $vendor->forceFill(['logo' => $this->logo])->save();
+            }
+
+            if ($this->heroImageUpload) {
+                $this->heroImage = $this->heroImageUpload->store("vendors/{$vendor->id}/public", 'public');
+                $vendor->forceFill(['hero_image' => $this->heroImage])->save();
+            }
+
+            if ($this->portraitImageUpload) {
+                $this->portraitImage = $this->portraitImageUpload->store("vendors/{$vendor->id}/public", 'public');
+                $vendor->forceFill(['portrait_image' => $this->portraitImage])->save();
             }
 
             User::withoutGlobalScopes()
@@ -151,11 +165,15 @@ class VendorsIndex extends Component
         $this->is_active = $vendor->is_active;
         $this->description = $vendor->description;
         $this->logo = $vendor->logo;
+        $this->heroImage = $vendor->hero_image;
+        $this->portraitImage = $vendor->portrait_image;
         $this->contacts = $vendor->contacts ?? [];
         $this->branding = $vendor->branding ?? [];
         $this->brandingJson = json_encode($this->branding ?: new \stdClass(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         $this->user_mode = $vendor->user_id ? 'select' : 'create';
         $this->logoUpload = null;
+        $this->heroImageUpload = null;
+        $this->portraitImageUpload = null;
         $this->showModal = true;
     }
 
@@ -163,6 +181,18 @@ class VendorsIndex extends Component
     {
         $this->logo = null;
         $this->logoUpload = null;
+    }
+
+    public function removeHeroImage()
+    {
+        $this->heroImage = null;
+        $this->heroImageUpload = null;
+    }
+
+    public function removePortraitImage()
+    {
+        $this->portraitImage = null;
+        $this->portraitImageUpload = null;
     }
 
     public function openCreateModal()
@@ -194,7 +224,11 @@ class VendorsIndex extends Component
         $this->is_active = true;
         $this->description = '';
         $this->logo = '';
+        $this->heroImage = '';
+        $this->portraitImage = '';
         $this->logoUpload = null;
+        $this->heroImageUpload = null;
+        $this->portraitImageUpload = null;
         $this->contacts = [];
         $this->branding = [];
         $this->brandingJson = '{}';

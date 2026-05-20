@@ -65,9 +65,15 @@ class Tickets extends Component
         ]);
 
         $lineId = $this->requireLineIdForScopedCreate();
+        $user = $this->findAssignableUserForTicket((int) $this->createUserId, $lineId);
+        if (! $user) {
+            $this->addError('createUserId', 'Selecciona un cliente activo del vendor y la linea actual.');
+
+            return;
+        }
 
         $ticket = Ticket::create([
-            'user_id' => (int) $this->createUserId,
+            'user_id' => $user->id,
             'line_id' => $lineId,
             'subject' => trim($this->createSubject),
             'category' => $this->createCategory,
@@ -331,5 +337,19 @@ class Tickets extends Component
     {
         return Ticket::withoutGlobalScopes()
             ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId));
+    }
+
+    private function findAssignableUserForTicket(int $userId, int $lineId): ?User
+    {
+        return User::whereKey($userId)
+            ->where('status', 'active')
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
+            ->where(function ($query) use ($lineId) {
+                $query->where('line_id', $lineId)
+                    ->orWhereHas('lines', fn ($line) => $line
+                        ->where('lines.id', $lineId)
+                        ->where('line_clients.is_active', true));
+            })
+            ->first();
     }
 }

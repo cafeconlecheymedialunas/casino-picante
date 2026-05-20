@@ -445,6 +445,8 @@ class UsersIndex extends Component
             ->map(fn ($lineId) => (int) $lineId)
             ->unique();
 
+        $selected->each(fn ($lineId) => $this->ensureLineMatchesActiveVendor($lineId, 'No podes asignar clientes a lineas fuera del vendor activo.'));
+
         if ($selected->diff($this->availableLineIds())->isNotEmpty()) {
             abort(403, 'No podes asignar clientes a lineas fuera de tu alcance.');
         }

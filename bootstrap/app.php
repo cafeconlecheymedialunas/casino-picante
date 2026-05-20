@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => EnsureAdmin::class,
             'panel.owner' => EnsureAdminOrCajero::class,
             'public.vendor' => ResolvePublicVendor::class,
+            'throttle.global' => \Illuminate\Routing\Middleware\ThrottleRequests::class.':60,1',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -13,6 +13,8 @@ class Vendor extends Model
         'name',
         'slug',
         'logo',
+        'hero_image',
+        'portrait_image',
         'description',
         'contacts',
         'branding',

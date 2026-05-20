@@ -25,7 +25,8 @@ class ClientForgotPassword extends Component
         $this->validate();
         $email = trim(strtolower($this->email));
 
-        $client = User::where('email', $email)
+        $client = User::withoutGlobalScopes()
+            ->where('email', $email)
             ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE))
             ->first();
 

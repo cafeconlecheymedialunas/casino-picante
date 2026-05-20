@@ -6,6 +6,7 @@ use App\Models\Vendor;
 use App\Support\Roles;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class IdentifyVendor
@@ -16,15 +17,24 @@ class IdentifyVendor
             $user = auth()->user();
 
             if ($user->hasRole(Roles::ADMIN)) {
-                // El Admin puede ver todo (active_vendor_id = null) 
-                // o puede elegir "actuar" como un vendor específico.
-                if (!$request->session()->has('active_vendor_id')) {
-                    // Por defecto el admin ve todo (global)
+                $activeVendorId = $request->session()->get('active_vendor_id');
+
+                if ($activeVendorId && ! Vendor::query()->whereKey($activeVendorId)->where('is_active', true)->exists()) {
+                    $request->session()->forget(['active_vendor_id', 'active_line_id']);
                 }
             } else {
-                // Cajeros, Agentes y Clientes están restringidos a su vendor_id
                 if ($user->vendor_id && Vendor::query()->whereKey($user->vendor_id)->where('is_active', true)->exists()) {
+                    $previousVendorId = session('active_vendor_id');
                     session(['active_vendor_id' => $user->vendor_id]);
+
+                    if ($previousVendorId && (int) $previousVendorId !== (int) $user->vendor_id) {
+                        Log::channel('daily')->info('Vendor auto-corrected for non-admin user', [
+                            'user_id' => $user->id,
+                            'role' => $user->role?->name,
+                            'previous_vendor_id' => $previousVendorId,
+                            'correct_vendor_id' => $user->vendor_id,
+                        ]);
+                    }
                 } else {
                     $request->session()->forget('active_vendor_id');
 

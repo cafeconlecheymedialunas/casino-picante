@@ -594,6 +594,55 @@
 .search-result-row:hover { border-color: var(--orange); }
 .result-avatar { width: 34px; height: 34px; border-radius: 8px; background: rgba(255,106,26,.2); color: var(--orange); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; flex-shrink: 0; }
 
+[data-dashboard-theme="light"] .ld-root .ld-hero-meta,
+[data-dashboard-theme="light"] .ld-root .ld-tabs,
+[data-dashboard-theme="light"] .ld-root .ld-tab-body,
+[data-dashboard-theme="light"] .ld-root .info-box,
+[data-dashboard-theme="light"] .ld-root .desc-box,
+[data-dashboard-theme="light"] .ld-root .agent-hero-card,
+[data-dashboard-theme="light"] .ld-root .agent-row,
+[data-dashboard-theme="light"] .ld-root .kpi-card,
+[data-dashboard-theme="light"] .ld-root .month-card,
+[data-dashboard-theme="light"] .ld-root .channel-card,
+[data-dashboard-theme="light"] .ld-root .plat-card,
+[data-dashboard-theme="light"] .ld-root .modal-panel,
+[data-dashboard-theme="light"] .ld-root .search-result-row,
+[data-dashboard-theme="light"] .ld-root .empty-state {
+    background: #fffdf8 !important;
+    background-image: none !important;
+    border-color: var(--line) !important;
+    color: var(--white);
+    box-shadow: 0 12px 28px rgba(42,20,20,.06);
+}
+[data-dashboard-theme="light"] .ld-root .ld-cover {
+    background: linear-gradient(135deg, rgba(255,106,26,.18), rgba(255,250,243,.86)) !important;
+    border-color: var(--line) !important;
+}
+[data-dashboard-theme="light"] .ld-root .ld-avatar,
+[data-dashboard-theme="light"] .ld-root .agent-row-avatar,
+[data-dashboard-theme="light"] .ld-root .agent-hero-avatar,
+[data-dashboard-theme="light"] .ld-root .result-avatar {
+    background: #fffaf3 !important;
+    border-color: rgba(230,88,15,.28) !important;
+}
+[data-dashboard-theme="light"] .ld-root .role-age,
+[data-dashboard-theme="light"] .ld-root .perm-chip-off,
+[data-dashboard-theme="light"] .ld-root .btn-ghost,
+[data-dashboard-theme="light"] .ld-root .modal-close,
+[data-dashboard-theme="light"] .ld-root .btn-icon-sm {
+    background: rgba(244,234,220,.78) !important;
+    color: var(--muted) !important;
+    border-color: var(--line) !important;
+}
+[data-dashboard-theme="light"] .ld-root .form-input {
+    background: #fff !important;
+    color: var(--white) !important;
+    border-color: var(--line-2) !important;
+}
+[data-dashboard-theme="light"] .ld-root .month-bar {
+    background: rgba(244,234,220,.88) !important;
+}
+
 @media (max-width: 900px) {
     .info-grid-4 { grid-template-columns: repeat(2, 1fr); }
     .kpi-grid    { grid-template-columns: repeat(2, 1fr); }

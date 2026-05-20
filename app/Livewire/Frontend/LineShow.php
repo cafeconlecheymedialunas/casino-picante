@@ -17,6 +17,8 @@ class LineShow extends Component
     public function mount(Line $line): void
     {
         abort_unless($line->status === 'active', 404);
+        $vendorId = session('active_vendor_id');
+        abort_unless(! $vendorId || (int) $line->vendor_id === (int) $vendorId, 404);
 
         $this->line = $line->load(['activePlatforms', 'lineAgents.agent']);
 

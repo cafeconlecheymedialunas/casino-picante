@@ -104,7 +104,11 @@ class Novedades extends Component
     public function deleteCategory(int $id): void
     {
         $this->checkLinePermission(Permissions::NEWS_DELETE);
-        \App\Models\Category::find($id)?->delete();
+        $category = \App\Models\Category::find($id);
+        if ($category) {
+            $this->authorizeVendorRecord($category);
+            $category->delete();
+        }
         session()->flash('category_message', 'Categoría eliminada');
     }
 
@@ -165,6 +169,9 @@ class Novedades extends Component
     {
         $this->checkLinePermission(Permissions::NEWS_DELETE);
         $post = Post::find($postId);
+        if ($post) {
+            $this->authorizeVendorRecord($post);
+        }
         ImageStorage::delete($post?->image);
         $postTitle = $post?->title;
         $post?->delete();
@@ -212,6 +219,7 @@ class Novedades extends Component
     private function availableAuthors()
     {
         $query = Agent::orderBy('name');
+        $query->when(session('active_vendor_id'), fn ($q, $vendorId) => $q->where('vendor_id', (int) $vendorId));
         $lineIds = $this->visibleLineIds();
 
         if ($lineIds !== null) {
@@ -244,6 +252,15 @@ class Novedades extends Component
             return;
         }
 
-        abort_unless(\App\Models\Category::whereKey((int) $categoryId)->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
+        abort_unless(\App\Models\Category::whereKey((int) $categoryId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
+    }
+
+    private function authorizeVendorRecord($model): void
+    {
+        if (! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless((int) $model->vendor_id === (int) session('active_vendor_id'), 403, 'No podes operar contenido fuera del vendor activo.');
     }
 }

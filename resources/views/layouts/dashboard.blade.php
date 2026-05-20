@@ -1,5 +1,9 @@
+@php
+    $dashboardTheme = \App\Models\Setting::query()->where('key', 'dashboard_theme')->value('value');
+    $dashboardTheme = in_array($dashboardTheme, ['dark', 'light'], true) ? $dashboardTheme : 'dark';
+@endphp
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-dashboard-theme="{{ $dashboardTheme }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,6 +39,18 @@
             --r-md: 14px;
             --r-lg: 20px;
             --r-xl: 28px;
+        }
+        :root[data-dashboard-theme="light"] {
+            --black: #f7f1e8;
+            --black-2: #fffaf3;
+            --black-3: #ffffff;
+            --ink: #fff5e8;
+            --line: rgba(42,20,20,0.11);
+            --line-2: rgba(42,20,20,0.18);
+            --line-warm: rgba(230,88,15,0.22);
+            --white: #130908;
+            --muted: rgba(19,9,8,0.82);
+            --muted-2: rgba(19,9,8,0.68);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         [x-cloak] { display: none !important; }
@@ -385,9 +401,379 @@
             padding: 12px 28px 8px;
             margin-bottom: 4px;
         }
+
+        [data-dashboard-theme="light"] body {
+            background:
+                radial-gradient(circle at top right, rgba(255, 106, 26, .10), transparent 26rem),
+                linear-gradient(180deg, #fffaf3 0%, #f7f1e8 100%);
+        }
+        [data-dashboard-theme="light"] .sidebar {
+            background: linear-gradient(180deg, #fffdf8 0%, #f4eadc 100%);
+            box-shadow: 1px 0 0 rgba(42,20,20,.04);
+        }
+        [data-dashboard-theme="light"] .sidebar-logo-text,
+        [data-dashboard-theme="light"] .sidebar-section,
+        [data-dashboard-theme="light"] .sidebar-line-label {
+            color: var(--orange-deep);
+        }
+        [data-dashboard-theme="light"] .sidebar-item:hover,
+        [data-dashboard-theme="light"] .sidebar-user,
+        [data-dashboard-theme="light"] .header-icon-btn,
+        [data-dashboard-theme="light"] .profile-trigger,
+        [data-dashboard-theme="light"] .settings-sidebar,
+        [data-dashboard-theme="light"] .settings-panel {
+            background: rgba(255,255,255,.68);
+        }
+        [data-dashboard-theme="light"] .sidebar-item.active,
+        [data-dashboard-theme="light"] .sidebar-line-selector {
+            background: rgba(255,106,26,.11);
+        }
+        [data-dashboard-theme="light"] .page-header {
+            background: rgba(255,250,243,.92);
+            backdrop-filter: blur(12px);
+        }
+        [data-dashboard-theme="light"] .header-dropdown {
+            background: #fffdf8;
+            box-shadow: 0 18px 45px rgba(42,20,20,.12);
+        }
+        [data-dashboard-theme="light"] .btn-ghost,
+        [data-dashboard-theme="light"] .hamburger-btn,
+        [data-dashboard-theme="light"] .sidebar-close,
+        [data-dashboard-theme="light"] .image-uploader-button {
+            background: rgba(255,255,255,.72);
+            color: var(--white);
+        }
+        [data-dashboard-theme="light"] select,
+        [data-dashboard-theme="light"] select.select,
+        [data-dashboard-theme="light"] select.filter-select,
+        [data-dashboard-theme="light"] select.form-input,
+        [data-dashboard-theme="light"] select.form-select,
+        [data-dashboard-theme="light"] select.lns-select,
+        [data-dashboard-theme="light"] select.sidebar-line-select,
+        [data-dashboard-theme="light"] select.contact-type,
+        [data-dashboard-theme="light"] select.repeater-type,
+        [data-dashboard-theme="light"] input,
+        [data-dashboard-theme="light"] textarea,
+        [data-dashboard-theme="light"] .settings-input {
+            background-color: rgba(255,255,255,.78);
+            color: var(--white);
+        }
+        [data-dashboard-theme="light"] select option {
+            background-color: #fffaf3;
+            color: var(--white);
+        }
+        [data-dashboard-theme="light"] .notification-item:hover,
+        [data-dashboard-theme="light"] .profile-dropdown a:hover,
+        [data-dashboard-theme="light"] .profile-dropdown button:hover {
+            background: rgba(255,106,26,.10);
+        }
+        [data-dashboard-theme="light"] .wrap-content {
+            color: var(--white);
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .stat-card,
+            .kpi-card,
+            .info-box,
+            .desc-box,
+            .month-card,
+            .channel-card,
+            .plat-card,
+            .agent-row,
+            .settings-panel,
+            .settings-sidebar,
+            .setting-card,
+            .notification-settings-content,
+            .admin-table,
+            .table-card,
+            .detail-card,
+            .line-card,
+            .client-card,
+            .bonus-card,
+            .ticket-card,
+            .raffle-card,
+            .post-card,
+            .metric-card,
+            .chart-card,
+            .activity-card,
+            .modal-panel,
+            .ld-hero-meta,
+            .ld-tabs,
+            .ld-tab-body,
+            .detail-tabs,
+            .tab-content,
+            .edit-layout,
+            .edit-content,
+            .avatar-library-current,
+            .avatar-library-option,
+            .contact-repeater-row,
+            .bubble
+        ) {
+            background: rgba(255,255,255,.82) !important;
+            background-image: none !important;
+            color: var(--white) !important;
+            border-color: var(--line) !important;
+            box-shadow: 0 14px 36px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .admin-table,
+            table,
+            thead,
+            tbody,
+            tr,
+            .t-row,
+            .sales-row,
+            .client-row,
+            .ticket-row,
+            .bonus-row,
+            .raffle-row,
+            .post-row,
+            .agent-row,
+            .search-result-row
+        ) {
+            color: var(--white) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            thead,
+            .t-row.head,
+            .sales-row.head,
+            .table-head,
+            .admin-table th
+        ) {
+            background: rgba(244,234,220,.86) !important;
+            color: var(--muted) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            tbody tr,
+            .t-row,
+            .sales-row,
+            .client-row,
+            .ticket-row,
+            .bonus-row,
+            .raffle-row,
+            .post-row
+        ):hover {
+            background: rgba(255,106,26,.08) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .form-input,
+            .input,
+            .search-input,
+            .filter-input,
+            .settings-input,
+            .chat-input,
+            .new-chat input,
+            .new-chat textarea,
+            input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+            textarea,
+            select
+        ) {
+            background: rgba(255,255,255,.9) !important;
+            background-image: none !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+            box-shadow: none !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .form-input,
+            .input,
+            .search-input,
+            .filter-input,
+            .settings-input,
+            .chat-input,
+            input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+            textarea,
+            select
+        ):focus {
+            border-color: var(--orange) !important;
+            box-shadow: 0 0 0 3px rgba(255,106,26,.14) !important;
+            outline: none !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .modal-panel,
+            .header-dropdown,
+            .profile-dropdown,
+            .notification-menu,
+            .notifications-dropdown
+        ) {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+            box-shadow: 0 22px 54px rgba(42,20,20,.16) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .btn-icon,
+            .btn-icon-sm,
+            .btn-soft,
+            .btn-ghost,
+            .modal-close,
+            .avatar-library-toggle,
+            .image-uploader-button,
+            .pg-btn
+        ) {
+            background: rgba(255,255,255,.78) !important;
+            color: var(--white) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .btn-icon:hover,
+            .btn-icon-sm:hover,
+            .btn-soft:hover,
+            .btn-ghost:hover,
+            .modal-close:hover,
+            .avatar-library-toggle:hover,
+            .image-uploader-button:hover,
+            .pg-btn:hover
+        ) {
+            background: rgba(255,106,26,.12) !important;
+            border-color: var(--orange) !important;
+            color: var(--orange-deep) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .ld-cover,
+            .detail-cover,
+            .line-cover
+        ) {
+            background: linear-gradient(135deg, rgba(255,106,26,.18), rgba(255,250,243,.86)) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .ld-avatar,
+            .detail-avatar,
+            .table-avatar,
+            .agent-row-avatar,
+            .result-avatar,
+            .avatar-library-preview img,
+            .avatar-library-preview .avatar-library-fallback
+        ) {
+            background: #fffaf3 !important;
+            border-color: rgba(230,88,15,.28) !important;
+            box-shadow: 0 10px 24px rgba(42,20,20,.12);
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .role-agent,
+            .line-badge,
+            .perm-chip-off,
+            .ag-perm-off,
+            .pg-btn,
+            .theme-option
+        ) {
+            background: rgba(244,234,220,.78) !important;
+            color: var(--muted) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .status-inactive,
+            .b-inactive
+        ) {
+            background: rgba(255,71,87,.10) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .status-active,
+            .b-active
+        ) {
+            background: rgba(37,196,107,.10) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            [style*="#120909"],
+            [style*="#140909"],
+            [style*="#1c0e0e"],
+            [style*="#1c0d0a"],
+            [style*="#0a0606"],
+            [style*="rgba(255,255,255,.02)"],
+            [style*="rgba(255,255,255,.03)"],
+            [style*="rgba(255,255,255,.035)"],
+            [style*="rgba(255,255,255,.04)"],
+            [style*="rgba(255,255,255,.05)"],
+            [style*="rgba(255,255,255,.06)"]
+        ) {
+            background: rgba(255,255,255,.86) !important;
+            background-image: none !important;
+            color: var(--white) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            [style*="color:#fff"],
+            [style*="color: #fff"],
+            [style*="color:white"],
+            [style*="color: white"],
+            [style*="rgba(255,255,255,0.62)"],
+            [style*="rgba(255,255,255,.62)"],
+            [style*="rgba(255,255,255,0.42)"],
+            [style*="rgba(255,255,255,.42)"]
+        ) {
+            color: var(--white) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            p,
+            small,
+            span,
+            td,
+            th,
+            label,
+            .module-count,
+            .settings-label,
+            .settings-panel-subtitle,
+            .kpi-label,
+            .info-box-label,
+            .month-label,
+            .plat-meta,
+            .channel-val
+        ) {
+            color: var(--muted) !important;
+            border-color: var(--line);
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            .page-subtitle,
+            .ph-subtitle,
+            .sidebar-user-role,
+            .notification-content small,
+            .notification-content em,
+            .dropdown-empty,
+            .module-count,
+            .settings-panel-subtitle,
+            .theme-copy small,
+            .kpi-label,
+            .info-box-label,
+            .month-label,
+            .plat-meta,
+            .channel-val,
+            .table-sub,
+            .t-muted,
+            .empty-state,
+            .chat-sub,
+            .ticket-meta
+        ) {
+            color: var(--muted-2) !important;
+        }
+        [data-dashboard-theme="light"] .wrap-content :is(
+            h1,
+            h2,
+            h3,
+            h4,
+            strong,
+            .module-title,
+            .settings-panel-title,
+            .kpi-val,
+            .month-total,
+            .channel-name,
+            .plat-name,
+            .agent-row-name,
+            .detail-title,
+            .ld-hero-name
+        ) {
+            color: var(--white) !important;
+        }
+        [data-dashboard-theme="light"] input::placeholder,
+        [data-dashboard-theme="light"] textarea::placeholder {
+            color: rgba(19,9,8,.58) !important;
+        }
+        [data-dashboard-theme="light"] ::-webkit-scrollbar-track { background: #efe5d7; }
+        [data-dashboard-theme="light"] * { scrollbar-color: var(--orange) #efe5d7; }
     </style>
 </head>
-<body>
+<body data-dashboard-theme="{{ $dashboardTheme }}">
     <div class="dash-shell" x-data="{ sidebarOpen: false }" @toggle-sidebar.window="sidebarOpen = !sidebarOpen">
         <div class="sidebar-overlay" :class="sidebarOpen && 'open'" x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak></div>
         <aside class="sidebar" :class="sidebarOpen && 'open'">
@@ -407,7 +793,7 @@
                 $sidebarIsPanelOwner = $sidebarIsAdmin || ($sidebarUser?->hasRole(\App\Support\Roles::CAJERO) ?? false);
                 $activeVendorId = session('active_vendor_id');
                 $sidebarVendors = $sidebarIsAdmin
-                    ? \App\Models\Vendor::query()->orderBy('name')->get()
+                    ? \App\Models\Vendor::query()->where('is_active', true)->orderBy('name')->get()
                     : collect();
                 $sessionAgentId = session('active_agent_id');
                 $sessionLineId  = session('active_line_id');
@@ -444,7 +830,7 @@
                 <form method="POST" id="vendor-selector-form">
                     @csrf
                     <select class="sidebar-line-select" onchange="switchVendor(this.value)">
-                        <option value="0" {{ !$activeVendorId ? 'selected' : '' }}>Global - todos</option>
+                        <option value="0" {{ !$activeVendorId ? 'selected' : '' }}>Global - solo lectura</option>
                         @foreach($sidebarVendors as $vendorOption)
                         <option value="{{ $vendorOption->id }}" {{ (int) $activeVendorId === (int) $vendorOption->id ? 'selected' : '' }}>
                             {{ $vendorOption->name }}
@@ -455,7 +841,7 @@
             </div>
             @endif
 
-            @if($allLines->count() > 0)
+            @if($allLines->count() > 0 && (! $sidebarIsAdmin || $activeVendorId))
             <div class="sidebar-line-selector">
                 <div class="sidebar-line-label">LÍNEA ACTIVA</div>
                 <form method="POST" id="line-selector-form">
@@ -608,6 +994,12 @@
                 },
             }).then(() => window.location.reload());
         }
+
+        window.addEventListener('dashboard-theme-updated', (event) => {
+            const theme = event.detail?.theme === 'light' ? 'light' : 'dark';
+            document.documentElement.dataset.dashboardTheme = theme;
+            document.body.dataset.dashboardTheme = theme;
+        });
     </script>
 </body>
 </html>

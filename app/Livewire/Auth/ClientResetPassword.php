@@ -43,7 +43,8 @@ class ClientResetPassword extends Component
         $this->validate();
         $email = trim(strtolower($this->email));
 
-        $isClient = User::where('email', $email)
+        $isClient = User::withoutGlobalScopes()
+            ->where('email', $email)
             ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE))
             ->exists();
 

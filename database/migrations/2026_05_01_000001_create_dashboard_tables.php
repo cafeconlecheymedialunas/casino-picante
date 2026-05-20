@@ -29,19 +29,6 @@ return new class extends Migration
             $table->unique(['agent_id', 'section']);
         });
 
-        Schema::create('promotions', function (Blueprint $table) {
-            $table->id();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('code')->nullable();
-            $table->string('icon')->default('🎁');
-            $table->timestamp('start_date');
-            $table->timestamp('end_date')->nullable();
-            $table->enum('status', ['draft', 'published', 'hidden'])->default('draft');
-            $table->json('lines')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -105,7 +92,6 @@ return new class extends Migration
         Schema::dropIfExists('lines');
         Schema::dropIfExists('ticket_messages');
         Schema::dropIfExists('tickets');
-        Schema::dropIfExists('promotions');
         Schema::dropIfExists('agent_permissions');
         Schema::dropIfExists('agents');
     }

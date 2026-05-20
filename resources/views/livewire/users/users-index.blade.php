@@ -213,6 +213,51 @@
 
     .line-selected { border-color: var(--orange) !important; background: rgba(255,106,26,.12) !important; color: var(--orange); }
 
+    [data-dashboard-theme="light"] .stat-card,
+    [data-dashboard-theme="light"] .table-card,
+    [data-dashboard-theme="light"] .modal-box {
+        background: #fffdf8 !important;
+        border-color: var(--line) !important;
+        color: var(--white);
+        box-shadow: 0 12px 28px rgba(42,20,20,.06);
+    }
+    [data-dashboard-theme="light"] .tc-header,
+    [data-dashboard-theme="light"] .tc-footer,
+    [data-dashboard-theme="light"] .modal-head,
+    [data-dashboard-theme="light"] .modal-foot {
+        background: rgba(255,250,243,.94) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .t-head {
+        background: rgba(244,234,220,.88) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .t-row {
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .t-row:hover,
+    [data-dashboard-theme="light"] .line-selected {
+        background: rgba(255,106,26,.08) !important;
+    }
+    [data-dashboard-theme="light"] .search-input,
+    [data-dashboard-theme="light"] .filter-select,
+    [data-dashboard-theme="light"] .form-input {
+        background: #fff !important;
+        color: var(--white) !important;
+        border-color: var(--line-2) !important;
+    }
+    [data-dashboard-theme="light"] .toggle-off,
+    [data-dashboard-theme="light"] .btn-icon,
+    [data-dashboard-theme="light"] .btn-text,
+    [data-dashboard-theme="light"] .pg-btn {
+        background: rgba(244,234,220,.78) !important;
+        color: var(--muted) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .table-avatar {
+        background: #fffaf3 !important;
+    }
+
     .toggle-btn {
         position: relative;
         width: 44px;

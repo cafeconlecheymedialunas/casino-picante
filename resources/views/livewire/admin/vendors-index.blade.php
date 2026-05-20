@@ -29,6 +29,38 @@
     .form-error { color:#ff4757; font-size:11px; margin-top:4px; }
     .check-row { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px; font-weight:700; }
     .modal-actions { display:flex; gap:10px; }
+
+    [data-dashboard-theme="light"] .vendors-page .admin-table,
+    [data-dashboard-theme="light"] .vendors-page .modal-panel {
+        background: #fffdf8 !important;
+        background-image: none !important;
+        border-color: var(--line) !important;
+        color: var(--white);
+        box-shadow: 0 12px 28px rgba(42,20,20,.06);
+    }
+    [data-dashboard-theme="light"] .vendors-page .admin-table th,
+    [data-dashboard-theme="light"] .vendors-page .modal-head {
+        background: rgba(244,234,220,.88) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .vendors-page .admin-table td {
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .vendors-page .admin-table tr:hover {
+        background: rgba(255,106,26,.08) !important;
+    }
+    [data-dashboard-theme="light"] .vendors-page .search-input,
+    [data-dashboard-theme="light"] .vendors-page .form-input {
+        background: #fff !important;
+        color: var(--white) !important;
+        border-color: var(--line-2) !important;
+    }
+    [data-dashboard-theme="light"] .vendors-page .btn-icon,
+    [data-dashboard-theme="light"] .vendors-page .modal-close {
+        background: rgba(244,234,220,.78) !important;
+        color: var(--muted) !important;
+        border-color: var(--line) !important;
+    }
 </style>
 
     <div class="module-top-bar">
@@ -152,6 +184,12 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <x-upload-image label="Logo del Cajero" model="logoUpload" :value="$logo" removeAction="removeLogo" aspect="1" hint="PNG/JPG cuadrado" />
+                    </div>
+                    <div class="form-group">
+                        <x-upload-image label="Imagen hero publica" model="heroImageUpload" :value="$heroImage" removeAction="removeHeroImage" aspect="16/9" hint="Fondo de /cajero/slug" />
+                    </div>
+                    <div class="form-group">
+                        <x-upload-image label="Imagen perfil publica" model="portraitImageUpload" :value="$portraitImage" removeAction="removePortraitImage" aspect="3/4" hint="Figura/tarjeta del cajero" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">Descripción</label>

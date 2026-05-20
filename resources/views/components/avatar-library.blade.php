@@ -32,6 +32,31 @@
         .avatar-library-option.is-selected,
         .avatar-library-option:has(input:checked) { border-color:var(--orange); background:rgba(255,106,26,.12); box-shadow:0 0 0 3px rgba(255,106,26,.1); }
         .avatar-library-option.is-broken { display:none; }
+        [data-dashboard-theme="light"] .avatar-library-current,
+        [data-dashboard-theme="light"] .avatar-library-panel,
+        [data-dashboard-theme="light"] .avatar-library-option,
+        [data-dashboard-theme="light"] .avatar-library-toggle {
+            background:#ffffff;
+            border-color:var(--line);
+            color:var(--white);
+        }
+        [data-dashboard-theme="light"] .avatar-library-preview img,
+        [data-dashboard-theme="light"] .avatar-library-preview .avatar-library-fallback,
+        [data-dashboard-theme="light"] .avatar-library-option img {
+            background:#fff7ed;
+        }
+        [data-dashboard-theme="light"] .avatar-library-meta strong {
+            color:var(--white);
+        }
+        [data-dashboard-theme="light"] .avatar-library-meta span {
+            color:var(--muted);
+        }
+        [data-dashboard-theme="light"] .avatar-library-toggle:hover,
+        [data-dashboard-theme="light"] .avatar-library-option.is-selected,
+        [data-dashboard-theme="light"] .avatar-library-option:has(input:checked) {
+            background:#fff7ed;
+            border-color:var(--orange);
+        }
     </style>
 @endonce
 

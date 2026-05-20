@@ -267,6 +267,10 @@ class Ventas extends Component
         }
 
         if ($this->isAdminMode()) {
+            $this->ensureLineMatchesActiveVendor($line, 'No podes cargar ventas en lineas fuera del vendor activo.');
+        }
+
+        if ($this->isAdminMode()) {
             return;
         }
 

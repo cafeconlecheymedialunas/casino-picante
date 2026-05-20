@@ -67,7 +67,7 @@ class LineDetail extends Component
     // Permissions panel
     public ?int $editingPermAgentId = null;
 
-    public array $editingPerms = []; // ['promo.create' => true/false, ...]
+    public array $editingPerms = []; // ['bono.create' => true/false, ...]
 
     // Inline editing mode
     public bool $isEditing = false;
@@ -1027,6 +1027,7 @@ class LineDetail extends Component
         $this->line = Line::findOrFail($this->lineId);
 
         if ($this->isAdminMode()) {
+            $this->ensureLineMatchesActiveVendor($this->line);
             session(['active_line_id' => $this->lineId]);
 
             return;
@@ -1071,7 +1072,7 @@ class LineDetail extends Component
             return;
         }
 
-        abort_unless(Agent::whereKey($agentId)->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+        abort_unless(Agent::whereKey($agentId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
     }
 
     private function authorizePlatformChoice(int $platformId): void
@@ -1080,7 +1081,7 @@ class LineDetail extends Component
             return;
         }
 
-        abort_unless(Platform::whereKey($platformId)->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+        abort_unless(Platform::whereKey($platformId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
     }
 
     private function authorizePlatformChoices(array $platforms): void

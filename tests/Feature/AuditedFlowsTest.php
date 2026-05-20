@@ -34,8 +34,18 @@ class AuditedFlowsTest extends TestCase
     public function test_published_blog_posts_get_a_publication_date(): void
     {
         $admin = $this->userWithRole(Roles::ADMIN);
-        $line = Line::create(['name' => 'Linea Blog', 'status' => 'active']);
+        $cajero = $this->userWithRole(Roles::CAJERO);
+        $vendor = Vendor::create([
+            'user_id' => $cajero->id,
+            'name' => 'Vendor Blog '.uniqid(),
+            'slug' => 'vendor-blog-'.uniqid(),
+            'is_active' => true,
+        ]);
+
         $this->actingAs($admin);
+        session(['active_vendor_id' => $vendor->id]);
+
+        $line = Line::create(['name' => 'Linea Blog', 'status' => 'active']);
         session(['active_line_id' => $line->id]);
 
         Livewire::test(Novedades::class)

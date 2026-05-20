@@ -14,6 +14,36 @@
             .agent-message-close:hover { color: var(--white); border-color: var(--orange); background: rgba(255,106,26,.15); }
             .agent-message-chat { padding: 14px; max-height: 72vh; overflow: auto; }
             .agent-message-empty { padding: 28px 14px; text-align: center; color: var(--muted-2); font-size: 13px; }
+            [data-dashboard-theme="light"] .agent-message .btn-text,
+            [data-dashboard-theme="light"] .agent-message-close {
+                background: #ffffff;
+                border-color: var(--line);
+                color: var(--white);
+            }
+            [data-dashboard-theme="light"] .agent-message .btn-text:hover,
+            [data-dashboard-theme="light"] .agent-message-close:hover {
+                background: #fff7ed;
+                border-color: var(--orange);
+            }
+            [data-dashboard-theme="light"] .agent-message-overlay {
+                background: rgba(39, 23, 11, .34);
+            }
+            [data-dashboard-theme="light"] .agent-message-panel {
+                background: var(--panel);
+                border-color: var(--line);
+                box-shadow: var(--shadow-md);
+            }
+            [data-dashboard-theme="light"] .agent-message-head {
+                background: var(--panel-2);
+                border-bottom-color: var(--line);
+            }
+            [data-dashboard-theme="light"] .agent-message-head h3 {
+                color: var(--white);
+            }
+            [data-dashboard-theme="light"] .agent-message-head p,
+            [data-dashboard-theme="light"] .agent-message-empty {
+                color: var(--muted);
+            }
         </style>
     @endonce
 

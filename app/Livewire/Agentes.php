@@ -483,6 +483,11 @@ class Agentes extends Component
             'avatar' => $agent->avatar,
         ];
 
+        $agentVendorId = $agent->vendor_id ?: session('active_vendor_id');
+        if ($agentVendorId) {
+            $userData['vendor_id'] = $agentVendorId;
+        }
+
         if ($this->password !== '') {
             $userData['password'] = Hash::make($this->password);
         }
@@ -557,6 +562,8 @@ class Agentes extends Component
         $selectedLineIds = collect($this->lineIds)
             ->map(fn ($lineId) => (int) $lineId)
             ->unique();
+
+        $selectedLineIds->each(fn ($lineId) => $this->ensureLineMatchesActiveVendor($lineId, 'No podes asignar agentes a lineas fuera del vendor activo.'));
 
         if ($selectedLineIds->diff($allowedLineIds)->isNotEmpty()) {
             abort(403, 'No podes asignar agentes a lineas fuera de tu alcance.');

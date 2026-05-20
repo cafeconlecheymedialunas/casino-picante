@@ -432,6 +432,8 @@ class Bonos extends Component
 
     private function authorizeLineChoice(int $lineId): void
     {
+        $this->ensureLineMatchesActiveVendor($lineId, 'No podes operar bonos en lineas fuera del vendor activo.');
+
         if (! $this->availableLines()->pluck('id')->contains($lineId)) {
             abort(403, 'No podes operar bonos fuera de tus lineas.');
         }
@@ -443,7 +445,7 @@ class Bonos extends Component
             return;
         }
 
-        abort_unless(Platform::whereKey((int) $platformId)->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+        abort_unless(Platform::whereKey((int) $platformId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
     }
 
     public function openAssignmentsPanel(int $bonusId): void

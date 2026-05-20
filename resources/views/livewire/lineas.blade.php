@@ -178,6 +178,59 @@
         .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 4px; }
         .kpi-value { font-size: 16px; color: var(--white); font-weight: 700; margin-bottom: 4px; }
         .kpi-amount { font-size: 20px; color: var(--orange); font-weight: 800; }
+
+        [data-dashboard-theme="light"] .lineas-page-root .line-card,
+        [data-dashboard-theme="light"] .lineas-page-root .modal-panel,
+        [data-dashboard-theme="light"] .lineas-page-root .detail-meta,
+        [data-dashboard-theme="light"] .lineas-page-root .detail-tabs,
+        [data-dashboard-theme="light"] .lineas-page-root .tab-content,
+        [data-dashboard-theme="light"] .lineas-page-root .stat-box,
+        [data-dashboard-theme="light"] .lineas-page-root .agent-item,
+        [data-dashboard-theme="light"] .lineas-page-root .kpi-card,
+        [data-dashboard-theme="light"] .lineas-page-root .sales-table {
+            background: #fffdf8 !important;
+            background-image: none !important;
+            border-color: var(--line) !important;
+            color: var(--white);
+            box-shadow: 0 12px 28px rgba(42,20,20,.06);
+        }
+        [data-dashboard-theme="light"] .lineas-page-root .line-cover,
+        [data-dashboard-theme="light"] .lineas-page-root .detail-cover {
+            background: linear-gradient(135deg, rgba(255,106,26,.18), rgba(255,250,243,.86)) !important;
+            border-color: var(--line) !important;
+        }
+        [data-dashboard-theme="light"] .lineas-page-root .line-profile,
+        [data-dashboard-theme="light"] .lineas-page-root .detail-avatar {
+            background: #fffaf3 !important;
+            border-color: rgba(230,88,15,.28) !important;
+        }
+        [data-dashboard-theme="light"] .lineas-page-root .info-box,
+        [data-dashboard-theme="light"] .lineas-page-root .chip,
+        [data-dashboard-theme="light"] .lineas-page-root .agent-item,
+        [data-dashboard-theme="light"] .lineas-page-root .platform-pick-label,
+        [data-dashboard-theme="light"] .lineas-page-root .perm-check,
+        [data-dashboard-theme="light"] .lineas-page-root .perm-chip-off,
+        [data-dashboard-theme="light"] .lineas-page-root .perm-chip-edit,
+        [data-dashboard-theme="light"] .lineas-page-root .empty-state {
+            background: rgba(244,234,220,.78) !important;
+            border-color: var(--line) !important;
+            color: var(--muted) !important;
+        }
+        [data-dashboard-theme="light"] .lineas-page-root .search-input,
+        [data-dashboard-theme="light"] .lineas-page-root .filter-select,
+        [data-dashboard-theme="light"] .lineas-page-root .form-input {
+            background: #fff !important;
+            color: var(--white) !important;
+            border-color: var(--line-2) !important;
+        }
+        [data-dashboard-theme="light"] .lineas-page-root .editor-fixed-actions {
+            background: rgba(255,250,243,.96) !important;
+            border-color: var(--line) !important;
+            box-shadow: 0 -12px 28px rgba(42,20,20,.10);
+        }
+        [data-dashboard-theme="light"] .lineas-page-root .sales-row {
+            border-color: var(--line) !important;
+        }
         .kpi-empty { font-size: 13px; color: var(--muted); padding: 20px; }
         .months-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         .month-card { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }

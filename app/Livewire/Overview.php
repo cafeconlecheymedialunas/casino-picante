@@ -9,7 +9,6 @@ use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Scopes\LineScope;
 use App\Models\Post;
-use App\Models\Promotion;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Ticket;
@@ -170,25 +169,6 @@ class Overview extends Component
             'totalNumbers', 'uniqueParticip', 'activeRaffle', 'numbersActive');
     }
 
-    public function getPromoStats(): array
-    {
-        $now = Carbon::now();
-        $lineIds = $this->overviewLineIds();
-
-        $base = fn () => Promotion::withoutGlobalScope(LineScope::class)
-            ->when($lineIds !== null, fn ($q) => $q->whereIn('line_id', $lineIds));
-
-        $active = $base()->where('status', 'published')
-            ->where('start_date', '<=', $now)->where('end_date', '>=', $now)->count();
-        $upcoming = $base()->where('status', 'published')->where('start_date', '>', $now)->count();
-        $ended = $base()->where('end_date', '<', $now)->count();
-        $draft = $base()->where('status', 'draft')->count();
-        $expiring = $base()->where('status', 'published')
-            ->whereBetween('end_date', [$now, $now->copy()->addHours(24)])->count();
-
-        return compact('active', 'upcoming', 'ended', 'draft', 'expiring');
-    }
-
     public function getAgentStats(): array
     {
         $total = $this->agentsQuery()->count();
@@ -316,7 +296,6 @@ class Overview extends Component
             'tickets' => $this->getTicketStats(),
             'bonuses' => $this->getBonusStats(),
             'raffles' => $this->getRaffleStats(),
-            'promos' => $this->getPromoStats(),
             'agents' => $this->getAgentStats(),
             'content' => $this->getContentStats(),
             'recentUsers' => $this->getRecentUsers(),

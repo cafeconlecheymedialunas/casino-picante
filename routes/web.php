@@ -24,12 +24,13 @@ use App\Livewire\Frontend\LinesIndex;
 use App\Livewire\Frontend\PostShow;
 use App\Livewire\Frontend\PublicRaffle;
 use App\Livewire\Frontend\RaffleShow;
+use App\Livewire\Frontend\VendorDetail;
+use App\Livewire\Frontend\VendorsIndex;
 use App\Livewire\Lineas;
 use App\Livewire\LineDetail;
 use App\Livewire\Novedades;
 use App\Livewire\Overview;
 use App\Livewire\PlatformsMaster;
-use App\Livewire\Promociones;
 use App\Livewire\Settings;
 use App\Livewire\Sorteos;
 use App\Livewire\Tickets;
@@ -51,7 +52,8 @@ Route::get('/registro', ClientRegister::class)->name('client.register')->middlew
 Route::get('/recuperar-password', ClientForgotPassword::class)->name('client.password.request')->middleware('guest_or_agent');
 Route::get('/recuperar-password/{token}', ClientResetPassword::class)->name('client.password.reset')->middleware('guest_or_agent');
 Route::get('/', Home::class)->name('frontend.home');
-Route::get('/cajero/{vendor:slug}', Home::class)->middleware('public.vendor')->name('frontend.vendor.home');
+Route::get('/cajeros', VendorsIndex::class)->name('frontend.vendors');
+Route::get('/cajero/{vendor:slug}', VendorDetail::class)->middleware('public.vendor')->name('frontend.vendor.home');
 Route::get('/lineas', LinesIndex::class)->name('frontend.lines');
 Route::get('/lineas/{line}', LineShow::class)->name('frontend.lines.show');
 Route::get('/bonos', BonusesIndex::class)->name('frontend.bonuses');
@@ -65,7 +67,7 @@ Route::get('/mi-cuenta', ClientAccount::class)->middleware('auth')->name('client
 
 Route::post('/logout', function () {
     Auth::logout();
-    session()->flush();
+    session()->invalidate();
     session()->regenerateToken();
 
     return redirect()->route('frontend.home');
@@ -87,8 +89,15 @@ Route::prefix('admin')->group(function () {
         }
 
         if ($user->hasRole(Roles::ADMIN)) {
+            if (! session('active_vendor_id')) {
+                abort(403, 'Selecciona un vendor antes de operar lineas.');
+            }
+
             if ($id !== 0) {
-                Line::where('status', 'active')->findOrFail($id);
+                $query = Line::where('status', 'active')
+                    ->where('vendor_id', session('active_vendor_id'));
+
+                $query->findOrFail($id);
             }
 
             session(['active_line_id' => $id ?: null]);
@@ -98,7 +107,9 @@ Route::prefix('admin')->group(function () {
 
         if ($user->hasRole(Roles::CAJERO)) {
             if ($id !== 0) {
-                Line::where('status', 'active')->findOrFail($id);
+                $line = Line::where('status', 'active')
+                    ->when($user->vendor_id, fn ($q) => $q->where('vendor_id', $user->vendor_id))
+                    ->findOrFail($id);
             }
 
             session(['active_line_id' => $id ?: null]);
@@ -133,12 +144,24 @@ Route::prefix('admin')->group(function () {
         }
 
         if ($id === 0) {
+            \Illuminate\Support\Facades\Log::channel('daily')->info('Admin switched to global view', [
+                'user_id' => $user->id,
+                'previous_vendor_id' => session('active_vendor_id'),
+            ]);
+
             session()->forget(['active_vendor_id', 'active_line_id']);
 
-            return back();
+            return redirect()->route('admin.vendors');
         }
 
-        Vendor::query()->where('is_active', true)->findOrFail($id);
+        $vendor = Vendor::query()->where('is_active', true)->findOrFail($id);
+
+        \Illuminate\Support\Facades\Log::channel('daily')->info('Admin switched vendor context', [
+            'user_id' => $user->id,
+            'previous_vendor_id' => session('active_vendor_id'),
+            'new_vendor_id' => $id,
+            'vendor_name' => $vendor->name,
+        ]);
 
         session([
             'active_vendor_id' => $id,
@@ -170,10 +193,6 @@ Route::prefix('admin')->group(function () {
         Route::get('/lineas/{id}/edit', Lineas::class)->middleware('line.authorize:'.Permissions::LINE_EDIT)->name('lineas.edit');
         Route::get('/lineas/{id}', LineDetail::class)->middleware('line.authorize')->name('lineas.detail');
 
-        Route::middleware('line.authorize:'.Permissions::PROMO_READ)->group(function () {
-            Route::get('/promociones', Promociones::class)->name('promociones');
-        });
-
         Route::middleware('line.authorize:'.Permissions::NEWS_READ)->group(function () {
             Route::get('/novedades', Novedades::class)->name('novedades');
         });
@@ -187,7 +206,7 @@ Route::prefix('admin')->group(function () {
         });
 
         Route::match(['get', 'post'], '/editor-home', EditorHome::class)->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home');
-        Route::post('/editor-home/save-section', [HomeSectionController::class, 'saveSection'])->name('editor-home.save');
+        Route::post('/editor-home/save-section', [HomeSectionController::class, 'saveSection'])->middleware('line.authorize:'.Permissions::HOME_EDIT)->name('editor-home.save');
 
         Route::get('/tickets', Tickets::class)->middleware('line.authorize')->name('tickets');
 
@@ -197,7 +216,7 @@ Route::prefix('admin')->group(function () {
 
         // Settings – admin only
         Route::get('/settings', Settings::class)->middleware('panel.owner')->name('settings');
-        Route::get('/vendors', \App\Livewire\Admin\Vendors\VendorsIndex::class)->middleware('admin')->name('admin.vendors');
-
     });
+
+    Route::get('/vendors', \App\Livewire\Admin\Vendors\VendorsIndex::class)->middleware('admin')->name('admin.vendors');
 });

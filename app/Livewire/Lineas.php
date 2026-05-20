@@ -699,7 +699,9 @@ class Lineas extends Component
             return;
         }
 
-        $allowed = Platform::whereIn('id', $selected)->pluck('id');
+        $allowed = Platform::whereIn('id', $selected)
+            ->where('vendor_id', (int) session('active_vendor_id'))
+            ->pluck('id');
 
         if ($selected->diff($allowed)->isNotEmpty()) {
             abort(403, 'No podes asignar plataformas fuera de tu vendor.');
@@ -712,7 +714,7 @@ class Lineas extends Component
             return;
         }
 
-        abort_unless(Agent::whereKey($agentId)->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+        abort_unless(Agent::whereKey($agentId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
     }
 
     private function mapChannels(array $links): array
@@ -745,6 +747,10 @@ class Lineas extends Component
 
     private function authorizeLineEdit(Line $line): void
     {
+        if ($this->isAdminMode()) {
+            $this->ensureLineMatchesActiveVendor($line);
+        }
+
         if (! $this->canManageLine($line)) {
             abort(403, 'Solo el administrador o el encargado puede editar esta linea.');
         }

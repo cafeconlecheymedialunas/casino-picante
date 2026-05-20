@@ -54,6 +54,7 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
+        $this->authorizeVendorRecord($platform);
         $this->editingPlatform = $platform;
         $this->name = $platform->name;
         $this->slug = $platform->slug;
@@ -118,6 +119,7 @@ class PlatformsMaster extends Component
         ];
 
         if ($this->editingPlatform) {
+            $this->authorizeVendorRecord($this->editingPlatform);
             $this->editingPlatform->update($data);
             session()->flash('message', 'Plataforma actualizada.');
         } else {
@@ -133,6 +135,7 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
+        $this->authorizeVendorRecord($platform);
         $platform->update(['is_active' => ! $platform->is_active]);
     }
 
@@ -141,6 +144,7 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
 
         $platform = Platform::find($platformId);
+        $this->authorizeVendorRecord($platform);
         ImageStorage::delete($platform?->logo_url);
         $platform->delete();
         if ($this->editingPlatform && $this->editingPlatform->id == $platformId) {
@@ -176,5 +180,14 @@ class PlatformsMaster extends Component
         if (! $this->isAdminMode()) {
             abort(403, 'Solo administradores y cajeros pueden gestionar plataformas.');
         }
+    }
+
+    private function authorizeVendorRecord(?Platform $platform): void
+    {
+        if (! $platform || ! session('active_vendor_id')) {
+            return;
+        }
+
+        abort_unless((int) $platform->vendor_id === (int) session('active_vendor_id'), 403, 'No podes operar plataformas fuera del vendor activo.');
     }
 }
