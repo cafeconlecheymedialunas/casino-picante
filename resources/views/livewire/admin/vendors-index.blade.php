@@ -203,6 +203,36 @@
                 </div>
 
                 <div class="form-group">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                        <label class="form-label" style="margin:0">Características</label>
+                        <button type="button" class="btn-soft" style="padding:2px 8px;font-size:11px" wire:click="addFeature">+ Agregar</button>
+                    </div>
+                    <div style="display:grid;gap:10px">
+                        @foreach($features as $index => $char)
+                        <div style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 40px;gap:10px;align-items:start">
+                            <div style="grid-column:1 / span 2">
+                                <label class="form-label" style="font-size:9px">Icono (FontAwesome)</label>
+                                <input class="form-input" wire:model="features.{{$index}}.icon" placeholder="fa-solid fa-star">
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size:9px">Título</label>
+                                <input class="form-input" wire:model="features.{{$index}}.title" placeholder="Ej: Atención 24/7">
+                            </div>
+                            <div>
+                                <label class="form-label" style="font-size:9px">Descripción</label>
+                                <input class="form-input" wire:model="features.{{$index}}.description" placeholder="Ej: Soporte personalizado">
+                            </div>
+                            <div style="padding-top:20px">
+                                <button type="button" class="btn-icon" style="color:#ff5050;border-color:rgba(255,80,80,.2)" wire:click="removeFeature({{$index}})">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">Branding (JSON)</label>
                     <textarea class="form-input" wire:model="brandingJson" rows="4" placeholder='{"primary":"#ff6a1a"}'></textarea>
                     @error('brandingJson') <div class="form-error">{{ $message }}</div> @enderror

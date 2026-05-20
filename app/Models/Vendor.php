@@ -17,12 +17,14 @@ class Vendor extends Model
         'portrait_image',
         'description',
         'contacts',
+        'features',
         'branding',
         'is_active',
     ];
 
     protected $casts = [
         'contacts' => 'array',
+        'features' => 'array',
         'branding' => 'array',
         'is_active' => 'boolean',
     ];

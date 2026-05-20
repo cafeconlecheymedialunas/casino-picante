@@ -31,7 +31,7 @@ class VendorsIndex extends Component
     // Form fields
     public $name, $slug, $user_id, $is_active = true, $description, $logo, $heroImage, $portraitImage;
     public $logoUpload, $heroImageUpload, $portraitImageUpload;
-    public $contacts = [], $branding = [];
+    public $contacts = [], $features = [], $branding = [];
     public $brandingJson = '{}';
     
     // User selection/creation
@@ -44,6 +44,17 @@ class VendorsIndex extends Component
         'slug' => 'required',
         'is_active' => 'boolean',
     ];
+
+    public function addFeature()
+    {
+        $this->features[] = ['icon' => 'fa-solid fa-star', 'title' => '', 'description' => ''];
+    }
+
+    public function removeFeature($index)
+    {
+        unset($this->features[$index]);
+        $this->features = array_values($this->features);
+    }
 
     public function updatedName($value)
     {
@@ -65,6 +76,10 @@ class VendorsIndex extends Component
             'contacts.*.type' => 'required_with:contacts.*.value|string|max:40',
             'contacts.*.value' => 'nullable|string|max:255',
             'contacts.*.name' => 'nullable|string|max:80',
+            'features' => 'array',
+            'features.*.icon' => 'nullable|string|max:80',
+            'features.*.title' => 'nullable|string|max:80',
+            'features.*.description' => 'nullable|string|max:255',
             'brandingJson' => 'nullable|string',
         ];
 
@@ -119,6 +134,7 @@ class VendorsIndex extends Component
                 'portrait_image' => $this->portraitImage,
                 'description' => $this->description,
                 'contacts' => $this->normalizedContacts(),
+                'features' => $this->normalizedfeatures(),
                 'branding' => $branding,
                 'is_active' => $this->is_active,
             ]);
@@ -168,6 +184,7 @@ class VendorsIndex extends Component
         $this->heroImage = $vendor->hero_image;
         $this->portraitImage = $vendor->portrait_image;
         $this->contacts = $vendor->contacts ?? [];
+        $this->features = $vendor->features ?? [];
         $this->branding = $vendor->branding ?? [];
         $this->brandingJson = json_encode($this->branding ?: new \stdClass(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         $this->user_mode = $vendor->user_id ? 'select' : 'create';
@@ -230,6 +247,7 @@ class VendorsIndex extends Component
         $this->heroImageUpload = null;
         $this->portraitImageUpload = null;
         $this->contacts = [];
+        $this->features = [];
         $this->branding = [];
         $this->brandingJson = '{}';
         $this->user_mode = 'select';
@@ -263,6 +281,19 @@ class VendorsIndex extends Component
                 'type' => $contact['type'] ?? 'other',
                 'value' => trim((string) ($contact['value'] ?? '')),
                 'name' => trim((string) ($contact['name'] ?? '')),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function normalizedfeatures(): array
+    {
+        return collect($this->features)
+            ->filter(fn ($char) => filled($char['title'] ?? null))
+            ->map(fn ($char) => [
+                'icon' => trim((string) ($char['icon'] ?? 'fa-solid fa-star')),
+                'title' => trim((string) ($char['title'] ?? '')),
+                'description' => trim((string) ($char['description'] ?? '')),
             ])
             ->values()
             ->all();

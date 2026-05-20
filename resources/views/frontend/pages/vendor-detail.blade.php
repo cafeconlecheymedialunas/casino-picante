@@ -107,80 +107,39 @@
                 </div>
 
                 <div class="vd-visual-stack">
-                    @if($portraitImageUrl)
-                        <div class="vd-portrait" aria-hidden="true">
-                            <img src="{{ $portraitImageUrl }}" alt="">
+
+                    <aside class="vd-profile-card">
+                        <div class="vd-avatar">
+                            @php
+                            var_dump($vendor->features);
+                            @endphp
+                            @if($portraitImageUrl)
+                                <img src="{{ $portraitImageUrl }}" alt="{{ $vendor->name }}">
+                            @endif
                         </div>
-                    @endif
-
-                   
-                </div>
-            </div>
-
-            <aside class="vd-profile-card">
-                <div class="vd-profile-identity">
-                    <div class="vd-avatar">
-                        @if($logoUrl)
-                            <img src="{{ $logoUrl }}" alt="{{ $vendor->name }}">
-                        @else
-                            {{ strtoupper(mb_substr($vendor->name, 0, 2)) }}
-                        @endif
-                    </div>
-                    <div>
-                        <h2>{{ $displayName }}</h2>
-                        <p>{{ $vendor->name }}</p>
+                        <div>
+                            <h2>{{ $displayName }}</h2>
+                            <p>{{ $vendor->username }}</p>
+                            @if($vendor->email)
+                                <div><dt>Email</dt><dd>{{ $vendor->email }}</dd></div>  
+                            @endif
+                            @if($phone)
+                                <div><dt>Telefono</dt><dd>{{ $phone }}</dd></div>
+                            @endif
+                        </div>
                         <div class="vd-rating">
                             <span>Calificacion</span>
                             <strong>★★★★★</strong>
                             <em>{{ number_format($rating, 1) }} ({{ $ratingsCount ?: 125 }})</em>
                         </div>
-                    </div>
+                    </aside>
                 </div>
-
-                <div class="vd-profile-details">
-                    <div class="vd-char-container">
-                        <p class="vd-char-label">Características</p>
-                        <ul class="vd-char-list">
-                            <li>
-                                <i class="fa-solid fa-user-check"></i>
-                                <div>
-                                    <strong>Atencion personalizada</strong>
-                                    <span>Soporte directo y trato humano.</span>
-                                </div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-bolt"></i>
-                                <div>
-                                    <strong>Pagos rapidos</strong>
-                                    <span>Cargas y retiros al instante.</span>
-                                </div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-shield-halved"></i>
-                                <div>
-                                    <strong>100% confiable</strong>
-                                    <span>Operacion clara y segura.</span>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="vd-profile-data">
-                        <dl>
-                            <div><dt>Slug</dt><dd>{{ $vendor->slug }}</dd></div>
-                            <div><dt>Usuario</dt><dd>{{ $cajero?->username ?: 'No asignado' }}</dd></div>
-                            <div><dt>Email</dt><dd>{{ $cajero?->email ?: 'No publicado' }}</dd></div>
-                            <div><dt>Telefono</dt><dd>{{ $phone ?: 'No publicado' }}</dd></div>
-                            <div><dt>Estado</dt><dd>{{ $vendor->is_active ? 'Activo' : 'Inactivo' }}</dd></div>
-                        </dl>
-                    </div>
-                </div>
-            </aside>
+            </div>
         </div>
     </section>
 
     <section class="vd-shell vd-content-grid">
-        <div class="vd-column">
+        <main class="vd-main-stack">
             <section id="lineas" class="vd-panel">
                 <div class="vd-panel-head">
                     <div>
@@ -235,6 +194,56 @@
                 @endif
             </section>
 
+            <div class="vd-split">
+                <section class="vd-panel">
+                    <div class="vd-panel-head">
+                        <div>
+                            <p>Bonos exclusivos</p>
+                            <h2>Beneficios activos</h2>
+                        </div>
+                    </div>
+                    <div class="vd-mini-list">
+                        @forelse($bonuses as $bonus)
+                            <article class="vd-bonus">
+                                <i class="fa-solid fa-star"></i>
+                                <div>
+                                    <strong>{{ $bonus->title }}</strong>
+                                    <span>{{ $bonus->bonus_percent ? number_format((float) $bonus->bonus_percent, 0).'% extra' : ($bonus->bonus_amount ? '$'.number_format((float) $bonus->bonus_amount, 0, ',', '.') : 'Bono disponible') }}</span>
+                                    <em>{{ $bonus->description ?: 'Aprovechalo antes de que termine.' }}</em>
+                                </div>
+                            </article>
+                        @empty
+                            <div class="vd-empty compact">Sin bonos activos por ahora.</div>
+                        @endforelse
+                    </div>
+                </section>
+
+                <section class="vd-panel">
+                    <div class="vd-panel-head">
+                        <div>
+                            <p>Sorteos activos</p>
+                            <h2>Premios vigentes</h2>
+                        </div>
+                    </div>
+                    <div class="vd-mini-list">
+                        @forelse($raffles as $raffle)
+                            <article class="vd-raffle">
+                                <i class="fa-solid fa-trophy"></i>
+                                <div>
+                                    <strong>{{ $raffle->title }}</strong>
+                                    <span>Finaliza {{ $raffle->end_date->format('d/m H:i') }}</span>
+                                    <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate>Participar ahora</a>
+                                </div>
+                            </article>
+                        @empty
+                            <div class="vd-empty compact">Sin sorteos activos por ahora.</div>
+                        @endforelse
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <aside class="vd-side-stack">
             <section class="vd-panel">
                 <div class="vd-panel-head">
                     <div>
@@ -261,55 +270,31 @@
                     @endforelse
                 </div>
             </section>
-        </div>
 
-        <div class="vd-column">
-            <section class="vd-panel">
+            <section class="vd-panel vd-data-card">
                 <div class="vd-panel-head">
                     <div>
-                        <p>Bonos exclusivos</p>
-                        <h2>Beneficios activos</h2>
+                        <p>Datos del cajero</p>
+                        <h2>Ficha</h2>
                     </div>
                 </div>
-                <div class="vd-mini-list">
-                    @forelse($bonuses as $bonus)
-                        <article class="vd-bonus">
-                            <i class="fa-solid fa-star"></i>
-                            <div>
-                                <strong>{{ $bonus->title }}</strong>
-                                <span>{{ $bonus->bonus_percent ? number_format((float) $bonus->bonus_percent, 0).'% extra' : ($bonus->bonus_amount ? '$'.number_format((float) $bonus->bonus_amount, 0, ',', '.') : 'Bono disponible') }}</span>
-                                <em>{{ $bonus->description ?: 'Aprovechalo antes de que termine.' }}</em>
-                            </div>
-                        </article>
-                    @empty
-                        <div class="vd-empty compact">Sin bonos activos por ahora.</div>
-                    @endforelse
-                </div>
+                <dl>
+                    <div><dt>Nombre publico</dt><dd>{{ $vendor->name }}</dd></div>
+                    <div><dt>Slug</dt><dd>{{ $vendor->slug }}</dd></div>
+                    <div><dt>Usuario</dt><dd>{{ $cajero?->username ?: 'No asignado' }}</dd></div>
+                    <div><dt>Email</dt><dd>{{ $cajero?->email ?: 'No publicado' }}</dd></div>
+                    <div><dt>Telefono</dt><dd>{{ $phone ?: 'No publicado' }}</dd></div>
+                    <div><dt>Estado</dt><dd>{{ $vendor->is_active ? 'Activo' : 'Inactivo' }}</dd></div>
+                </dl>
             </section>
+        </aside>
+    </section>
 
-            <section class="vd-panel">
-                <div class="vd-panel-head">
-                    <div>
-                        <p>Sorteos activos</p>
-                        <h2>Premios vigentes</h2>
-                    </div>
-                </div>
-                <div class="vd-mini-list">
-                    @forelse($raffles as $raffle)
-                        <article class="vd-raffle">
-                            <i class="fa-solid fa-trophy"></i>
-                            <div>
-                                <strong>{{ $raffle->title }}</strong>
-                                <span>Finaliza {{ $raffle->end_date->format('d/m H:i') }}</span>
-                                <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate>Participar ahora</a>
-                            </div>
-                        </article>
-                    @empty
-                        <div class="vd-empty compact">Sin sorteos activos por ahora.</div>
-                    @endforelse
-                </div>
-            </section>
-        </div>
+    <section class="vd-shell vd-trust-row" aria-label="Confianza">
+        <div><i class="fa-solid fa-shield-halved"></i><strong>100% confiable</strong><span>Transacciones seguras</span></div>
+        <div><i class="fa-solid fa-bolt"></i><strong>Pagos rapidos</strong><span>Cobros al instante</span></div>
+        <div><i class="fa-solid fa-headset"></i><strong>Atencion 24/7</strong><span>Siempre disponible</span></div>
+        <div><i class="fa-solid fa-lock"></i><strong>Privacidad total</strong><span>Tus datos protegidos</span></div>
     </section>
 </div>
 
@@ -354,33 +339,27 @@
     .vd-btn-ghost { border-color: rgba(255,106,26,.44); color: #fff; background: rgba(255,106,26,.05); }
     .vd-visual-stack { position: relative; z-index: 2; display: grid; justify-items: center; gap: 0; padding-top: 28px; }
     .vd-visual-stack::before { content: ""; position: absolute; width: min(420px, 82vw); aspect-ratio: 1; top: 72px; left: 50%; transform: translateX(-50%); border: 5px solid rgba(255,106,26,.72); border-radius: 999px; box-shadow: 0 0 48px rgba(255,106,26,.36), inset 0 0 38px rgba(255,106,26,.18); pointer-events: none; }
-    .vd-profile-card { position: relative; z-index: 3; width: 100%; margin-top: -34px; border: 1px solid var(--vd-stroke); border-radius: 8px; background: linear-gradient(180deg, rgba(22,18,17,.78), rgba(10,7,7,.58)); backdrop-filter: blur(16px); padding: 24px; box-shadow: 0 22px 54px rgba(0,0,0,.32); display: grid; grid-template-columns: 340px 1fr; gap: 42px; align-items: start; }
-    .vd-profile-identity { display: flex; gap: 20px; align-items: flex-start; }
-    .vd-portrait { position: relative; z-index: 2; width: min(370px, 100%); height: 420px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; pointer-events: none; filter: drop-shadow(0 26px 54px rgba(0,0,0,.62)); opacity: .98;border-radius: 100%;margin-bottom: 76px;}
+    .vd-profile-card { position: relative; z-index: 3; width: min(100%, 410px); margin-top: -34px; border: 1px solid var(--vd-stroke); border-radius: 8px; background: linear-gradient(180deg, rgba(22,18,17,.78), rgba(10,7,7,.58)); backdrop-filter: blur(16px); padding: 20px; box-shadow: 0 22px 54px rgba(0,0,0,.32); }
+    .vd-portrait { position: relative; z-index: 2; width: min(370px, 100%); height: 420px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; pointer-events: none; filter: drop-shadow(0 26px 54px rgba(0,0,0,.62)); opacity: .98; }
     .vd-portrait img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center top; border-radius: 2px; -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%); mask-image: linear-gradient(180deg, #000 78%, transparent 100%); }
-    .vd-avatar { flex-shrink: 0; width: 84px; height: 84px; border-radius: 20px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: linear-gradient(135deg, var(--orange), var(--amber)); color: #170704; font-family: var(--font-display); font-size: 38px; }
+    .vd-avatar { width: 270px;height: 270px;margin: 0 auto 20px;object-fit: cover;border-radius: 18px;display: flex;align-items: center;justify-content: center;overflow: hidden;background: linear-gradient(135deg, var(--orange), var(--amber));color: #170704;font-family: var(--font-display);font-size: 34px; }
     .vd-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .vd-profile-card h2 { margin: 0; font-size: 28px; line-height: 1; }
-    .vd-profile-card p { margin: 6px 0 0; color: var(--orange); font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
-    .vd-profile-details { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; border-left: 1px solid var(--vd-stroke); padding-left: 42px; }
-    .vd-char-container { display: grid; gap: 12px; }
-    .vd-char-label { margin: 0; color: rgba(255,255,255,.48); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-    .vd-char-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
-    .vd-char-list li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; }
-    .vd-char-list i { color: var(--orange); font-size: 16px; margin-top: 2px; text-align: center; }
-    .vd-char-list strong { display: block; color: #fff; font-size: 13px; line-height: 1.2; }
-    .vd-char-list span { display: block; margin-top: 3px; color: rgba(255,255,255,.58); font-size: 11px; line-height: 1.35; font-weight: 700; }
-    .vd-rating { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,.56); }
+    .vd-profile-card h2 { margin: 0; font-size: 26px; line-height: 1; }
+    .vd-profile-card p { margin: 5px 0 18px; color: var(--orange); font-size: 12px; font-weight: 900; }
+    .vd-profile-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; color: rgba(255,255,255,.76); font-size: 12px; font-weight: 800; }
+    .vd-profile-list li { display: flex; align-items: center; gap: 10px; }
+    .vd-profile-list i { color: var(--orange); width: 16px; }
+    .vd-rating { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--vd-stroke); font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,.56); }
     .vd-rating strong { color: var(--orange); letter-spacing: .08em; }
     .vd-rating em { color: rgba(255,255,255,.82); font-style: normal; text-transform: none; }
-    .vd-content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: -70px; position: relative; z-index: 2; }
-    .vd-column { display: grid; gap: 14px; align-content: start; }
+    .vd-content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 14px; margin-top: -70px; position: relative; z-index: 2; }
+    .vd-main-stack, .vd-side-stack { display: grid; gap: 14px; align-content: start; }
     .vd-panel { border: 1px solid var(--vd-stroke); border-radius: 8px; background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035)); box-shadow: 0 18px 48px rgba(0,0,0,.26); padding: 18px; backdrop-filter: blur(8px); }
     .vd-panel-head { display: flex; justify-content: space-between; gap: 14px; align-items: start; margin-bottom: 16px; }
     .vd-panel-head p { margin: 0 0 5px; color: rgba(255,255,255,.58); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
     .vd-panel-head h2 { margin: 0; font-family: var(--font-display); font-size: 28px; line-height: .95; letter-spacing: .025em; }
     .vd-panel-head a { color: var(--orange); text-decoration: none; font-size: 11px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
-    .vd-lines-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .vd-lines-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
     .vd-line-card { min-width: 0; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(255,255,255,.04); overflow: hidden; }
     .vd-line-media { height: 108px; position: relative; background: radial-gradient(80% 90% at 50% 0%, rgba(255,106,26,.32), transparent 64%), #100706; }
     .vd-line-media > img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -409,19 +388,25 @@
     .vd-contact strong { font-size: 12px; }
     .vd-contact em { color: rgba(255,255,255,.52); font-size: 10px; font-style: normal; margin-top: 2px; }
     .vd-contact b { color: var(--orange); font-size: 10px; }
-    .vd-profile-data { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--vd-stroke); }
-    .vd-profile-data dl { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
-    .vd-profile-data dl div { border-bottom: 0; padding-bottom: 0; }
-    .vd-profile-data dt { color: rgba(255,255,255,.48); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
-    .vd-profile-data dd { margin: 4px 0 0; color: #fff; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+    .vd-data-card dl { margin: 0; display: grid; gap: 10px; }
+    .vd-data-card dl div { border-bottom: 1px solid rgba(255,255,255,.08); padding-bottom: 9px; }
+    .vd-data-card dt { color: rgba(255,255,255,.48); font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+    .vd-data-card dd { margin: 4px 0 0; color: #fff; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
     .vd-empty { border: 1px dashed rgba(255,255,255,.12); border-radius: 8px; padding: 18px; color: rgba(255,255,255,.6); font-size: 13px; text-align: center; }
     .vd-empty.compact { padding: 12px; font-size: 12px; }
+    .vd-trust-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 14px; border: 1px solid var(--vd-stroke); border-radius: 8px; background: rgba(255,255,255,.05); overflow: hidden; }
+    .vd-trust-row div { display: grid; grid-template-columns: 40px minmax(0,1fr); column-gap: 10px; align-items: center; padding: 14px 18px; border-right: 1px solid rgba(255,255,255,.08); }
+    .vd-trust-row div:last-child { border-right: 0; }
+    .vd-trust-row i { grid-row: span 2; color: var(--orange); font-size: 18px; }
+    .vd-trust-row strong { color: #fff; font-size: 12px; text-transform: uppercase; }
+    .vd-trust-row span { color: rgba(255,255,255,.55); font-size: 11px; }
     @media (max-width: 1060px) {
         .vd-hero-grid, .vd-content-grid { grid-template-columns: 1fr; }
         .vd-hero-copy { padding-top: 0; }
         .vd-visual-stack { max-width: 460px; margin: 0 auto; }
         .vd-content-grid { margin-top: -40px; }
         .vd-lines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .vd-side-stack { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 760px) {
         .vd-shell { width: calc(100% - 24px); }
@@ -431,9 +416,12 @@
         .vd-visual-stack { padding-top: 8px; }
         .vd-visual-stack::before { width: min(310px, 82vw); top: 46px; }
         .vd-portrait { height: 340px; width: min(300px, 92%); }
-        .vd-benefits, .vd-split { grid-template-columns: 1fr; }
+        .vd-profile-card { margin-top: -24px; }
+        .vd-benefits, .vd-split, .vd-side-stack, .vd-trust-row { grid-template-columns: 1fr; }
         .vd-lines-grid { grid-template-columns: 1fr; }
         .vd-actions .vd-btn { width: 100%; }
+        .vd-trust-row div { border-right: 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .vd-trust-row div:last-child { border-bottom: 0; }
     }
 </style>
 @endpush

@@ -26,7 +26,7 @@ By contributing, you agree that your contributions will be licensed under its MI
 
 We as members, contributors, and leaders pledge to make participation in our
 community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
+size, visible or invisible disability, ethnicity, sex features, gender
 identity and expression, level of experience, education, socio-economic status,
 nationality, personal appearance, race, religion, or sexual identity
 and orientation.
