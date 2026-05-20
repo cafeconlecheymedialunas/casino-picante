@@ -128,7 +128,7 @@
                             @if($primaryContact)
                                 <a class="vpi-soft-btn" href="{{ $contactHref($primaryContact) }}" target="_blank" rel="noopener">Contactar</a>
                             @endif
-                            <a class="vpi-main-btn" href="{{ route('frontend.vendor.home', $vendor) }}" wire:navigate>Ver detalle</a>
+                            <a class="vpi-main-btn" href="{{ route('frontend.cajero.inicio', $vendor) }}" wire:navigate>Ver detalle</a>
                         </div>
                     </article>
                 @endforeach
