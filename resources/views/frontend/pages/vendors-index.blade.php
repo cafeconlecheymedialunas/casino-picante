@@ -101,7 +101,6 @@
                                     {{ strtoupper(mb_substr($vendor->name, 0, 2)) }}
                                 @endif
                             </div>
-                            <span class="vpi-status"><i class="fa-solid fa-circle-check"></i> Activo</span>
                         </div>
 
                         <div class="vpi-card-body">
@@ -131,9 +130,6 @@
                         </div>
 
                         <div class="vpi-card-actions">
-                            @if($primaryContact)
-                                <a class="vpi-soft-btn" href="{{ $contactHref($primaryContact) }}" target="_blank" rel="noopener">Contactar</a>
-                            @endif
                             <a class="vpi-main-btn" href="{{ route('frontend.cajero.inicio', $vendor) }}" wire:navigate>Ver detalle</a>
                         </div>
                     </article>

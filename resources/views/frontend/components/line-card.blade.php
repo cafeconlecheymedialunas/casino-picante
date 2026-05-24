@@ -21,6 +21,9 @@
     
     .public-line-avatar { position:absolute; left:18px; bottom:-30px; width:70px; height:70px; border-radius:18px; border:3px solid #100707; background:linear-gradient(135deg,var(--orange),var(--amber)); display:flex; align-items:center; justify-content:center; overflow:hidden; font-family:var(--font-display); font-size:30px; color:#160604; z-index: 2; }
     .public-line-avatar img { width:100%; height:100%; object-fit:cover; }
+    .line-vendor-badge { position:absolute; top:10px; right:10px; z-index:3; display:inline-flex; align-items:center; gap:6px; padding:4px 10px 4px 4px; border-radius:999px; background:rgba(0,0,0,.60); border:1px solid rgba(255,106,26,.35); backdrop-filter:blur(6px); color:#fff; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.06em; text-decoration:none; }
+    .line-vendor-badge-logo { width:22px; height:22px; border-radius:999px; object-fit:cover; background:linear-gradient(135deg,var(--orange),var(--amber)); display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; font-size:9px; font-weight:900; color:#160604; font-family:var(--font-display); }
+    .line-vendor-badge-logo img { width:100%; height:100%; object-fit:cover; }
     
     .public-line-body { padding:42px 18px 18px; position: relative; z-index: 2; }
     
@@ -50,11 +53,29 @@
 <article class="public-line-card">
     <div class="public-line-cover">
         @if($line->portada_url)
-            <img src="{{ $line->portada_url }}" alt="{{ $line->name }}">
+            <img src="{{ $line->portada_url }}" alt="{{ $line->name }}" onerror="this.style.display='none'">
+        @endif
+        @if(! isset($publicVendor) && $line->vendor)
+            @php
+                $vendorLogo = $line->vendor->logo;
+                if ($vendorLogo && !\Illuminate\Support\Str::startsWith($vendorLogo, ['http://', 'https://', '/storage/'])) {
+                    $vendorLogo = asset('storage/'.$vendorLogo);
+                }
+            @endphp
+            <a href="{{ route('frontend.cajero.inicio', $line->vendor) }}" wire:navigate class="line-vendor-badge">
+                <span class="line-vendor-badge-logo">
+                    @if($vendorLogo)
+                        <img src="{{ $vendorLogo }}" alt="{{ $line->vendor->name }}" onerror="this.outerHTML='<i class=\'fa-solid fa-store\'></i>'">
+                    @else
+                        <i class="fa-solid fa-store"></i>
+                    @endif
+                </span>
+                {{ $line->vendor->name }}
+            </a>
         @endif
         <div class="public-line-avatar">
             @if($line->perfil_url)
-                <img src="{{ $line->perfil_url }}" alt="">
+                <img src="{{ $line->perfil_url }}" alt="" onerror="this.style.display='none';this.parentElement.insertAdjacentText('beforeend','{{ strtoupper(mb_substr($line->name, 0, 2)) }}')">
             @else
                 {{ strtoupper(mb_substr($line->name, 0, 2)) }}
             @endif

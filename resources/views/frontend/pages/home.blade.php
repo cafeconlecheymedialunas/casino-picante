@@ -5,7 +5,7 @@
         </div>
     </section>
 
-    @if(($sections['como-empezar']['enabled'] ?? true))
+    @if(($sections['como-empezar']['enabled'] ?? true) && count($sections['como-empezar']['repeater_data'] ?? []) > 0)
     <section id="como-empezar" class="fe-section">
         <div class="fe-shell">
             @include('frontend.components.section-header', [
@@ -28,7 +28,7 @@
     </section>
     @endif
 
-    @if(($sections['lineas']['enabled'] ?? true))
+    @if(($sections['lineas']['enabled'] ?? true) && $lines->count())
     <section id="lineas" class="fe-section">
         <div class="fe-shell">
             @include('frontend.components.section-header', [
@@ -51,7 +51,7 @@
     </section>
     @endif
 
-    @if(($sections['sorteo']['enabled'] ?? true) && $raffles->count())
+    @if(($sections['sorteo']['enabled'] ?? true) && $raffles->count() > 0)
     <section id="sorteo" class="fe-section">
         <div class="fe-shell">
             <div class="raffle-section-head">
@@ -92,9 +92,10 @@
                                     if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
                                         $image = asset('storage/'.$image);
                                     }
-                                    $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
                                 @endphp
-                                <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
+                                @if($image)
+                                    <img src="{{ $image }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}" onerror="this.style.display='none'">
+                                @endif
                                 <div class="raffle-prize-overlay">
                                     <span class="prize-tag">{{ $position }}° PUESTO</span>
                                     <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
@@ -142,9 +143,10 @@
                             if ($image && !Str::startsWith($image, ['http://', 'https://', '/storage/'])) {
                                 $image = asset('storage/'.$image);
                             }
-                            $displayImage = $image ?: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000&auto=format&fit=crop';
                         @endphp
-                        <img src="{{ $displayImage }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}">
+                        @if($image)
+                            <img src="{{ $image }}" alt="{{ $prize['name'] ?? 'Premio '.$position }}" onerror="this.style.display='none'">
+                        @endif
                         <div class="raffle-prize-overlay">
                             <span class="prize-tag">{{ $position }}° PUESTO</span>
                             <h3 class="prize-name">{{ $prize['name'] ?? 'Premio sorpresa' }}</h3>
@@ -162,7 +164,7 @@
     </section>
     @endif
 
-    @if(($sections['nosotros']['enabled'] ?? true))
+    @if(($sections['nosotros']['enabled'] ?? true) && (($sections['nosotros']['subtitle'] ?? '') || count($sections['nosotros']['repeater_data'] ?? []) > 0))
     <section id="nosotros" class="fe-section">
         <div class="fe-shell">
             <div class="about-box">
@@ -186,7 +188,7 @@
     </section>
     @endif
 
-    @if(($sections['bonos']['enabled'] ?? true))
+    @if(($sections['bonos']['enabled'] ?? true) && $bonusItems->count())
     <section id="bonos" class="fe-section">
         <div class="fe-shell">
             @include('frontend.components.section-header', [
@@ -198,14 +200,16 @@
             ])
 
             @if($bonusItems->count())
-                <div class="bonus-carousel">
-                    <button type="button" class="slider-btn slider-btn-prev bonus-swiper-btn-prev">
+                <div class="bonus-carousel-wrapper" x-data="bonusCarousel()">
+                    <button type="button" class="slider-btn slider-btn-prev" @click="prev()">
                         <i class="fa-solid fa-chevron-left"></i>
                     </button>
-                    @foreach($bonusItems as $bonus)
-                        @include('frontend.components.bonus-card', ['bonus' => $bonus])
-                    @endforeach
-                    <button type="button" class="slider-btn slider-btn-next bonus-swiper-btn-next">
+                    <div class="bonus-carousel" x-ref="track">
+                        @foreach($bonusItems as $bonus)
+                            @include('frontend.components.bonus-card', ['bonus' => $bonus])
+                        @endforeach
+                    </div>
+                    <button type="button" class="slider-btn slider-btn-next" @click="next()">
                         <i class="fa-solid fa-chevron-right"></i>
                     </button>
                 </div>
@@ -216,7 +220,7 @@
     </section>
     @endif
 
-    @if(($sections['blog']['enabled'] ?? true))
+    @if(($sections['blog']['enabled'] ?? true) && $blogPosts->count())
     <section id="blog" class="fe-section">
         <div class="fe-shell">
             @include('frontend.components.section-header', [
@@ -246,8 +250,12 @@
 <style>
     .home-hero { padding:0; }
     .home-hero .fe-shell { width:100%; max-width:none; }
-    .home-hero-carousel { display:grid; grid-auto-flow:column; grid-auto-columns:100%; gap:0; overflow-x:auto; scroll-snap-type:inline mandatory; border-radius:0; box-shadow:0 22px 70px rgba(0,0,0,.5); }
+    .home-hero-carousel-wrapper { position:relative; }
+    .home-hero-carousel { display:grid; grid-auto-flow:column; grid-auto-columns:100%; gap:0; overflow-x:auto; scroll-snap-type:inline mandatory; border-radius:0; box-shadow:0 22px 70px rgba(0,0,0,.5); scroll-behavior:smooth; }
     .home-hero-carousel::-webkit-scrollbar { display:none; }
+    .home-hero-dots { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:10; }
+    .home-hero-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.4); border:none; cursor:pointer; padding:0; transition:background .2s, transform .2s; }
+    .home-hero-dot.active { background:#fff; transform:scale(1.3); }
     .home-hero-slide { position:relative; width:100%; min-height:520px; overflow:hidden; border:0; border-radius:0; background:#120909; scroll-snap-align:start; text-decoration:none; display:block; }
     .home-hero-slide img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
     .home-hero-empty { position:absolute; inset:0; background:radial-gradient(60% 80% at 80% 20%, rgba(255,106,26,.65), transparent 60%), radial-gradient(40% 50% at 0% 80%, rgba(255,138,61,.35), transparent 60%), linear-gradient(135deg,#1a0606,#3a1308); }
@@ -398,7 +406,6 @@
     .raffle-single .raffle-prizes-carousel { grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px; }
     .raffle-single .raffle-prize-item { min-height:140px; }
     .raffle-single .raffle-slide-footer { padding-top:14px; }
-    .raffle-single .raffle-slide-footer .fe-btn { width:100%; }
     @media (max-width: 768px) {
         .raffle-single { padding:12px; }
         .raffle-single .raffle-meta h4 { font-size:20px; }
@@ -465,7 +472,11 @@
     @media (max-width: 768px) {
         .slider-btn { display: flex !important; width: 36px; height: 36px; top: 50%; }
     }
-    .bonus-carousel { position:relative; width:100%; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px, 360px); gap:16px; overflow-x:hidden; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; padding:4px 0 16px; scroll-snap-type:inline mandatory; scrollbar-width:thin; scrollbar-color:rgba(255,106,26,.72) rgba(255,255,255,.08); }
+    .bonus-carousel-wrapper { position:relative; width:100%; }
+    .bonus-carousel-wrapper .slider-btn-prev { left:0; }
+    .bonus-carousel-wrapper .slider-btn-next { right:0; }
+    .bonus-carousel { width:100%; display:grid; grid-auto-flow:column; grid-auto-columns:minmax(280px, 360px); gap:16px; overflow-x:auto; overscroll-behavior-inline:contain; -webkit-overflow-scrolling:touch; padding:4px 0 16px; scroll-snap-type:inline mandatory; scroll-behavior:smooth; scrollbar-width:none; -ms-overflow-style:none; }
+    .bonus-carousel::-webkit-scrollbar { display:none; }
     .bonus-card { min-height:250px; color:#fff; position:relative; border:3px dashed rgba(255,106,26,.9); border-radius:18px; background:
         radial-gradient(90% 100% at 0% 0%, rgba(255,106,26,.2), transparent 58%),
         linear-gradient(180deg,#180b08,#090505);box-shadow:0 18px 42px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.04) inset; transform:rotate(-1deg); overflow:hidden; padding:30px; scroll-snap-align:start; }
@@ -628,6 +639,20 @@
 @push('scripts')
 <script>
     document.addEventListener('alpine:init', () => {
+        Alpine.data('bonusCarousel', () => ({
+            get track() { return this.$refs.track; },
+            cardWidth() {
+                const card = this.track.querySelector('.bonus-card');
+                return card ? card.offsetWidth + 16 : 296;
+            },
+            next() {
+                this.track.scrollBy({ left: this.cardWidth(), behavior: 'smooth' });
+            },
+            prev() {
+                this.track.scrollBy({ left: -this.cardWidth(), behavior: 'smooth' });
+            },
+        }));
+
         Alpine.data('rafflesSlider', () => ({
             currentIndex: 0,
             slideCount: 0,

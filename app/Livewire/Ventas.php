@@ -72,13 +72,12 @@ class Ventas extends Component
     {
         $this->authorizeSalesAccess();
 
-        if ($this->lineFilter === 'all') {
-            return;
-        }
-
         $this->resetSaleForm();
 
-        $this->saleLineId = $this->lineFilter;
+        if ($this->lineFilter !== 'all') {
+            $this->saleLineId = $this->lineFilter;
+        }
+
         $this->syncFormCollections();
 
         $this->showModal = true;

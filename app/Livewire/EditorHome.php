@@ -169,15 +169,12 @@ class EditorHome extends Component
         $bonusIds = $data['bonus_ids'] ?? '';
 
         $parseToArray = function ($str, ?string $model = null) {
-            if (empty($str)) {
-                return null;
-            }
-            $arr = array_filter(array_map('trim', explode(',', $str)));
+            $arr = array_values(array_filter(array_map('trim', explode(',', (string) $str))));
             if ($model && session('active_vendor_id')) {
                 $arr = $this->filterScopedIds($model, $arr);
             }
 
-            return count($arr) ? $arr : null;
+            return $arr; // always return array (empty = explicitly none selected)
         };
 
         $repeaterData = $data['repeater_data'] ?? null;

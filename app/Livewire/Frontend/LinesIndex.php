@@ -13,7 +13,7 @@ class LinesIndex extends Component
         $vendorId = $routeVendor?->id;
 
         $lines = Line::withoutGlobalScopes()
-            ->with(['activePlatforms', 'lineAgents.agent', 'ratings'])
+            ->with(['activePlatforms', 'lineAgents.agent', 'ratings', 'vendor'])
             ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->orderBy('name')

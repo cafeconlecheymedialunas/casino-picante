@@ -78,7 +78,8 @@ class PublicRaffle extends Component
             ->with(['lines', 'platform'])
             ->withCount('numbers')
             ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
-            ->orderByRaw("CASE status WHEN 'active' THEN 0 WHEN 'inactive' THEN 1 ELSE 2 END")
+            ->whereIn('status', ['active', 'inactive'])
+            ->orderByRaw("CASE status WHEN 'active' THEN 0 ELSE 1 END")
             ->latest('end_date')
             ->get();
 

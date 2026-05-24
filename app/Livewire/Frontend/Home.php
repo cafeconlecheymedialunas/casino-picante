@@ -52,8 +52,9 @@ class Home extends Component
     private function lines(): EloquentCollection
     {
         return Line::withoutGlobalScopes()
-            ->with(['activePlatforms', 'lineAgents.agent', 'ratings'])
+            ->with(['activePlatforms', 'lineAgents.agent', 'ratings', 'vendor'])
             ->where('status', 'active')
+            ->orderByRaw('CASE WHEN vendor_id IS NOT NULL THEN 0 ELSE 1 END')
             ->orderBy('name')
             ->take(6)
             ->get();
@@ -82,7 +83,7 @@ class Home extends Component
             return $query->whereIn('id', $ids)->get()->sortBy(fn ($r) => array_search($r->id, $ids))->values();
         }
 
-        return $query->orderBy('start_date', 'asc')->take(3)->get();
+        return new EloquentCollection();
     }
 
     private function bonusItems(): EloquentCollection
@@ -107,7 +108,7 @@ class Home extends Component
             return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($b) => array_search($b->id, $ids))->values();
         }
 
-        return $baseQuery->latest('start_date')->take(5)->get();
+        return new EloquentCollection();
     }
 
     private function blogPosts(): EloquentCollection
@@ -132,7 +133,7 @@ class Home extends Component
             return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($p) => array_search($p->id, $ids))->values();
         }
 
-        return $baseQuery->latest('published_at')->take(3)->get();
+        return new EloquentCollection();
     }
 
     private function sections(): array

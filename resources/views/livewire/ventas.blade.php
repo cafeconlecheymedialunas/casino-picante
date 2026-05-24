@@ -143,17 +143,10 @@
 @endsection
 
 <div class="module-top-bar">
-    @if($lineFilter !== 'all')
-        <button type="button" class="btn-primary" wire:click="openCreateModal">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            Cargar venta
-        </button>
-    @else
-        <button type="button" class="btn-primary" style="opacity: 0.5; cursor: not-allowed;" title="Seleccione una linea primero">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-            Cargar venta
-        </button>
-    @endif
+    <button type="button" class="btn-primary" wire:click="openCreateModal">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Cargar venta
+    </button>
 </div>
 
 <div class="sales-page">
@@ -252,13 +245,22 @@
                 </div>
                 <form class="modal-form" wire:submit.prevent="saveSale">
                     <div class="form-grid">
-                        <!-- Line selector removed - line comes from global filter -->
-                        <input type="hidden" wire:model="saleLineId" value="{{ $lineFilter }}">
                         <div class="form-group">
-                            <label class="form-label">Linea</label>
-                            <div class="input" style="background: rgba(255,106,26,0.1); border-color: var(--orange); width:100%">
-                                <strong>{{ $lines->find($lineFilter)?->name ?? 'Línea seleccionada' }}</strong>
-                            </div>
+                            <label class="form-label">Linea <span style="color:var(--orange)">*</span></label>
+                            @if($lineFilter !== 'all')
+                                <input type="hidden" wire:model="saleLineId" value="{{ $lineFilter }}">
+                                <div class="input" style="background: rgba(255,106,26,0.1); border-color: var(--orange); width:100%">
+                                    <strong>{{ $lines->find($lineFilter)?->name ?? 'Línea seleccionada' }}</strong>
+                                </div>
+                            @else
+                                <select wire:model.live="saleLineId" class="select" style="width:100%">
+                                    <option value="">Seleccionar línea</option>
+                                    @foreach($lines as $line)
+                                        <option value="{{ $line->id }}">{{ $line->name }}</option>
+                                    @endforeach
+                                </select>
+                            @endif
+                            @error('saleLineId') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group">
                             <label class="form-label">Plataforma</label>

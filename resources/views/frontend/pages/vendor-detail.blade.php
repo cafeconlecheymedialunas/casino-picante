@@ -12,7 +12,7 @@
     };
 
     $logoUrl = $assetUrl($vendor->logo);
-    $heroImageUrl = $assetUrl($vendor->hero_image) ?: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1800&auto=format&fit=crop';
+    $heroImageUrl = $assetUrl($vendor->hero_image);
     $portraitImageUrl = $assetUrl($vendor->portrait_image) ?: $logoUrl;
     $cajeroDisplayName = trim(($cajero?->name ?? '').' '.($cajero?->apellido ?? ''));
     $displayName = $cajeroDisplayName ?: $vendor->name;
@@ -33,13 +33,7 @@
         ['label' => 'Telefono', 'value' => $phone],
     ])->filter(fn ($item) => filled($item['value'] ?? null));
 
-    $benefits = $vendorFeatures->isNotEmpty()
-        ? $vendorFeatures
-        : collect([
-            ['icon' => 'fa-solid fa-bolt', 'title' => 'Pagos rapidos', 'description' => 'Cargas y retiros al instante.'],
-            ['icon' => 'fa-solid fa-lock', 'title' => '100% confiable', 'description' => 'Operacion clara y segura.'],
-            ['icon' => 'fa-solid fa-headset', 'title' => 'Atencion 24/7', 'description' => 'Soporte cuando lo necesites.'],
-        ]);
+    $benefits = $vendorFeatures;
 
     $channelIcons = [
         'wsp' => 'fa-brands fa-whatsapp',
@@ -94,7 +88,7 @@
 @endphp
 
 <div class="vendor-detail-page">
-    <section class="vd-hero" style="--vendor-hero-image: url('{{ $heroImageUrl }}');">
+    <section class="vd-hero"{{ $heroImageUrl ? " style=\"--vendor-hero-image: url('{$heroImageUrl}')\"" : '' }}>
         <div class="vd-shell">
             @include('frontend.components.breadcrumbs', [
                 'items' => [
@@ -116,8 +110,11 @@
                 <div class="vd-hero-copy">
                     <p class="vd-kicker">{{ $vendor->slug }}</p>
                     <h1>{{ $vendor->name }} — tu <span>cajero.</span></h1>
-                    <p class="vd-lead">{{ $vendor->description ?: 'Atencion personalizada, pagos rapidos y lineas listas para que empieces a jugar sin vueltas.' }}</p>
+                    @if($vendor->description)
+                        <p class="vd-lead">{{ $vendor->description }}</p>
+                    @endif
 
+                    @if($benefits->isNotEmpty())
                     <div class="vd-benefits">
                         @foreach($benefits as $benefit)
                             <div>
@@ -127,6 +124,7 @@
                             </div>
                         @endforeach
                     </div>
+                    @endif
 
                     <div class="vd-contact-widget">
                         <div class="vd-contact-widget-head">

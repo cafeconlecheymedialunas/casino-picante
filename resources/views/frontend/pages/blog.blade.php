@@ -205,7 +205,9 @@
                                     · {{ $featuredPost->category->name }}
                                 @endif
                             </div>
-                            <span class="blog-author">Autor: {{ $featuredPost->authorAgent?->username ?: $featuredPost->authorAgent?->name ?: 'RED PICANTES BET' }}</span>
+                            @if($featuredPost->authorAgent)
+                                <span class="blog-author">Autor: {{ $featuredPost->authorAgent->name }} {{ $featuredPost->authorAgent->apellido }}</span>
+                            @endif
                             <h2>{{ $featuredPost->title }}</h2>
                             <p>{{ $featuredPost->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($featuredPost->content), 180) }}</p>
                         </div>
@@ -220,7 +222,9 @@
                                         · {{ $post->category->name }}
                                     @endif
                                 </div>
-                                <span class="blog-author">Autor: {{ $post->authorAgent?->username ?: $post->authorAgent?->name ?: 'RED PICANTES BET' }}</span>
+                                @if($post->authorAgent)
+                                    <span class="blog-author">Autor: {{ $post->authorAgent->name }} {{ $post->authorAgent->apellido }}</span>
+                                @endif
                                 <h3>{{ $post->title }}</h3>
                                 <p>{{ $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($post->content), 92) }}</p>
                             </a>

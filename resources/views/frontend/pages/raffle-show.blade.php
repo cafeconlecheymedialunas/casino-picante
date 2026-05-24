@@ -123,8 +123,6 @@
                 ],
         ])
         <div class="raffle-arena">
-            <img class="raffle-detail-gift left" src="{{ asset('sorteos-imagen.png') }}" alt="">
-            <img class="raffle-detail-gift right" src="{{ asset('sorteos-imagen.png') }}" alt="">
 
             <div class="raffle-detail-head">
                 <h1 class="raffle-detail-title">{{ $raffle->title }}</h1>

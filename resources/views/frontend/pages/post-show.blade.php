@@ -105,7 +105,9 @@
                             · {{ $post->category->name }}
                         @endif
                     </div>
-                    <div class="post-author">Autor: {{ $post->authorAgent?->username ?: $post->authorAgent?->name ?: 'RED PICANTES BET' }}</div>
+                    @if($post->authorAgent)
+                        <div class="post-author">Autor: {{ $post->authorAgent->name }} {{ $post->authorAgent->apellido }}</div>
+                    @endif
                     <h1 class="post-title">{{ $post->title }}</h1>
                     <p class="post-excerpt">{{ $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($post->content), 180) }}</p>
                 </div>
