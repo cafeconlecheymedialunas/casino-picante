@@ -188,6 +188,15 @@ class Tickets extends Component
             $this->selectedTicket->update(['status' => 'closed']);
 
             $this->notify('Ticket resuelto', "El ticket {$this->selectedTicket->subject} fue marcado como resuelto.", 'tickets', '/tickets', 'success');
+
+            NotificationService::sendToClient(
+                'Ticket resuelto',
+                "Tu ticket {$this->selectedTicket->tracking_code} fue marcado como resuelto.",
+                $this->selectedTicket->user_id,
+                'success',
+                route('client.account', [], false).'?tab=tickets',
+                'tickets'
+            );
         }
 
         $this->selectedTicket = $this->ticketQuery()
@@ -221,6 +230,15 @@ class Tickets extends Component
             ->find($this->selectedTicket->id);
         $this->dispatch('messageSent');
         $this->notify('Ticket reabierto', "El ticket {$this->selectedTicket->subject} fue reabierto.", 'tickets', '/tickets', 'warning');
+
+        NotificationService::sendToClient(
+            'Ticket reabierto',
+            "Tu ticket {$this->selectedTicket->tracking_code} fue reabierto por un agente.",
+            $this->selectedTicket->user_id,
+            'warning',
+            route('client.account', [], false).'?tab=tickets',
+            'tickets'
+        );
     }
 
     public function updateStatus($status)
@@ -234,7 +252,20 @@ class Tickets extends Component
                 abort(403, 'No tienes acceso a este ticket.');
             }
 
+            $oldStatus = $this->selectedTicket->status;
             $this->selectedTicket->update(['status' => $status]);
+
+            if ($oldStatus !== $status) {
+                NotificationService::sendToClient(
+                    'Estado de ticket actualizado',
+                    "El estado de tu ticket {$this->selectedTicket->tracking_code} cambió a: {$status}",
+                    $this->selectedTicket->user_id,
+                    'info',
+                    route('client.account', [], false).'?tab=tickets',
+                    'tickets'
+                );
+            }
+
             $this->selectedTicket = $this->ticketQuery()
                 ->with(['user', 'line', 'messages.agent', 'messages.user'])
                 ->find($this->selectedTicket->id);

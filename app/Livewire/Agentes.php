@@ -310,6 +310,15 @@ class Agentes extends Component
 
         $lineAgent->syncPermissions($toSave);
 
+        $this->notifyAgent(
+            (int) $this->permEditAgentId,
+            'Permisos actualizados',
+            "Tus permisos en la linea {$lineAgent->line->name} fueron actualizados.",
+            'agents',
+            route('admin.perfil', [], false),
+            'info'
+        );
+
         session()->flash('message', 'Permisos guardados.');
         $this->closePermissions();
     }

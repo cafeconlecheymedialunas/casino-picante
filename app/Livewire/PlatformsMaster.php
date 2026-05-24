@@ -5,13 +5,14 @@ namespace App\Livewire;
 use App\Models\Platform;
 use App\Support\ImageStorage;
 use App\Traits\HasLinePermissions;
+use App\Traits\SendsNotifications;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
 class PlatformsMaster extends Component
 {
-    use HasLinePermissions, WithFileUploads;
+    use HasLinePermissions, SendsNotifications, WithFileUploads;
 
     protected array $dispatchesEvents = [
         'page-header-action' => 'handlePageHeaderAction',
@@ -122,9 +123,11 @@ class PlatformsMaster extends Component
             $this->authorizeVendorRecord($this->editingPlatform);
             $this->editingPlatform->update($data);
             session()->flash('message', 'Plataforma actualizada.');
+            $this->notify('Plataforma actualizada', "La plataforma {$this->name} fue actualizada.", 'platforms', '/plataformas', 'info');
         } else {
             Platform::create($data);
             session()->flash('message', 'Plataforma creada.');
+            $this->notify('Plataforma creada', "La plataforma {$this->name} fue creada exitosamente.", 'platforms', '/plataformas', 'success');
         }
 
         $this->closeModal();
@@ -137,6 +140,14 @@ class PlatformsMaster extends Component
         $platform = Platform::find($platformId);
         $this->authorizeVendorRecord($platform);
         $platform->update(['is_active' => ! $platform->is_active]);
+
+        $this->notify(
+            'Estado de plataforma cambiado',
+            "La plataforma {$platform->name} fue ".($platform->is_active ? 'activada' : 'pausada').'.',
+            'platforms',
+            '/plataformas',
+            'warning'
+        );
     }
 
     public function deletePlatform($platformId)
@@ -145,12 +156,14 @@ class PlatformsMaster extends Component
 
         $platform = Platform::find($platformId);
         $this->authorizeVendorRecord($platform);
+        $platformName = $platform->name;
         ImageStorage::delete($platform?->logo_url);
         $platform->delete();
         if ($this->editingPlatform && $this->editingPlatform->id == $platformId) {
             $this->closeModal();
         }
         session()->flash('message', 'Plataforma eliminada.');
+        $this->notify('Plataforma eliminada', "La plataforma {$platformName} fue eliminada del sistema.", 'platforms', '/plataformas', 'danger');
     }
 
     public function removeLogo(): void

@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Support\Roles;
+use App\Traits\SendsNotifications;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,7 @@ use Livewire\WithFileUploads;
 
 class Settings extends Component
 {
-    use WithFileUploads;
+    use WithFileUploads, SendsNotifications;
 
     public string $activeTab = 'notifications';
 
@@ -116,6 +117,7 @@ class Settings extends Component
         );
 
         session()->flash('theme_message', 'Apariencia actualizada correctamente.');
+        $this->notify('Preferencia de tema guardada', "El tema del dashboard se cambió a {$this->dashboardTheme}.", 'settings', '/configuracion', 'info');
         $this->dispatch('dashboard-theme-updated', theme: $this->dashboardTheme);
     }
 
@@ -153,6 +155,7 @@ class Settings extends Component
         $this->siteFaviconUpload = null;
 
         session()->flash('branding_assets_message', 'Logo y favicon actualizados correctamente.');
+        $this->notify('Identidad visual actualizada', 'Se actualizaron el título, logo o favicon del sitio.', 'settings', '/configuracion', 'success');
     }
 
     public function saveVendor(): void
@@ -210,6 +213,7 @@ class Settings extends Component
         $this->portraitImage = $portraitImage;
         $this->portraitImageUpload = null;
         session()->flash('vendor_message', 'Cajero actualizado correctamente.');
+        $this->notify('Datos de cajero actualizados', "Se actualizaron los datos del cajero {$this->name}.", 'settings', '/configuracion', 'info');
     }
 
     public function saveCajeroUser(): void
@@ -244,6 +248,7 @@ class Settings extends Component
         $user->update($data);
         $this->cajeroPassword = '';
         session()->flash('cajero_user_message', 'Usuario cajero actualizado correctamente.');
+        $this->notify('Usuario cajero actualizado', "Se actualizaron los datos de acceso del usuario {$this->cajeroUsername}.", 'settings', '/configuracion', 'warning');
     }
 
     public function removeLogo(): void

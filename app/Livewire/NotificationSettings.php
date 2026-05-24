@@ -18,6 +18,9 @@ class NotificationSettings extends Component
         'lines' => ['label' => 'Lineas', 'icon' => 'LI'],
         'sales' => ['label' => 'Ventas', 'icon' => 'VE'],
         'posts' => ['label' => 'Novedades', 'icon' => 'NO'],
+        'platforms' => ['label' => 'Plataformas', 'icon' => 'PL'],
+        'chats' => ['label' => 'Chats', 'icon' => 'CH'],
+        'settings' => ['label' => 'Configuración', 'icon' => 'CO'],
     ];
 
     public function mount(): void

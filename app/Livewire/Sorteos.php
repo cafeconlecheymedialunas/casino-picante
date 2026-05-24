@@ -584,6 +584,20 @@ class Sorteos extends Component
 
         $raffle->update($updateData);
 
+        // Notify winners
+        foreach ($prizes as $prize) {
+            if (! empty($prize['winner_user_id']) && ! empty($prize['winner_number'])) {
+                \App\Services\NotificationService::sendToClient(
+                    '¡Ganaste un premio!',
+                    "Salió tu número {$prize['winner_number']} en el sorteo {$raffle->title}. Premio: {$prize['name']}",
+                    (int) $prize['winner_user_id'],
+                    'success',
+                    null,
+                    'raffles'
+                );
+            }
+        }
+
         $message = $this->finalizeOnSave ? 'Sorteo finalizado' : 'Resultados registrados';
 
         $this->showWinnerModal = false;

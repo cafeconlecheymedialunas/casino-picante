@@ -206,6 +206,19 @@ class UsersIndex extends Component
             $this->dispatch('toast', message: 'Cliente actualizado correctamente.', type: 'success');
 
             $this->notify('Cliente actualizado', "El cliente {$user->name} fue actualizado.", 'users', route('admin.clientes', [], false), 'info');
+
+            // Notify client if password was changed
+            if ($this->password) {
+                \App\Services\NotificationService::sendToClient(
+                    'Seguridad de cuenta',
+                    'Tu contraseña fue actualizada por un administrador.',
+                    $user->id,
+                    'warning',
+                    null,
+                    'users'
+                );
+            }
+
             $this->dispatch('notification-created');
         } else {
             $data['password'] = Hash::make($this->password);
@@ -213,6 +226,17 @@ class UsersIndex extends Component
             $this->dispatch('toast', message: 'Cliente creado correctamente.', type: 'success');
 
             $this->notify('Nuevo cliente registrado', "El cliente {$user->name} fue creado exitosamente.", 'users', route('admin.clientes', [], false), 'success');
+
+            // Notify client
+            \App\Services\NotificationService::sendToClient(
+                '¡Bienvenido!',
+                'Tu cuenta de cliente fue creada exitosamente.',
+                $user->id,
+                'success',
+                null,
+                'users'
+            );
+
             $this->dispatch('notification-created');
         }
 
@@ -251,6 +275,17 @@ class UsersIndex extends Component
 
         $user = User::findOrFail($userId);
         $this->notify('Estado de cliente cambiado', "El cliente {$user->name} fue ".($status === 'active' ? 'activado' : 'pausado').'.', 'users', route('admin.clientes', [], false), 'warning');
+
+        // Notify client
+        \App\Services\NotificationService::sendToClient(
+            $status === 'active' ? 'Tu cuenta fue activada' : 'Tu cuenta fue pausada',
+            $status === 'active' ? 'Ya podés volver a operar en el sistema.' : 'Tu acceso fue suspendido temporalmente por un administrador.',
+            $user->id,
+            $status === 'active' ? 'success' : 'danger',
+            null,
+            'users'
+        );
+
         $this->dispatch('notification-created');
 
         if ($this->detailUserId === $userId) {

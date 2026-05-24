@@ -295,6 +295,15 @@ class Bonos extends Component
                 'assigned_at' => now(),
             ]);
 
+            NotificationService::sendToClient(
+                '¡Nuevo bono recibido!',
+                "Recibiste el bono {$bonus->title}. Canjealo ahora.",
+                $user->id,
+                'success',
+                route('frontend.bonos', [], false),
+                'bonuses'
+            );
+
             $assigned[] = $user->username ?? $user->email;
         }
 

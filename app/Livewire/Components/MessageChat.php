@@ -121,6 +121,18 @@ class MessageChat extends Component
         if ($this->isAgent) {
             // Agente/admin responde → notificar al admin general
             $this->notify('Respuesta enviada', "Respuesta enviada en el chat: {$chat->subject}", 'chats', '/chats', 'info');
+
+            // Notificar al cliente
+            if ($chat->user_id) {
+                \App\Services\NotificationService::sendToClient(
+                    'Nueva respuesta en el chat',
+                    "Recibiste una respuesta en el chat: {$chat->subject}",
+                    (int) $chat->user_id,
+                    'info',
+                    null,
+                    'chats'
+                );
+            }
         } else {
             // Cliente responde → notificar a agentes
             $this->notify('Nuevo mensaje de cliente', "El cliente respondió en: {$chat->subject}", 'chats', '/chats', 'info');

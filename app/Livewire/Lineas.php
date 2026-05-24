@@ -274,9 +274,27 @@ class Lineas extends Component
         }
 
         $line = Line::findOrFail($lineId);
+        $lineName = $line->name;
+
+        $this->notifyLineEncargados(
+            $line,
+            'Linea eliminada',
+            "La linea {$lineName} fue eliminada del sistema.",
+            'danger'
+        );
+
         $line->delete();
 
         session()->flash('message', 'Línea eliminada correctamente.');
+
+        $this->notify(
+            'Linea eliminada',
+            "La linea {$lineName} fue eliminada del sistema.",
+            'lines',
+            route('admin.lineas', [], false),
+            'danger'
+        );
+
         $this->closeModal();
     }
 
@@ -393,6 +411,16 @@ class Lineas extends Component
 
         $lineAgent->syncPermissions($filtered);
 
+        // Notify the agent about permission changes
+        $this->notifyAgent(
+            (int) $lineAgent->agent_id,
+            'Permisos actualizados',
+            "Tus permisos en la linea {$lineAgent->line->name} fueron actualizados.",
+            'lines',
+            route('admin.lineas', [], false),
+            'info'
+        );
+
         // If we're updating the encargado, remove from other agents any permissions not allowed by the new encargado set
         if ($lineAgent->role === LineRoles::ENCARGADO) {
             $deleteQuery = LineAgentPermission::where('line_id', $lineAgent->line_id)
@@ -447,6 +475,15 @@ class Lineas extends Component
         // Agente gets all permissions except line and agent administration
         if ($result->wasRecentlyCreated) {
             $result->syncRegularAgentPermissions();
+
+            $this->notifyAgent(
+                (int) $agentId,
+                'Nueva linea asignada',
+                "Fuiste asignado a la linea {$line->name} como miembro.",
+                'lines',
+                route('admin.lineas', [], false),
+                'success'
+            );
         }
 
         session()->flash(
@@ -459,7 +496,7 @@ class Lineas extends Component
 
     public function removeLineAgent(int $lineAgentId): void
     {
-        $lineAgent = LineAgent::with('line')->findOrFail($lineAgentId);
+        $lineAgent = LineAgent::with(['line', 'agent'])->findOrFail($lineAgentId);
         $this->authorizeLineEdit($lineAgent->line);
 
         if ($lineAgent->role === LineRoles::ENCARGADO) {
@@ -468,11 +505,23 @@ class Lineas extends Component
             return;
         }
 
+        $lineName = $lineAgent->line->name;
+        $agentId = $lineAgent->agent_id;
+
         LineAgentPermission::where('line_id', $lineAgent->line_id)
             ->where('agent_id', $lineAgent->agent_id)
             ->delete();
 
         $lineAgent->delete();
+
+        $this->notifyAgent(
+            (int) $agentId,
+            'Removido de linea',
+            "Ya no tenes acceso a la linea {$lineName}.",
+            'lines',
+            route('admin.lineas', [], false),
+            'danger'
+        );
 
         $this->closeAgentPermissions();
     }
