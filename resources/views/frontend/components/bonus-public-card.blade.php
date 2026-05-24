@@ -27,7 +27,7 @@
     .bonus-public-head, .bonus-public-actions, .bonus-public-card p, .bonus-public-meta { position:relative; z-index:1; }
     .bonus-public-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
     .bonus-public-kicker { display:block; color:var(--orange); font-size:10px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; margin-bottom:8px; }
-    .bonus-public-card h3 { font-family:var(--font-display); font-size:34px; line-height:.92; margin:0; letter-spacing:.02em; text-transform:uppercase; overflow-wrap:anywhere; }
+    .bonus-public-card h3 { font-family:var(--font-display); font-size:28px; line-height:.92; margin:0; letter-spacing:.02em; text-transform:uppercase; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     .bonus-public-code { max-width:136px; overflow-wrap:anywhere; border:1px solid rgba(255,106,26,.42); border-radius:8px; background:rgba(255,106,26,.1); color:var(--orange); padding:8px 10px; font-family:var(--font-mono); font-size:11px; font-weight:900; text-align:center; }
     .bonus-public-card p { color:var(--muted); font-size:13px; line-height:1.45; margin:0; font-weight:700; }
     .bonus-public-meta { display:flex; flex-wrap:wrap; gap:6px; }

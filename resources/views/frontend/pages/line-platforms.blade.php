@@ -18,6 +18,18 @@
     .lp-count-card i { color:var(--orange); font-size:24px; }
     .lp-count-card strong { display:block; margin-top:14px; font-family:var(--font-display); font-size:54px; line-height:.8; }
     .lp-count-card span { display:block; margin-top:7px; color:var(--muted); font-size:12px; font-weight:800; }
+    .lp-vendor-strip { display:flex; align-items:center; justify-content:space-between; gap:16px; border:1px solid rgba(255,106,26,.22); border-radius:10px; background:linear-gradient(90deg, rgba(255,106,26,.07), rgba(255,255,255,.035)); padding:12px 16px; margin-bottom:14px; }
+    .lp-vendor-identity { display:flex; align-items:center; gap:12px; text-decoration:none; color:#fff; transition:opacity .15s; }
+    .lp-vendor-identity:hover { opacity:.82; }
+    .lp-vendor-avatar { width:46px; height:46px; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:linear-gradient(135deg, var(--orange), var(--amber)); display:flex; align-items:center; justify-content:center; overflow:hidden; color:#190702; font-family:var(--font-display); font-size:18px; flex-shrink:0; }
+    .lp-vendor-avatar img { width:100%; height:100%; object-fit:cover; }
+    .lp-vendor-identity span { display:block; color:rgba(255,255,255,.5); font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
+    .lp-vendor-identity strong { display:block; font-size:15px; font-weight:900; margin-top:2px; }
+    .lp-vendor-meta { display:flex; gap:8px; flex-wrap:wrap; }
+    .lp-vendor-meta a { display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(255,255,255,.12); border-radius:6px; padding:6px 12px; color:rgba(255,255,255,.72); text-decoration:none; font-size:11px; font-weight:900; text-transform:uppercase; transition:border-color .15s, color .15s; }
+    .lp-vendor-meta a:hover { border-color:rgba(255,106,26,.42); color:var(--orange); }
+    .lp-vendor-meta i { color:var(--orange); font-size:11px; }
+    @media (max-width: 560px) { .lp-vendor-strip { flex-direction:column; align-items:flex-start; } }
     .lp-panel { margin-top:18px; border:1px solid var(--line); border-radius:var(--r-md); background:linear-gradient(180deg,#170b0b,#0f0707); padding:22px; }
     .lp-panel-head { display:flex; align-items:end; justify-content:space-between; gap:16px; margin-bottom:18px; }
     .lp-panel-head p { margin:0 0 5px; color:var(--orange); font-size:11px; font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
@@ -81,6 +93,39 @@
                     ['label' => 'Plataformas'],
                 ],
         ])
+        @if(isset($publicVendor))
+            @php
+                $vendorLogoUrl = $assetUrl($publicVendor->logo);
+                $vendorPortraitUrl = $assetUrl($publicVendor->portrait_image) ?: $vendorLogoUrl;
+            @endphp
+            <div class="lp-vendor-strip">
+                <a href="{{ route('frontend.cajero.inicio', $publicVendor) }}" class="lp-vendor-identity" wire:navigate>
+                    <div class="lp-vendor-avatar">
+                        @if($vendorPortraitUrl)
+                            <img src="{{ $vendorPortraitUrl }}" alt="{{ $publicVendor->name }}">
+                        @else
+                            {{ strtoupper(mb_substr($publicVendor->name, 0, 2)) }}
+                        @endif
+                    </div>
+                    <div>
+                        <span>Cajero</span>
+                        <strong>{{ $publicVendor->name }}</strong>
+                    </div>
+                </a>
+                <div class="lp-vendor-meta">
+                    <a href="{{ route('frontend.cajero.lineas', $publicVendor) }}" wire:navigate>
+                        <i class="fa-solid fa-layer-group"></i> Lineas
+                    </a>
+                    <a href="{{ route('frontend.cajero.bonos', $publicVendor) }}" wire:navigate>
+                        <i class="fa-solid fa-gift"></i> Bonos
+                    </a>
+                    <a href="{{ route('frontend.cajero.sorteos', $publicVendor) }}" wire:navigate>
+                        <i class="fa-solid fa-trophy"></i> Sorteos
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <section class="lp-hero">
             <div class="lp-hero-bg">
                 @if($cover)

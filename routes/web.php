@@ -26,6 +26,7 @@ use App\Livewire\Frontend\PostShow;
 use App\Livewire\Frontend\PublicRaffle;
 use App\Livewire\Frontend\RaffleShow;
 use App\Livewire\Frontend\VendorDetail;
+use App\Livewire\Frontend\VendorPlatforms;
 use App\Livewire\Frontend\VendorsIndex;
 use App\Livewire\Lineas;
 use App\Livewire\LineDetail;
@@ -110,10 +111,10 @@ Route::prefix('cajeros/{vendor:slug}')
         Route::get('/lineas/{line}', LineShow::class)
             ->name('lineas.detalle');
 
-        Route::get('/lineas/{line}/plataformas', LinePlatforms::class)
+        Route::get('/plataformas/{line}', LinePlatforms::class)
             ->name('lineas.plataformas');
 
-        Route::get('/plataformas', fn (Vendor $vendor) => redirect()->route('frontend.cajero.lineas', $vendor))
+        Route::get('/plataformas', VendorPlatforms::class)
             ->name('plataformas');
 
         Route::get('/bonos', BonusesIndex::class)
@@ -158,7 +159,7 @@ Route::get('/lineas', LinesIndex::class)
 Route::get('/lineas/{line}', LineShow::class)
     ->name('frontend.lineas.detalle');
 
-Route::get('/lineas/{line}/plataformas', LinePlatforms::class)
+Route::get('/plataformas/{line}', LinePlatforms::class)
     ->name('frontend.lineas.plataformas');
 
 Route::get('/plataformas', fn () => redirect()->route('frontend.lineas'))

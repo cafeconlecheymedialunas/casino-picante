@@ -29,9 +29,7 @@
 
     $profileData = collect([
         ['label' => 'Nombre publico', 'value' => $vendor->name],
-        ['label' => 'Slug', 'value' => $vendor->slug],
         ['label' => 'Usuario', 'value' => $cajero?->username],
-        ['label' => 'Email', 'value' => $cajero?->email],
         ['label' => 'Telefono', 'value' => $phone],
     ])->filter(fn ($item) => filled($item['value'] ?? null));
 
@@ -109,13 +107,15 @@
                     <span class="vd-brand-mark"></span>
                     <span>RED <strong>PICANTES</strong></span>
                 </a>
-                <span class="vd-badge"><i class="fa-solid fa-shield-halved"></i> Cajero verificado</span>
+                @if($vendor->is_active)
+                    <span class="vd-badge"><i class="fa-solid fa-shield-halved"></i> Cajero verificado</span>
+                @endif
             </header>
 
             <div class="vd-hero-grid">
                 <div class="vd-hero-copy">
                     <p class="vd-kicker">{{ $vendor->slug }}</p>
-                    <h1>Tu mejor jugada, tu mejor <span>cajero.</span></h1>
+                    <h1>{{ $vendor->name }} — tu <span>cajero.</span></h1>
                     <p class="vd-lead">{{ $vendor->description ?: 'Atencion personalizada, pagos rapidos y lineas listas para que empieces a jugar sin vueltas.' }}</p>
 
                     <div class="vd-benefits">
@@ -155,7 +155,6 @@
                 </div>
 
                 <div class="vd-visual-stack">
-
                     <aside class="vd-profile-card">
                         <div class="vd-avatar">
                             @if($portraitImageUrl)
@@ -190,15 +189,55 @@
         </div>
     </section>
 
-    <section class="vd-shell vd-hero-grid">
-        <main class="vd-main-stack">
+    <section class="vd-shell vd-content-stack">
+
+            {{-- Stats de confiabilidad --}}
+            <div class="vd-trust-bar">
+                <div class="vd-trust-stat">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div>
+                        <strong>Cajero verificado</strong>
+                        <span>Miembro desde {{ $memberSince->format('M Y') }}</span>
+                    </div>
+                </div>
+                <div class="vd-trust-stat">
+                    <i class="fa-solid fa-users"></i>
+                    <div>
+                        <strong>{{ number_format($totalClients) }}+</strong>
+                        <span>Clientes atendidos</span>
+                    </div>
+                </div>
+                <div class="vd-trust-stat">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    <div>
+                        <strong>{{ number_format($totalOperations) }}+</strong>
+                        <span>Operaciones realizadas</span>
+                    </div>
+                </div>
+                <div class="vd-trust-stat">
+                    <i class="fa-solid fa-gift"></i>
+                    <div>
+                        <strong>{{ $totalBonuses }} bonos activos</strong>
+                        <span>Promociones vigentes</span>
+                    </div>
+                </div>
+                <div class="vd-trust-stat">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <div>
+                        <strong>{{ $totalLines }} lineas · {{ $totalPlatforms }} plataformas</strong>
+                        <span>Cobertura del cajero</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Líneas --}}
             <section id="lineas" class="vd-panel">
                 <div class="vd-panel-head">
                     <div>
                         <p>Lineas disponibles</p>
-                        <h2>{{ $lines->count() }} lineas para jugar</h2>
+                        <h2>{{ $totalLines }} lineas para jugar</h2>
                     </div>
-                    <a href="{{ route('frontend.cajero.lineas', $vendor) }}" wire:navigate>Ver todas</a>
+                    <a href="{{ route('frontend.cajero.lineas', $vendor) }}" class="vd-panel-btn" wire:navigate>Ver todos</a>
                 </div>
 
                 @if($lines->count())
@@ -212,16 +251,17 @@
                 @endif
             </section>
 
-            <div class="vd-split">
+            {{-- Bonos y Sorteos --}}
+            <div class="vd-full-row">
                 <section class="vd-panel">
                     <div class="vd-panel-head">
                         <div>
                             <p>Bonos exclusivos</p>
                             <h2>Beneficios activos</h2>
                         </div>
-                        <a href="{{ route('frontend.cajero.bonos', $vendor) }}" wire:navigate>Ver todas</a>
+                        <a href="{{ route('frontend.cajero.bonos', $vendor) }}" class="vd-panel-btn" wire:navigate>Ver todos</a>
                     </div>
-                    <div class="vd-mini-list">
+                    <div class="vd-bonus-grid">
                         @forelse($bonuses as $bonus)
                             @include('frontend.components.bonus-public-card', ['bonus' => $bonus])
                         @empty
@@ -232,11 +272,8 @@
 
                 <section class="vd-panel">
                     <div class="vd-panel-head">
-                        <div>
-                            <p>Sorteos activos</p>
-                            <h2>Premios vigentes</h2>
-                        </div>
-                        <a href="{{ route('frontend.cajero.sorteos', $vendor) }}" wire:navigate>Ver todas</a>
+                        <h2>Premios vigentes</h2>
+                        <a href="{{ route('frontend.cajero.sorteos', $vendor) }}" class="vd-panel-btn" wire:navigate>Ver todos</a>
                     </div>
                     <div class="vd-mini-list">
                         @forelse($raffles as $raffle)
@@ -254,21 +291,25 @@
                     </div>
                 </section>
             </div>
-        </main>
 
-        <aside class="vd-side-stack">
-            <section class="vd-panel">
-                <div class="vd-panel-head">
-                    <div>
-                        <p>Agentes</p>
-                        <h2>Equipo</h2>
-                    </div>
-                    <a href="{{ route('frontend.cajero.agentes', $vendor) }}" wire:navigate>Ver agentes</a>
+        <section class="vd-panel">
+            <div class="vd-panel-head">
+                <div>
+                    <p>Agentes</p>
+                    <h2>Equipo</h2>
                 </div>
-                <div class="vd-empty compact">Ver agentes del cajero</div>
-            </section>
-
-        </aside>
+                <a href="{{ route('frontend.cajero.agentes', $vendor) }}" class="vd-panel-btn" wire:navigate>Ver todos</a>
+            </div>
+            @if($agents->count())
+                <div class="vd-agents-grid">
+                    @foreach($agents as $agent)
+                        @include('frontend.components.agent-card', ['agent' => $agent])
+                    @endforeach
+                </div>
+            @else
+                <div class="vd-empty compact">Sin agentes del cajero.</div>
+            @endif
+        </section>
     </section>
 
 </div>
@@ -313,7 +354,7 @@
     .vd-contact-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
     .vd-contact-widget-head span { color: rgba(255,255,255,.62); font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
     .vd-contact-widget-head strong { color: var(--orange); font-size: 10px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
-    .vd-contact-widget-list { display: grid; gap: 8px; }
+    .vd-contact-widget-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
     .vd-contact-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) 12px; gap: 10px; align-items: center; border: 1px solid rgba(255,255,255,.09); border-radius: 9px; background: rgba(255,255,255,.045); padding: 9px; color: #fff; text-decoration: none; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
     .vd-contact-row:hover { transform: translateY(-1px); border-color: rgba(255,106,26,.36); background: rgba(255,106,26,.07); }
     .vd-contact-row > i { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(255,106,26,.1); color: var(--orange); font-size: 16px; }
@@ -344,13 +385,27 @@
     .vd-rating strong { color: var(--orange); letter-spacing: .08em; }
     .vd-rating em { color: rgba(255,255,255,.82); font-style: normal; text-transform: none; }
     .vd-hero-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: -70px; position: relative; z-index: 2; }
-    .vd-main-stack, .vd-side-stack { display: grid; gap: 14px; align-content: start; }
+    .vd-content-stack { display: grid; gap: 16px; margin-top: -70px; position: relative; z-index: 2; background: linear-gradient(180deg, #050202 0%, #050202 100%); border-radius: 14px 14px 0 0; padding: 20px 0 0; }
+    /* Agents */
+    .vd-agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    /* Trust bar */
+    .vd-trust-bar { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; }
+    .vd-trust-stat { display: flex; align-items: center; gap: 14px; border: 1px solid rgba(255,255,255,.11); border-radius: 12px; background: linear-gradient(135deg, rgba(255,106,26,.08), rgba(255,255,255,.03)); padding: 18px; }
+    .vd-trust-stat i { flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(255,106,26,.14); color: var(--orange); font-size: 18px; }
+    .vd-trust-stat strong { display: block; color: #fff; font-size: 15px; font-weight: 900; line-height: 1.15; }
+    .vd-trust-stat span { display: block; color: rgba(255,255,255,.46); font-size: 11px; font-weight: 700; margin-top: 4px; }
+    @media (max-width: 1100px) { .vd-trust-bar { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+    @media (max-width: 640px) { .vd-trust-bar { grid-template-columns: 1fr 1fr; } }
     .vd-panel { border: 1px solid var(--vd-stroke); border-radius: 8px; background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035)); box-shadow: 0 18px 48px rgba(0,0,0,.26); padding: 18px; backdrop-filter: blur(8px); }
     .vd-panel-head { display: flex; justify-content: space-between; gap: 14px; align-items: start; margin-bottom: 16px; }
     .vd-panel-head p { margin: 0 0 5px; color: rgba(255,255,255,.58); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
     .vd-panel-head h2 { margin: 0; font-family: var(--font-display); font-size: 28px; line-height: .95; letter-spacing: .025em; }
     .vd-panel-head a { color: var(--orange); text-decoration: none; font-size: 11px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
-    .vd-lines-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .vd-panel-btn { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:0 14px; border:1px solid rgba(255,106,26,.38); border-radius:6px; background:rgba(255,106,26,.07); color:var(--orange) !important; font-size:11px; font-weight:900; text-transform:uppercase; text-decoration:none; white-space:nowrap; transition:background .18s,border-color .18s; flex-shrink:0; }
+    .vd-panel-btn:hover { background:rgba(255,106,26,.14); border-color:rgba(255,106,26,.6); }
+    /* Lines — altura uniforme */
+    .vd-lines-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
+    .vd-lines-grid > * { display: flex; flex-direction: column; height: 100%; }
     .vd-line-card { min-width: 0; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(255,255,255,.04); overflow: hidden; }
     .vd-line-media { height: 108px; position: relative; background: radial-gradient(80% 90% at 50% 0%, rgba(255,106,26,.32), transparent 64%), #100706; }
     .vd-line-media > img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -365,14 +420,18 @@
     .vd-line-actions a { flex: 1; min-height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--vd-stroke); border-radius: 6px; color: #fff; text-decoration: none; font-size: 10px; font-weight: 900; text-transform: uppercase; }
     .vd-line-actions a:first-child { color: var(--orange); border-color: rgba(255,106,26,.36); }
     .vd-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+    .vd-full-row { display: grid; gap: 14px; }
     .vd-split > .vd-panel { align-self: start; }
     .vd-mini-list { display: grid; gap: 10px; }
-    .vd-bonus, .vd-raffle { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: center; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: rgba(255,255,255,.04); padding: 12px; }
-    .vd-bonus i, .vd-raffle i { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,106,26,.12); color: var(--orange); font-size: 22px; }
-    .vd-bonus strong, .vd-raffle strong { display: block; color: #fff; font-size: 13px; }
-    .vd-bonus span, .vd-raffle span { display: block; color: var(--orange); font-size: 11px; font-weight: 900; margin-top: 3px; }
-    .vd-bonus em { display: block; color: rgba(255,255,255,.56); font-size: 11px; line-height: 1.35; font-style: normal; margin-top: 5px; }
-    .vd-raffle a { display: inline-flex; color: var(--orange); margin-top: 8px; font-size: 10px; font-weight: 900; text-transform: uppercase; text-decoration: none; }
+    .vd-bonus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    /* Raffle cards */
+    .vd-raffle { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; align-items: start; border: 1px solid rgba(255,255,255,.1); border-radius: 10px; background: linear-gradient(135deg, rgba(255,106,26,.06), rgba(255,255,255,.03)); padding: 16px; transition: border-color .18s, background .18s; }
+    .vd-raffle:hover { border-color: rgba(255,106,26,.32); background: rgba(255,106,26,.08); }
+    .vd-raffle i { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: rgba(255,106,26,.14); color: var(--orange); font-size: 22px; flex-shrink: 0; }
+    .vd-raffle strong { display: block; color: #fff; font-size: 14px; font-weight: 900; line-height: 1.2; }
+    .vd-raffle span { display: block; color: rgba(255,255,255,.48); font-size: 11px; font-weight: 700; margin-top: 4px; }
+    .vd-raffle a { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--orange); font-size: 11px; font-weight: 900; text-transform: uppercase; text-decoration: none; border: 1px solid rgba(255,106,26,.34); border-radius: 6px; padding: 5px 12px; background: rgba(255,106,26,.07); transition: background .15s; }
+    .vd-raffle a:hover { background: rgba(255,106,26,.15); }
     .vd-contact-list { display: flex; flex-wrap: wrap; gap: 10px; }
     .vd-contact-list.icon-only { display: flex; flex-wrap: wrap; gap: 10px; }
     .vd-contact.icon-only { width: 46px; height: 46px; display: inline-flex; align-items: center; justify-content: center; grid-template-columns: none; gap: 0; padding: 0; border-radius: 12px; }
@@ -426,7 +485,7 @@
     .vd-hero::after { display:block; content:""; position:absolute; inset:auto 0 0; height:180px; background:linear-gradient(180deg, transparent, #050202); pointer-events:none; }
     .vd-hero .fe-breadcrumbs { margin-bottom:22px; }
     .vd-topbar { margin-bottom:64px; }
-    .vd-hero-grid { grid-template-columns:minmax(0, 1fr) minmax(340px, 430px); gap:clamp(30px, 6vw, 78px); }
+    .vd-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 420px); gap: clamp(26px, 5vw, 64px); align-items: start; }
     .vd-hero-copy { padding-top:34px; }
     .vd-hero h1 { max-width:620px; font-size:clamp(62px, 8vw, 104px); line-height:.84; text-shadow:0 18px 52px rgba(0,0,0,.58); }
     .vd-lead { max-width:560px; margin-top:22px; color:rgba(255,255,255,.78); line-height:1.65; font-weight:750; }
@@ -442,7 +501,7 @@
     .vd-main-stack, .vd-side-stack { gap:16px; }
     .vd-panel { border-radius:10px; background:linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035)); box-shadow:0 20px 54px rgba(0,0,0,.28); backdrop-filter:blur(10px); }
     .vd-panel-head h2 { font-size:30px; }
-    .vd-lines-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
+    .vd-lines-grid { grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px; }
     .vd-line-card { border-color:rgba(255,255,255,.11); border-radius:10px; background:rgba(255,255,255,.045); transition:transform .18s ease, border-color .18s ease, background .18s ease; }
     .vd-line-card:hover { transform:translateY(-2px); border-color:rgba(255,106,26,.38); background:rgba(255,255,255,.06); }
     .vd-line-media { height:116px; }
@@ -451,16 +510,11 @@
     .vd-bonus, .vd-raffle, .vd-contact { border-color:rgba(255,255,255,.09); border-radius:10px; background:rgba(255,255,255,.045); }
     .vd-contact { transition:border-color .18s ease, background .18s ease; }
     .vd-contact:hover { border-color:rgba(255,106,26,.36); background:rgba(255,106,26,.07); }
-    @media (max-width: 1060px) {
-        .vd-lines-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
-        .vd-hero-grid { margin-top:-42px; }
-    }
     @media (max-width: 760px) {
         .vd-shell { width:calc(100% - 24px); }
-        .vd-hero { padding-bottom:64px; }
-        .vd-profile-card { margin-top:-18px; }
-        .vd-avatar { width:min(210px, 72vw); height:min(210px, 72vw); }
-        .vd-lines-grid { grid-template-columns:1fr; }
+        .vd-hero { padding-bottom:48px; }
+        .vd-benefits, .vd-split { grid-template-columns:1fr; }
+        .vd-content-stack { margin-top:-24px; }
     }
 </style>
 @endpush
