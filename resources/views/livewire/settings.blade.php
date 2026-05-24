@@ -96,6 +96,9 @@
                 <button type="button" wire:click="setTab('notifications')" class="sidebar-tab {{ $activeTab === 'notifications' ? 'active' : '' }}">
                     <span>NO</span> Notificaciones
                 </button>
+                <button type="button" wire:click="setTab('brand')" class="sidebar-tab {{ $activeTab === 'brand' ? 'active' : '' }}">
+                    <span>MA</span> Marca
+                </button>
                 <button type="button" wire:click="setTab('appearance')" class="sidebar-tab {{ $activeTab === 'appearance' ? 'active' : '' }}">
                     <span>AP</span> Apariencia
                 </button>
@@ -235,7 +238,7 @@
                 @endif
             @elseif($activeTab === 'notifications')
                 @livewire('notification-settings')
-            @elseif($activeTab === 'appearance')
+            @elseif($activeTab === 'brand')
                 <section class="settings-panel">
                     <div class="settings-panel-head">
                         <div>
@@ -257,27 +260,27 @@
                             </div>
 
                             <div class="settings-field">
-                                <x-upload-image
+                                <x-image-uploader
                                     label="Logo global"
                                     model="siteLogoUpload"
                                     :value="\App\Models\Setting::assetUrl($siteLogo)"
-                                    removeAction="removeSiteLogo"
-                                    aspect="3/1"
-                                    icon="fa-solid fa-crown"
+                                    :upload="$siteLogoUpload"
+                                    remove-action="removeSiteLogo"
                                     hint="PNG/JPG/WEBP recomendado"
+                                    variant="wide"
                                 />
                                 @error('siteLogoUpload') <div class="settings-error">{{ $message }}</div> @enderror
                             </div>
 
                             <div class="settings-field">
-                                <x-upload-image
+                                <x-image-uploader
                                     label="Favicon"
                                     model="siteFaviconUpload"
                                     :value="\App\Models\Setting::assetUrl($siteFavicon, \App\Models\Setting::DEFAULT_FAVICON)"
-                                    removeAction="removeSiteFavicon"
-                                    aspect="1"
-                                    icon="fa-solid fa-star"
+                                    :upload="$siteFaviconUpload"
+                                    remove-action="removeSiteFavicon"
                                     hint="Cuadrado, ideal 512x512"
+                                    variant="logo"
                                 />
                                 @error('siteFaviconUpload') <div class="settings-error">{{ $message }}</div> @enderror
                             </div>
@@ -289,6 +292,7 @@
                     </form>
                 </section>
 
+            @elseif($activeTab === 'appearance')
                 <section class="settings-panel">
                     <div class="settings-panel-head">
                         <div>

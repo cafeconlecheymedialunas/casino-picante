@@ -69,6 +69,22 @@ class BrandingSettingsTest extends TestCase
             ->assertSee('alt="Casino Marca Test"', false);
     }
 
+    public function test_branding_has_its_own_settings_tab_with_uploaders(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+
+        $this->actingAs($user)->withSession(['active_vendor_id' => $vendor->id]);
+
+        Livewire::test(Settings::class)
+            ->call('setTab', 'brand')
+            ->assertSet('activeTab', 'brand')
+            ->assertSee('Marca global')
+            ->assertSee('Logo global')
+            ->assertSee('Favicon')
+            ->assertSee('siteLogoUpload')
+            ->assertSee('siteFaviconUpload');
+    }
+
     private function cajeroVendor(): array
     {
         $role = Role::firstOrCreate(['name' => Roles::CAJERO], ['label' => 'Cajero']);
