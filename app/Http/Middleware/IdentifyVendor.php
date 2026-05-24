@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Line;
 use App\Models\Vendor;
 use App\Support\Roles;
 use Closure;
@@ -21,6 +22,16 @@ class IdentifyVendor
 
                 if ($activeVendorId && ! Vendor::query()->whereKey($activeVendorId)->where('is_active', true)->exists()) {
                     $request->session()->forget(['active_vendor_id', 'active_line_id']);
+                } elseif ($activeVendorId && $request->session()->get('active_line_id')) {
+                    $lineBelongsToVendor = Line::query()
+                        ->whereKey((int) $request->session()->get('active_line_id'))
+                        ->where('vendor_id', (int) $activeVendorId)
+                        ->where('status', 'active')
+                        ->exists();
+
+                    if (! $lineBelongsToVendor) {
+                        $request->session()->forget('active_line_id');
+                    }
                 }
             } else {
                 if ($user->vendor_id && Vendor::query()->whereKey($user->vendor_id)->where('is_active', true)->exists()) {

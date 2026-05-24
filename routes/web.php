@@ -306,7 +306,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'active_line_id' => null,
         ]);
 
-        return back();
+        return redirect()->route('admin.dashboard');
     })->middleware(['auth', 'admin'])->name('session.vendor');
 
     Route::middleware('line.authorize')->group(function () {

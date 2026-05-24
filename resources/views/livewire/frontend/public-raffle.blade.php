@@ -19,15 +19,21 @@
     .raffle-card-body { padding:20px; flex:1; display:flex; flex-direction:column; }
     .raffle-card-title { font-family:var(--font-display); font-size:24px; line-height:1.1; margin:0 0 8px; letter-spacing:.01em; }
     .raffle-card-desc { color:var(--muted); font-size:13px; line-height:1.5; margin:0 0 16px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-    .raffle-card-meta { display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:16px; border-top:1px solid var(--line); }
+    .raffle-card-meta { display:grid; grid-template-columns:minmax(0, 1fr); gap:14px; margin-top:auto; padding-top:16px; border-top:1px solid var(--line); }
+    .raffle-card-row { display:flex; justify-content:space-between; align-items:center; gap:12px; }
     .raffle-card-info { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px; }
     .raffle-card-info i { color:var(--orange); }
-    .raffle-card-timer { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; color:var(--orange); }
-    .raffle-card-timer i { font-size:10px; }
-    .raffle-card-countdown { display:flex; gap:4px; align-items:center; }
-    .raffle-card-countdown .timer-unit { min-width:34px; min-height:34px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid rgba(255,106,26,.22); border-radius:7px; background:rgba(255,106,26,.08); }
-    .raffle-card-countdown .timer-val { color:#fff; font-family:var(--font-display); font-size:16px; line-height:1; }
-    .raffle-card-countdown .timer-label { margin-top:2px; color:var(--orange); font-size:6px; font-weight:900; letter-spacing:.08em; }
+    .raffle-card-clock-label { display:inline-flex; align-items:center; gap:7px; color:var(--orange); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
+    .raffle-card-clock-label i { font-size:10px; }
+    .raffle-card-countdown { position:relative; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:7px; width:100%; border:1px solid rgba(255,106,26,.2); border-radius:10px; background:linear-gradient(180deg, rgba(255,106,26,.08), rgba(255,255,255,.025)); padding:10px; overflow:hidden; box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
+    .raffle-card-countdown::before { content:""; position:absolute; inset:0; background:radial-gradient(80% 120% at 100% 0%, rgba(255,106,26,.16), transparent 62%); pointer-events:none; }
+    .raffle-card-countdown .timer-unit { position:relative; z-index:1; min-width:0; min-height:52px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid rgba(255,106,26,.24); border-radius:8px; background:rgba(8,3,2,.58); }
+    .raffle-card-countdown .timer-val { color:#fff; font-family:var(--font-display); font-size:25px; line-height:.86; text-shadow:0 0 18px rgba(255,106,26,.22); }
+    .raffle-card-countdown .timer-label { margin-top:5px; color:rgba(255,106,26,.95); font-size:7px; font-weight:900; letter-spacing:.12em; }
+    .raffle-card-countdown.is-finished .timer-unit { opacity:.42; }
+    .raffle-countdown-finished { position:absolute; z-index:3; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(11,4,3,.86); color:#fff; font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.1em; }
+    .raffle-countdown-progress { position:relative; height:5px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
+    .raffle-countdown-progress span { position:absolute; inset:0 auto 0 0; width:0; border-radius:inherit; background:linear-gradient(90deg, #ff6a1a, #ffb347); box-shadow:0 0 18px rgba(255,106,26,.42); transition:width .45s ease; }
     .raffle-card-prizes { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; padding-top:12px;padding-bottom:12px; border-top:1px solid var(--line); }
     .raffle-prize-tag { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; background:rgba(255,106,26,.1); border:1px solid rgba(255,106,26,.25); border-radius:6px; font-size:10px; font-weight:800; color:var(--orange); }
     .raffle-prize-tag i { font-size:8px; }
@@ -40,6 +46,9 @@
         .raffles-page { padding:28px 0 40px; }
         .raffles-header h1 { font-size:40px; }
         .raffles-grid { grid-template-columns:1fr; gap:16px; }
+        .raffle-card-countdown { gap:5px; padding:8px; }
+        .raffle-card-countdown .timer-unit { min-height:46px; }
+        .raffle-card-countdown .timer-val { font-size:22px; }
     }
 </style>
 @endpush
@@ -105,21 +114,37 @@
                                 </div>
                             @endif
                             <div class="raffle-card-meta">
-                                <span class="raffle-card-info">
-                                    <i class="fa-solid fa-ticket"></i>
-                                    {{ $raffle->numbers_count }} participantes
-                                </span>
-                                @if($raffle->status === 'active' && ! $raffle->isFinished())
-                                    <span class="raffle-card-timer">
-                                        <i class="fa-regular fa-clock"></i>
-                                        <span class="raffle-card-countdown" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
-                                            <span class="timer-unit"><span class="timer-val" data-unit="days">00</span><span class="timer-label">D</span></span>
-                                            <span class="timer-unit"><span class="timer-val" data-unit="hours">00</span><span class="timer-label">H</span></span>
-                                            <span class="timer-unit"><span class="timer-val" data-unit="minutes">00</span><span class="timer-label">M</span></span>
-                                        </span>
+                                <div class="raffle-card-row">
+                                    <span class="raffle-card-info">
+                                        <i class="fa-solid fa-ticket"></i>
+                                        {{ $raffle->numbers_count }} participantes
                                     </span>
-                                @else
-                                    <span class="raffle-card-timer" style="color: var(--muted);">{{ $raffle->end_date?->format('d/m') }}</span>
+                                    @if($raffle->status === 'active' && ! $raffle->isFinished())
+                                        <span class="raffle-card-clock-label">
+                                            <i class="fa-regular fa-clock"></i>
+                                            Termina en
+                                        </span>
+                                    @else
+                                        <span class="raffle-card-clock-label" style="color: var(--muted);">
+                                            {{ $raffle->end_date?->format('d/m') }}
+                                        </span>
+                                    @endif
+                                </div>
+                                @if($raffle->status === 'active' && ! $raffle->isFinished())
+                                    <div
+                                        class="raffle-card-countdown"
+                                        data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}"
+                                        data-countdown-start="{{ $raffle->start_date?->toIso8601String() }}"
+                                    >
+                                        <span class="raffle-countdown-finished" data-countdown-finished hidden>Sorteo finalizado</span>
+                                        <span class="timer-unit"><span class="timer-val" data-unit="days">00</span><span class="timer-label">Dias</span></span>
+                                        <span class="timer-unit"><span class="timer-val" data-unit="hours">00</span><span class="timer-label">Horas</span></span>
+                                        <span class="timer-unit"><span class="timer-val" data-unit="minutes">00</span><span class="timer-label">Min</span></span>
+                                        <span class="timer-unit"><span class="timer-val" data-unit="seconds">00</span><span class="timer-label">Seg</span></span>
+                                    </div>
+                                    <div class="raffle-countdown-progress" aria-hidden="true">
+                                        <span data-countdown-progress></span>
+                                    </div>
                                 @endif
                             </div>
                             <span class="raffle-card-btn">Ver detalles</span>
