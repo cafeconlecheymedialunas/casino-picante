@@ -2,15 +2,15 @@
 
 namespace App\Livewire\Admin\Vendors;
 
-use App\Models\Vendor;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\FontAwesomeIcons;
 use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -19,26 +19,59 @@ use Livewire\WithPagination;
 #[Layout('layouts.dashboard')]
 class VendorsIndex extends Component
 {
-    use WithPagination, WithFileUploads;
+    use WithFileUploads, WithPagination;
 
     protected array $dispatchesEvents = [
         'page-header-action' => 'handlePageHeaderAction',
     ];
 
     public $search = '';
+
     public $showModal = false;
+
     public $vendorId = null;
 
     // Form fields
-    public $name, $slug, $user_id, $is_active = true, $description, $logo, $heroImage, $portraitImage;
-    public $logoUpload, $heroImageUpload, $portraitImageUpload;
-    public $contacts = [], $features = [], $branding = [];
+    public $name;
+
+    public $slug;
+
+    public $user_id;
+
+    public $is_active = true;
+
+    public $description;
+
+    public $logo;
+
+    public $heroImage;
+
+    public $portraitImage;
+
+    public $logoUpload;
+
+    public $heroImageUpload;
+
+    public $portraitImageUpload;
+
+    public $contacts = [];
+
+    public $features = [];
+
+    public $branding = [];
+
     public $brandingJson = '{}';
-    
+
     // User selection/creation
     public $user_mode = 'select'; // 'select' or 'create'
+
     public $selected_user_id = null;
-    public $username, $email, $password;
+
+    public $username;
+
+    public $email;
+
+    public $password;
 
     protected $rules = [
         'name' => 'required|min:3',
@@ -187,7 +220,7 @@ class VendorsIndex extends Component
         $this->contacts = $vendor->contacts ?? [];
         $this->features = $vendor->features ?? [];
         $this->branding = $vendor->branding ?? [];
-        $this->brandingJson = json_encode($this->branding ?: new \stdClass(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $this->brandingJson = json_encode($this->branding ?: new \stdClass, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         $this->user_mode = $vendor->user_id ? 'select' : 'create';
         $this->logoUpload = null;
         $this->heroImageUpload = null;
@@ -302,12 +335,12 @@ class VendorsIndex extends Component
 
     public function render()
     {
-        $vendors = Vendor::where('name', 'like', '%' . $this->search . '%')
+        $vendors = Vendor::where('name', 'like', '%'.$this->search.'%')
             ->with('user')
             ->paginate(10);
 
         $cajeros = User::withoutGlobalScopes()
-            ->whereHas('role', fn($q) => $q->where('name', Roles::CAJERO))
+            ->whereHas('role', fn ($q) => $q->where('name', Roles::CAJERO))
             ->where(function ($query) {
                 $query->whereDoesntHave('assignedVendor');
 

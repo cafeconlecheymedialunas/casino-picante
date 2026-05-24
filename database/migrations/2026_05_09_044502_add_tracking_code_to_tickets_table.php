@@ -15,7 +15,7 @@ return new class extends Migration
 
         DB::table('tickets')->whereNull('tracking_code')->orderBy('id')->each(function ($ticket) {
             DB::table('tickets')->where('id', $ticket->id)->update([
-                'tracking_code' => 'TKT-' . strtoupper(substr(md5($ticket->id . 'x9z'), 0, 6)),
+                'tracking_code' => 'TKT-'.strtoupper(substr(md5($ticket->id.'x9z'), 0, 6)),
             ]);
         });
     }

@@ -38,6 +38,7 @@ use App\Livewire\Sorteos;
 use App\Livewire\Tickets;
 use App\Livewire\Users\UsersIndex;
 use App\Livewire\Ventas;
+use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Vendor;
@@ -135,8 +136,8 @@ Route::prefix('cajeros/{vendor:slug}')
         Route::get('/blog/{slug}', PostShow::class)
             ->name('blog.detalle');
 
-        Route::get('/agentes', function (App\Models\Vendor $vendor) {
-            $agents = \App\Models\Agent::whereHas('lines', function ($q) use ($vendor) {
+        Route::get('/agentes', function (Vendor $vendor) {
+            $agents = Agent::whereHas('lines', function ($q) use ($vendor) {
                 $q->where('lines.vendor_id', $vendor->id);
             })->get();
 
@@ -310,15 +311,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware('line.authorize')->group(function () {
         Route::get('/dashboard', Overview::class)
-            ->middleware('line.authorize:' . Permissions::DASHBOARD_READ)
+            ->middleware('line.authorize:'.Permissions::DASHBOARD_READ)
             ->name('dashboard');
 
         Route::get('/clientes', UsersIndex::class)
-            ->middleware('line.authorize:' . Permissions::USER_READ)
+            ->middleware('line.authorize:'.Permissions::USER_READ)
             ->name('clientes');
 
         Route::get('/agentes', Agentes::class)
-            ->middleware('line.authorize:' . implode('|', [
+            ->middleware('line.authorize:'.implode('|', [
                 Permissions::AGENT_CREATE,
                 Permissions::AGENT_ASSIGN,
                 Permissions::AGENT_UPDATE,
@@ -327,7 +328,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('agentes');
 
         Route::get('/chats', Chats::class)
-            ->middleware('line.authorize:' . implode('|', [
+            ->middleware('line.authorize:'.implode('|', [
                 Permissions::TICKET_READ,
                 Permissions::USER_READ,
             ]))
@@ -338,15 +339,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('plataformas');
 
         Route::get('/ventas/{line?}', Ventas::class)
-            ->middleware('line.authorize:' . Permissions::LINE_EDIT)
+            ->middleware('line.authorize:'.Permissions::LINE_EDIT)
             ->name('ventas');
 
         Route::get('/lineas', Lineas::class)
-            ->middleware('line.authorize:' . Permissions::LINE_READ)
+            ->middleware('line.authorize:'.Permissions::LINE_READ)
             ->name('lineas');
 
         Route::get('/lineas/{id}/editar', Lineas::class)
-            ->middleware('line.authorize:' . Permissions::LINE_EDIT)
+            ->middleware('line.authorize:'.Permissions::LINE_EDIT)
             ->name('lineas.editar');
 
         Route::get('/lineas/{id}', LineDetail::class)
@@ -354,23 +355,23 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('lineas.detalle');
 
         Route::get('/novedades', Novedades::class)
-            ->middleware('line.authorize:' . Permissions::NEWS_READ)
+            ->middleware('line.authorize:'.Permissions::NEWS_READ)
             ->name('novedades');
 
         Route::get('/blog/{id}/editar', BlogEdit::class)
-            ->middleware('line.authorize:' . Permissions::NEWS_UPDATE)
+            ->middleware('line.authorize:'.Permissions::NEWS_UPDATE)
             ->name('blog.editar');
 
         Route::get('/bonos', Bonos::class)
-            ->middleware('line.authorize:' . Permissions::BONO_READ)
+            ->middleware('line.authorize:'.Permissions::BONO_READ)
             ->name('bonos');
 
         Route::match(['get', 'post'], '/editor-inicio', EditorHome::class)
-            ->middleware('line.authorize:' . Permissions::HOME_EDIT)
+            ->middleware('line.authorize:'.Permissions::HOME_EDIT)
             ->name('editor.inicio');
 
         Route::post('/editor-inicio/guardar-seccion', [HomeSectionController::class, 'saveSection'])
-            ->middleware('line.authorize:' . Permissions::HOME_EDIT)
+            ->middleware('line.authorize:'.Permissions::HOME_EDIT)
             ->name('editor.inicio.guardar');
 
         Route::get('/tickets', Tickets::class)
@@ -378,7 +379,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('tickets');
 
         Route::get('/sorteos', Sorteos::class)
-            ->middleware('line.authorize:' . Permissions::SORTEO_READ)
+            ->middleware('line.authorize:'.Permissions::SORTEO_READ)
             ->name('sorteos');
 
         Route::get('/configuracion', Settings::class)
@@ -386,7 +387,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('configuracion');
     });
 
-    Route::get('/cajeros', \App\Livewire\Admin\Vendors\VendorsIndex::class)
+    Route::get('/cajeros', App\Livewire\Admin\Vendors\VendorsIndex::class)
         ->middleware('admin')
         ->name('cajeros');
 });

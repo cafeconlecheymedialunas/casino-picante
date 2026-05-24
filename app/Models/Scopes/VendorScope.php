@@ -19,7 +19,7 @@ class VendorScope implements Scope
         $vendorId = (int) $vendorId;
 
         if (! auth()->check()) {
-            $builder->where($model->getTable() . '.vendor_id', $vendorId);
+            $builder->where($model->getTable().'.vendor_id', $vendorId);
 
             return;
         }
@@ -47,13 +47,13 @@ class VendorScope implements Scope
         if ($model->getTable() === 'users') {
             $authUserId = (int) auth()->id();
             $builder->where(function (Builder $query) use ($model, $vendorId, $authUserId): void {
-                $query->where($model->getTable() . '.vendor_id', $vendorId)
-                    ->orWhere($model->getTable() . '.id', $authUserId);
+                $query->where($model->getTable().'.vendor_id', $vendorId)
+                    ->orWhere($model->getTable().'.id', $authUserId);
             });
 
             return;
         }
 
-        $builder->where($model->getTable() . '.vendor_id', $vendorId);
+        $builder->where($model->getTable().'.vendor_id', $vendorId);
     }
 }

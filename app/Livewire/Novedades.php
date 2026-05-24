@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Agent;
+use App\Models\Category;
 use App\Models\LineAgent;
 use App\Models\Post;
 use App\Support\ImageStorage;
@@ -30,12 +31,19 @@ class Novedades extends Component
 
     // Post fields
     public $title = '';
+
     public $content = '';
+
     public $excerpt = '';
+
     public $status = 'published';
+
     public $category_id = '';
+
     public $author_agent_id = '';
+
     public $image = '';
+
     public $imageUpload = null;
 
     // Category management
@@ -92,7 +100,7 @@ class Novedades extends Component
             ],
         ]);
 
-        \App\Models\Category::create([
+        Category::create([
             'name' => $this->newCategoryName,
             'slug' => Str::slug($this->newCategoryName),
             'vendor_id' => session('active_vendor_id'),
@@ -105,7 +113,7 @@ class Novedades extends Component
     public function deleteCategory(int $id): void
     {
         $this->checkLinePermission(Permissions::NEWS_DELETE);
-        $category = \App\Models\Category::find($id);
+        $category = Category::find($id);
         if ($category) {
             $this->authorizeVendorRecord($category);
             $category->delete();
@@ -211,7 +219,7 @@ class Novedades extends Component
     {
         return view('livewire.novedades', [
             'posts' => $this->getPosts(),
-            'categories' => \App\Models\Category::where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', session('active_vendor_id')))->orderBy('name')->get(),
+            'categories' => Category::where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', session('active_vendor_id')))->orderBy('name')->get(),
             'authors' => $this->availableAuthors(),
             'canDelete' => $this->canDelete(),
         ])->layout('layouts.dashboard');
@@ -253,7 +261,7 @@ class Novedades extends Component
             return;
         }
 
-        abort_unless(\App\Models\Category::whereKey((int) $categoryId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
+        abort_unless(Category::whereKey((int) $categoryId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
     }
 
     private function authorizeVendorRecord($model): void

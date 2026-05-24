@@ -22,7 +22,7 @@ use Livewire\WithPagination;
 #[Layout('layouts.dashboard')]
 class UsersIndex extends Component
 {
-    use HasLinePermissions, WithPagination, SendsNotifications;
+    use HasLinePermissions, SendsNotifications, WithPagination;
 
     public string $search = '';
 
@@ -250,7 +250,7 @@ class UsersIndex extends Component
         $this->dispatch('toast', message: "Cliente {$label}.", type: $status === 'active' ? 'success' : 'danger');
 
         $user = User::findOrFail($userId);
-        $this->notify('Estado de cliente cambiado', "El cliente {$user->name} fue " . ($status === 'active' ? 'activado' : 'pausado') . ".", 'users', route('admin.clientes', [], false), 'warning');
+        $this->notify('Estado de cliente cambiado', "El cliente {$user->name} fue ".($status === 'active' ? 'activado' : 'pausado').'.', 'users', route('admin.clientes', [], false), 'warning');
         $this->dispatch('notification-created');
 
         if ($this->detailUserId === $userId) {

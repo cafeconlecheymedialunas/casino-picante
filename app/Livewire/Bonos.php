@@ -156,8 +156,9 @@ class Bonos extends Component
             : $this->checkLinePermission(Permissions::BONO_CREATE);
 
         $this->validate();
-        $this->authorizeLineChoice((int) $this->lineId);
-        $this->authorizePlatformChoice($this->platformId);
+        $line = Line::withoutGlobalScopes()->findOrFail((int) $this->lineId);
+        $this->authorizeLineChoice($line->id);
+        $this->authorizePlatformChoice($this->platformId, $line);
 
         $start = Carbon::parse($this->startDate.' '.$this->startTime);
         $end = Carbon::parse($this->endDate.' '.$this->endTime);
@@ -353,7 +354,7 @@ class Bonos extends Component
         return view('livewire.bonos', [
             'bonuses' => $this->bonuses(),
             'metrics' => $this->metrics(),
-            'platforms' => Platform::orderBy('name')->get(),
+            'platforms' => $this->availablePlatforms(),
             'selectedBonus' => $this->selectedBonusId ? $this->accessibleBonusesQuery()->with('line')->find($this->selectedBonusId) : null,
             'canCreateBonus' => $this->hasLinePermission(Permissions::BONO_CREATE),
             'panelBonus' => $panelBonus,
@@ -438,13 +439,38 @@ class Bonos extends Component
         }
     }
 
-    private function authorizePlatformChoice(string $platformId): void
+    private function authorizePlatformChoice(string $platformId, ?Line $line = null): void
     {
-        if ($platformId === '' || ! session('active_vendor_id')) {
+        if ($platformId === '') {
             return;
         }
 
-        abort_unless(Platform::whereKey((int) $platformId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+        $platform = Platform::withoutGlobalScopes()->find((int) $platformId);
+        abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
+
+        $vendorId = session('active_vendor_id') ?: $line?->vendor_id;
+
+        if ($vendorId && $platform->vendor_id && (int) $platform->vendor_id !== (int) $vendorId) {
+            abort(403, 'No podes usar plataformas fuera de tu vendor.');
+        }
+    }
+
+    private function availablePlatforms(): Collection
+    {
+        $vendorId = session('active_vendor_id');
+
+        if (! $vendorId && $this->lineId) {
+            $vendorId = Line::withoutGlobalScopes()->whereKey((int) $this->lineId)->value('vendor_id');
+        }
+
+        return Platform::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->when($vendorId, fn ($query) => $query->where(function ($platforms) use ($vendorId) {
+                $platforms->where('vendor_id', (int) $vendorId)
+                    ->orWhereNull('vendor_id');
+            }))
+            ->orderBy('name')
+            ->get();
     }
 
     public function openAssignmentsPanel(int $bonusId): void

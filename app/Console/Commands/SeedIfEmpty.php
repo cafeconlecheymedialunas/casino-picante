@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 class SeedIfEmpty extends Command
 {
     protected $signature = 'db:seed-if-empty';
+
     protected $description = 'Run seeder only if the database has no users';
 
     public function handle(): void
@@ -16,6 +17,7 @@ class SeedIfEmpty extends Command
 
         if ($count > 0) {
             $this->info('Database already has data. Skipping seed.');
+
             return;
         }
 

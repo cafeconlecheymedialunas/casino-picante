@@ -24,9 +24,9 @@ class Sale extends Model
     ];
 
     protected $casts = [
-        'fecha_inicio'         => 'date',
-        'fecha_fin'            => 'date',
-        'monto_fichas'         => 'decimal:2',
+        'fecha_inicio' => 'date',
+        'fecha_fin' => 'date',
+        'monto_fichas' => 'decimal:2',
         'ganancia_superagente' => 'decimal:2',
     ];
 

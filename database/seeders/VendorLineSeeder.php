@@ -62,6 +62,7 @@ class VendorLineSeeder extends Seeder
         ] as $name => $label) {
             $roles[$name] = Role::firstOrCreate(['name' => $name], ['label' => $label]);
         }
+
         return $roles;
     }
 
@@ -90,7 +91,7 @@ class VendorLineSeeder extends Seeder
 
         $vendors = [];
         foreach ($data as $i => $vd) {
-            $username = 'cajero_' . $vd['slug'];
+            $username = 'cajero_'.$vd['slug'];
             $user = User::updateOrCreate(
                 ['email' => $vd['cajero'][1]],
                 [
@@ -98,7 +99,7 @@ class VendorLineSeeder extends Seeder
                     'username' => $username,
                     'password' => Hash::make('password'),
                     'role_id' => $roles[Roles::CAJERO]->id,
-                    'phone' => '+5491100000' . str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
+                    'phone' => '+5491100000'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
                     'status' => 'active',
                 ]
             );
@@ -109,17 +110,18 @@ class VendorLineSeeder extends Seeder
                     'user_id' => $user->id,
                     'name' => $vd['name'],
                     'description' => $vd['description'],
-                    'logo' => 'https://ui-avatars.com/api/?name=' . urlencode($vd['name']) . '&background=ff6a1a&color=fff&bold=true&size=256',
+                    'logo' => 'https://ui-avatars.com/api/?name='.urlencode($vd['name']).'&background=ff6a1a&color=fff&bold=true&size=256',
                     'is_active' => true,
                     'contacts' => [
-                        ['type' => 'whatsapp', 'value' => 'https://wa.me/54911' . (10000000 + $i), 'name' => 'WhatsApp ' . $vd['name']],
+                        ['type' => 'whatsapp', 'value' => 'https://wa.me/54911'.(10000000 + $i), 'name' => 'WhatsApp '.$vd['name']],
                     ],
                     'branding' => ['primary' => '#ff6a1a', 'accent' => '#ffb347'],
                 ]
             );
         }
 
-        $this->command->info(count($vendors) . ' vendors creados.');
+        $this->command->info(count($vendors).' vendors creados.');
+
         return $vendors;
     }
 
@@ -130,24 +132,25 @@ class VendorLineSeeder extends Seeder
 
         foreach ($vendors as $vendor) {
             foreach ($names as $j => $name) {
-                $slug = Str::slug($name) . '-' . $vendor->slug;
+                $slug = Str::slug($name).'-'.$vendor->slug;
                 $platforms[] = Platform::withoutGlobalScopes()->updateOrCreate(
                     ['vendor_id' => $vendor->id, 'slug' => $slug],
                     [
-                        'name' => $name . ' (' . $vendor->name . ')',
-                        'description' => $name . ' disponible en ' . $vendor->name,
-                        'logo_url' => 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=ff6a1a&color=fff&bold=true&size=128',
-                        'website_url' => 'https://' . $vendor->slug . '.test/' . $slug,
+                        'name' => $name.' ('.$vendor->name.')',
+                        'description' => $name.' disponible en '.$vendor->name,
+                        'logo_url' => 'https://ui-avatars.com/api/?name='.urlencode($name).'&background=ff6a1a&color=fff&bold=true&size=128',
+                        'website_url' => 'https://'.$vendor->slug.'.test/'.$slug,
                         'is_active' => true,
                         'contacts' => [
-                            ['type' => 'whatsapp', 'value' => 'https://wa.me/54911' . (20000000 + $j), 'name' => 'Soporte ' . $name],
+                            ['type' => 'whatsapp', 'value' => 'https://wa.me/54911'.(20000000 + $j), 'name' => 'Soporte '.$name],
                         ],
                     ]
                 );
             }
         }
 
-        $this->command->info(count($platforms) . ' plataformas creadas.');
+        $this->command->info(count($platforms).' plataformas creadas.');
+
         return $platforms;
     }
 
@@ -162,8 +165,8 @@ class VendorLineSeeder extends Seeder
         $agents = [];
         foreach ($vendors as $vi => $vendor) {
             foreach ($agentData as $ai => $ad) {
-                $email = $ad[2] . '_' . $vendor->slug . '@demo.com';
-                $username = $ad[2] . '_' . $vendor->slug;
+                $email = $ad[2].'_'.$vendor->slug.'@demo.com';
+                $username = $ad[2].'_'.$vendor->slug;
 
                 $user = User::updateOrCreate(
                     ['email' => $email],
@@ -172,7 +175,7 @@ class VendorLineSeeder extends Seeder
                         'apellido' => $ad[1],
                         'username' => $username,
                         'password' => Hash::make('password'),
-                        'phone' => '+54911' . (30000000 + $vi * 100 + $ai),
+                        'phone' => '+54911'.(30000000 + $vi * 100 + $ai),
                         'role_id' => $roles[Roles::AGENTE]->id,
                         'vendor_id' => $vendor->id,
                         'status' => 'active',
@@ -196,7 +199,8 @@ class VendorLineSeeder extends Seeder
             }
         }
 
-        $this->command->info(count($agents) . ' agentes creados.');
+        $this->command->info(count($agents).' agentes creados.');
+
         return $agents;
     }
 
@@ -230,18 +234,18 @@ class VendorLineSeeder extends Seeder
             foreach ($lineConfigs as $li => $lc) {
                 $line = Line::withoutGlobalScopes()->create([
                     'vendor_id' => $vendor->id,
-                    'name' => $lc['name'] . ' ' . $vendor->name,
+                    'name' => $lc['name'].' '.$vendor->name,
                     'type' => $lc['type'],
-                    'phone' => '+54911' . (40000000 + $vi * 100 + $li),
+                    'phone' => '+54911'.(40000000 + $vi * 100 + $li),
                     'icon' => ['fa-solid fa-crown', 'fa-solid fa-bolt', 'fa-solid fa-star'][$li],
                     'description' => $lc['description'],
                     'status' => 'active',
                     'contact_links' => [
-                        ['name' => 'WhatsApp', 'type' => 'whatsapp', 'value' => 'https://wa.me/54911' . (40000000 + $vi * 100 + $li)],
-                        ['name' => 'Telegram', 'type' => 'telegram', 'value' => 'https://t.me/' . $vendor->slug . '_linea' . ($li + 1)],
+                        ['name' => 'WhatsApp', 'type' => 'whatsapp', 'value' => 'https://wa.me/54911'.(40000000 + $vi * 100 + $li)],
+                        ['name' => 'Telegram', 'type' => 'telegram', 'value' => 'https://t.me/'.$vendor->slug.'_linea'.($li + 1)],
                     ],
-                    'portada_url' => 'https://picsum.photos/seed/' . $vendor->slug . '-linea' . ($li + 1) . '/1200/420',
-                    'perfil_url' => 'https://ui-avatars.com/api/?name=' . urlencode($lc['name']) . '&background=ff6a1a&color=fff&bold=true&size=256',
+                    'portada_url' => 'https://picsum.photos/seed/'.$vendor->slug.'-linea'.($li + 1).'/1200/420',
+                    'perfil_url' => 'https://ui-avatars.com/api/?name='.urlencode($lc['name']).'&background=ff6a1a&color=fff&bold=true&size=256',
                     'best_sales' => random_int(800000, 3500000),
                 ]);
 
@@ -252,7 +256,7 @@ class VendorLineSeeder extends Seeder
                     foreach ($linePlatforms as $lp) {
                         $syncData[$lp->id] = [
                             'vendor_id' => $vendor->id,
-                            'custom_message' => 'Disponible en ' . $line->name . ' con soporte dedicado.',
+                            'custom_message' => 'Disponible en '.$line->name.' con soporte dedicado.',
                             'is_active' => true,
                         ];
                     }
@@ -310,7 +314,8 @@ class VendorLineSeeder extends Seeder
             }
         }
 
-        $this->command->info(count($lines) . ' lineas creadas.');
+        $this->command->info(count($lines).' lineas creadas.');
+
         return $lines;
     }
 
@@ -322,7 +327,7 @@ class VendorLineSeeder extends Seeder
         foreach ($vendors as $vendor) {
             foreach ($names as $name) {
                 $categories[] = Category::withoutGlobalScopes()->updateOrCreate(
-                    ['vendor_id' => $vendor->id, 'slug' => Str::slug($name) . '-' . $vendor->slug],
+                    ['vendor_id' => $vendor->id, 'slug' => Str::slug($name).'-'.$vendor->slug],
                     ['name' => $name]
                 );
             }
@@ -355,7 +360,7 @@ class VendorLineSeeder extends Seeder
                     'apellido' => $cd[1],
                     'username' => $cd[2],
                     'password' => Hash::make('password'),
-                    'phone' => '+54911' . (50000000 + $ci),
+                    'phone' => '+54911'.(50000000 + $ci),
                     'role_id' => $roles[Roles::CLIENTE]->id,
                     'vendor_id' => $vendor->id,
                     'line_id' => $line->id,
@@ -370,7 +375,8 @@ class VendorLineSeeder extends Seeder
             $clients[] = $user;
         }
 
-        $this->command->info(count($clients) . ' clientes creados.');
+        $this->command->info(count($clients).' clientes creados.');
+
         return $clients;
     }
 
@@ -391,8 +397,8 @@ class VendorLineSeeder extends Seeder
             $vendorAgents = array_values(array_filter($agents, fn ($a) => (int) $a->vendor_id === (int) $vendor->id));
 
             foreach ($templates as $ti => $tmpl) {
-                $title = $tmpl[0] . ' - ' . $vendor->name;
-                $slug = Str::slug($title) . '-' . $vendor->slug;
+                $title = $tmpl[0].' - '.$vendor->name;
+                $slug = Str::slug($title).'-'.$vendor->slug;
 
                 $cat = null;
                 foreach ($vendorCategories as $vc) {
@@ -409,9 +415,9 @@ class VendorLineSeeder extends Seeder
                     ['vendor_id' => $vendor->id, 'slug' => $slug],
                     [
                         'title' => $title,
-                        'content' => '<p>' . $tmpl[1] . '</p><p>Jugá con responsabilidad y consultá a tu linea de atencion ante cualquier duda.</p>',
+                        'content' => '<p>'.$tmpl[1].'</p><p>Jugá con responsabilidad y consultá a tu linea de atencion ante cualquier duda.</p>',
                         'excerpt' => $tmpl[1],
-                        'image' => 'https://picsum.photos/seed/' . $slug . '/900/560',
+                        'image' => 'https://picsum.photos/seed/'.$slug.'/900/560',
                         'status' => Post::STATUS_PUBLISHED,
                         'published_at' => Carbon::now()->subDays($ti + 1),
                         'line_id' => $line->id,
@@ -434,7 +440,8 @@ class VendorLineSeeder extends Seeder
             }
         }
 
-        $this->command->info(count($posts) . ' posts creados.');
+        $this->command->info(count($posts).' posts creados.');
+
         return $posts;
     }
 
@@ -453,7 +460,7 @@ class VendorLineSeeder extends Seeder
             $vendorAgents = array_values(array_filter($agents, fn ($a) => (int) $a->vendor_id === (int) $vendor->id));
 
             foreach ($bonusTemplates as $bi => $bt) {
-                $code = $bt[0] . strtoupper(Str::random(4)) . $vi;
+                $code = $bt[0].strtoupper(Str::random(4)).$vi;
                 $line = $vendorLines[$bi % count($vendorLines)];
                 $platform = count($vendorPlatforms) > 0 ? $vendorPlatforms[$bi % count($vendorPlatforms)] : null;
                 $createdBy = count($vendorAgents) > 0 ? $vendorAgents[$bi % count($vendorAgents)]->id : null;
@@ -461,8 +468,8 @@ class VendorLineSeeder extends Seeder
                 $bonus = Bonus::withoutGlobalScopes()->updateOrCreate(
                     ['vendor_id' => $vendor->id, 'code' => $code],
                     [
-                        'title' => $bt[1] . ' ' . $vendor->name,
-                        'description' => 'Bono del ' . $bt[2] . '% hasta $' . number_format($bt[3]) . ' en ' . $vendor->name,
+                        'title' => $bt[1].' '.$vendor->name,
+                        'description' => 'Bono del '.$bt[2].'% hasta $'.number_format($bt[3]).' en '.$vendor->name,
                         'start_date' => Carbon::now()->subDays(5),
                         'end_date' => Carbon::now()->addDays(25 - $bi),
                         'type' => 'general',
@@ -495,7 +502,8 @@ class VendorLineSeeder extends Seeder
             }
         }
 
-        $this->command->info(count($bonuses) . ' bonos creados.');
+        $this->command->info(count($bonuses).' bonos creados.');
+
         return $bonuses;
     }
 
@@ -509,7 +517,7 @@ class VendorLineSeeder extends Seeder
 
             // Sorteo activo
             $active = Raffle::withoutGlobalScopes()->updateOrCreate(
-                ['vendor_id' => $vendor->id, 'title' => 'Sorteo Semanal ' . $vendor->name],
+                ['vendor_id' => $vendor->id, 'title' => 'Sorteo Semanal '.$vendor->name],
                 [
                     'description' => 'Participa por grandes premios con tus recargas de la semana.',
                     'status' => 'active',
@@ -544,7 +552,7 @@ class VendorLineSeeder extends Seeder
 
             // Sorteo finalizado
             $finished = Raffle::withoutGlobalScopes()->updateOrCreate(
-                ['vendor_id' => $vendor->id, 'title' => 'Sorteo Anterior ' . $vendor->name],
+                ['vendor_id' => $vendor->id, 'title' => 'Sorteo Anterior '.$vendor->name],
                 [
                     'description' => 'Resultados del sorteo anterior con premios entregados.',
                     'status' => 'finished',
@@ -567,7 +575,8 @@ class VendorLineSeeder extends Seeder
             $raffles[] = $finished;
         }
 
-        $this->command->info(count($raffles) . ' sorteos creados.');
+        $this->command->info(count($raffles).' sorteos creados.');
+
         return $raffles;
     }
 
@@ -593,7 +602,7 @@ class VendorLineSeeder extends Seeder
                     'platform_id' => $platform?->id,
                     'fecha_inicio' => Carbon::now()->subDays(15 - $si),
                     'fecha_fin' => Carbon::now()->subDays(15 - $si),
-                    'descripcion' => 'Venta demo ' . $vendor->name,
+                    'descripcion' => 'Venta demo '.$vendor->name,
                     'monto_fichas' => random_int(10000, 180000),
                     'ganancia_superagente' => random_int(1500, 35000),
                 ]);
@@ -601,7 +610,7 @@ class VendorLineSeeder extends Seeder
             }
         }
 
-        $this->command->info($count . ' ventas creadas.');
+        $this->command->info($count.' ventas creadas.');
     }
 
     private function seedCarousel(array $vendors, array $lines): void
@@ -611,14 +620,14 @@ class VendorLineSeeder extends Seeder
             $vendorLines = array_values(array_filter($lines, fn ($l) => (int) $l->vendor_id === (int) $vendor->id));
 
             foreach ([
-                ['Bienvenido a ' . $vendor->name, '/' . $vendor->slug],
-                ['Bonos activos en ' . $vendor->name, '/' . $vendor->slug . '/bonos'],
-                ['Sorteo ' . $vendor->name, '/' . $vendor->slug . '/sorteos'],
+                ['Bienvenido a '.$vendor->name, '/'.$vendor->slug],
+                ['Bonos activos en '.$vendor->name, '/'.$vendor->slug.'/bonos'],
+                ['Sorteo '.$vendor->name, '/'.$vendor->slug.'/sorteos'],
             ] as $ci => $item) {
                 CarouselItem::updateOrCreate(
                     ['title' => $item[0], 'vendor_id' => $vendor->id],
                     [
-                        'image' => 'https://picsum.photos/seed/' . $vendor->slug . '-carousel-' . $ci . '/1600/680',
+                        'image' => 'https://picsum.photos/seed/'.$vendor->slug.'-carousel-'.$ci.'/1600/680',
                         'link' => $item[1],
                         'order' => $ci + 1,
                         'line_id' => $vendorLines[$ci % count($vendorLines)]->id,
@@ -628,7 +637,7 @@ class VendorLineSeeder extends Seeder
             }
         }
 
-        $this->command->info($count . ' items de carrusel creados.');
+        $this->command->info($count.' items de carrusel creados.');
     }
 
     private function seedRatings(array $vendors, array $lines, array $clients): void
@@ -651,6 +660,6 @@ class VendorLineSeeder extends Seeder
             }
         }
 
-        $this->command->info($count . ' valoraciones creadas.');
+        $this->command->info($count.' valoraciones creadas.');
     }
 }

@@ -2,9 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\Bonos;
 use App\Livewire\Auth\AdminForgotPassword;
 use App\Livewire\Auth\ClientForgotPassword;
+use App\Livewire\Bonos;
+use App\Livewire\Frontend\Blog;
 use App\Livewire\Frontend\PublicRaffle;
 use App\Livewire\Novedades;
 use App\Livewire\Tickets;
@@ -192,7 +193,7 @@ class AuditedFlowsTest extends TestCase
             ->assertSee('Post publico multi linea');
     }
 
-    public function test_public_blog_respects_active_vendor_scope_when_present(): void
+    public function test_public_blog_ignores_active_vendor_scope_on_global_route(): void
     {
         $firstVendor = Vendor::create([
             'user_id' => User::factory()->create()->id,
@@ -224,9 +225,9 @@ class AuditedFlowsTest extends TestCase
 
         $this->withSession(['active_vendor_id' => $firstVendor->id]);
 
-        Livewire::test(\App\Livewire\Frontend\Blog::class)
+        Livewire::test(Blog::class)
             ->assertSee('Post Vendor A')
-            ->assertDontSee('Post Vendor B');
+            ->assertSee('Post Vendor B');
     }
 
     public function test_public_cajero_slug_sets_vendor_scope_for_guest_home(): void

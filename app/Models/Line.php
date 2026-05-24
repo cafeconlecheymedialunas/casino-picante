@@ -136,6 +136,7 @@ class Line extends Model
     public function getAverageRatingAttribute()
     {
         $avg = $this->ratings()->avg('rating');
+
         return $avg ? round($avg, 1) : 0;
     }
 

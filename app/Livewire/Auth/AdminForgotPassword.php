@@ -55,7 +55,7 @@ class AdminForgotPassword extends Component
         DB::insert('INSERT INTO password_reset_tokens (email, token, created_at) VALUES (?, ?, ?)', [$email, $token, now()]);
 
         try {
-            ($agent ?? $user)->notify(new AdminPasswordReset(url('/admin/reset-password/'.$token)));
+            ($agent ?? $user)->notify(new AdminPasswordReset(route('admin.password.reset', ['token' => $token])));
             $this->sent = true;
         } catch (\Exception) {
             $this->error = 'No se pudo enviar el enlace. Intentá nuevamente.';

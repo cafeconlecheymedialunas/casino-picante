@@ -12,7 +12,6 @@ use App\Support\LineRoles;
 use App\Support\Permissions;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
@@ -123,7 +122,7 @@ class Ventas extends Component
 
         $line = Line::with(['platforms', 'lineAgents.agent'])->findOrFail((int) $this->saleLineId);
         $this->authorizeLineEdit($line);
-        $this->authorizePlatformChoice($this->salePlatformId);
+        $this->authorizePlatformChoice($this->salePlatformId, $line);
 
         $amount = (float) $this->saleMontoFichas;
         $percent = (float) $line->lineAgents()
@@ -193,7 +192,16 @@ class Ventas extends Component
 
     public function formPlatforms(): Collection
     {
-        return Platform::where('is_active', true)->orderBy('name')->get();
+        $vendorId = $this->platformVendorIdForForm();
+
+        return Platform::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->when($vendorId, fn ($query) => $query->where(function ($platforms) use ($vendorId) {
+                $platforms->where('vendor_id', (int) $vendorId)
+                    ->orWhereNull('vendor_id');
+            }))
+            ->orderBy('name')
+            ->get();
     }
 
     public function sales()
@@ -231,6 +239,7 @@ class Ventas extends Component
         if ($this->dateInicioFilter && $this->dateFinFilter) {
             return $this->dateInicioFilter.' al '.$this->dateFinFilter;
         }
+
         return 'Seleccionar rango de fechas';
     }
 
@@ -311,12 +320,36 @@ class Ventas extends Component
             ->pluck('line_id');
     }
 
-    private function authorizePlatformChoice(string $platformId): void
+    private function authorizePlatformChoice(string $platformId, ?Line $line): void
     {
-        if ($platformId === '' || ! session('active_vendor_id')) {
+        if ($platformId === '') {
             return;
         }
 
-        abort_unless(Platform::whereKey((int) $platformId)->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+        $platform = Platform::withoutGlobalScopes()->find((int) $platformId);
+        abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
+
+        $vendorId = session('active_vendor_id') ?: $line?->vendor_id;
+
+        if ($vendorId && $platform->vendor_id && (int) $platform->vendor_id !== (int) $vendorId) {
+            abort(403, 'No podes usar plataformas fuera de tu vendor.');
+        }
+    }
+
+    private function platformVendorIdForForm(): ?int
+    {
+        if (session('active_vendor_id')) {
+            return (int) session('active_vendor_id');
+        }
+
+        if ($this->saleLineId) {
+            return Line::withoutGlobalScopes()->whereKey((int) $this->saleLineId)->value('vendor_id');
+        }
+
+        if ($this->lineFilter !== 'all') {
+            return Line::withoutGlobalScopes()->whereKey((int) $this->lineFilter)->value('vendor_id');
+        }
+
+        return null;
     }
 }

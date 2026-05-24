@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Components\PageHeader;
 use App\Models\Agent;
 use App\Models\DashboardNotification;
 use App\Models\Line;
@@ -22,7 +23,9 @@ class NotificationsTest extends TestCase
     use RefreshDatabase;
 
     private Line $line;
+
     private Agent $encargado;
+
     private Agent $miembro;
 
     protected function setUp(): void
@@ -33,41 +36,41 @@ class NotificationsTest extends TestCase
         $adminRole = Role::firstOrCreate(['name' => Roles::ADMIN], ['label' => 'Admin']);
 
         $encargadoUser = User::factory()->create(['role_id' => $agentRole->id]);
-        $miembroUser   = User::factory()->create(['role_id' => $agentRole->id]);
+        $miembroUser = User::factory()->create(['role_id' => $agentRole->id]);
 
         $this->encargado = Agent::create([
-            'user_id'  => $encargadoUser->id,
+            'user_id' => $encargadoUser->id,
             'username' => 'encargado_test',
-            'name'     => 'Encargado',
-            'email'    => 'enc@test.com',
+            'name' => 'Encargado',
+            'email' => 'enc@test.com',
             'password' => bcrypt('password'),
-            'cargo'    => 'super_agente',
-            'status'   => 'active',
+            'cargo' => 'super_agente',
+            'status' => 'active',
         ]);
 
         $this->miembro = Agent::create([
-            'user_id'  => $miembroUser->id,
+            'user_id' => $miembroUser->id,
             'username' => 'miembro_test',
-            'name'     => 'Miembro',
-            'email'    => 'mie@test.com',
+            'name' => 'Miembro',
+            'email' => 'mie@test.com',
             'password' => bcrypt('password'),
-            'cargo'    => 'agente',
-            'status'   => 'active',
+            'cargo' => 'agente',
+            'status' => 'active',
         ]);
 
         $this->line = Line::create(['name' => 'Linea Test', 'status' => 'active']);
 
         LineAgent::create([
-            'line_id'  => $this->line->id,
+            'line_id' => $this->line->id,
             'agent_id' => $this->encargado->id,
-            'role'     => LineRoles::ENCARGADO,
+            'role' => LineRoles::ENCARGADO,
             'is_active' => true,
         ]);
 
         LineAgent::create([
-            'line_id'  => $this->line->id,
+            'line_id' => $this->line->id,
             'agent_id' => $this->miembro->id,
-            'role'     => LineRoles::MIEMBRO,
+            'role' => LineRoles::MIEMBRO,
             'is_active' => true,
         ]);
     }
@@ -79,8 +82,8 @@ class NotificationsTest extends TestCase
         NotificationService::send('Titulo', 'Mensaje', null, 'info', null, 'general');
 
         $this->assertDatabaseHas('dashboard_notifications', [
-            'title'    => 'Titulo',
-            'message'  => 'Mensaje',
+            'title' => 'Titulo',
+            'message' => 'Mensaje',
             'agent_id' => null,
         ]);
     }
@@ -91,7 +94,7 @@ class NotificationsTest extends TestCase
 
         $this->assertDatabaseHas('dashboard_notifications', [
             'agent_id' => $this->miembro->id,
-            'title'    => 'Titulo',
+            'title' => 'Titulo',
         ]);
     }
 
@@ -101,10 +104,14 @@ class NotificationsTest extends TestCase
     {
         session(['active_agent_id' => $this->miembro->id, 'active_line_id' => $this->line->id]);
 
-        $component = new class extends Component {
+        $component = new class extends Component
+        {
             use SendsNotifications;
 
-            public function render() { return '<div></div>'; }
+            public function render()
+            {
+                return '<div></div>';
+            }
 
             public function act(): void
             {
@@ -113,7 +120,8 @@ class NotificationsTest extends TestCase
         };
 
         // Llamar directamente al trait
-        $trait = new class($this->miembro->id, $this->line->id) {
+        $trait = new class($this->miembro->id, $this->line->id)
+        {
             use SendsNotifications;
 
             public function __construct(private int $agentId, private int $lineId) {}
@@ -139,7 +147,8 @@ class NotificationsTest extends TestCase
 
     public function test_notify_from_encargado_only_sends_to_self_and_admin(): void
     {
-        $trait = new class($this->encargado->id, $this->line->id) {
+        $trait = new class($this->encargado->id, $this->line->id)
+        {
             use SendsNotifications;
 
             public function __construct(private int $agentId, private int $lineId) {}
@@ -167,7 +176,8 @@ class NotificationsTest extends TestCase
     {
         $this->encargado->update(['status' => 'inactive']);
 
-        $trait = new class($this->miembro->id, $this->line->id) {
+        $trait = new class($this->miembro->id, $this->line->id)
+        {
             use SendsNotifications;
 
             public function __construct(private int $agentId, private int $lineId) {}
@@ -184,13 +194,13 @@ class NotificationsTest extends TestCase
         // Encargado inactivo NO recibe
         $this->assertDatabaseMissing('dashboard_notifications', [
             'agent_id' => $this->encargado->id,
-            'title'    => 'Sin encargado activo',
+            'title' => 'Sin encargado activo',
         ]);
 
         // Admin sí recibe
         $this->assertDatabaseHas('dashboard_notifications', [
             'agent_id' => null,
-            'title'    => 'Sin encargado activo',
+            'title' => 'Sin encargado activo',
         ]);
     }
 
@@ -198,7 +208,8 @@ class NotificationsTest extends TestCase
     {
         $this->encargado->delete();
 
-        $trait = new class($this->miembro->id, $this->line->id) {
+        $trait = new class($this->miembro->id, $this->line->id)
+        {
             use SendsNotifications;
 
             public function __construct(private int $agentId, private int $lineId) {}
@@ -220,7 +231,8 @@ class NotificationsTest extends TestCase
         // Sin active_agent_id ni active_line_id = modo admin
         session()->forget(['active_agent_id', 'active_line_id']);
 
-        $trait = new class {
+        $trait = new class
+        {
             use SendsNotifications;
 
             public function run(): void
@@ -250,7 +262,7 @@ class NotificationsTest extends TestCase
 
         session(['active_agent_id' => $this->miembro->id, 'active_line_id' => $this->line->id]);
 
-        Livewire::test(\App\Livewire\Components\PageHeader::class)
+        Livewire::test(PageHeader::class)
             ->assertSee('Para miembro')
             ->assertDontSee('Para encargado')
             ->assertDontSee('Para admin');
@@ -267,7 +279,7 @@ class NotificationsTest extends TestCase
 
         session()->forget(['active_agent_id', 'active_line_id']);
 
-        Livewire::test(\App\Livewire\Components\PageHeader::class)
+        Livewire::test(PageHeader::class)
             ->assertSee('Para admin')
             ->assertDontSee('Para miembro');
     }
@@ -280,7 +292,7 @@ class NotificationsTest extends TestCase
         $admin = User::factory()->create(['role_id' => $adminRole->id]);
         $this->actingAs($admin);
 
-        Livewire::test(\App\Livewire\Components\PageHeader::class)->call('markAllRead');
+        Livewire::test(PageHeader::class)->call('markAllRead');
 
         $this->assertNull(session('active_agent_id'));
     }
@@ -291,10 +303,10 @@ class NotificationsTest extends TestCase
     {
         $notif = DashboardNotification::create([
             'agent_id' => null,
-            'title'    => 'Test',
-            'message'  => 'Msg',
-            'type'     => 'info',
-            'module'   => 'general',
+            'title' => 'Test',
+            'message' => 'Msg',
+            'type' => 'info',
+            'module' => 'general',
         ]);
 
         $this->assertNull($notif->read_at);
@@ -306,10 +318,10 @@ class NotificationsTest extends TestCase
     {
         $notif = DashboardNotification::create([
             'agent_id' => null,
-            'title'    => 'Test',
-            'message'  => 'Msg',
-            'type'     => 'info',
-            'module'   => 'general',
+            'title' => 'Test',
+            'message' => 'Msg',
+            'type' => 'info',
+            'module' => 'general',
         ]);
 
         $notif->markRead();

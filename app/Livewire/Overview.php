@@ -7,10 +7,10 @@ use App\Models\Bonus;
 use App\Models\BonusAssignment;
 use App\Models\Line;
 use App\Models\LineAgent;
-use App\Models\Scopes\LineScope;
 use App\Models\Post;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
+use App\Models\Scopes\LineScope;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\SalesStats;
@@ -460,4 +460,3 @@ class Overview extends Component
         return $query;
     }
 }
-

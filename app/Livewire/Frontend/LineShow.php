@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Frontend;
 
+use App\Models\Bonus;
 use App\Models\Line;
 use App\Models\LineRating;
+use App\Models\Raffle;
 use Livewire\Component;
 
 class LineShow extends Component
@@ -68,14 +70,14 @@ class LineShow extends Component
         $ratingAverage = (float) $this->line->ratings()->avg('rating');
         $ratingCount = $this->line->ratings()->count();
 
-        $activeBonuses = \App\Models\Bonus::withoutGlobalScopes()
+        $activeBonuses = Bonus::withoutGlobalScopes()
             ->where('line_id', $this->line->id)
             ->where('status', 'active')
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
             ->get();
 
-        $activeRaffles = $this->line->belongsToMany(\App\Models\Raffle::class, 'line_raffle')
+        $activeRaffles = $this->line->belongsToMany(Raffle::class, 'line_raffle')
             ->withoutGlobalScopes()
             ->where('status', 'active')
             ->where('start_date', '<=', now())

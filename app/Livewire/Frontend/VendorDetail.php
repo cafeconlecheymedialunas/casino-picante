@@ -5,7 +5,7 @@ namespace App\Livewire\Frontend;
 use App\Models\Agent;
 use App\Models\Bonus;
 use App\Models\Line;
-use App\Models\LineRating;
+use App\Models\Platform;
 use App\Models\Raffle;
 use App\Models\Sale;
 use App\Models\Vendor;
@@ -24,8 +24,8 @@ class VendorDetail extends Component
     {
         $vendorId = $this->vendor->id;
 
-        $lineLimit   = 4;
-        $bonusLimit  = 3;
+        $lineLimit = 4;
+        $bonusLimit = 3;
         $raffleLimit = 2;
 
         $linesQuery = Line::withoutGlobalScopes()
@@ -84,8 +84,7 @@ class VendorDetail extends Component
             'lineLimit' => $lineLimit,
             'bonusLimit' => $bonusLimit,
             'raffleLimit' => $raffleLimit,
-            'totalPlatforms' => \App\Models\Platform::whereHas('lines', fn ($q) =>
-                $q->withoutGlobalScopes()->whereIn('lines.id', $allLineIds)->wherePivot('is_active', true)
+            'totalPlatforms' => Platform::whereHas('lines', fn ($q) => $q->withoutGlobalScopes()->whereIn('lines.id', $allLineIds)->wherePivot('is_active', true)
             )->where('is_active', true)->count(),
             'averageRating' => round((float) Line::withoutGlobalScopes()
                 ->whereIn('id', $allLineIds)->with('ratings')->get()

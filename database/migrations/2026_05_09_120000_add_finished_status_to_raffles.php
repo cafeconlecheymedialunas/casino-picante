@@ -9,6 +9,7 @@ return new class extends Migration
     {
         if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE raffles MODIFY COLUMN status ENUM('active','inactive','finished') NOT NULL DEFAULT 'inactive'");
+
             return;
         }
 
@@ -46,6 +47,7 @@ return new class extends Migration
     {
         if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE raffles MODIFY COLUMN status ENUM('active','inactive') NOT NULL DEFAULT 'inactive'");
+
             return;
         }
 

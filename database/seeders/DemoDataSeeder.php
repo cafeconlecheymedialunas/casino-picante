@@ -18,6 +18,7 @@ use App\Models\Sale;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\LineRoles;
 use App\Support\Roles;
 use Carbon\Carbon;
@@ -43,7 +44,7 @@ class DemoDataSeeder extends Seeder
         $this->command->info('Plataformas listas.');
 
         // ── 2. ROLES (incluye CAJERO) ──
-        $roleCajero = Role::firstOrCreate(['name' => \App\Support\Roles::CAJERO], ['display_name' => 'Cajero']);
+        $roleCajero = Role::firstOrCreate(['name' => Roles::CAJERO], ['display_name' => 'Cajero']);
 
         // ── 3. VENDORS (4 vendors + usuarios cajero) ──
         $vendorData = [
@@ -55,17 +56,17 @@ class DemoDataSeeder extends Seeder
         $vendors = [];
         foreach ($vendorData as $i => $vd) {
             $cajeroUser = User::updateOrCreate(
-                ['email' => 'cajero'.($i+1).'@demo.com'],
+                ['email' => 'cajero'.($i + 1).'@demo.com'],
                 [
-                    'name' => 'Cajero ' . ($i+1),
+                    'name' => 'Cajero '.($i + 1),
                     'password' => bcrypt('demo123'),
-                    'username' => 'cajero'.($i+1),
-                    'phone' => '+54911000000'.($i+1),
+                    'username' => 'cajero'.($i + 1),
+                    'phone' => '+54911000000'.($i + 1),
                     'role_id' => $roleCajero->id,
                     'status' => 'active',
                 ]
             );
-            $vendors[] = \App\Models\Vendor::updateOrCreate(
+            $vendors[] = Vendor::updateOrCreate(
                 ['slug' => $vd['slug']],
                 [
                     'user_id' => $cajeroUser->id,
@@ -74,7 +75,7 @@ class DemoDataSeeder extends Seeder
                     'hero_image' => $vd['hero'] ?? null,
                     'portrait_image' => $vd['portrait'] ?? null,
                     'is_active' => true,
-                    'description' => 'Demo vendor ' . $vd['name'],
+                    'description' => 'Demo vendor '.$vd['name'],
                 ]
             );
         }

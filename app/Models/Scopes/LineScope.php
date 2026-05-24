@@ -21,7 +21,7 @@ class LineScope implements Scope
     public function apply(Builder $builder, Model $model): void
     {
         if ($lineId = session('active_line_id')) {
-            $builder->where($model->getTable() . '.line_id', (int) $lineId);
+            $builder->where($model->getTable().'.line_id', (int) $lineId);
         }
     }
 }

@@ -13,7 +13,7 @@ return new class extends Migration
             if (Schema::hasColumn('raffles', 'max_numbers')) {
                 $table->renameColumn('max_numbers', 'end_number');
             }
-            
+
             // Drop next_number
             if (Schema::hasColumn('raffles', 'next_number')) {
                 $table->dropColumn('next_number');

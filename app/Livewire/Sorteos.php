@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Line;
+use App\Models\Platform;
 use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Role;
@@ -799,11 +800,27 @@ class Sorteos extends Component
 
     private function authorizePlatformChoice(): void
     {
-        if ($this->platform_id === '' || ! session('active_vendor_id')) {
+        if ($this->platform_id === '') {
             return;
         }
 
-        abort_unless(\App\Models\Platform::whereKey((int) $this->platform_id)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+        $platform = Platform::withoutGlobalScopes()->find((int) $this->platform_id);
+        abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
+
+        $vendorIds = collect($this->lineIds)
+            ->map(fn ($lineId) => Line::withoutGlobalScopes()->whereKey((int) $lineId)->value('vendor_id'))
+            ->filter()
+            ->map(fn ($vendorId) => (int) $vendorId)
+            ->unique()
+            ->values();
+
+        if (session('active_vendor_id')) {
+            $vendorIds = collect([(int) session('active_vendor_id')]);
+        }
+
+        if ($vendorIds->isNotEmpty() && $platform->vendor_id && ! $vendorIds->contains((int) $platform->vendor_id)) {
+            abort(403, 'No podes usar plataformas fuera de tu vendor.');
+        }
     }
 
     private function assignmentLineId(?Raffle $raffle = null): ?int

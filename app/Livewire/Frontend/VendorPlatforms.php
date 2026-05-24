@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Frontend;
 
-use App\Models\Vendor;
 use App\Models\Platform;
+use App\Models\Vendor;
 use Livewire\Component;
 
 class VendorPlatforms extends Component
@@ -30,7 +30,7 @@ class VendorPlatforms extends Component
             ->get();
 
         return view('frontend.pages.vendor-platforms', [
-            'vendor'    => $this->vendor,
+            'vendor' => $this->vendor,
             'platforms' => $platforms,
         ])->layout('frontend.layouts.app', [
             'title' => 'Plataformas '.$this->vendor->name.' - RED PICANTES',

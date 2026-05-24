@@ -83,7 +83,7 @@ class Home extends Component
             return $query->whereIn('id', $ids)->get()->sortBy(fn ($r) => array_search($r->id, $ids))->values();
         }
 
-        return new EloquentCollection();
+        return new EloquentCollection;
     }
 
     private function bonusItems(): EloquentCollection
@@ -108,7 +108,7 @@ class Home extends Component
             return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($b) => array_search($b->id, $ids))->values();
         }
 
-        return new EloquentCollection();
+        return new EloquentCollection;
     }
 
     private function blogPosts(): EloquentCollection
@@ -133,7 +133,7 @@ class Home extends Component
             return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($p) => array_search($p->id, $ids))->values();
         }
 
-        return new EloquentCollection();
+        return new EloquentCollection;
     }
 
     private function sections(): array

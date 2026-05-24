@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Raffle;
 use App\Models\Line;
 use App\Models\Platform;
+use App\Models\Raffle;
 use Illuminate\Support\Facades\DB;
 
 // Clear existing raffles to have a clean state for the demo
@@ -32,7 +32,7 @@ $activeRaffle = Raffle::create([
         ['position' => 1, 'name' => 'Viaje por $7.000', 'amount' => 500, 'image' => null],
         ['position' => 2, 'name' => 'Bajaj Rouser ns200 0km', 'amount' => 250, 'image' => null],
         ['position' => 3, 'name' => 'MacBook Pro 16 M5', 'amount' => 150, 'image' => null],
-    ]
+    ],
 ]);
 $activeRaffle->lines()->attach($lines->pluck('id'));
 
@@ -47,7 +47,7 @@ $upcomingRaffle = Raffle::create([
     'prizes' => [
         ['position' => 1, 'name' => 'iPhone 15 Pro Max', 'amount' => 1200, 'image' => null],
         ['position' => 2, 'name' => 'PlayStation 5 Slim', 'amount' => 600, 'image' => null],
-    ]
+    ],
 ]);
 $upcomingRaffle->lines()->attach($lines->take(2)->pluck('id'));
 
@@ -61,7 +61,7 @@ $finishedRaffle = Raffle::create([
     'winner_number' => 1234,
     'prizes' => [
         ['position' => 1, 'name' => 'Créditos por $50.000', 'amount' => 50000, 'image' => null],
-    ]
+    ],
 ]);
 $finishedRaffle->lines()->attach($lines->random(1)->pluck('id'));
 

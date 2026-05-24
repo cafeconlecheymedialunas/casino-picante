@@ -287,7 +287,7 @@ class Settings extends Component
         $this->portraitImage = $vendor->portrait_image;
         $this->description = $vendor->description ?? '';
         $this->contacts = $vendor->contacts ?? [];
-        $this->brandingJson = json_encode($vendor->branding ?: new \stdClass(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $this->brandingJson = json_encode($vendor->branding ?: new \stdClass, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
 
     private function loadCajeroUserForm(): void

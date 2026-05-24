@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        if (PHP_OS_FAMILY === 'Windows' && !getenv('TEMP')) {
+        if (PHP_OS_FAMILY === 'Windows' && ! getenv('TEMP')) {
             putenv('TEMP=C:\\phptemp');
             putenv('TMP=C:\\phptemp');
         }

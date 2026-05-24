@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
@@ -187,8 +189,8 @@ class Bonus extends Model
     public static function statusForPeriod($startDate, $endDate): string
     {
         $now = now();
-        $start = $startDate instanceof \Carbon\CarbonInterface ? $startDate : \Carbon\Carbon::parse($startDate);
-        $end = $endDate instanceof \Carbon\CarbonInterface ? $endDate : \Carbon\Carbon::parse($endDate);
+        $start = $startDate instanceof CarbonInterface ? $startDate : Carbon::parse($startDate);
+        $end = $endDate instanceof CarbonInterface ? $endDate : Carbon::parse($endDate);
 
         if ($now->lt($start)) {
             return 'upcoming';

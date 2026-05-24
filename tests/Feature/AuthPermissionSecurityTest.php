@@ -2,16 +2,21 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Agentes;
 use App\Livewire\Auth\ClientLogin;
 use App\Livewire\Auth\ClientRegister;
 use App\Livewire\Auth\Login;
-use App\Livewire\Agentes;
+use App\Livewire\Lineas;
+use App\Livewire\Novedades;
 use App\Livewire\Settings;
+use App\Livewire\Sorteos;
+use App\Livewire\Tickets;
 use App\Livewire\Users\UsersIndex;
 use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
+use App\Models\Post;
 use App\Models\Raffle;
 use App\Models\Role;
 use App\Models\Ticket;
@@ -20,6 +25,7 @@ use App\Models\Vendor;
 use App\Support\LineRoles;
 use App\Support\Permissions;
 use App\Support\Roles;
+use App\Traits\HasLinePermissions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
@@ -250,7 +256,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($admin);
 
-        Livewire::test(\App\Livewire\Lineas::class)
+        Livewire::test(Lineas::class)
             ->set('name', 'Linea Sin Vendor')
             ->set('status', 'active')
             ->call('saveLine')
@@ -268,7 +274,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($admin)->withSession(['active_vendor_id' => $vendor->id]);
 
-        Livewire::test(\App\Livewire\Lineas::class)
+        Livewire::test(Lineas::class)
             ->set('name', 'Linea Con Vendor')
             ->set('status', 'active')
             ->call('saveLine')
@@ -375,7 +381,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $resolver = new class
         {
-            use \App\Traits\HasLinePermissions;
+            use HasLinePermissions;
         };
 
         $this->assertNull($resolver->lineIdForScopedCreate());
@@ -428,7 +434,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $resolver = new class
         {
-            use \App\Traits\HasLinePermissions;
+            use HasLinePermissions;
         };
 
         $this->assertNull($resolver->lineIdForScopedCreate());
@@ -499,11 +505,11 @@ class AuthPermissionSecurityTest extends TestCase
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id, 'active_line_id' => null]);
 
-        Livewire::test(\App\Livewire\Tickets::class)
+        Livewire::test(Tickets::class)
             ->assertSee('Ticket Vendor Propio')
             ->assertDontSee('Ticket Vendor Ajeno');
 
-        Livewire::test(\App\Livewire\Sorteos::class)
+        Livewire::test(Sorteos::class)
             ->assertSee('Sorteo Vendor Propio')
             ->assertDontSee('Sorteo Vendor Ajeno');
     }
@@ -534,7 +540,7 @@ class AuthPermissionSecurityTest extends TestCase
         $this->actingAs($admin)
             ->withSession(['active_vendor_id' => $vendor->id, 'active_line_id' => $line->id]);
 
-        Livewire::test(\App\Livewire\Tickets::class)
+        Livewire::test(Tickets::class)
             ->set('createSubject', 'Ticket cruzado')
             ->set('createUserId', (string) $otherClient->id)
             ->set('createMessage', 'No deberia crearse')
@@ -556,18 +562,18 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
         [, $vendor] = $this->cajeroVendor();
         [, $otherVendor] = $this->cajeroVendor();
-        $otherPost = \App\Models\Post::withoutGlobalScopes()->create([
+        $otherPost = Post::withoutGlobalScopes()->create([
             'vendor_id' => $otherVendor->id,
             'title' => 'Post Ajeno',
             'slug' => 'post-ajeno-'.uniqid(),
-            'status' => \App\Models\Post::STATUS_PUBLISHED,
+            'status' => Post::STATUS_PUBLISHED,
             'published_at' => now(),
         ]);
 
         $this->actingAs($admin)
             ->withSession(['active_vendor_id' => $vendor->id]);
 
-        Livewire::test(\App\Livewire\Novedades::class)
+        Livewire::test(Novedades::class)
             ->call('deletePost', $otherPost->id)
             ->assertForbidden();
 
@@ -963,7 +969,7 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertSee($line->name);
     }
 
-    public function test_logged_client_cannot_switch_to_another_vendor_public_slug(): void
+    public function test_logged_client_can_open_another_vendor_public_slug(): void
     {
         $role = $this->role(Roles::CLIENTE, 'Cliente');
         [, $vendor] = $this->cajeroVendor();
@@ -979,7 +985,7 @@ class AuthPermissionSecurityTest extends TestCase
         $this->actingAs($client)
             ->withSession(['active_vendor_id' => $vendor->id])
             ->get(route('frontend.cajero.inicio', $otherVendor->slug))
-            ->assertForbidden();
+            ->assertOk();
 
         $this->assertSame($vendor->id, session('active_vendor_id'));
     }

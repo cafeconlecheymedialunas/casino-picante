@@ -87,5 +87,4 @@ class PageHeader extends Component
             ->when($agentId, fn ($query) => $query->where('agent_id', $agentId))
             ->when(! $agentId, fn ($query) => $query->whereNull('agent_id'));
     }
-
 }

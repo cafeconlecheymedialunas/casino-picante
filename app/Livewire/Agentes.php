@@ -443,7 +443,7 @@ class Agentes extends Component
             LineAgent::updateOrCreate(
                 ['line_id' => $lineId, 'agent_id' => $agent->id],
                 [
-                    'vendor_id' => \App\Models\Line::find($lineId)?->vendor_id ?: session('active_vendor_id'),
+                    'vendor_id' => Line::find($lineId)?->vendor_id ?: session('active_vendor_id'),
                     'role' => $existing ? $existing->role : LineRoles::MIEMBRO,
                     'is_active' => $this->status === 'active',
                 ]

@@ -8,8 +8,8 @@ use App\Models\Vendor;
 use App\Support\Roles;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class ClientRegister extends Component
