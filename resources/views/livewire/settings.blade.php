@@ -239,6 +239,59 @@
                 <section class="settings-panel">
                     <div class="settings-panel-head">
                         <div>
+                            <h3 class="settings-panel-title">Marca global</h3>
+                            <p class="settings-panel-subtitle">Define el logo del sitio y el favicon que usan frontend y dashboard.</p>
+                        </div>
+                    </div>
+
+                    <form wire:submit.prevent="saveBrandingAssets" class="settings-form">
+                        @if(session('branding_assets_message'))
+                            <div class="settings-alert">{{ session('branding_assets_message') }}</div>
+                        @endif
+
+                        <div class="settings-grid">
+                            <div class="settings-field full">
+                                <label class="settings-label">Titulo de la pagina</label>
+                                <input class="settings-input" wire:model="siteTitle" type="text" maxlength="80">
+                                @error('siteTitle') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+
+                            <div class="settings-field">
+                                <x-upload-image
+                                    label="Logo global"
+                                    model="siteLogoUpload"
+                                    :value="\App\Models\Setting::assetUrl($siteLogo)"
+                                    removeAction="removeSiteLogo"
+                                    aspect="3/1"
+                                    icon="fa-solid fa-crown"
+                                    hint="PNG/JPG/WEBP recomendado"
+                                />
+                                @error('siteLogoUpload') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+
+                            <div class="settings-field">
+                                <x-upload-image
+                                    label="Favicon"
+                                    model="siteFaviconUpload"
+                                    :value="\App\Models\Setting::assetUrl($siteFavicon, \App\Models\Setting::DEFAULT_FAVICON)"
+                                    removeAction="removeSiteFavicon"
+                                    aspect="1"
+                                    icon="fa-solid fa-star"
+                                    hint="Cuadrado, ideal 512x512"
+                                />
+                                @error('siteFaviconUpload') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+                        </div>
+
+                        <div class="settings-actions">
+                            <button type="submit" class="btn-primary">Guardar marca</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="settings-panel">
+                    <div class="settings-panel-head">
+                        <div>
                             <h3 class="settings-panel-title">Tema del dashboard</h3>
                             <p class="settings-panel-subtitle">Elegi la apariencia global para todas las pantallas internas.</p>
                         </div>

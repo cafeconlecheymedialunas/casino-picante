@@ -10,8 +10,12 @@
         <div class="fe-footer-grid">
             <div>
                 <a href="{{ $homeUrl }}" wire:navigate class="fe-brand">
+                    @if($siteLogoUrl ?? false)
+                        <img src="{{ $siteLogoUrl }}" alt="{{ $siteTitle ?? 'RED PICANTES' }}" class="fe-brand-logo">
+                    @else
                     <span class="fe-brand-mark"></span>
-                    <span class="fe-brand-text">RED <span>PICANTES</span></span>
+                    <span class="fe-brand-text">{{ $siteTitle ?? 'RED PICANTES' }}</span>
+                    @endif
                 </a>
                 <p>Casino online con atencion rapida, bonos activos, sorteos y novedades para jugar con mas chances.</p>
             </div>
@@ -49,7 +53,7 @@
             </div>
         </div>
         <div class="fe-footer-bottom">
-            <span>RED PICANTES</span>
+            <span>{{ $siteTitle ?? 'RED PICANTES' }}</span>
             <span>Juego responsable. Solo mayores de edad.</span>
         </div>
     </div>

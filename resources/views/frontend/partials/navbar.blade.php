@@ -10,8 +10,12 @@
     <div class="fe-shell">
         <div class="fe-nav-inner">
             <a href="{{ $homeUrl }}" wire:navigate class="fe-brand" aria-label="RED PICANTES">
+                @if($siteLogoUrl ?? false)
+                    <img src="{{ $siteLogoUrl }}" alt="{{ $siteTitle ?? 'RED PICANTES' }}" class="fe-brand-logo">
+                @else
                 <span class="fe-brand-mark"></span>
-                <span class="fe-brand-text">RED <span>PICANTES</span></span>
+                <span class="fe-brand-text">{{ $siteTitle ?? 'RED PICANTES' }}</span>
+                @endif
             </a>
 
             <nav class="fe-nav-links" aria-label="Navegacion principal">

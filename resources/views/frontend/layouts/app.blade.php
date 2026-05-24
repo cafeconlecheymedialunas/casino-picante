@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    @php
+        $siteTitle = \App\Models\Setting::siteTitle();
+        $siteLogoUrl = \App\Models\Setting::siteLogoUrl();
+        $siteFaviconUrl = \App\Models\Setting::siteFaviconUrl();
+    @endphp
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'RED PICANTES' }}</title>
+    <title>{{ $title ?? $siteTitle }}</title>
+    <link rel="icon" href="{{ $siteFaviconUrl }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -53,6 +59,7 @@
         }
         .fe-nav-inner { height:68px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
         .fe-brand { display:flex; align-items:center; gap:10px; text-decoration:none; min-width:max-content; }
+        .fe-brand-logo { width:132px; max-height:42px; object-fit:contain; object-position:left center; }
         .fe-brand-mark { width:32px; height:32px; border-radius:11px; background:linear-gradient(135deg,var(--orange),var(--amber)); box-shadow:0 10px 28px rgba(255,106,26,.34); position:relative; }
         .fe-brand-mark::after { content:""; position:absolute; inset:8px 7px 5px 10px; border-radius:60% 40% 55% 45%; background:#190702; opacity:.2; transform:rotate(-18deg); }
         .fe-brand-text { font-family:var(--font-display); font-size:30px; letter-spacing:.03em; line-height:1; }
@@ -140,6 +147,7 @@
             .fe-shell { width:calc(100% - 24px); }
             .fe-section { padding-top:42px; }
             .fe-brand-text { font-size:25px; }
+            .fe-brand-logo { width:112px; max-height:36px; }
             .fe-brand-mark { width:28px; height:28px; border-radius:9px; }
             .fe-title { font-size:34px; }
             .fe-subtitle { font-size:13px; }
@@ -175,12 +183,25 @@
             const updateRaffleCountdowns = () => {
                 timers.forEach(timer => {
                     const endDate = new Date(timer.getAttribute('data-raffle-countdown')).getTime();
+                    const startRaw = timer.getAttribute('data-countdown-start');
+                    const startDate = startRaw ? new Date(startRaw).getTime() : null;
                     const now = new Date().getTime();
                     const diff = endDate - now;
+                    const progressEl = timer.querySelector('[data-countdown-progress]')
+                        || timer.parentElement?.querySelector('[data-countdown-progress]');
 
                     if (diff <= 0) {
-                        timer.innerHTML = '<div class="timer-unit" style="grid-column: 1/-1; width: 100%;"><span class="timer-label">SORTEO FINALIZADO</span></div>';
+                        timer.classList.add('is-finished');
+                        if (progressEl) progressEl.style.width = '100%';
+                        const finishedEl = timer.querySelector('[data-countdown-finished]');
+                        if (finishedEl) finishedEl.hidden = false;
                         return;
+                    }
+
+                    if (Number.isFinite(startDate) && endDate > startDate && progressEl) {
+                        const elapsed = Math.max(0, now - startDate);
+                        const total = endDate - startDate;
+                        progressEl.style.width = `${Math.min(100, (elapsed / total) * 100)}%`;
                     }
 
                     const days = Math.floor(diff / (1000 * 60 * 60 * 24));

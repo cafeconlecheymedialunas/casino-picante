@@ -304,7 +304,7 @@
     .prize-media span { font-family:var(--font-display); color:var(--orange); font-size:54px; line-height:1; }
     .prize-position { color:var(--orange); font-size:11px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; margin-bottom:5px; }
     .prize-card h3 { margin:0; font-size:18px; line-height:1.2; }
-    #sorteo { position:relative; overflow:hidden;}
+    #sorteo { position:relative; overflow:hidden; margin-top:50px;}
     #sorteo::before { content:""; position:absolute; inset:0; background:radial-gradient(52% 70% at 92% 22%, rgba(255,106,26,.17), transparent 64%), radial-gradient(36% 72% at 0% 45%, rgba(255,106,26,.1), transparent 70%); pointer-events:none; }
     #sorteo .fe-shell { position:relative; z-index:1; }
     .raffle-section-head { display:flex; flex-direction:column; align-items:center; gap:16px; margin-bottom:24px; }

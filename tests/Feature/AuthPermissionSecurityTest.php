@@ -332,6 +332,54 @@ class AuthPermissionSecurityTest extends TestCase
         $this->assertNull(session('active_line_id'));
     }
 
+    public function test_admin_can_switch_active_vendor_from_sidebar(): void
+    {
+        $adminRole = $this->role(Roles::ADMIN, 'Administrador');
+        $admin = User::factory()->create([
+            'role_id' => $adminRole->id,
+            'username' => 'admin_vendor_switch_'.uniqid(),
+            'status' => 'active',
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+
+        $this->actingAs($admin)
+            ->from(route('admin.cajeros'))
+            ->post(route('admin.session.vendor', $vendor->id))
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->assertSame($vendor->id, session('active_vendor_id'));
+        $this->assertNull(session('active_line_id'));
+    }
+
+    public function test_admin_sidebar_lines_are_limited_to_active_vendor(): void
+    {
+        $adminRole = $this->role(Roles::ADMIN, 'Administrador');
+        $admin = User::factory()->create([
+            'role_id' => $adminRole->id,
+            'username' => 'admin_vendor_lines_'.uniqid(),
+            'status' => 'active',
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $visibleLine = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Vendor Visible '.uniqid(),
+            'status' => 'active',
+        ]);
+        $hiddenLine = Line::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Linea Vendor Oculta '.uniqid(),
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession(['active_vendor_id' => $vendor->id])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee($visibleLine->name)
+            ->assertDontSee($hiddenLine->name);
+    }
+
     public function test_cajero_cannot_switch_to_another_vendor_line(): void
     {
         [$user, $vendor] = $this->cajeroVendor();

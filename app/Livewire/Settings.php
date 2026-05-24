@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Support\Roles;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +20,16 @@ class Settings extends Component
     public string $activeTab = 'notifications';
 
     public string $dashboardTheme = 'dark';
+
+    public string $siteTitle = '';
+
+    public string $siteLogo = '';
+
+    public $siteLogoUpload = null;
+
+    public string $siteFavicon = '';
+
+    public $siteFaviconUpload = null;
 
     public ?int $vendorId = null;
 
@@ -66,6 +77,7 @@ class Settings extends Component
         $this->loadVendorForm();
         $this->loadCajeroUserForm();
         $this->loadDashboardTheme();
+        $this->loadBrandingAssets();
 
         if ($this->currentVendor()) {
             $this->activeTab = 'vendor';
@@ -105,6 +117,42 @@ class Settings extends Component
 
         session()->flash('theme_message', 'Apariencia actualizada correctamente.');
         $this->dispatch('dashboard-theme-updated', theme: $this->dashboardTheme);
+    }
+
+    public function saveBrandingAssets(): void
+    {
+        $this->ensureAdmin();
+
+        $this->validate([
+            'siteTitle' => ['required', 'string', 'min:2', 'max:80'],
+            'siteLogoUpload' => ['nullable', 'image', 'max:5120'],
+            'siteFaviconUpload' => ['nullable', 'image', 'max:1024'],
+        ]);
+
+        $logo = $this->siteLogo;
+        $favicon = $this->siteFavicon ?: Setting::DEFAULT_FAVICON;
+
+        if ($this->siteLogoUpload) {
+            $this->deletePublicAsset($logo);
+            $logo = $this->siteLogoUpload->store('branding', 'public');
+        }
+
+        if ($this->siteFaviconUpload) {
+            $this->deletePublicAsset($favicon);
+            $favicon = $this->siteFaviconUpload->store('branding', 'public');
+        }
+
+        Setting::updateOrCreate(['key' => 'site_title'], ['value' => trim($this->siteTitle)]);
+        Setting::updateOrCreate(['key' => 'site_logo'], ['value' => $logo ?: Setting::DEFAULT_LOGO]);
+        Setting::updateOrCreate(['key' => 'site_favicon'], ['value' => $favicon ?: Setting::DEFAULT_FAVICON]);
+
+        $this->siteTitle = trim($this->siteTitle);
+        $this->siteLogo = $logo ?: Setting::DEFAULT_LOGO;
+        $this->siteFavicon = $favicon ?: Setting::DEFAULT_FAVICON;
+        $this->siteLogoUpload = null;
+        $this->siteFaviconUpload = null;
+
+        session()->flash('branding_assets_message', 'Logo y favicon actualizados correctamente.');
     }
 
     public function saveVendor(): void
@@ -231,6 +279,26 @@ class Settings extends Component
         $this->portraitImageUpload = null;
     }
 
+    public function removeSiteLogo(): void
+    {
+        $this->ensureAdmin();
+        $this->deletePublicAsset($this->siteLogo);
+
+        Setting::updateOrCreate(['key' => 'site_logo'], ['value' => Setting::DEFAULT_LOGO]);
+        $this->siteLogo = Setting::DEFAULT_LOGO;
+        $this->siteLogoUpload = null;
+    }
+
+    public function removeSiteFavicon(): void
+    {
+        $this->ensureAdmin();
+        $this->deletePublicAsset($this->siteFavicon);
+
+        Setting::updateOrCreate(['key' => 'site_favicon'], ['value' => Setting::DEFAULT_FAVICON]);
+        $this->siteFavicon = Setting::DEFAULT_FAVICON;
+        $this->siteFaviconUpload = null;
+    }
+
     public function render()
     {
         return view('livewire.settings', [
@@ -314,6 +382,13 @@ class Settings extends Component
         $this->dashboardTheme = in_array($theme, ['dark', 'light'], true) ? $theme : 'dark';
     }
 
+    private function loadBrandingAssets(): void
+    {
+        $this->siteTitle = Setting::siteTitle();
+        $this->siteLogo = Setting::siteLogoPath();
+        $this->siteFavicon = Setting::siteFaviconPath();
+    }
+
     private function decodeBranding(): array
     {
         if (blank($this->brandingJson)) {
@@ -342,5 +417,14 @@ class Settings extends Component
             ])
             ->values()
             ->all();
+    }
+
+    private function deletePublicAsset(?string $path): void
+    {
+        if (! $path || $path === Setting::DEFAULT_FAVICON || str_starts_with($path, 'http') || str_starts_with($path, '/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete($path);
     }
 }

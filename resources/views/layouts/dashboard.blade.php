@@ -1,6 +1,9 @@
 @php
     $dashboardTheme = \App\Models\Setting::query()->where('key', 'dashboard_theme')->value('value');
     $dashboardTheme = in_array($dashboardTheme, ['dark', 'light'], true) ? $dashboardTheme : 'dark';
+    $siteTitle = \App\Models\Setting::siteTitle();
+    $siteLogoUrl = \App\Models\Setting::siteLogoUrl();
+    $siteFaviconUrl = \App\Models\Setting::siteFaviconUrl();
 @endphp
 <!DOCTYPE html>
 <html lang="es" data-dashboard-theme="{{ $dashboardTheme }}">
@@ -8,7 +11,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? 'RED PICANTES Dashboard' }}</title>
+    <title>{{ $title ?? $siteTitle.' Dashboard' }}</title>
+    <link rel="icon" href="{{ $siteFaviconUrl }}">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -64,6 +68,7 @@
             overflow-y: auto;
         }
         .sidebar-logo { padding: 4px 8px 14px; border-bottom: 1px solid var(--line); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .sidebar-logo-img { width: 118px; max-height: 36px; object-fit: contain; object-position: left center; }
         .sidebar-logo-text { font-family: var(--font-display); font-size: 22px; color: var(--orange); }
         .sidebar-section { font-size: 10px; font-weight: 800; letter-spacing: 0.18em; color: var(--orange); margin: 16px 0 8px; padding-left: 8px; }
         .sidebar-item {
@@ -778,11 +783,15 @@
         <div class="sidebar-overlay" :class="sidebarOpen && 'open'" x-show="sidebarOpen" @click="sidebarOpen = false" x-cloak></div>
         <aside class="sidebar" :class="sidebarOpen && 'open'">
             <div class="sidebar-logo">
+                @if($siteLogoUrl)
+                <img src="{{ $siteLogoUrl }}" alt="{{ $siteTitle }}" class="sidebar-logo-img">
+                @else
                 <svg width="20" height="20" viewBox="0 0 40 40">
                     <circle cx="20" cy="22" r="16" fill="rgba(255,106,26,0.35)" opacity="0.6" />
                     <path d="M14 12 C 12 18, 12 26, 18 32 C 24 36, 32 32, 33 24 C 34 18, 28 14, 22 14 C 18 14, 16 13, 14 12 Z" fill="#ff6a1a" />
                 </svg>
-                <span class="sidebar-logo-text">RED PICANTES</span>
+                <span class="sidebar-logo-text">{{ $siteTitle }}</span>
+                @endif
                 <button class="sidebar-close" @click="sidebarOpen = false" title="Cerrar menú"><i class="fa-solid fa-xmark"></i></button>
             </div>
             
@@ -822,14 +831,20 @@
                         ->where('is_active', true)
                         ->get()
                         ->pluck('line')
-                    : \App\Models\Line::where('status', 'active')->get();
+                    : \App\Models\Line::where('status', 'active')
+                        ->when($sidebarIsAdmin && $activeVendorId, fn ($query) => $query->where('vendor_id', (int) $activeVendorId))
+                        ->get();
             @endphp
             @if($sidebarIsAdmin && $sidebarVendors->count() > 0)
             <div class="sidebar-line-selector">
                 <div class="sidebar-line-label">VENDOR ACTIVO</div>
-                <form method="POST" id="vendor-selector-form">
+                <form method="POST" id="vendor-selector-form" action="{{ route('admin.session.vendor', $activeVendorId ?: 0) }}">
                     @csrf
-                    <select class="sidebar-line-select" onchange="switchVendor(this.value)">
+                    <select
+                        class="sidebar-line-select"
+                        data-route-template="{{ route('admin.session.vendor', ['id' => '__ID__']) }}"
+                        onchange="switchContext(this)"
+                    >
                         <option value="0" {{ !$activeVendorId ? 'selected' : '' }}>Global - solo lectura</option>
                         @foreach($sidebarVendors as $vendorOption)
                         <option value="{{ $vendorOption->id }}" {{ (int) $activeVendorId === (int) $vendorOption->id ? 'selected' : '' }}>
@@ -844,9 +859,13 @@
             @if($allLines->count() > 0 && (! $sidebarIsAdmin || $activeVendorId))
             <div class="sidebar-line-selector">
                 <div class="sidebar-line-label">LÍNEA ACTIVA</div>
-                <form method="POST" id="line-selector-form">
+                <form method="POST" id="line-selector-form" action="{{ route('admin.session.line', $sessionLineId ?: 0) }}">
                     @csrf
-                    <select class="sidebar-line-select" onchange="switchLine(this.value)">
+                    <select
+                        class="sidebar-line-select"
+                        data-route-template="{{ route('admin.session.line', ['id' => '__ID__']) }}"
+                        onchange="switchContext(this)"
+                    >
                         @foreach($allLines as $sl)
                         <option value="{{ $sl->id }}" {{ $sessionLineId == $sl->id ? 'selected' : '' }}>
                             {{ $sl->name }}
@@ -967,32 +986,24 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     @livewireScripts
     <script>
-        function switchLine(lineId) {
-            const switchLineUrl = @json(route('admin.session.line', ['id' => '__LINE_ID__'])).replace('__LINE_ID__', lineId);
+        function switchContext(select) {
+            const form = select?.form;
+            const routeTemplate = select?.dataset?.routeTemplate;
 
-            fetch(switchLineUrl, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')
-                        ? document.querySelector('meta[name=csrf-token]').content
-                        : '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                },
-            }).then(() => window.location.reload());
+            if (! form || ! routeTemplate) {
+                return;
+            }
+
+            submitContextForm(form, routeTemplate.replace('__ID__', select.value));
         }
 
-        function switchVendor(vendorId) {
-            const switchVendorUrl = @json(route('admin.session.vendor', ['id' => '__VENDOR_ID__'])).replace('__VENDOR_ID__', vendorId);
+        function submitContextForm(form, action) {
+            if (! form) {
+                return;
+            }
 
-            fetch(switchVendorUrl, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')
-                        ? document.querySelector('meta[name=csrf-token]').content
-                        : '{{ csrf_token() }}',
-                    'Content-Type': 'application/json',
-                },
-            }).then(() => window.location.reload());
+            form.action = action;
+            form.submit();
         }
 
         window.addEventListener('dashboard-theme-updated', (event) => {
