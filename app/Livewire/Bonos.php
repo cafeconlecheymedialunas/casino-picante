@@ -185,13 +185,12 @@ class Bonos extends Component
             'title' => trim($this->title),
             'code' => trim($this->code) ?: Bonus::generateCode(),
             'description' => trim($this->description) ?: null,
-            'type' => 'general',
+            'type' => $this->bonusType ?: 'general',
             'start_date' => $start,
             'end_date' => $end,
             'status' => Bonus::statusForPeriod($start, $end),
             'line_id' => (int) $this->lineId,
             'platform_id' => $this->platformId ? (int) $this->platformId : null,
-            'type' => $this->bonusType,
             'user_id' => $specificUser?->id,
             'bonus_percent' => $this->bonusPercent !== '' ? (float) $this->bonusPercent : 0,
             'min_deposit' => $this->minDeposit !== '' ? (float) $this->minDeposit : 0,
@@ -325,7 +324,7 @@ class Bonos extends Component
             'bonuses'
         );
 
-        session()->flash('message', 'Bono marcado como reclamoado.');
+        session()->flash('message', 'Bono marcado como reclamado.');
 
         $this->notify('Bono activado', "El bono {$assignment->bonus->title} fue marcado como activado.", 'bonuses', '/bonos', 'info');
     }

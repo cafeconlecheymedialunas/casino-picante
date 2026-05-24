@@ -95,6 +95,7 @@ class Novedades extends Component
         \App\Models\Category::create([
             'name' => $this->newCategoryName,
             'slug' => Str::slug($this->newCategoryName),
+            'vendor_id' => session('active_vendor_id'),
         ]);
 
         $this->newCategoryName = '';
@@ -210,7 +211,7 @@ class Novedades extends Component
     {
         return view('livewire.novedades', [
             'posts' => $this->getPosts(),
-            'categories' => \App\Models\Category::all(),
+            'categories' => \App\Models\Category::where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', session('active_vendor_id')))->orderBy('name')->get(),
             'authors' => $this->availableAuthors(),
             'canDelete' => $this->canDelete(),
         ])->layout('layouts.dashboard');

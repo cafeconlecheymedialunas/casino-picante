@@ -317,10 +317,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->middleware('line.authorize:' . Permissions::USER_READ)
             ->name('clientes');
 
-        Route::get('/usuarios', UsersIndex::class)
-            ->middleware('line.authorize:' . Permissions::USER_READ)
-            ->name('usuarios');
-
         Route::get('/agentes', Agentes::class)
             ->middleware('line.authorize:' . implode('|', [
                 Permissions::AGENT_CREATE,

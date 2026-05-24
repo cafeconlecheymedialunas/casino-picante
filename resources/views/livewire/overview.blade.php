@@ -309,7 +309,7 @@
     <span class="mod-section-label">CLIENTES</span>
     <div class="mod-section-line"></div>
     @if($canViewUsers)
-    <a href="{{ route('admin.usuarios') }}" wire:navigate class="mod-section-link">Ver clientes →</a>
+    <a href="{{ route('admin.clientes') }}" wire:navigate class="mod-section-link">Ver clientes →</a>
     @endif
 </div>
 <div class="kpi-grid-4">
@@ -563,7 +563,7 @@
             <span class="ov-card-title">ÚLTIMOS 10 REGISTROS DE CLIENTES</span>
             <span class="ov-card-mod">users</span>
             @if($canViewUsers)
-            <a href="{{ route('admin.usuarios') }}" wire:navigate class="ov-card-link">Ver todos →</a>
+            <a href="{{ route('admin.clientes') }}" wire:navigate class="ov-card-link">Ver todos →</a>
             @endif
         </div>
         @forelse($last10Users as $user)
