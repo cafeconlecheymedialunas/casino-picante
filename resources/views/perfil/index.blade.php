@@ -57,7 +57,21 @@
             color: var(--white) !important;
             border-color: var(--line-2) !important;
         }
-        @media (max-width:860px) { .form-grid { grid-template-columns:1fr; } .profile-tabs { overflow-x:auto; } }
+        @media (max-width:860px) {
+            .form-grid { grid-template-columns:1fr; }
+            .profile-tabs { overflow-x:auto; flex-wrap:nowrap; }
+        }
+        @media (max-width:600px) {
+            .profile-title { font-size:22px; }
+            .profile-header { gap:10px; }
+            .tab-panel { padding:14px; }
+            .profile-tabs { padding:8px; gap:6px; }
+            .profile-tabs label { height:30px; padding:0 10px; font-size:11px; white-space:nowrap; }
+            .form-input { font-size:12px; padding:9px 10px; }
+            .form-label { font-size:10px; }
+            .btn-primary { width:100%; text-align:center; }
+            .flash-message { font-size:12px; padding:10px 12px; }
+        }
     </style>
 
     <div class="profile-page">

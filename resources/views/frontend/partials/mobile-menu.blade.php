@@ -1,11 +1,10 @@
 <nav class="fe-mobile-menu" data-fe-mobile-menu aria-label="Navegacion movil">
     @php
-        $scopedVendor = $publicVendor ?? null;
-        $homeUrl = $scopedVendor ? route('frontend.cajero.inicio', $scopedVendor) : route('frontend.home');
-        $lineasUrl = $scopedVendor ? route('frontend.cajero.lineas', $scopedVendor) : route('frontend.lineas');
-        $bonosUrl = $scopedVendor ? route('frontend.cajero.bonos', $scopedVendor) : route('frontend.bonos');
-        $sorteosUrl = $scopedVendor ? route('frontend.cajero.sorteos', $scopedVendor) : route('frontend.sorteos');
-        $blogUrl = $scopedVendor ? route('frontend.cajero.blog', $scopedVendor) : route('frontend.blog');
+        $homeUrl = route('frontend.home');
+        $lineasUrl = route('frontend.lineas');
+        $bonosUrl = route('frontend.bonos');
+        $sorteosUrl = route('frontend.sorteos');
+        $blogUrl = route('frontend.blog');
     @endphp
     <a href="{{ $homeUrl }}" wire:navigate>Inicio</a>
     <a href="{{ route('frontend.cajeros') }}" wire:navigate>Cajeros</a>

@@ -439,7 +439,7 @@
     @media (max-width: 1060px) {
         .vd-hero-grid, .vd-hero-grid { grid-template-columns: 1fr; }
         .vd-hero-copy { padding-top: 0; }
-        .vd-visual-stack { max-width: 460px; margin: 0 auto; }
+        .vd-visual-stack { max-width: 460px;  }
         .vd-hero-grid { margin-top: -40px; }
         .vd-lines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .vd-side-stack { grid-template-columns: 1fr 1fr; }
@@ -447,9 +447,10 @@
     @media (max-width: 760px) {
         .vd-shell { width: calc(100% - 24px); }
         .vd-hero { min-height: 0; padding-top: 16px; }
-        .vd-topbar { margin-bottom: 46px; align-items: flex-start; }
+        .vd-profile-card { margin-top: 0; }
+        .vd-topbar { display:none;}
         .vd-badge { max-width: 170px; justify-content: center; text-align: center; }
-        .vd-visual-stack { padding-top: 8px; }
+        .vd-visual-stack { padding-top:60px; }
         .vd-visual-stack::before { width: min(310px, 82vw); top: 46px; }
         .vd-portrait { height: 340px; width: min(300px, 92%); }
         .vd-profile-card { margin-top: -24px; }
@@ -513,6 +514,36 @@
         .vd-hero { padding-bottom:48px; }
         .vd-benefits, .vd-split { grid-template-columns:1fr; }
         .vd-content-stack { margin-top:-24px; }
+    }
+
+    /* ── Responsive correctivos (deben ir al final para no ser pisados) ── */
+    @media (max-width: 1060px) {
+        .vd-hero-grid { grid-template-columns: 1fr !important; }
+        .vd-hero-copy { padding-top: 0; }
+        .vd-visual-stack { max-width: 460px; margin: 0 auto; }
+        .vd-lines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        .vd-hero-grid { margin-top: -40px !important; }
+    }
+    @media (max-width: 760px) {
+        .vd-hero-grid { margin-top: -16px !important; gap: 10px; }
+        .vd-hero h1 { font-size: clamp(36px, 10vw, 62px) !important; }
+        .vd-topbar { margin-bottom: 28px; }
+        .vd-hero { min-height: 0 !important; }
+        .vd-trust-bar { grid-template-columns: 1fr 1fr !important; }
+        .vd-lines-grid { grid-template-columns: 1fr !important; }
+        .vd-full-row { grid-template-columns: 1fr; }
+        .vd-panel-head h2 { font-size: 22px !important; }
+        .vd-avatar { width: 160px !important; height: 160px !important; }
+        .vd-profile-data { grid-template-columns: 1fr !important; }
+        .vd-benefits { grid-template-columns: 1fr !important; }
+        .vd-agents-grid { grid-template-columns: 1fr 1fr; }
+        .vd-bonus-grid { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 480px) {
+        .vd-trust-bar { grid-template-columns: 1fr !important; }
+        .vd-agents-grid { grid-template-columns: 1fr; }
+        .vd-shell { width: calc(100% - 16px); }
+        .vd-panel { padding: 12px; }
     }
 </style>
 @endpush

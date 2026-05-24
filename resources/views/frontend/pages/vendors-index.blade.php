@@ -90,8 +90,11 @@
                         $contacts = collect($vendor->contacts ?? [])->filter(fn ($contact) => filled($contact['value'] ?? null))->values();
                         $primaryContact = $contacts->first();
                         $displayName = trim(($vendor->user?->name ?? '').' '.($vendor->user?->apellido ?? '')) ?: $vendor->name;
+                        $rank = $loop->iteration;
+                        $rankLabel = $rank === 1 ? '🥇' : ($rank === 2 ? '🥈' : ($rank === 3 ? '🥉' : "#$rank"));
+                        $isTop = $rank <= 3;
                     @endphp
-                    <article class="vpi-card">
+                    <article class="vpi-card {{ $isTop ? 'vpi-card--top' : '' }}">
                         <div class="vpi-card-glow"></div>
                         <div class="vpi-card-top">
                             <div class="vpi-logo">
@@ -101,12 +104,31 @@
                                     {{ strtoupper(mb_substr($vendor->name, 0, 2)) }}
                                 @endif
                             </div>
+                            <span class="vpi-rank {{ $isTop ? 'vpi-rank--top' : '' }}">{{ $rankLabel }}</span>
                         </div>
 
                         <div class="vpi-card-body">
                             <p class="vpi-slug">{{ $vendor->slug }}</p>
                             <h2>{{ $vendor->name }}</h2>
                             <p class="vpi-description">{{ $vendor->description ?: 'Cajero con atención personalizada, carga rápida y líneas disponibles para jugar online.' }}</p>
+
+                            <div class="vpi-reputation">
+                                <div class="vpi-rep-left">
+                                    <div class="vpi-rep-stars">
+                                        @for($s = 1; $s <= 5; $s++)
+                                            <i class="fa-{{ $s <= round($vendor->avg_rating) ? 'solid' : 'regular' }} fa-star"></i>
+                                        @endfor
+                                    </div>
+                                    <span class="vpi-rep-value">{{ number_format($vendor->avg_rating, 1) }}</span>
+                                    <span class="vpi-rep-label">Rating</span>
+                                </div>
+                                <div class="vpi-rep-divider"></div>
+                                <div class="vpi-rep-right">
+                                    <i class="fa-solid fa-users vpi-rep-icon"></i>
+                                    <span class="vpi-rep-value">{{ number_format($vendor->total_clients) }}</span>
+                                    <span class="vpi-rep-label">Clientes</span>
+                                </div>
+                            </div>
 
                             <div class="vpi-meta">
                                 <div><strong>{{ $vendor->active_lines_count }}</strong><span>Líneas</span></div>
@@ -189,6 +211,19 @@
     .vpi-empty { border: 1px dashed rgba(255,255,255,.14); border-radius: 8px; padding: 38px; text-align: center; background: rgba(255,255,255,.04); }
     .vpi-empty h2 { margin: 0; font-family: var(--font-display); font-size: 42px; }
     .vpi-empty p { margin: 8px 0 0; color: rgba(255,255,255,.62); }
+    /* Rank badge */
+    .vpi-rank { display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:28px; padding:0 8px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:rgba(255,255,255,.6); font-size:12px; font-weight:900; }
+    .vpi-rank--top { border-color:rgba(255,106,26,.42); background:rgba(255,106,26,.12); color:var(--orange); font-size:14px; }
+    .vpi-card--top { border-color:rgba(255,106,26,.28); box-shadow:0 20px 50px rgba(0,0,0,.28), 0 0 0 1px rgba(255,106,26,.10) inset; }
+    /* Reputation block */
+    .vpi-reputation { display:flex; align-items:center; gap:0; margin-top:16px; border:1px solid rgba(255,106,26,.18); border-radius:8px; background:rgba(255,106,26,.05); overflow:hidden; }
+    .vpi-rep-left, .vpi-rep-right { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; flex:1; padding:10px 12px; }
+    .vpi-rep-right { background:rgba(255,255,255,.03); }
+    .vpi-rep-stars { display:flex; gap:3px; color:var(--orange); font-size:12px; margin-bottom:1px; }
+    .vpi-rep-icon { color:rgba(255,255,255,.4); font-size:13px; margin-bottom:1px; }
+    .vpi-rep-value { color:#fff; font-size:18px; font-weight:900; line-height:1; }
+    .vpi-rep-label { color:rgba(255,255,255,.38); font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:.1em; }
+    .vpi-rep-divider { width:1px; align-self:stretch; background:rgba(255,106,26,.18); flex-shrink:0; }
     @media (max-width: 1020px) {
         .vpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .vpi-hero-grid { grid-template-columns: 1fr; }
