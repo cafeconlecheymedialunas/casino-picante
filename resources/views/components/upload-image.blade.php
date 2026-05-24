@@ -33,7 +33,7 @@
          @mouseout="$el.style.borderColor=''"
          @click="$refs.{{ $refName }}.click()">
 
-        <img x-show="preview" :src="preview" style="width:100%;height:100%;object-fit:cover;display:block">
+        <img x-show="preview" :src="preview" style="width:100%;height:100%;object-fit:cover;display:none" x-cloak>
 
         <div class="upload-image-empty" x-show="!preview" style="height:100%;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted-2);font-size:12px;padding:16px">
             <i class="{{ $icon }}" style="font-size:24px;opacity:.4"></i>

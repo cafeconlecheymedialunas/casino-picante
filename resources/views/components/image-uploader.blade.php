@@ -9,18 +9,32 @@
 ])
 
 @php
-    $preview = $value;
+    $inputId = 'img-upload-' . md5($model . uniqid());
+    $initialPreview = $value;
+    
+    // Fallback to Livewire's temporaryUrl if Alpine preview is not yet set or during re-renders
     if (is_object($upload) && method_exists($upload, 'temporaryUrl')) {
         try {
-            $preview = $upload->temporaryUrl();
+            $initialPreview = $upload->temporaryUrl();
         } catch (\Throwable $exception) {
-            $preview = $value;
+            // Ignore signature issues for now
         }
     }
-    $inputId = 'img-upload-' . md5($model . uniqid());
 @endphp
 
-<div class="image-uploader image-uploader-{{ $variant }}">
+<div class="image-uploader image-uploader-{{ $variant }}" 
+     x-data="{ 
+        preview: '{{ $initialPreview }}',
+        handleFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                this.preview = URL.createObjectURL(file);
+            }
+        }
+     }"
+     x-on:livewire:init="() => {
+        // Optional: listen for property updates if needed
+     }">
     <div class="image-uploader-head">
         <label class="image-uploader-label">{{ $label }}</label>
         @if($hint)
@@ -29,20 +43,20 @@
     </div>
 
     <label class="image-uploader-drop" for="{{ $inputId }}">
-        @if($preview)
-            <img src="{{ $preview }}" alt="">
-        @else
-            <span class="image-uploader-empty">Seleccionar imagen</span>
-        @endif
+        <img x-show="preview" :src="preview" alt="" style="display: none;" x-cloak>
+        <span x-show="!preview" class="image-uploader-empty">Seleccionar imagen</span>
     </label>
 
     <input type="file" id="{{ $inputId }}" wire:model="{{ $model }}"
-        accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
+        accept="image/png,image/jpeg,image/webp,image/gif" style="display:none"
+        @change="handleFile($event)">
 
     <div class="image-uploader-actions">
         <label class="image-uploader-button" for="{{ $inputId }}">Subir imagen</label>
-        @if($preview && $removeAction)
-            <button type="button" class="image-uploader-button danger" wire:click="{{ $removeAction }}">Borrar</button>
+        @if($removeAction)
+            <button type="button" class="image-uploader-button danger" 
+                    wire:click="{{ $removeAction }}"
+                    @click="preview = ''">Borrar</button>
         @endif
     </div>
 
