@@ -14,10 +14,11 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 class Novedades extends Component
 {
-    use HasLinePermissions, SendsNotifications, WithFileUploads;
+    use HasLinePermissions, SendsNotifications, WithFileUploads, WithPagination;
 
     public $statusFilter = 'all';
 
@@ -57,6 +58,21 @@ class Novedades extends Component
         'category_id' => 'nullable|exists:categories,id',
         'author_agent_id' => 'nullable|exists:agents,id',
     ];
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingCategoryFilter(): void
+    {
+        $this->resetPage();
+    }
 
     public function canCreate(): bool
     {
@@ -209,10 +225,15 @@ class Novedades extends Component
         }
 
         if ($this->search) {
-            $query->where('title', 'like', '%'.$this->search.'%');
+            $search = '%'.$this->search.'%';
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', $search)
+                    ->orWhere('excerpt', 'like', $search)
+                    ->orWhere('content', 'like', $search);
+            });
         }
 
-        return $query->orderBy('created_at', 'desc')->get();
+        return $query->orderBy('created_at', 'desc')->paginate(10);
     }
 
     public function render()

@@ -126,8 +126,9 @@
 
 <div style="padding:0 28px 28px;">
     <div class="filter-row">
-        <div class="filter-box">
-            <input type="text" placeholder="Buscar..." wire:model.live="search" class="search-input">
+        <div class="filter-box" style="position:relative;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted-2);pointer-events:none;"></i>
+            <input type="text" placeholder="Buscar por título o contenido..." wire:model.live.debounce.300ms="search" class="search-input" style="padding-left:38px;">
         </div>
         <div class="filter-box" style="max-width:200px">
             <select wire:model.live="categoryFilter" class="form-input" style="height:38px;font-size:12px;">
@@ -186,6 +187,10 @@
         @empty
         <div class="nv-empty">No hay publicaciones</div>
         @endforelse
+    </div>
+
+    <div style="margin-top:20px">
+        {{ $posts->links() }}
     </div>
 </div>
 
