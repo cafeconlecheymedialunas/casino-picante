@@ -107,7 +107,10 @@ class UsersIndex extends Component
             return Line::whereIn('id', $this->availableLineIds())->orderBy('name')->get();
         }
 
-        return Line::orderBy('name')->get();
+        $vendorId = session('active_vendor_id');
+
+        return Line::when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+            ->orderBy('name')->get();
     }
 
     public function updatingSearch(): void
@@ -419,14 +422,18 @@ class UsersIndex extends Component
 
     private function availableLineIds(): array
     {
+        $vendorId = session('active_vendor_id');
+
         if ($this->isAdminMode()) {
-            return Line::pluck('id')->map(fn ($lineId) => (int) $lineId)->toArray();
+            return Line::when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+                ->pluck('id')->map(fn ($id) => (int) $id)->toArray();
         }
 
         return LineAgent::where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
+            ->when($vendorId, fn ($q) => $q->whereHas('line', fn ($l) => $l->where('vendor_id', (int) $vendorId)))
             ->pluck('line_id')
-            ->map(fn ($lineId) => (int) $lineId)
+            ->map(fn ($id) => (int) $id)
             ->toArray();
     }
 

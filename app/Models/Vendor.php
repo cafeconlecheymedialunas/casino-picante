@@ -20,13 +20,15 @@ class Vendor extends Model
         'features',
         'branding',
         'is_active',
+        'is_direct',
     ];
 
     protected $casts = [
         'contacts' => 'array',
         'features' => 'array',
         'branding' => 'array',
-        'is_active' => 'boolean',
+        'is_active'  => 'boolean',
+        'is_direct'  => 'boolean',
     ];
 
     public function user(): BelongsTo

@@ -42,6 +42,13 @@
     .raffle-card:hover .raffle-card-btn { border-color:var(--orange); color:var(--orange); }
     .raffles-empty { border:1px dashed var(--line); border-radius:var(--r-xl); padding:60px 20px; color:var(--muted); text-align:center; }
     .raffles-empty i { font-size:48px; margin-bottom:16px; display:block; opacity:.5; }
+    .lines-tabs { display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,.09); padding-bottom:0; }
+    .lines-tab-btn { position:relative; display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 20px; border:none; background:none; color:rgba(255,255,255,.5); font-size:13px; font-weight:800; cursor:pointer; font-family:var(--font-body); text-transform:uppercase; letter-spacing:.06em; border-radius:8px 8px 0 0; transition:color .18s; }
+    .lines-tab-btn:hover { color:rgba(255,255,255,.8); }
+    .lines-tab-btn.active { color:#fff; background:rgba(255,255,255,.04); }
+    .lines-tab-btn.active::after { content:""; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--orange); border-radius:2px 2px 0 0; }
+    .lines-tab-btn .tab-count { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 5px; border-radius:999px; font-size:10px; font-weight:900; background:rgba(255,255,255,.08); color:rgba(255,255,255,.5); }
+    .lines-tab-btn.active .tab-count { background:rgba(255,106,26,.18); color:var(--orange); }
     @media (max-width: 740px) {
         .raffles-page { padding:28px 0 40px; }
         .raffles-header h1 { font-size:40px; }
@@ -67,16 +74,32 @@
                     ['label' => 'Sorteos'],
                 ],
         ])
+        <div class="raffles-header">
+            <h1>SORTEOS <span>ACTIVOS</span></h1>
+            <p>Participa en los sorteos de las lineas activas y acumula chances de ganar premios exclusivos.</p>
+        </div>
+
+        @if($showTabs)
+            <div class="lines-tabs" style="margin-bottom:24px">
+                <button type="button" class="lines-tab-btn {{ $tab === 'general' ? 'active' : '' }}" wire:click="$set('tab','general')">
+                    <i class="fa-solid fa-crown" style="font-size:11px"></i>
+                    Admin General
+                    <span class="tab-count">{{ $generalRaffles->count() }}</span>
+                </button>
+                <button type="button" class="lines-tab-btn {{ $tab === 'cajeros' ? 'active' : '' }}" wire:click="$set('tab','cajeros')">
+                    <i class="fa-solid fa-user-tie" style="font-size:11px"></i>
+                    Cajeros
+                    <span class="tab-count">{{ $cajeroRaffles->count() }}</span>
+                </button>
+            </div>
+        @endif
+
         @if($raffles->isEmpty())
             <div class="raffles-empty">
                 <i class="fa-solid fa-ticket-simple"></i>
                 <p>No hay sorteos disponibles en este momento.</p>
             </div>
         @else
-            <div class="raffles-header">
-                <h1>SORTEOS <span>ACTIVOS</span></h1>
-                <p>Participa en los sorteos de las lineas activas y acumula chances de ganar premios exclusivos.</p>
-            </div>
             <div class="raffles-grid">
                 @foreach($raffles as $raffle)
                     @php

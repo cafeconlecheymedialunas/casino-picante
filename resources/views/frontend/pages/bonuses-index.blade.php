@@ -21,6 +21,13 @@
     .bonus-public-actions { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
     .bonus-public-state { display:inline-flex; align-items:center; justify-content:center; height:40px; border-radius:999px; padding:0 18px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:var(--muted); font-size:12px; font-weight:900; text-transform:uppercase; }
     .bonuses-empty { border:1px dashed var(--line-2); border-radius:12px; color:var(--muted); padding:30px; text-align:center; font-size:13px; font-weight:800; }
+    .lines-tabs { display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,.09); padding-bottom:0; margin-bottom:0; }
+    .lines-tab-btn { position:relative; display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 20px; border:none; background:none; color:rgba(255,255,255,.5); font-size:13px; font-weight:800; cursor:pointer; font-family:var(--font-body); text-transform:uppercase; letter-spacing:.06em; border-radius:8px 8px 0 0; transition:color .18s; }
+    .lines-tab-btn:hover { color:rgba(255,255,255,.8); }
+    .lines-tab-btn.active { color:#fff; background:rgba(255,255,255,.04); }
+    .lines-tab-btn.active::after { content:""; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:var(--orange); border-radius:2px 2px 0 0; }
+    .lines-tab-btn .tab-count { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 5px; border-radius:999px; font-size:10px; font-weight:900; background:rgba(255,255,255,.08); color:rgba(255,255,255,.5); }
+    .lines-tab-btn.active .tab-count { background:rgba(255,106,26,.18); color:var(--orange); }
     @media (max-width: 980px) { .bonuses-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 640px) {
         .bonuses-page { padding-top:34px; }
@@ -59,8 +66,23 @@
             <a href="{{ isset($publicVendor) ? route('frontend.cajero.lineas', $publicVendor) : route('frontend.lineas') }}" wire:navigate class="fe-btn ghost">Lineas de atencion</a>
         </div>
 
+        @if($showTabs)
+            <div class="lines-tabs">
+                <button type="button" class="lines-tab-btn {{ $tab === 'general' ? 'active' : '' }}" wire:click="$set('tab','general')">
+                    <i class="fa-solid fa-crown" style="font-size:11px"></i>
+                    Admin General
+                    <span class="tab-count">{{ $generalBonuses->count() }}</span>
+                </button>
+                <button type="button" class="lines-tab-btn {{ $tab === 'cajeros' ? 'active' : '' }}" wire:click="$set('tab','cajeros')">
+                    <i class="fa-solid fa-user-tie" style="font-size:11px"></i>
+                    Cajeros
+                    <span class="tab-count">{{ $cajeroBonuses->count() }}</span>
+                </button>
+            </div>
+        @endif
+
         @if($bonuses->count())
-            <div class="bonuses-grid">
+            <div class="bonuses-grid" style="{{ $showTabs ? 'margin-top:20px' : '' }}">
                 @foreach($bonuses as $bonus)
                     @include('frontend.components.bonus-public-card', [
                         'bonus' => $bonus,

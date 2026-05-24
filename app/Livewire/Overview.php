@@ -286,9 +286,12 @@ class Overview extends Component
     public function render()
     {
         $lineIds = $this->overviewLineIds();
+        $vendorId = session('active_vendor_id');
         $lines = $lineIds !== null
             ? Line::whereIn('id', $lineIds)->where('status', 'active')->get()
-            : Line::where('status', 'active')->get();
+            : Line::where('status', 'active')
+                ->when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+                ->get();
 
         return view('livewire.overview', [
             'alerts' => $this->getAlerts(),

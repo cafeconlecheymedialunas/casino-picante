@@ -763,14 +763,19 @@ class Sorteos extends Component
 
     private function availableLines()
     {
+        $vendorId = session('active_vendor_id');
+
         if ($this->isAdminMode()) {
-            return Line::orderBy('name')->get();
+            return Line::when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+                ->orderBy('name')->get();
         }
 
         return Line::whereHas('lineAgents', fn ($query) => $query
             ->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
-        )->orderBy('name')->get();
+        )
+        ->when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+        ->orderBy('name')->get();
     }
 
     private function accessibleRafflesQuery()
