@@ -11,9 +11,12 @@ class Blog extends Component
 
     public function render()
     {
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         $posts = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at')
             ->when(trim($this->search) !== '', function ($query) {

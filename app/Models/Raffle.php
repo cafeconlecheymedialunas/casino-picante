@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Raffle extends Model
 {
@@ -13,14 +14,43 @@ class Raffle extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new LineScope);
+
+        static::saving(function (Raffle $raffle) {
+            if (blank($raffle->slug)) {
+                $raffle->slug = static::uniqueSlug($raffle->title ?: 'sorteo', $raffle->id);
+            }
+        });
     }
 
     protected $fillable = [
         'vendor_id',
+        'slug',
         'title', 'description', 'status', 'start_date', 'end_date',
         'end_number', 'line_id', 'platform_id', 'start_number',
         'winner_user_id', 'winner_number', 'prizes', 'numbers_limit',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public static function uniqueSlug(string $title, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($title) ?: 'sorteo';
+        $slug = $base;
+        $suffix = 2;
+
+        while (static::withoutGlobalScopes()
+            ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->where('slug', $slug)
+            ->exists()) {
+            $slug = $base.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
+    }
 
     protected $casts = [
         'start_date' => 'datetime',
@@ -36,13 +66,14 @@ class Raffle extends Model
     public function lines()
     {
         return $this->belongsToMany(Line::class, 'line_raffle')
+            ->withoutGlobalScopes()
             ->withPivot('vendor_id')
             ->withTimestamps();
     }
 
     public function platform()
     {
-        return $this->belongsTo(Platform::class);
+        return $this->belongsTo(Platform::class)->withoutGlobalScopes();
     }
 
     public function winner()

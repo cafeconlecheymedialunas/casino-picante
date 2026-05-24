@@ -121,13 +121,13 @@
         <div class="card-footer">
             <div class="line-actions">
                 @if($canManage)
-                    <a href="{{ route('lineas.edit', $line->id) }}" class="btn-soft">
+                    <a href="{{ route('admin.lineas.editar', $line->id) }}" class="btn-soft">
                         <svg class="mini-icon" viewBox="0 0 15 15"><path d="M10.5 2.5l2 2-8.5 8.5H2.5v-2l8.5-8.5z"/></svg>
                         Editar
                     </a>
                 @endif
             </div>
-            <a href="{{ route('lineas.detail', $line->id) }}" class="btn-soft">
+            <a href="{{ route('admin.lineas.detalle', $line->id) }}" class="btn-soft">
                 Ver más →
             </a>
         </div>

@@ -25,6 +25,6 @@ class GuestOrAgent
             return redirect()->route('client.account');
         }
 
-        return redirect()->route('dashboard');
+        return redirect()->route('admin.dashboard');
     }
 }

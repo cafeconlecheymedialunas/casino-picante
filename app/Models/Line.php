@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasVendorScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Line extends Model
 {
@@ -12,6 +13,7 @@ class Line extends Model
     protected $fillable = [
         'vendor_id',
         'name',
+        'slug',
         'type',
         'phone',
         'icon',
@@ -28,6 +30,44 @@ class Line extends Model
         'platforms' => 'array',
         'best_sales' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Line $line) {
+            if (blank($line->slug)) {
+                $line->slug = static::uniqueSlug($line->name ?: 'linea', $line->id);
+            }
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return static::withoutGlobalScopes()
+            ->where($field ?: $this->getRouteKeyName(), $value)
+            ->first();
+    }
+
+    public static function uniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($name) ?: 'linea';
+        $slug = $base;
+        $suffix = 2;
+
+        while (static::withoutGlobalScopes()
+            ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->where('slug', $slug)
+            ->exists()) {
+            $slug = $base.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
+    }
 
     public function vendor()
     {
@@ -71,13 +111,16 @@ class Line extends Model
     public function platforms()
     {
         return $this->belongsToMany(Platform::class, 'line_platform')
+            ->withoutGlobalScopes()
             ->withPivot('vendor_id', 'custom_message', 'is_active')
             ->withTimestamps();
     }
 
     public function activePlatforms()
     {
-        return $this->platforms()->wherePivot('is_active', true);
+        return $this->platforms()
+            ->wherePivot('is_active', true)
+            ->where('platforms.is_active', true);
     }
 
     public function sales()

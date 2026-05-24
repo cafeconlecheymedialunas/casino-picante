@@ -102,11 +102,19 @@
         .fe-footer ul { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
         .fe-footer-bottom { border-top:1px solid var(--line); padding:16px 0 22px; color:var(--muted-2); font-size:11px; display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; }
         .fe-section { padding:64px 0 0; }
+        .fe-breadcrumbs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 18px; color:var(--muted-2); font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; }
+        .fe-breadcrumbs a { color:var(--muted); text-decoration:none; }
+        .fe-breadcrumbs a:hover { color:var(--orange); }
+        .fe-breadcrumbs i { color:rgba(255,255,255,.2); font-size:9px; }
+        .fe-breadcrumbs span { color:var(--orange); overflow-wrap:anywhere; }
         .fe-section-head { display:flex; align-items:end; justify-content:space-between; gap:18px; margin-bottom:20px; }
         .fe-kicker { color:var(--orange); font-size:11px; font-weight:900; letter-spacing:.18em; text-transform:uppercase; margin-bottom:7px; }
         .fe-title { font-family:var(--font-display); font-size:58px; line-height:.92; letter-spacing:.02em; margin:0; }
         .fe-title span { color:var(--orange); }
         .fe-subtitle { color:var(--muted); font-size:14px; line-height:1.55; margin:8px 0 0; max-width:520px; }
+        .fe-back-bar { margin-top:24px; }
+        .fe-back-link { display:inline-flex; align-items:center; gap:6px; color:var(--orange); font-size:13px; font-weight:900; text-decoration:none; }
+        .fe-back-link:hover { text-decoration:underline; }
         .fe-card {
             border:1px solid var(--line); border-radius:var(--r-md);
             background:linear-gradient(180deg,#170b0b,#0f0707); box-shadow:0 16px 40px rgba(0,0,0,.32); min-width:0;
@@ -164,7 +172,7 @@
             const timers = document.querySelectorAll('[data-raffle-countdown]');
             if (window.raffleInterval) clearInterval(window.raffleInterval);
 
-            window.raffleInterval = setInterval(() => {
+            const updateRaffleCountdowns = () => {
                 timers.forEach(timer => {
                     const endDate = new Date(timer.getAttribute('data-raffle-countdown')).getTime();
                     const now = new Date().getTime();
@@ -190,7 +198,10 @@
                     if (mEl) mEl.innerText = String(minutes).padStart(2, '0');
                     if (sEl) sEl.innerText = String(seconds).padStart(2, '0');
                 });
-            }, 1000);
+            };
+
+            updateRaffleCountdowns();
+            window.raffleInterval = setInterval(updateRaffleCountdowns, 1000);
         };
 
         window.initSliders = function() {

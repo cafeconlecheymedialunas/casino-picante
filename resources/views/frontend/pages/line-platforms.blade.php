@@ -58,11 +58,29 @@
 
     $cover = $assetUrl($line->portada_url);
     $avatar = $assetUrl($line->perfil_url);
-    $lineUrl = route('frontend.lineas.show', $line);
+    $lineUrl = isset($publicVendor)
+        ? route('frontend.cajero.lineas.detalle', [$publicVendor, $line])
+        : route('frontend.lineas.detalle', $line);
 @endphp
 
 <div class="line-platforms-page">
     <div class="fe-shell">
+        @include('frontend.components.breadcrumbs', [
+            'items' => isset($publicVendor)
+                ? [
+                    ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                    ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                    ['label' => 'Lineas', 'url' => route('frontend.cajero.lineas', $publicVendor)],
+                    ['label' => $line->name, 'url' => route('frontend.cajero.lineas.detalle', [$publicVendor, $line])],
+                    ['label' => 'Plataformas'],
+                ]
+                : [
+                    ['label' => 'Inicio', 'url' => route('frontend.home')],
+                    ['label' => 'Lineas', 'url' => route('frontend.lineas')],
+                    ['label' => $line->name, 'url' => route('frontend.lineas.detalle', $line)],
+                    ['label' => 'Plataformas'],
+                ],
+        ])
         <section class="lp-hero">
             <div class="lp-hero-bg">
                 @if($cover)

@@ -368,11 +368,11 @@ class DemoDataSeeder extends Seeder
         // ── 12. CAROUSEL ITEMS ──
         CarouselItem::firstOrCreate(
             ['title' => 'Bienvenido a RED PICANTES'],
-            ['image' => '/storage/carousel/demo1.jpg', 'link' => route('bonos'), 'order' => 1, 'line_id' => $lines[array_rand($lines)]->id]
+            ['image' => '/storage/carousel/demo1.jpg', 'link' => route('admin.bonos'), 'order' => 1, 'line_id' => $lines[array_rand($lines)]->id]
         );
         CarouselItem::firstOrCreate(
             ['title' => 'Bonos exclusivos'],
-            ['image' => '/storage/carousel/demo2.jpg', 'link' => route('sorteos'), 'order' => 2, 'line_id' => $lines[array_rand($lines)]->id]
+            ['image' => '/storage/carousel/demo2.jpg', 'link' => route('admin.sorteos'), 'order' => 2, 'line_id' => $lines[array_rand($lines)]->id]
         );
         $this->command->info('Carousel items listos.');
 

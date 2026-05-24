@@ -1,8 +1,15 @@
 <footer class="fe-footer">
+    @php
+        $scopedVendor = $publicVendor ?? null;
+        $homeUrl = $scopedVendor ? route('frontend.cajero.inicio', $scopedVendor) : route('frontend.home');
+        $lineasUrl = $scopedVendor ? route('frontend.cajero.lineas', $scopedVendor) : route('frontend.lineas');
+        $bonosUrl = $scopedVendor ? route('frontend.cajero.bonos', $scopedVendor) : route('frontend.bonos');
+        $blogUrl = $scopedVendor ? route('frontend.cajero.blog', $scopedVendor) : route('frontend.blog');
+    @endphp
     <div class="fe-shell">
         <div class="fe-footer-grid">
             <div>
-                <a href="{{ route('frontend.home') }}" wire:navigate class="fe-brand">
+                <a href="{{ $homeUrl }}" wire:navigate class="fe-brand">
                     <span class="fe-brand-mark"></span>
                     <span class="fe-brand-text">RED <span>PICANTES</span></span>
                 </a>
@@ -11,11 +18,11 @@
             <div>
                 <div class="fe-footer-title">Secciones</div>
                 <ul>
-                    <li><a href="{{ route('frontend.home') }}" wire:navigate>Inicio</a></li>
-                    <li><a href="{{ route('frontend.vendors') }}" wire:navigate>Cajeros</a></li>
-                    <li><a href="{{ route('frontend.lines') }}" wire:navigate>Lineas</a></li>
-                    <li><a href="{{ route('frontend.bonuses') }}" wire:navigate>Bonos</a></li>
-                    <li><a href="{{ route('frontend.blog') }}" wire:navigate>Novedades</a></li>
+                    <li><a href="{{ $homeUrl }}" wire:navigate>Inicio</a></li>
+                    <li><a href="{{ route('frontend.cajeros') }}" wire:navigate>Cajeros</a></li>
+                    <li><a href="{{ $lineasUrl }}" wire:navigate>Lineas</a></li>
+                    <li><a href="{{ $bonosUrl }}" wire:navigate>Bonos</a></li>
+                    <li><a href="{{ $blogUrl }}" wire:navigate>Novedades</a></li>
                 </ul>
             </div>
             <div>
@@ -27,7 +34,7 @@
                         @if(auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
                             <li><a href="{{ route('client.account') }}" wire:navigate>Mi cuenta</a></li>
                         @else
-                            <li><a href="{{ route('perfil') }}" wire:navigate>Mi perfil</a></li>
+                            <li><a href="{{ route('admin.perfil') }}" wire:navigate>Mi perfil</a></li>
                         @endif
                     @endauth
                 </ul>

@@ -20,9 +20,12 @@ class PostShow extends Component
 
     public function mount(string $slug): void
     {
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         $post = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->where('slug', $slug)
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at')

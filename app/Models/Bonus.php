@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasVendorScope;
 use App\Models\Scopes\LineScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Bonus extends Model
 {
@@ -17,16 +18,45 @@ class Bonus extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new LineScope);
+
+        static::saving(function (Bonus $bonus) {
+            if (blank($bonus->slug)) {
+                $bonus->slug = static::uniqueSlug($bonus->title ?: 'bono', $bonus->id);
+            }
+        });
     }
 
     protected $fillable = [
         'vendor_id',
+        'slug',
         'code', 'title', 'description', 'start_date', 'end_date',
         'type', 'user_id', 'status', 'created_by',
         'bonus_percent', 'bonus_amount', 'min_deposit', 'max_bonus',
         'total_quantity', 'per_user_limit',
         'line_id', 'platform_id',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public static function uniqueSlug(string $title, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($title) ?: 'bono';
+        $slug = $base;
+        $suffix = 2;
+
+        while (static::withoutGlobalScopes()
+            ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->where('slug', $slug)
+            ->exists()) {
+            $slug = $base.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
+    }
 
     protected $casts = [
         'start_date' => 'datetime',
@@ -54,12 +84,12 @@ class Bonus extends Model
 
     public function line()
     {
-        return $this->belongsTo(Line::class);
+        return $this->belongsTo(Line::class)->withoutGlobalScopes();
     }
 
     public function platform()
     {
-        return $this->belongsTo(Platform::class);
+        return $this->belongsTo(Platform::class)->withoutGlobalScopes();
     }
 
     public function isExpired(): bool

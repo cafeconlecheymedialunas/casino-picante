@@ -20,6 +20,18 @@
 <div>
     <section class="lines-page">
         <div class="fe-shell">
+            @include('frontend.components.breadcrumbs', [
+                'items' => isset($publicVendor)
+                    ? [
+                        ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                        ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                        ['label' => 'Lineas'],
+                    ]
+                    : [
+                        ['label' => 'Inicio', 'url' => route('frontend.home')],
+                        ['label' => 'Lineas'],
+                    ],
+            ])
             <div class="lines-hero">
                 <div>
                     <div class="fe-kicker">Lineas disponibles</div>

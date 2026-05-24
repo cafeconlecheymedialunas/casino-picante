@@ -34,7 +34,7 @@ class AuthPermissionSecurityTest extends TestCase
     {
         $line = Line::create(['name' => 'Linea Cerrada', 'status' => 'active']);
 
-        $this->post(route('session.line', $line->id))
+        $this->post(route('admin.session.line', $line->id))
             ->assertRedirect(route('login'));
     }
 
@@ -55,7 +55,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->post(route('session.line', $otherLine->id))
+            ->post(route('admin.session.line', $otherLine->id))
             ->assertForbidden();
     }
 
@@ -65,7 +65,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('clientes'))
+            ->get(route('admin.clientes'))
             ->assertForbidden();
     }
 
@@ -75,7 +75,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('clientes'))
+            ->get(route('admin.clientes'))
             ->assertOk();
     }
 
@@ -85,7 +85,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('chats'))
+            ->get(route('admin.chats'))
             ->assertForbidden();
     }
 
@@ -95,7 +95,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('chats'))
+            ->get(route('admin.chats'))
             ->assertOk();
     }
 
@@ -105,7 +105,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('ventas'))
+            ->get(route('admin.ventas'))
             ->assertForbidden();
 
         LineAgentPermission::create([
@@ -116,7 +116,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('ventas'))
+            ->get(route('admin.ventas'))
             ->assertOk();
     }
 
@@ -135,7 +135,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id, 'active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('editor-home'))
+            ->get(route('admin.editor.inicio'))
             ->assertForbidden();
 
         LineAgentPermission::create([
@@ -146,7 +146,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id, 'active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('editor-home'))
+            ->get(route('admin.editor.inicio'))
             ->assertOk();
     }
 
@@ -156,7 +156,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('platforms.master'))
+            ->get(route('admin.plataformas'))
             ->assertForbidden();
     }
 
@@ -172,18 +172,18 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
 
         foreach ([
-            'dashboard',
-            'clientes',
-            'agentes',
-            'lineas',
-            'platforms.master',
-            'editor-home',
-            'novedades',
-            'bonos',
-            'ventas',
-            'sorteos',
-            'tickets',
-            'settings',
+            'admin.dashboard',
+            'admin.clientes',
+            'admin.agentes',
+            'admin.lineas',
+            'admin.plataformas',
+            'admin.editor.inicio',
+            'admin.novedades',
+            'admin.bonos',
+            'admin.ventas',
+            'admin.sorteos',
+            'admin.tickets',
+            'admin.configuracion',
         ] as $route) {
             $this->actingAs($user)
                 ->withSession(['active_vendor_id' => $vendor->id])
@@ -201,7 +201,7 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('dashboard'))
+            ->get(route('admin.dashboard'))
             ->assertOk();
     }
 
@@ -234,7 +234,7 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('lineas'))
+            ->get(route('admin.lineas'))
             ->assertOk()
             ->assertSee(strtoupper($visibleLineName))
             ->assertSee(strtoupper($hiddenLineName));
@@ -286,7 +286,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id])
-            ->get(route('admin.vendors'))
+            ->get(route('admin.cajeros'))
             ->assertForbidden();
     }
 
@@ -297,7 +297,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id])
-            ->get(route('dashboard'))
+            ->get(route('admin.dashboard'))
             ->assertForbidden();
     }
 
@@ -313,14 +313,14 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id])
-            ->post(route('session.line', $line->id))
+            ->post(route('admin.session.line', $line->id))
             ->assertRedirect();
 
         $this->assertSame($line->id, session('active_line_id'));
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id, 'active_line_id' => $line->id])
-            ->post(route('session.line', 0))
+            ->post(route('admin.session.line', 0))
             ->assertRedirect();
 
         $this->assertNull(session('active_line_id'));
@@ -340,7 +340,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id])
-            ->post(route('session.line', $otherLine->id))
+            ->post(route('admin.session.line', $otherLine->id))
             ->assertNotFound();
     }
 
@@ -356,7 +356,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_vendor_id' => $vendor->id])
-            ->post(route('session.line', $line->id))
+            ->post(route('admin.session.line', $line->id))
             ->assertNotFound();
     }
 
@@ -404,7 +404,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($admin)
             ->withSession(['active_vendor_id' => $vendor->id])
-            ->get(route('lineas.detail', $otherLine->id))
+            ->get(route('admin.lineas.detalle', $otherLine->id))
             ->assertForbidden();
     }
 
@@ -597,12 +597,12 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($firstUser)
             ->withSession(['active_vendor_id' => $firstVendor->id])
-            ->get(route('editor-home'))
+            ->get(route('admin.editor.inicio'))
             ->assertOk();
 
         $this->actingAs($secondUser)
             ->withSession(['active_vendor_id' => $secondVendor->id])
-            ->get(route('editor-home'))
+            ->get(route('admin.editor.inicio'))
             ->assertOk();
 
         $this->assertDatabaseHas('home_sections', [
@@ -736,7 +736,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $line->id])
-            ->get(route('lineas.detail', $otherLine->id))
+            ->get(route('admin.lineas.detalle', $otherLine->id))
             ->assertForbidden();
     }
 
@@ -764,7 +764,7 @@ class AuthPermissionSecurityTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_agent_id' => $agent->id, 'active_line_id' => $lineWithoutDashboard->id])
-            ->get(route('dashboard'))
+            ->get(route('admin.dashboard'))
             ->assertOk();
 
         $this->assertSame($lineWithDashboard->id, session('active_line_id'));
@@ -848,7 +848,7 @@ class AuthPermissionSecurityTest extends TestCase
             ->set('username', 'admin_vendor_stale')
             ->set('password', 'password')
             ->call('login')
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('admin.dashboard'));
 
         $this->assertAuthenticatedAs($admin);
         $this->assertNull(session('active_vendor_id'));

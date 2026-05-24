@@ -16,7 +16,7 @@
         <div class="be-card">
             <div class="be-card-head">
                 <span><i class="fa-solid fa-pen-to-square" style="color:var(--orange);margin-right:8px"></i>Contenido</span>
-                <a href="{{ route('novedades') }}" class="btn-ghost" style="height:32px;font-size:11px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
+                <a href="{{ route('admin.novedades') }}" class="btn-ghost" style="height:32px;font-size:11px;padding:0 14px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
                     <i class="fa-solid fa-arrow-left"></i> Volver
                 </a>
             </div>

@@ -28,21 +28,22 @@ class Home extends Component
 
     private function carouselItems(): EloquentCollection
     {
-        $ids = HomeConfig::where('section', HomeConfig::SECTION_CAROUSEL)
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+        $ids = HomeConfig::withoutGlobalScopes()
+            ->where('section', HomeConfig::SECTION_CAROUSEL)
+            ->whereNull('vendor_id')
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
 
         if (! empty($ids)) {
-            return CarouselItem::whereIn('id', $ids)
-                ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            return CarouselItem::withoutGlobalScopes()
+                ->whereIn('id', $ids)
                 ->get()
                 ->sortBy(fn ($c) => array_search($c->id, $ids))
                 ->values();
         }
 
-        return CarouselItem::when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+        return CarouselItem::withoutGlobalScopes()
             ->orderBy('order')
             ->take(5)
             ->get();
@@ -50,8 +51,8 @@ class Home extends Component
 
     private function lines(): EloquentCollection
     {
-        return Line::with(['activePlatforms', 'lineAgents.agent', 'ratings'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+        return Line::withoutGlobalScopes()
+            ->with(['activePlatforms', 'lineAgents.agent', 'ratings'])
             ->where('status', 'active')
             ->orderBy('name')
             ->take(6)
@@ -60,15 +61,15 @@ class Home extends Component
 
     private function raffles(): EloquentCollection
     {
-        $section = HomeSection::where('section_key', 'sorteo')
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+        $section = HomeSection::withoutGlobalScopes()
+            ->where('section_key', 'sorteo')
+            ->whereNull('vendor_id')
             ->first();
         $ids = $this->ensureArray($section?->raffle_ids);
         $raffleType = $section?->raffle_type ?? '';
 
         $query = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now());
@@ -86,15 +87,15 @@ class Home extends Component
 
     private function bonusItems(): EloquentCollection
     {
-        $section = HomeSection::where('section_key', 'bonos')
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+        $section = HomeSection::withoutGlobalScopes()
+            ->where('section_key', 'bonos')
+            ->whereNull('vendor_id')
             ->first();
         $ids = $this->ensureArray($section?->bonus_ids);
         $bonusType = $section?->bonus_type ?? '';
 
         $baseQuery = Bonus::withoutGlobalScopes()
             ->with(['line', 'platform'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('end_date', '>=', now());
 
@@ -111,15 +112,15 @@ class Home extends Component
 
     private function blogPosts(): EloquentCollection
     {
-        $section = HomeSection::where('section_key', 'blog')
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+        $section = HomeSection::withoutGlobalScopes()
+            ->where('section_key', 'blog')
+            ->whereNull('vendor_id')
             ->first();
         $ids = $this->ensureArray($section?->post_ids);
         $postType = $section?->post_type ?? '';
 
         $baseQuery = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
             ->where('status', Post::STATUS_PUBLISHED)
             ->whereNotNull('published_at');
 
@@ -178,8 +179,9 @@ class Home extends Component
         $sections = [];
 
         foreach ($defaultSections as $key => $defaults) {
-            $section = HomeSection::where('section_key', $key)
-                ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            $section = HomeSection::withoutGlobalScopes()
+                ->where('section_key', $key)
+                ->whereNull('vendor_id')
                 ->first();
 
             $sections[$key] = $section ? [

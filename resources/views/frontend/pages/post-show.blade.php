@@ -77,6 +77,20 @@
 <div>
     <section class="post-page">
         <div class="fe-shell">
+            @include('frontend.components.breadcrumbs', [
+                'items' => isset($publicVendor)
+                    ? [
+                        ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                        ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                        ['label' => 'Novedades', 'url' => route('frontend.cajero.blog', $publicVendor)],
+                        ['label' => $post->title],
+                    ]
+                    : [
+                        ['label' => 'Inicio', 'url' => route('frontend.home')],
+                        ['label' => 'Novedades', 'url' => route('frontend.blog')],
+                        ['label' => $post->title],
+                    ],
+            ])
             <div class="post-image">
                 @if($image)
                     <img src="{{ $image }}" alt="{{ $post->title }}">

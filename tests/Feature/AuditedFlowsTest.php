@@ -187,7 +187,7 @@ class AuditedFlowsTest extends TestCase
         ]);
 
         $this->withSession(['active_line_id' => $line->id])
-            ->get(route('frontend.blog.show', $post->slug))
+            ->get(route('frontend.blog.detalle', $post->slug))
             ->assertOk()
             ->assertSee('Post publico multi linea');
     }

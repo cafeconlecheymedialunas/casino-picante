@@ -591,7 +591,7 @@ class EditorHome extends Component
 
         session()->flash('message_success', 'Selecciones guardadas correctamente.');
 
-        return redirect()->route('editor-home');
+        return redirect()->route('admin.editor.inicio');
     }
 
     public function render()

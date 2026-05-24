@@ -35,7 +35,7 @@
     </div>
     <div class="ld-hero-meta">
         <div>
-            <a href="{{ route('lineas') }}" class="ld-back">
+            <a href="{{ route('admin.lineas') }}" class="ld-back">
                 <i class="fa-solid fa-arrow-left"></i> Volver a líneas
             </a>
             <div class="ld-hero-name">{{ strtoupper($line->name) }}</div>
@@ -50,7 +50,7 @@
             </div>
         </div>
         @if($this->hasLinePermission(\App\Support\Permissions::LINE_EDIT))
-        <a href="{{ route('lineas.edit', $line->id) }}" class="btn-edit-hero">
+        <a href="{{ route('admin.lineas.editar', $line->id) }}" class="btn-edit-hero">
             <i class="fa-solid fa-pen-to-square"></i> Editar línea
         </a>
         @endif

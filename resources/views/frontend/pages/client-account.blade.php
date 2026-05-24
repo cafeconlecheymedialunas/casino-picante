@@ -353,7 +353,7 @@
                                             <td>{{ $number->created_at->format('d/m/Y H:i') }}</td>
                                             <td>
                                                 @if($number->raffle)
-                                                    <a href="{{ route('frontend.raffles.show', $number->raffle->id) }}" wire:navigate class="fe-btn ghost" style="height:32px;padding:0 12px;">Ver sorteo</a>
+                                                    <a href="{{ route('frontend.sorteos.detalle', $number->raffle) }}" wire:navigate class="fe-btn ghost" style="height:32px;padding:0 12px;">Ver sorteo</a>
                                                 @endif
                                             </td>
                                         </tr>

@@ -38,13 +38,25 @@
 
 <section class="bonuses-page">
     <div class="fe-shell">
+        @include('frontend.components.breadcrumbs', [
+            'items' => isset($publicVendor)
+                ? [
+                    ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                    ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                    ['label' => 'Bonos'],
+                ]
+                : [
+                    ['label' => 'Inicio', 'url' => route('frontend.home')],
+                    ['label' => 'Bonos'],
+                ],
+        ])
         <div class="bonuses-head">
             <div>
                 <div class="bonuses-kicker">Bonos disponibles</div>
                 <h1 class="bonuses-title">Bonos <span>activos</span></h1>
                 <p class="bonuses-copy">Listado completo conectado al modulo de bonos del dashboard. Revisa codigo, linea disponible y vigencia antes de reclamar.</p>
             </div>
-            <a href="{{ route('frontend.lines') }}" wire:navigate class="fe-btn ghost">Lineas de atencion</a>
+            <a href="{{ isset($publicVendor) ? route('frontend.cajero.lineas', $publicVendor) : route('frontend.lineas') }}" wire:navigate class="fe-btn ghost">Lineas de atencion</a>
         </div>
 
         @if($bonuses->count())

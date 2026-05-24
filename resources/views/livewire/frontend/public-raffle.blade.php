@@ -8,9 +8,10 @@
     .raffles-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:20px; }
     .raffle-card { display:flex; flex-direction:column; border:1px solid var(--line); border-radius:var(--r-xl); background:linear-gradient(180deg,#180b08,#0d0707); overflow:hidden; text-decoration:none; transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
     .raffle-card:hover { transform:translateY(-6px); border-color:var(--orange); box-shadow:0 20px 50px rgba(255,106,26,.15); }
-    .raffle-card-image { position:relative; height:180px; display:flex; align-items:center; justify-content:center; background:radial-gradient(60% 60% at 50% 30%, rgba(255,106,26,.15), transparent 70%); }
+    .raffle-card-image { position:relative; height:170px; display:flex; align-items:center; justify-content:center; background:radial-gradient(70% 72% at 50% 30%, rgba(255,106,26,.24), transparent 70%), linear-gradient(135deg, rgba(255,106,26,.08), rgba(255,255,255,.025)); overflow:hidden; }
+    .raffle-card-image::after { content:""; position:absolute; inset:auto 0 0; height:72px; background:linear-gradient(180deg, transparent, rgba(13,7,7,.88)); pointer-events:none; }
     .raffle-card-image img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
-    .raffle-card-placeholder { width:90px; height:90px; display:flex; align-items:center; justify-content:center; }
+    .raffle-card-placeholder { position:relative; z-index:1; width:88px; height:88px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,106,26,.34); border-radius:24px; background:rgba(255,106,26,.10); color:var(--orange); font-size:38px; box-shadow:0 20px 46px rgba(0,0,0,.28), 0 0 36px rgba(255,106,26,.16); }
     .raffle-card-badge { position:absolute; top:12px; right:12px; padding:6px 12px; border-radius:999px; font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
     .raffle-card-badge.active { background:var(--orange); color:#190702; }
     .raffle-card-badge.finished { background:rgba(255,71,87,.9); color:#fff; }
@@ -23,6 +24,10 @@
     .raffle-card-info i { color:var(--orange); }
     .raffle-card-timer { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:800; color:var(--orange); }
     .raffle-card-timer i { font-size:10px; }
+    .raffle-card-countdown { display:flex; gap:4px; align-items:center; }
+    .raffle-card-countdown .timer-unit { min-width:34px; min-height:34px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid rgba(255,106,26,.22); border-radius:7px; background:rgba(255,106,26,.08); }
+    .raffle-card-countdown .timer-val { color:#fff; font-family:var(--font-display); font-size:16px; line-height:1; }
+    .raffle-card-countdown .timer-label { margin-top:2px; color:var(--orange); font-size:6px; font-weight:900; letter-spacing:.08em; }
     .raffle-card-prizes { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; padding-top:12px;padding-bottom:12px; border-top:1px solid var(--line); }
     .raffle-prize-tag { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; background:rgba(255,106,26,.1); border:1px solid rgba(255,106,26,.25); border-radius:6px; font-size:10px; font-weight:800; color:var(--orange); }
     .raffle-prize-tag i { font-size:8px; }
@@ -41,6 +46,18 @@
 
 <section class="raffles-page">
     <div class="fe-shell">
+        @include('frontend.components.breadcrumbs', [
+            'items' => isset($publicVendor)
+                ? [
+                    ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                    ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                    ['label' => 'Sorteos'],
+                ]
+                : [
+                    ['label' => 'Inicio', 'url' => route('frontend.home')],
+                    ['label' => 'Sorteos'],
+                ],
+        ])
         @if($raffles->isEmpty())
             <div class="raffles-empty">
                 <i class="fa-solid fa-ticket-simple"></i>
@@ -60,10 +77,14 @@
                         $prizeImageUrl = $prizeImg ? (\Illuminate\Support\Str::startsWith($prizeImg, ['http://', 'https://', '/storage/']) ? $prizeImg : asset('storage/'.$prizeImg)) : null;
                         $statusLabel = $raffle->status === 'active' ? 'Activo' : ($raffle->status === 'finished' ? 'Finalizado' : 'Próximo');
                     @endphp
-                    <a class="raffle-card" href="{{ route('frontend.raffles.show', $raffle) }}" wire:navigate>
+                    <a class="raffle-card" href="{{ isset($publicVendor) ? route('frontend.cajero.sorteos.detalle', [$publicVendor, $raffle]) : route('frontend.sorteos.detalle', $raffle) }}" wire:navigate>
                         <div class="raffle-card-image">
                             @if($prizeImageUrl)
                                 <img src="{{ $prizeImageUrl }}" alt="{{ $firstPrize['name'] ?? 'Premio' }}">
+                            @else
+                                <span class="raffle-card-placeholder" aria-hidden="true">
+                                    <i class="fa-solid fa-gift"></i>
+                                </span>
                             @endif
                             <span class="raffle-card-badge {{ $raffle->status }}">{{ $statusLabel }}</span>
                         </div>
@@ -91,7 +112,11 @@
                                 @if($raffle->status === 'active' && ! $raffle->isFinished())
                                     <span class="raffle-card-timer">
                                         <i class="fa-regular fa-clock"></i>
-                                        <span class="raffle-countdown" data-end="{{ $raffle->end_date->toIso8601String() }}">calculando...</span>
+                                        <span class="raffle-card-countdown" data-raffle-countdown="{{ $raffle->end_date->toIso8601String() }}">
+                                            <span class="timer-unit"><span class="timer-val" data-unit="days">00</span><span class="timer-label">D</span></span>
+                                            <span class="timer-unit"><span class="timer-val" data-unit="hours">00</span><span class="timer-label">H</span></span>
+                                            <span class="timer-unit"><span class="timer-val" data-unit="minutes">00</span><span class="timer-label">M</span></span>
+                                        </span>
                                     </span>
                                 @else
                                     <span class="raffle-card-timer" style="color: var(--muted);">{{ $raffle->end_date?->format('d/m') }}</span>
@@ -105,37 +130,3 @@
         @endif
     </div>
 </section>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    function updateCountdowns() {
-        document.querySelectorAll('.raffle-countdown').forEach(function(el) {
-            const end = new Date(el.dataset.end);
-            const now = new Date();
-            const diff = end - now;
-            
-            if (diff <= 0) {
-                el.textContent = 'Terminado';
-                return;
-            }
-            
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            
-            if (days > 0) {
-                el.textContent = days + 'd ' + hours + 'h';
-            } else if (hours > 0) {
-                el.textContent = hours + 'h ' + minutes + 'm';
-            } else {
-                el.textContent = minutes + 'm';
-            }
-        });
-    }
-    
-    updateCountdowns();
-    setInterval(updateCountdowns, 60000);
-});
-</script>
-@endpush

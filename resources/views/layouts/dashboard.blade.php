@@ -861,84 +861,84 @@
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::DASHBOARD_READ]))
-            <a href="{{ route('dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="{{ route('admin.dashboard') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-chart-line"></i></span> Overview
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::USER_READ, \App\Support\Permissions::USER_UPDATE, \App\Support\Permissions::USER_BLOCK]))
-            <a href="{{ route('clientes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('clientes') ? 'active' : '' }}">
+            <a href="{{ route('admin.clientes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.clientes*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-users"></i></span> Clientes
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::AGENT_CREATE, \App\Support\Permissions::AGENT_ASSIGN, \App\Support\Permissions::AGENT_UPDATE, \App\Support\Permissions::AGENT_PERMISSIONS]))
-            <a href="{{ route('agentes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('agentes') ? 'active' : '' }}">
+            <a href="{{ route('admin.agentes') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.agentes') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-user-tie"></i></span> Agentes
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::LINE_READ, \App\Support\Permissions::LINE_EDIT]))
-            <a href="{{ route('lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('lineas') ? 'active' : '' }}">
+            <a href="{{ route('admin.lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.lineas*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-layer-group"></i></span> Lineas
             </a>
             @endif
 
             @if($sidebarIsPanelOwner)
-            <a href="{{ route('platforms.master') }}" wire:navigate class="sidebar-item {{ request()->routeIs('platforms.master*') ? 'active' : '' }}">
+            <a href="{{ route('admin.plataformas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.plataformas*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-server"></i></span> Plataformas
             </a>
             @endif
 
             @if($sidebarCanEditHome)
-            <a href="{{ route('editor-home') }}" wire:navigate class="sidebar-item {{ request()->routeIs('editor-home') ? 'active' : '' }}">
+            <a href="{{ route('admin.editor.inicio') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.inicio*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-house-chimney"></i></span> Editar Home
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::NEWS_READ, \App\Support\Permissions::NEWS_CREATE, \App\Support\Permissions::NEWS_UPDATE, \App\Support\Permissions::NEWS_DELETE]))
-            <a href="{{ route('novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('novedades') ? 'active' : '' }}">
+            <a href="{{ route('admin.novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.novedades') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-newspaper"></i></span> Blog
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::BONO_READ, \App\Support\Permissions::BONO_CREATE, \App\Support\Permissions::BONO_UPDATE, \App\Support\Permissions::BONO_DELETE]))
-            <a href="{{ route('bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('bonos') ? 'active' : '' }}">
+            <a href="{{ route('admin.bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.bonos*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-gift"></i></span> Bonos
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::LINE_EDIT]))
-            <a href="{{ route('ventas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('ventas') ? 'active' : '' }}">
+            <a href="{{ route('admin.ventas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.ventas*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-dollar-sign"></i></span> Ventas
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::SORTEO_READ, \App\Support\Permissions::SORTEO_CREATE, \App\Support\Permissions::SORTEO_UPDATE, \App\Support\Permissions::SORTEO_DELETE]))
-            <a href="{{ route('sorteos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('sorteos') ? 'active' : '' }}">
+            <a href="{{ route('admin.sorteos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.sorteos*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-dice"></i></span> Sorteos
             </a>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::TICKET_READ, \App\Support\Permissions::TICKET_UPDATE, \App\Support\Permissions::TICKET_CLOSE]))
-            <a href="{{ route('tickets') }}" wire:navigate class="sidebar-item {{ request()->routeIs('tickets') ? 'active' : '' }}">
+            <a href="{{ route('admin.tickets') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.tickets*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-ticket"></i></span> Tickets
             </a>
             @endif
 
             @if($sidebarIsAdmin)
-            <a href="{{ route('admin.vendors') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.vendors') ? 'active' : '' }}">
+            <a href="{{ route('admin.cajeros') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.cajeros') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-cash-register"></i></span> Cajeros
             </a>
             @endif
 
             @if($sidebarIsPanelOwner)
-            <a href="{{ route('settings') }}" wire:navigate class="sidebar-item {{ request()->routeIs('settings*') ? 'active' : '' }}">
+            <a href="{{ route('admin.configuracion') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.configuracion*') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-gear"></i></span> Configuracion
             </a>
             @endif
 
-            <a href="{{ route('perfil') }}" wire:navigate class="sidebar-item {{ request()->routeIs('perfil') ? 'active' : '' }}">
+            <a href="{{ route('admin.perfil') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.perfil') ? 'active' : '' }}">
                 <span class="sidebar-item-icon"><i class="fa-solid fa-user"></i></span> Mi Perfil
             </a>
 
@@ -968,7 +968,7 @@
     @livewireScripts
     <script>
         function switchLine(lineId) {
-            const switchLineUrl = @json(route('session.line', ['id' => '__LINE_ID__'])).replace('__LINE_ID__', lineId);
+            const switchLineUrl = @json(route('admin.session.line', ['id' => '__LINE_ID__'])).replace('__LINE_ID__', lineId);
 
             fetch(switchLineUrl, {
                 method: 'POST',
@@ -982,7 +982,7 @@
         }
 
         function switchVendor(vendorId) {
-            const switchVendorUrl = @json(route('session.vendor', ['id' => '__VENDOR_ID__'])).replace('__VENDOR_ID__', vendorId);
+            const switchVendorUrl = @json(route('admin.session.vendor', ['id' => '__VENDOR_ID__'])).replace('__VENDOR_ID__', vendorId);
 
             fetch(switchVendorUrl, {
                 method: 'POST',

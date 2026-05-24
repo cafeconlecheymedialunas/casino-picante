@@ -321,7 +321,7 @@ class Bonos extends Component
             "Tu bono {$assignment->bonus->title} ha sido activado",
             $assignment->user_id,
             'success',
-            route('frontend.bonuses', [], false),
+            route('frontend.bonos', [], false),
             'bonuses'
         );
 

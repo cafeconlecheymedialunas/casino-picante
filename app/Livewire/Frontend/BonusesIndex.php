@@ -11,10 +11,13 @@ class BonusesIndex extends Component
     public function render()
     {
         $userId = auth()->id();
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         $bonuses = Bonus::withoutGlobalScopes()
             ->with(['line', 'platform'])
             ->withCount(['assignments as active_assignments_count' => fn ($query) => $query->whereIn('status', Bonus::CONSUMED_STATUSES)])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->whereNotNull('line_id')
             ->where('status', 'active')
             ->where('start_date', '<=', now())

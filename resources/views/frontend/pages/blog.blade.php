@@ -157,6 +157,18 @@
 <div>
     <section class="blog-page-hero">
         <div class="fe-shell">
+            @include('frontend.components.breadcrumbs', [
+                'items' => isset($publicVendor)
+                    ? [
+                        ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                        ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                        ['label' => 'Novedades'],
+                    ]
+                    : [
+                        ['label' => 'Inicio', 'url' => route('frontend.home')],
+                        ['label' => 'Novedades'],
+                    ],
+            ])
             <div class="blog-page-head">
                 <div>
                     <div class="fe-kicker">Noticias y jugadas</div>
@@ -180,7 +192,7 @@
                             ? (\Illuminate\Support\Str::startsWith($featuredPost->image, ['http://', 'https://', '/storage/']) ? $featuredPost->image : asset('storage/'.$featuredPost->image))
                             : null;
                     @endphp
-                    <a class="blog-featured" href="{{ route('frontend.blog.show', $featuredPost->slug) }}" wire:navigate style="text-decoration:none;color:inherit">
+                    <a class="blog-featured" href="{{ isset($publicVendor) ? route('frontend.cajero.blog.detalle', [$publicVendor, $featuredPost->slug]) : route('frontend.blog.detalle', $featuredPost->slug) }}" wire:navigate style="text-decoration:none;color:inherit">
                         <div class="blog-featured-media">
                             @if($featuredImage)
                                 <img src="{{ $featuredImage }}" alt="{{ $featuredPost->title }}">
@@ -201,7 +213,7 @@
 
                     <div class="blog-aside">
                         @foreach($asidePosts as $post)
-                            <a class="blog-aside-card" href="{{ route('frontend.blog.show', $post->slug) }}" wire:navigate style="text-decoration:none;color:inherit">
+                            <a class="blog-aside-card" href="{{ isset($publicVendor) ? route('frontend.cajero.blog.detalle', [$publicVendor, $post->slug]) : route('frontend.blog.detalle', $post->slug) }}" wire:navigate style="text-decoration:none;color:inherit">
                                 <div class="blog-date">
                                     {{ $post->published_at?->format('d/m/Y') }}
                                     @if($post->category)

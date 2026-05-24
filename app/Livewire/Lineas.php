@@ -133,7 +133,7 @@ class Lineas extends Component
         $this->resetForm();
 
         if ($lineId && request()->routeIs('lineas.edit')) {
-            $this->redirect(route('lineas.detail', $lineId));
+            $this->redirect(route('admin.lineas.detalle', $lineId));
         }
     }
 
@@ -255,7 +255,7 @@ class Lineas extends Component
             'Estado de linea cambiado',
             'La linea '.$line->name.' fue '.($line->status === 'active' ? 'activada' : 'pausada').'.',
             'lines',
-            route('lineas', [], false),
+            route('admin.lineas', [], false),
             'warning'
         );
 
@@ -740,7 +740,7 @@ class Lineas extends Component
             ->each(function ($agentId) use ($currentAgentId, $title, $message, $type) {
                 $agentId = (int) $agentId;
                 if ($agentId !== $currentAgentId) {
-                    $this->notifyAgent($agentId, $title, $message, 'lines', route('lineas', [], false), $type);
+                    $this->notifyAgent($agentId, $title, $message, 'lines', route('admin.lineas', [], false), $type);
                 }
             });
     }

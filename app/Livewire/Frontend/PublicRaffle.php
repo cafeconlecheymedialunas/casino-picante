@@ -10,9 +10,12 @@ class PublicRaffle extends Component
 {
     public function getActiveRaffle(): ?Raffle
     {
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         return Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->where('start_date', '<=', now())
             ->where('end_date', '>=', now())
@@ -22,9 +25,12 @@ class PublicRaffle extends Component
 
     public function getEndedRaffle(): ?Raffle
     {
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         return Raffle::withoutGlobalScopes()
             ->with(['winner', 'lines', 'platform'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->where('status', 'finished')
             ->latest('end_date')
             ->first();
@@ -32,9 +38,12 @@ class PublicRaffle extends Component
 
     public function getUpcomingRaffle(): ?Raffle
     {
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         return Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->where('status', 'inactive')
             ->where('start_date', '>', now())
             ->oldest('start_date')
@@ -62,10 +71,13 @@ class PublicRaffle extends Component
         $myNumbers = $activeRaffle ? $this->getMyNumbers($activeRaffle) : collect();
         $isLogged = Auth::check();
         $user = Auth::user();
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         $raffles = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
             ->withCount('numbers')
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->orderByRaw("CASE status WHEN 'active' THEN 0 WHEN 'inactive' THEN 1 ELSE 2 END")
             ->latest('end_date')
             ->get();

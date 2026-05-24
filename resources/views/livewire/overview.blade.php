@@ -184,7 +184,7 @@
     <span class="mod-section-label">💰 VENTAS DEL MES</span>
     <div class="mod-section-line"></div>
     @if($canViewSales)
-    <a href="{{ route('ventas') }}" wire:navigate class="mod-section-link">Ver ventas →</a>
+    <a href="{{ route('admin.ventas') }}" wire:navigate class="mod-section-link">Ver ventas →</a>
     @endif
 </div>
 <div class="kpi-grid-4">
@@ -309,7 +309,7 @@
     <span class="mod-section-label">CLIENTES</span>
     <div class="mod-section-line"></div>
     @if($canViewUsers)
-    <a href="{{ route('users.index') }}" wire:navigate class="mod-section-link">Ver clientes →</a>
+    <a href="{{ route('admin.usuarios') }}" wire:navigate class="mod-section-link">Ver clientes →</a>
     @endif
 </div>
 <div class="kpi-grid-4">
@@ -393,7 +393,7 @@
     <span class="mod-section-label">TICKETS DE SOPORTE</span>
     <div class="mod-section-line"></div>
     @if($canViewTickets)
-    <a href="{{ route('tickets') }}" wire:navigate class="mod-section-link">Ver tickets →</a>
+    <a href="{{ route('admin.tickets') }}" wire:navigate class="mod-section-link">Ver tickets →</a>
     @endif
 </div>
 <div class="kpi-grid-4">
@@ -459,7 +459,7 @@
     <span class="mod-section-label">🎁 BONOS</span>
     <div class="mod-section-line"></div>
     @if($canViewBonuses)
-    <a href="{{ route('bonos') }}" wire:navigate class="mod-section-link">Ver bonos →</a>
+    <a href="{{ route('admin.bonos') }}" wire:navigate class="mod-section-link">Ver bonos →</a>
     @endif
 </div>
 <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
@@ -509,7 +509,7 @@
     <span class="mod-section-label">🎰 SORTEOS</span>
     <div class="mod-section-line"></div>
     @if($canViewRaffles)
-    <a href="{{ route('sorteos') }}" wire:navigate class="mod-section-link">Ver sorteos →</a>
+    <a href="{{ route('admin.sorteos') }}" wire:navigate class="mod-section-link">Ver sorteos →</a>
     @endif
 </div>
 <div style="display: grid; grid-template-columns: 3fr 1fr; gap: 12px;">
@@ -563,7 +563,7 @@
             <span class="ov-card-title">ÚLTIMOS 10 REGISTROS DE CLIENTES</span>
             <span class="ov-card-mod">users</span>
             @if($canViewUsers)
-            <a href="{{ route('users.index') }}" wire:navigate class="ov-card-link">Ver todos →</a>
+            <a href="{{ route('admin.usuarios') }}" wire:navigate class="ov-card-link">Ver todos →</a>
             @endif
         </div>
         @forelse($last10Users as $user)
@@ -594,7 +594,7 @@
             <span class="ov-card-title">TICKETS ABIERTOS SIN RESPUESTA</span>
             <span class="ov-card-mod">tickets</span>
             @if($canViewTickets)
-            <a href="{{ route('tickets') }}" wire:navigate class="ov-card-link">Ver todos →</a>
+            <a href="{{ route('admin.tickets') }}" wire:navigate class="ov-card-link">Ver todos →</a>
             @endif
         </div>
         @forelse($urgentTickets as $ticket)

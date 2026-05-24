@@ -11,12 +11,16 @@ class RaffleShow extends Component
 {
     public Raffle $raffle;
 
-    public function mount(int|string $raffleId): void
+    public function mount(string $raffleSlug): void
     {
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
         $this->raffle = Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform', 'winner'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
-            ->findOrFail($raffleId);
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
+            ->where('slug', $raffleSlug)
+            ->firstOrFail();
     }
 
     public function getMyNumbersProperty(): Collection

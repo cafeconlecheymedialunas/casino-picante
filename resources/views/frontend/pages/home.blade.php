@@ -104,7 +104,7 @@
                             @endforeach
                         </div>
                         <div class="raffle-slide-footer">
-                            <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
+                            <a href="{{ route('frontend.sorteos.detalle', $raffle) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
                         </div>
                     </div>
                     @endforeach
@@ -154,7 +154,7 @@
                     @endforeach
                 </div>
                 <div class="raffle-slide-footer">
-                    <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
+                    <a href="{{ route('frontend.sorteos.detalle', $raffle) }}" wire:navigate class="fe-btn primary">Ver sorteo</a>
                 </div>
             </div>
             @endif
@@ -194,7 +194,7 @@
                 'title' => $sections['bonos']['title'] ?? 'Bonos',
                 'highlight' => $sections['bonos']['highlight'] ?? 'activos',
                 'subtitle' => $sections['bonos']['subtitle'] ?? 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
-                'action' => '<a class="fe-btn ghost" href="'.route('frontend.bonuses').'" wire:navigate>Ver todos</a>',
+                'action' => '<a class="fe-btn ghost" href="'.route('frontend.bonos').'" wire:navigate>Ver todos</a>',
             ])
 
             @if($bonusItems->count())

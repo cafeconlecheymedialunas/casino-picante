@@ -216,7 +216,7 @@ class Sorteos extends Component
                 $this->editingRaffle->update($data);
                 $this->syncRaffleLines($this->editingRaffle);
                 session()->flash('message', 'Sorteo actualizado');
-                $this->notify('Sorteo actualizado', "El sorteo {$this->editingRaffle->title} fue actualizado.", 'raffles', route('sorteos', [], false), 'info');
+                $this->notify('Sorteo actualizado', "El sorteo {$this->editingRaffle->title} fue actualizado.", 'raffles', route('admin.sorteos', [], false), 'info');
 
                 return;
             }
@@ -225,7 +225,7 @@ class Sorteos extends Component
             $raffle = Raffle::create($data);
             $this->syncRaffleLines($raffle);
             session()->flash('message', 'Sorteo creado');
-            $this->notify('Nuevo sorteo creado', "El sorteo {$raffle->title} fue creado exitosamente.", 'raffles', route('sorteos', [], false), 'success');
+            $this->notify('Nuevo sorteo creado', "El sorteo {$raffle->title} fue creado exitosamente.", 'raffles', route('admin.sorteos', [], false), 'success');
         });
 
         $this->closeModal();
@@ -243,7 +243,7 @@ class Sorteos extends Component
         }
 
         session()->flash('message', 'Sorteo eliminado');
-        $this->notify('Sorteo eliminado', "El sorteo {$raffleTitle} fue eliminado del sistema.", 'raffles', route('sorteos', [], false), 'danger');
+        $this->notify('Sorteo eliminado', "El sorteo {$raffleTitle} fue eliminado del sistema.", 'raffles', route('admin.sorteos', [], false), 'danger');
     }
 
     public function selectRaffle(int $id): void
@@ -360,7 +360,7 @@ class Sorteos extends Component
                 'Te asignaron el número '.str_pad($number, 4, '0', STR_PAD_LEFT)." para el sorteo {$raffle->title}",
                 $user->id,
                 'success',
-                route('frontend.raffles.show', $raffle->id),
+                route('frontend.sorteos.detalle', $raffle),
                 'raffles'
             );
         }
@@ -374,7 +374,7 @@ class Sorteos extends Component
             ])->filter()->join(', '));
 
             session()->flash('message', "Seleccion guardada: {$message}.");
-            $this->notify('Numeros guardados', "{$changedCount} numero(s) guardados para el cliente {$user->name}.", 'raffles', route('sorteos', [], false), 'success');
+            $this->notify('Numeros guardados', "{$changedCount} numero(s) guardados para el cliente {$user->name}.", 'raffles', route('admin.sorteos', [], false), 'success');
             $this->selectedNumbers = [];
         } else {
             session()->flash('info', 'La seleccion ya estaba asignada a ese cliente.');
@@ -424,7 +424,7 @@ class Sorteos extends Component
 
         if ($deleted > 0) {
             session()->flash('message', "{$deleted} numero(s) desasignados correctamente");
-            $this->notify('Numeros desasignados', "{$deleted} numero(s) desasignados del sorteo {$raffle->title}.", 'raffles', route('sorteos', [], false), 'warning');
+            $this->notify('Numeros desasignados', "{$deleted} numero(s) desasignados del sorteo {$raffle->title}.", 'raffles', route('admin.sorteos', [], false), 'warning');
 
             return;
         }
@@ -590,7 +590,7 @@ class Sorteos extends Component
         $this->finalizeOnSave = false;
 
         session()->flash('message', $message);
-        $this->notify('Resultados registrados', "Se cargaron los resultados del sorteo {$raffle->title}.", 'raffles', route('sorteos', [], false), 'success');
+        $this->notify('Resultados registrados', "Se cargaron los resultados del sorteo {$raffle->title}.", 'raffles', route('admin.sorteos', [], false), 'success');
     }
 
     public function reopenRaffle(int $id): void
@@ -611,7 +611,7 @@ class Sorteos extends Component
 
         $raffle->update(['status' => $raffle->status === 'active' ? 'inactive' : 'active']);
         session()->flash('message', 'Estado actualizado');
-        $this->notify('Estado de sorteo cambiado', "El sorteo {$raffle->title} fue ".($raffle->status === 'active' ? 'activado' : 'pausado').'.', 'raffles', route('sorteos', [], false), 'warning');
+        $this->notify('Estado de sorteo cambiado', "El sorteo {$raffle->title} fue ".($raffle->status === 'active' ? 'activado' : 'pausado').'.', 'raffles', route('admin.sorteos', [], false), 'warning');
     }
 
     public function addPrize(): void

@@ -113,19 +113,19 @@ Route::prefix('cajeros/{vendor:slug}')
         Route::get('/lineas/{line}/plataformas', LinePlatforms::class)
             ->name('lineas.plataformas');
 
-        Route::get('/plataformas', LinePlatforms::class)
+        Route::get('/plataformas', fn (Vendor $vendor) => redirect()->route('frontend.cajero.lineas', $vendor))
             ->name('plataformas');
 
         Route::get('/bonos', BonusesIndex::class)
             ->name('bonos');
 
-        Route::get('/bonos/{bonusId}', BonusShow::class)
+        Route::get('/bonos/{bonusSlug}', BonusShow::class)
             ->name('bonos.detalle');
 
         Route::get('/sorteos', PublicRaffle::class)
             ->name('sorteos');
 
-        Route::get('/sorteos/{raffleId}', RaffleShow::class)
+        Route::get('/sorteos/{raffleSlug}', RaffleShow::class)
             ->name('sorteos.detalle');
 
         Route::get('/blog', Blog::class)
@@ -136,7 +136,7 @@ Route::prefix('cajeros/{vendor:slug}')
 
         Route::get('/agentes', function (App\Models\Vendor $vendor) {
             $agents = \App\Models\Agent::whereHas('lines', function ($q) use ($vendor) {
-                $q->where('vendor_id', $vendor->id);
+                $q->where('lines.vendor_id', $vendor->id);
             })->get();
 
             return view('frontend.pages.vendor-agents', [
@@ -161,19 +161,19 @@ Route::get('/lineas/{line}', LineShow::class)
 Route::get('/lineas/{line}/plataformas', LinePlatforms::class)
     ->name('frontend.lineas.plataformas');
 
-Route::get('/plataformas', LinePlatforms::class)
+Route::get('/plataformas', fn () => redirect()->route('frontend.lineas'))
     ->name('frontend.plataformas');
 
 Route::get('/bonos', BonusesIndex::class)
     ->name('frontend.bonos');
 
-Route::get('/bonos/{bonusId}', BonusShow::class)
+Route::get('/bonos/{bonusSlug}', BonusShow::class)
     ->name('frontend.bonos.detalle');
 
 Route::get('/sorteos', PublicRaffle::class)
     ->name('frontend.sorteos');
 
-Route::get('/sorteos/{raffleId}', RaffleShow::class)
+Route::get('/sorteos/{raffleSlug}', RaffleShow::class)
     ->name('frontend.sorteos.detalle');
 
 Route::get('/blog', Blog::class)

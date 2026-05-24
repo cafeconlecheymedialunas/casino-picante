@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Vendors;
 use App\Models\Vendor;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\FontAwesomeIcons;
 use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -77,7 +78,7 @@ class VendorsIndex extends Component
             'contacts.*.value' => 'nullable|string|max:255',
             'contacts.*.name' => 'nullable|string|max:80',
             'features' => 'array',
-            'features.*.icon' => 'nullable|string|max:80',
+            'features.*.icon' => 'nullable|string|max:120',
             'features.*.title' => 'nullable|string|max:80',
             'features.*.description' => 'nullable|string|max:255',
             'brandingJson' => 'nullable|string',
@@ -291,7 +292,7 @@ class VendorsIndex extends Component
         return collect($this->features)
             ->filter(fn ($char) => filled($char['title'] ?? null))
             ->map(fn ($char) => [
-                'icon' => trim((string) ($char['icon'] ?? 'fa-solid fa-star')),
+                'icon' => $this->normalizeFeatureIcon((string) ($char['icon'] ?? 'fa-solid fa-star')),
                 'title' => trim((string) ($char['title'] ?? '')),
                 'description' => trim((string) ($char['description'] ?? '')),
             ])
@@ -319,6 +320,26 @@ class VendorsIndex extends Component
         return view('livewire.admin.vendors-index', [
             'vendors' => $vendors,
             'cajeros' => $cajeros,
+            'fontAwesomeIcons' => FontAwesomeIcons::options(),
         ]);
+    }
+
+    private function normalizeFeatureIcon(string $icon): string
+    {
+        $icon = trim($icon);
+
+        if ($icon === '') {
+            return 'fa-solid fa-star';
+        }
+
+        if (! str_contains($icon, 'fa-')) {
+            return 'fa-solid fa-'.$icon;
+        }
+
+        if (! str_contains($icon, 'fa-solid') && ! str_contains($icon, 'fa-regular') && ! str_contains($icon, 'fa-brands')) {
+            return 'fa-solid '.$icon;
+        }
+
+        return $icon;
     }
 }

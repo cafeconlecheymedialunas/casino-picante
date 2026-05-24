@@ -107,7 +107,7 @@
                         </p>
                         
                         <div class="module-top-bar" style="justify-content: center; margin-top: 2rem;">
-                            <a href="{{ route('dashboard') }}" class="btn-primary">
+                            <a href="{{ route('admin.dashboard') }}" class="btn-primary">
                                 <i class="fa-solid fa-home"></i> Ir al Dashboard
                             </a>
                             <a href="javascript:history.back()" class="btn-ghost" style="margin-left: 1rem;">

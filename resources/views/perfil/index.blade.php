@@ -88,7 +88,7 @@
 
                 <div class="tab-panel panel-profile">
                     <p class="section-title">Datos personales</p>
-                    <form method="POST" action="{{ route('perfil.update') }}">
+                    <form method="POST" action="{{ route('admin.perfil.update') }}">
                         @csrf
                         @method('PUT')
                         <div class="form-grid">
@@ -145,7 +145,7 @@
 
                 <div class="tab-panel panel-security">
                     <p class="section-title">Cambiar contrasena</p>
-                    <form method="POST" action="{{ route('perfil.password') }}">
+                    <form method="POST" action="{{ route('admin.perfil.password') }}">
                         @csrf
                         @method('PUT')
                         <div class="form-grid">

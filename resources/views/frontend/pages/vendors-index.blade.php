@@ -60,6 +60,12 @@
 <div class="vendors-public-page">
     <section class="vpi-hero">
         <div class="fe-shell">
+            @include('frontend.components.breadcrumbs', [
+                'items' => [
+                    ['label' => 'Inicio', 'url' => route('frontend.home')],
+                    ['label' => 'Cajeros'],
+                ],
+            ])
             <div class="vpi-hero-grid">
                 <div>
                     <p class="vpi-kicker">Cajeros verificados</p>

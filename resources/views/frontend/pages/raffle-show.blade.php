@@ -13,18 +13,18 @@
     .raffle-detail-clock strong { color:var(--orange); font-family:var(--font-mono); }
     .raffle-actions { display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin-top:16px; }
     .raffle-status-note { max-width:680px; margin:12px auto 0; color:rgba(255,255,255,.66); font-size:13px; line-height:1.45; }
-    .raffle-prize-board { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.28fr) minmax(0,1fr); gap:14px; align-items:end; padding:50px 24px 18px; }
-    .raffle-prize-cell { min-height:138px; display:grid; grid-template-columns:78px minmax(0,.85fr) minmax(128px,1fr); align-items:center; gap:12px; border:1px solid rgba(255,106,26,.76); border-radius:8px; background:#0b0605; box-shadow:inset 0 0 22px rgba(255,106,26,.08), 0 0 18px rgba(255,106,26,.11); padding:12px 14px; overflow:hidden; }
-    .raffle-prize-cell.main { min-height:150px; border-color:rgba(255,179,71,.82); background:#100705; transform:translateY(-12px); }
-    .raffle-prize-rank { font-family:var(--font-display); color:var(--orange); font-size:96px; line-height:.8; text-align:center; text-shadow:0 0 20px rgba(255,106,26,.42); }
-    .raffle-prize-cell.main .raffle-prize-rank { font-size:80px; color:#ff8a1f; }
-    .raffle-prize-copy small { display:block; color:#fff; font-size:12px; font-weight:900; text-transform:uppercase; }
-    .raffle-prize-copy strong { display:block; margin-top:5px; color:#fff; font-size:14px; line-height:1.18; }
-    .raffle-prize-copy b { display:block; margin-top:5px; color:var(--orange); font-size:13px; }
-    .raffle-prize-art { height:98px; border-radius:6px; background:#120807; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-    .raffle-prize-cell.main .raffle-prize-art { height:126px; }
+    .raffle-prize-board { position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.18fr) minmax(0,1fr); gap:14px; align-items:end; padding:42px 24px 18px; }
+    .raffle-prize-cell { min-height:138px; display:grid; grid-template-columns:78px minmax(0,1fr) 118px; align-items:center; gap:12px; border:1px solid rgba(255,106,26,.56); border-radius:10px; background:linear-gradient(180deg, rgba(255,106,26,.055), rgba(255,255,255,.025)), #0b0605; box-shadow:inset 0 0 22px rgba(255,106,26,.08), 0 18px 34px rgba(0,0,0,.28); padding:12px 14px; overflow:hidden; }
+    .raffle-prize-cell.main { min-height:154px; border-color:rgba(255,179,71,.82); background:radial-gradient(70% 100% at 50% 0%, rgba(255,179,71,.10), transparent 70%), #100705; transform:translateY(-12px); }
+    .raffle-prize-rank { font-family:var(--font-display); color:var(--orange); font-size:88px; line-height:.8; text-align:center; text-shadow:0 0 20px rgba(255,106,26,.42); }
+    .raffle-prize-cell.main .raffle-prize-rank { font-size:96px; color:#ff8a1f; }
+    .raffle-prize-copy small { display:block; color:rgba(255,255,255,.72); font-size:11px; font-weight:900; text-transform:uppercase; }
+    .raffle-prize-copy strong { display:block; margin-top:5px; color:#fff; font-size:15px; line-height:1.15; }
+    .raffle-prize-copy b { display:block; margin-top:6px; color:var(--orange); font-size:14px; }
+    .raffle-prize-art { height:94px; border-radius:8px; background:radial-gradient(70% 70% at 50% 35%, rgba(255,106,26,.22), transparent 72%), #120807; overflow:hidden; display:flex; align-items:center; justify-content:center; color:rgba(255,106,26,.82); }
+    .raffle-prize-cell.main .raffle-prize-art { height:116px; }
     .raffle-prize-art img { width:100%; height:100%; object-fit:cover; display:block; }
-    .raffle-prize-art span { font-family:var(--font-display); color:rgba(255,255,255,.13); font-size:34px; }
+    .raffle-prize-art span { width:54px; height:54px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,106,26,.26); border-radius:16px; background:rgba(255,106,26,.08); color:var(--orange); font-size:24px; }
     .raffle-metrics { position:relative; z-index:1; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:min(780px, calc(100% - 48px)); margin:0 auto 16px; border:1px solid rgba(255,106,26,.24); border-radius:8px; background:#080403; overflow:hidden; }
     .raffle-metric { display:flex; align-items:center; justify-content:center; gap:12px; padding:14px 18px; border-left:1px solid rgba(255,106,26,.16); }
     .raffle-metric:first-child { border-left:0; }
@@ -69,7 +69,7 @@
         .raffle-detail-head { padding:30px 28px 10px; }
         .raffle-detail-gift { opacity:.18; }
         .raffle-prize-board { grid-template-columns:1fr; }
-        .raffle-prize-cell, .raffle-prize-cell.main { transform:none; grid-template-columns:60px minmax(0,1fr) 124px; min-height:124px; }
+        .raffle-prize-cell, .raffle-prize-cell.main { transform:none; grid-template-columns:60px minmax(0,1fr) 112px; min-height:124px; }
         .raffle-prize-rank, .raffle-prize-cell.main .raffle-prize-rank { font-size:78px; }
         .raffle-secondary { grid-template-columns:1fr; }
     }
@@ -108,6 +108,20 @@
 
 <section class="raffle-detail" x-data="{ showPrizes: false }">
     <div class="fe-shell">
+        @include('frontend.components.breadcrumbs', [
+            'items' => isset($publicVendor)
+                ? [
+                    ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                    ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                    ['label' => 'Sorteos', 'url' => route('frontend.cajero.sorteos', $publicVendor)],
+                    ['label' => $raffle->title],
+                ]
+                : [
+                    ['label' => 'Inicio', 'url' => route('frontend.home')],
+                    ['label' => 'Sorteos', 'url' => route('frontend.sorteos')],
+                    ['label' => $raffle->title],
+                ],
+        ])
         <div class="raffle-arena">
             <img class="raffle-detail-gift left" src="{{ asset('sorteos-imagen.png') }}" alt="">
             <img class="raffle-detail-gift right" src="{{ asset('sorteos-imagen.png') }}" alt="">
@@ -141,7 +155,7 @@
                     @endif
                     @if($raffle->status === 'active')
                         @auth
-                            <a href="{{ route('frontend.lines') }}" wire:navigate class="fe-btn primary">Suma puntos</a>
+                            <a href="{{ isset($publicVendor) ? route('frontend.cajero.lineas', $publicVendor) : route('frontend.lineas') }}" wire:navigate class="fe-btn primary">Suma puntos</a>
                         @else
                             <a href="{{ route('login') }}" wire:navigate class="fe-btn primary">Registrarme o iniciar sesion</a>
                         @endauth
@@ -174,7 +188,7 @@
                                 @if($imageUrl)
                                     <img src="{{ $imageUrl }}" alt="{{ $prize['name'] ?? 'Premio' }}">
                                 @else
-                                    <span>PREMIO</span>
+                                    <span><i class="fa-solid fa-gift"></i></span>
                                 @endif
                             </div>
                         </article>

@@ -29,6 +29,8 @@
     .form-error { color:#ff4757; font-size:11px; margin-top:4px; }
     .check-row { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px; font-weight:700; }
     .modal-actions { display:flex; gap:10px; }
+    .feature-icon-field { display:grid; grid-template-columns:44px minmax(0,1fr); gap:8px; align-items:end; }
+    .feature-icon-preview { width:44px; height:38px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line-2); border-radius:7px; background:rgba(255,106,26,.08); color:var(--orange); font-size:17px; }
 
     [data-dashboard-theme="light"] .vendors-page .admin-table,
     [data-dashboard-theme="light"] .vendors-page .modal-panel {
@@ -59,6 +61,10 @@
     [data-dashboard-theme="light"] .vendors-page .modal-close {
         background: rgba(244,234,220,.78) !important;
         color: var(--muted) !important;
+        border-color: var(--line) !important;
+    }
+    [data-dashboard-theme="light"] .vendors-page .feature-icon-preview {
+        background: rgba(255,106,26,.10) !important;
         border-color: var(--line) !important;
     }
 </style>
@@ -212,7 +218,20 @@
                         <div style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 40px;gap:10px;align-items:start">
                             <div style="grid-column:1 / span 2">
                                 <label class="form-label" style="font-size:9px">Icono (FontAwesome)</label>
-                                <input class="form-input" wire:model="features.{{$index}}.icon" placeholder="fa-solid fa-star">
+                                <div class="feature-icon-field">
+                                    <span class="feature-icon-preview">
+                                        <i class="{{ $char['icon'] ?? 'fa-solid fa-star' }}"></i>
+                                    </span>
+                                    <select class="form-input" wire:model.live="features.{{$index}}.icon">
+                                        @foreach(collect($fontAwesomeIcons)->groupBy('style') as $style => $icons)
+                                            <optgroup label="{{ $style }}">
+                                                @foreach($icons as $icon)
+                                                    <option value="{{ $icon['class'] }}">{{ $icon['label'] }}</option>
+                                                @endforeach
+                                            </optgroup>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                             <div>
                                 <label class="form-label" style="font-size:9px">Título</label>

@@ -10,13 +10,19 @@
 
 <section class="agents-page">
     <div class="fe-shell">
+        @include('frontend.components.breadcrumbs', [
+            'items' => [
+                ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                ['label' => $vendor->name, 'url' => route('frontend.cajero.inicio', $vendor)],
+                ['label' => 'Agentes'],
+            ],
+        ])
         <div class="bonuses-head">
             <div>
                 <div class="bonuses-kicker">Agentes</div>
                 <h1 class="bonuses-title">Equipo del cajero</h1>
                 <p class="bonuses-copy">Lista de agentes asignados a las lineas de este cajero.</p>
             </div>
-            <a href="{{ route('frontend.cajeros') }}" wire:navigate class="fe-btn ghost">Volver</a>
         </div>
 
         @if($agents->count())

@@ -11,8 +11,6 @@
     .line-detail-title { z-index:2; }
     .line-detail-title h1 { margin:0; font-family:var(--font-display); font-size:64px; line-height:.9; letter-spacing:.02em; }
     .line-detail-title p { margin:10px 0 0; color:var(--muted); font-size:14px; line-height:1.55; max-width:720px; }
-    .line-status-box { z-index:2; border:1px solid var(--line); border-radius:var(--r-md); background:rgba(0,0,0,.28); padding:14px 16px; min-width:180px; }
-    .line-status-box strong { display:block; color:var(--amber); letter-spacing:.08em; }
     .line-detail-grid { display:grid; grid-template-columns:minmax(0, .95fr) minmax(0, 1.35fr); gap:16px; margin-top:18px; }
     .line-panel { border:1px solid var(--line); border-radius:var(--r-md); background:linear-gradient(180deg,#170b0b,#0f0707); padding:20px; min-width:0; }
     .line-panel-title { font-family:var(--font-display); font-size:30px; line-height:1; margin:0 0 14px; letter-spacing:.02em; }
@@ -20,10 +18,6 @@
     .line-info-row:last-child { border-bottom:0; }
     .line-info-row strong { color:#fff; text-align:right; }
     .detail-channel-list { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
-    .detail-channel { width:max-content; max-width:100%; display:inline-grid; grid-template-columns:42px minmax(0, auto); gap:12px; align-items:center; padding:12px 14px 12px 12px; border:1px solid rgba(154,154,154,.18); border-radius:999px; background:rgba(255,255,255,.035); text-decoration:none; }
-    .detail-channel i { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(154,154,154,.08); color:#9a9a9a; font-size:18px; }
-    .detail-channel strong { display:block; font-size:14px; }
-    .detail-channel small { display:block; color:var(--muted-2); font-size:11px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:min(420px, 58vw); }
     .platform-grid { display:grid; gap:12px; grid-template-columns:repeat(4, minmax(0, 1fr)); }
     .platform-card { display:flex; flex-direction:column; gap:12px; padding:16px; border:1px solid var(--line); border-radius:var(--r-md); background:rgba(255,255,255,.035); text-align:center; align-items:center; transition: transform 0.2s ease, border-color 0.2s ease; }
     .platform-card:hover { transform: translateY(-4px); border-color: var(--orange); }
@@ -34,7 +28,6 @@
     .line-rating-wrap { margin-top:18px; }
     .rating-summary { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
     .rating-big { font-family:var(--font-display); font-size:54px; line-height:.85; color:var(--orange); }
-    .rating-stars { display:flex; gap:4px; color:var(--amber); font-size:18px; }
     .rating-count { color:var(--muted); font-size:12px; font-weight:800; }
     .rating-form { display:grid; gap:12px; margin-bottom:16px; }
     .rating-pick { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -104,7 +97,6 @@
 
     @media (max-width: 920px) {
         .line-detail-profile, .line-detail-grid { grid-template-columns:1fr; }
-        .line-status-box { width:100%; }
         .line-detail-title h1 { font-size:50px; }
         .platform-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -116,8 +108,6 @@
         .line-detail-title h1 { font-size:42px; }
         .line-info-row { display:grid; grid-template-columns:1fr; gap:4px; }
         .line-info-row strong { text-align:left; overflow-wrap:anywhere; }
-        .detail-channel { width:100%; grid-template-columns:42px minmax(0, 1fr); border-radius:12px; }
-        .detail-channel small { max-width:none; white-space:normal; overflow-wrap:anywhere; }
         .line-login-box .fe-btn, .rating-form .fe-btn { width:100%; }
         .rating-item { grid-template-columns:1fr; }
         .rating-head { display:block; }
@@ -128,24 +118,30 @@
 @endpush
 
 @php
-    $channelIcons = [
-        'wsp' => 'fa-brands fa-whatsapp', 'wsap' => 'fa-brands fa-whatsapp', 'wa' => 'fa-brands fa-whatsapp', 'whatsapp' => 'fa-brands fa-whatsapp',
-        'telegram' => 'fa-brands fa-telegram', 'tg' => 'fa-brands fa-telegram',
-        'instagram' => 'fa-brands fa-instagram', 'ig' => 'fa-brands fa-instagram',
-        'facebook' => 'fa-brands fa-facebook', 'fb' => 'fa-brands fa-facebook',
-        'phone' => 'fa-solid fa-phone', 'telefono' => 'fa-solid fa-phone', 'tel' => 'fa-solid fa-phone',
-        'email' => 'fa-solid fa-envelope', 'mail' => 'fa-solid fa-envelope',
-        'web' => 'fa-solid fa-globe', 'tiktok' => 'fa-brands fa-tiktok', 'twitter' => 'fa-brands fa-x-twitter', 'x' => 'fa-brands fa-x-twitter', 'youtube' => 'fa-brands fa-youtube',
-    ];
-    $normalizeChannelType = fn (?string $type): string => strtolower(trim((string) $type));
     $contacts = collect($line->contact_links ?? [])->filter(fn ($contact) => filled($contact['value'] ?? null))->values();
-    $manager = $line->lineAgents->first(fn ($lineAgent) => $lineAgent->role === 'encargado' && $lineAgent->is_active);
     $platforms = $line->activePlatforms;
+    $platformsUrl = isset($publicVendor)
+        ? route('frontend.cajero.lineas.plataformas', [$publicVendor, $line])
+        : route('frontend.lineas.plataformas', $line);
 @endphp
 
 <div>
     <section class="line-detail-page">
         <div class="fe-shell">
+            @include('frontend.components.breadcrumbs', [
+                'items' => isset($publicVendor)
+                    ? [
+                        ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                        ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                        ['label' => 'Lineas', 'url' => route('frontend.cajero.lineas', $publicVendor)],
+                        ['label' => $line->name],
+                    ]
+                    : [
+                        ['label' => 'Inicio', 'url' => route('frontend.home')],
+                        ['label' => 'Lineas', 'url' => route('frontend.lineas')],
+                        ['label' => $line->name],
+                    ],
+            ])
             <article class="line-detail-hero">
                 <div class="line-detail-cover">
                     @if($line->portada_url)
@@ -165,46 +161,15 @@
                         <h1>{{ $line->name }}</h1>
                         <p>{{ $line->description ?: 'Alta rapida, carga de saldo, plataformas disponibles y atencion directa para jugar online.' }}</p>
                     </div>
-                    <div class="line-status-box">
-                        <small>Valoracion general</small>
-                        <div class="rating-stars" aria-label="Valoracion general {{ number_format($ratingAverage, 1) }} estrellas">
-                            @php
-                                $fullStars = floor($ratingAverage);
-                                $hasHalfStar = ($ratingAverage - $fullStars) >= 0.5;
-                                $emptyStars = 5 - $fullStars - ($hasHalfStar ? 1 : 0);
-                            @endphp
-                            @for($i = 0; $i < $fullStars; $i++)
-                                ★
-                            @endfor
-                            @if($hasHalfStar)
-                                <i class="fa-solid fa-star-half-stroke" style="font-size: 0.9em; vertical-align: middle; margin-top: -2px; display: inline-block;"></i>
-                            @endif
-                            @for($i = 0; $i < $emptyStars; $i++)
-                                <span style="color: rgba(255,255,255,0.15);">★</span>
-                            @endfor
-                            <strong style="margin-left: 4px; color: #fff;">{{ number_format($ratingAverage, 1) }}</strong>
-                        </div>
-                    </div>
                 </div>
             </article>
 
             <div class="line-detail-grid">
                 <div class="line-panel">
                     <h2 class="line-panel-title">Informacion</h2>
-                    <div class="line-info-row"><span>Encargado</span><strong>{{ $manager?->agent?->username ?: $manager?->agent?->name ?: 'A confirmar' }}</strong></div>
                     <div class="line-info-row"><span>Estado</span><strong>Activa</strong></div>
                     <div class="line-info-row"><span>Plataformas disponibles</span><strong>{{ $platforms->count() }}</strong></div>
                     <div class="line-info-row"><span>Canales publicados</span><strong>{{ $contacts->count() }}</strong></div>
-                    <div class="line-info-row">
-                        <span>Valoración</span>
-                        <strong>
-                            @if($ratingCount > 0)
-                                ★ {{ number_format($ratingAverage, 1) }}
-                            @else
-                                Sin valoraciones
-                            @endif
-                        </strong>
-                    </div>
                     @if($line->type)
                         <div class="line-info-row"><span>Tipo</span><strong>{{ ucfirst($line->type) }}</strong></div>
                     @endif
@@ -213,45 +178,32 @@
                 <div class="line-panel">
                     <h2 class="line-panel-title">Canales de contacto</h2>
                     <div class="detail-channel-list">
-                        @forelse($contacts as $contact)
-                            @php
-                                $type = $normalizeChannelType($contact['type'] ?? 'web');
-                                $icon = $channelIcons[$type] ?? 'fa-solid fa-link';
-                                $name = $contact['name'] ?: ucfirst($type);
-                            @endphp
-                            <a class="detail-channel" href="{{ $contact['value'] }}" target="_blank" rel="noopener">
-                                <i class="{{ $icon }}"></i>
-                                <div>
-                                    <strong>{{ $name }}</strong>
-                                    <small>{{ $contact['value'] }}</small>
-                                </div>
-                            </a>
-                        @empty
-                            <div class="empty-panel">Esta linea todavia no tiene canales publicados.</div>
-                        @endforelse
+                        @include('frontend.components.contact-icons', [
+                            'contacts' => $contacts,
+                            'emptyText' => 'Esta linea todavia no tiene canales publicados.',
+                        ])
                     </div>
                 </div>
             </div>
 
             <section id="plataformas" class="fe-section">
                 <div class="line-panel">
-                    <h2 class="line-panel-title">Plataformas disponibles</h2>
+                    <div class="fe-section-head" style="margin-bottom:16px;">
+                        <div>
+                            <div class="fe-kicker">Plataformas disponibles</div>
+                            <h2 class="line-panel-title" style="margin:0;">Accesos de la linea</h2>
+                        </div>
+                        @if($platforms->count())
+                            <a class="fe-btn ghost" href="{{ $platformsUrl }}" target="_blank" rel="noopener">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                Ver todas las plataformas
+                            </a>
+                        @endif
+                    </div>
                     @if($platforms->count())
-                        <div class="platform-grid">
-                            @foreach($platforms as $platform)
-                                <article class="platform-card">
-                                    <div class="platform-logo">
-                                        @if($platform->logo_url)
-                                            <img src="{{ $platform->logo_url }}" alt="{{ $platform->name }}">
-                                        @else
-                                            {{ strtoupper(mb_substr($platform->name, 0, 2)) }}
-                                        @endif
-                                    </div>
-                                    <div>
-                                        <strong>{{ $platform->name }}</strong>
-                                        <p>{{ $platform->pivot?->custom_message ?: $platform->description ?: 'Disponible para esta linea.' }}</p>
-                                    </div>
-                                </article>
+                        <div class="public-platform-grid">
+                            @foreach($platforms->take(4) as $platform)
+                                @include('frontend.components.platform-card', ['platform' => $platform, 'line' => $line, 'compact' => true])
                             @endforeach
                         </div>
                     @else
@@ -290,7 +242,7 @@
                                     $firstPrizeImage = $prizeImage($firstPrize['image'] ?? null);
                                     $remaining = now()->diff($raffle->end_date);
                                     $remainingText = $raffle->end_date->isFuture() 
-                                        ? trim(collect([$remaining->d ? $remaining->d.' días' : null, $remaining->h ? $remaining->h.'h' : null])->filter()->take(2)->join(' ')) 
+                                        ? trim(collect([$remaining->d ? $remaining->d.' dias' : null, $remaining->h ? $remaining->h.'h' : null])->filter()->take(2)->join(' ')) 
                                         : 'Finalizando';
                                 @endphp
                                 <article class="raffle-card">
@@ -313,14 +265,14 @@
                                         <div class="raffle-card-prizes">
                                             @foreach($displayPrizes->take(3) as $idx => $prize)
                                                 <span class="prize-badge">
-                                                    {{ $prize['position'] ?? $idx + 1 }}° {{ $prize['name'] ?? 'Premio' }}
+                                                    {{ $prize['position'] ?? $idx + 1 }}&deg; {{ $prize['name'] ?? 'Premio' }}
                                                 </span>
                                             @endforeach
                                             @if($displayPrizes->count() > 3)
                                                 <span class="prize-badge more">+{{ $displayPrizes->count() - 3 }}</span>
                                             @endif
                                         </div>
-                                        <a href="{{ route('frontend.raffles.show', $raffle->id) }}" wire:navigate class="raffle-card-btn">
+                                        <a href="{{ isset($publicVendor) ? route('frontend.cajero.sorteos.detalle', [$publicVendor, $raffle]) : route('frontend.sorteos.detalle', $raffle) }}" wire:navigate class="raffle-card-btn">
                                             Ver detalles
                                         </a>
                                     </div>
@@ -338,7 +290,13 @@
                     <div class="rating-summary">
                         <div>
                             <div class="rating-big">{{ number_format($ratingAverage, 1) }}</div>
-                            <div class="rating-stars">★★★★★</div>
+                            @include('frontend.components.rating', [
+                                'rating' => $ratingAverage,
+                                'count' => $ratingCount,
+                                'showValue' => false,
+                                'showCount' => false,
+                                'size' => 'lg',
+                            ])
                         </div>
                         <div class="rating-count">{{ $ratingCount }} valoraciones publicadas</div>
                     </div>
@@ -347,7 +305,7 @@
                         <form wire:submit.prevent="saveRating" class="rating-form">
                             <div class="rating-pick" aria-label="Elegir valoracion">
                                 @for($star = 1; $star <= 5; $star++)
-                                    <button type="button" wire:click="setRating({{ $star }})" class="rating-star-btn {{ ($selectedRating ?? 0) >= $star ? 'active' : '' }}">★</button>
+                                    <button type="button" wire:click="setRating({{ $star }})" class="rating-star-btn {{ ($selectedRating ?? 0) >= $star ? 'active' : '' }}">&#9733;</button>
                                 @endfor
                             </div>
                             @error('selectedRating') <div class="rating-error">{{ $message }}</div> @enderror
@@ -377,7 +335,12 @@
                                         <div class="rating-head">
                                             <div>
                                                 <div class="rating-name">{{ $rating->user?->name ?? 'Usuario' }}</div>
-                                                <div class="rating-stars">{{ str_repeat('★', $rating->rating) }}{{ str_repeat('☆', 5 - $rating->rating) }}</div>
+                                                @include('frontend.components.rating', [
+                                                    'rating' => $rating->rating,
+                                                    'showValue' => false,
+                                                    'showCount' => false,
+                                                    'size' => 'sm',
+                                                ])
                                             </div>
                                             <time class="rating-date">{{ $rating->created_at->diffForHumans() }}</time>
                                         </div>

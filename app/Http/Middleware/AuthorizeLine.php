@@ -69,7 +69,7 @@ class AuthorizeLine
         if (! $lineId) {
             $first = LineAgent::where('agent_id', $agentId)->where('is_active', true)->first();
             if (! $first) {
-                return redirect()->route('perfil')->with('error', 'No tenés líneas asignadas.');
+                return redirect()->route('admin.perfil')->with('error', 'No tenés líneas asignadas.');
             }
             session(['active_line_id' => $first->line_id]);
             $lineId = $first->line_id;
@@ -85,7 +85,7 @@ class AuthorizeLine
             // Reassign to the agent's first active line
             $first = LineAgent::where('agent_id', $agentId)->where('is_active', true)->first();
             if (! $first) {
-                return redirect()->route('perfil')->with('error', 'No pertenecés a ninguna línea activa.');
+                return redirect()->route('admin.perfil')->with('error', 'No pertenecés a ninguna línea activa.');
             }
             session(['active_line_id' => $first->line_id]);
 

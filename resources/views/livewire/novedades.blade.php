@@ -147,7 +147,7 @@
 
     <div class="nv-list">
         @forelse($posts as $post)
-        <a href="{{ route('blog.edit', $post->id) }}" class="nv-item" wire:navigate>
+        <a href="{{ route('admin.blog.editar', $post->id) }}" class="nv-item" wire:navigate>
             <div class="nv-thumb">
                 @if($post->image)
                     <img src="{{ $post->image }}" style="width:100%;height:100%;object-fit:cover;">

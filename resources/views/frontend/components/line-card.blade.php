@@ -1,24 +1,13 @@
-@props(['line'])
+@props(['line', 'showPlatformButton' => true])
 
 @php
     $contacts = collect($line->contact_links ?? [])->filter(fn ($contact) => filled($contact['value'] ?? null))->values();
-    $manager = $line->lineAgents->first(fn ($lineAgent) => $lineAgent->role === 'encargado' && $lineAgent->is_active);
     $platforms = $line->activePlatforms;
     $avgRating = (float) $line->average_rating;
-    $platformsUrl = $line->vendor
-        ? route('frontend.vendor.lines.platforms', [$line->vendor, $line])
-        : route('frontend.lines.platforms', $line);
+    $platformsUrl = isset($publicVendor)
+        ? route('frontend.cajero.lineas.plataformas', [$publicVendor, $line])
+        : route('frontend.lineas.plataformas', $line);
 
-    $channelIcons = [
-        'wsp' => 'fa-brands fa-whatsapp', 'wsap' => 'fa-brands fa-whatsapp', 'wa' => 'fa-brands fa-whatsapp', 'whatsapp' => 'fa-brands fa-whatsapp',
-        'telegram' => 'fa-brands fa-telegram', 'tg' => 'fa-brands fa-telegram',
-        'instagram' => 'fa-brands fa-instagram', 'ig' => 'fa-brands fa-instagram',
-        'facebook' => 'fa-brands fa-facebook', 'fb' => 'fa-brands fa-facebook',
-        'phone' => 'fa-solid fa-phone', 'telefono' => 'fa-solid fa-phone', 'tel' => 'fa-solid fa-phone',
-        'email' => 'fa-solid fa-envelope', 'mail' => 'fa-solid fa-envelope',
-        'web' => 'fa-solid fa-globe', 'tiktok' => 'fa-brands fa-tiktok', 'twitter' => 'fa-brands fa-x-twitter', 'x' => 'fa-brands fa-x-twitter', 'youtube' => 'fa-brands fa-youtube',
-    ];
-    $normalizeChannelType = fn (?string $type): string => strtolower(trim((string) $type));
 @endphp
 
 @once
@@ -35,31 +24,23 @@
     
     .public-line-body { padding:42px 18px 18px; position: relative; z-index: 2; }
     
-    .public-line-name { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .public-line-name { display:block; }
     .public-line-name h2 { margin:0; font-family:var(--font-display); font-size:34px; line-height:.95; letter-spacing:.02em; }
     
     .public-line-meta { margin-top:8px; color:var(--muted); font-size:13px; line-height:1.45; }
     
-    .public-line-manager { margin-top:14px; padding:10px 12px; border:1px solid var(--line); border-radius:var(--r-sm); background:rgba(255,255,255,.035); color:#fff; font-size:12px; font-weight:800; }
-    .public-line-manager span { color:var(--orange); font-family:var(--font-mono); }
+    .public-line-rating { margin-top: 12px; }
     
     .line-platforms-preview { margin-top:12px; color:var(--muted-2); font-size:11px; font-weight:800; }
     
-    .line-channel-list { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; align-items:flex-start; }
-    .line-channel { width:max-content; max-width:100%; display:inline-grid; grid-template-columns:34px auto; gap:10px; align-items:center; padding:9px 12px 9px 9px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.035); text-decoration:none; transition: all 0.2s ease; }
-    .line-channel:hover { border-color: var(--orange); background: rgba(255, 106, 26, 0.05); }
-    .line-channel i { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:rgba(154,154,154,.08); color:#9a9a9a; }
-    .line-channel strong { font-size:12px; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+    .line-channel-list { margin-top:14px; }
     
     .line-card-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
     .line-card-actions .fe-btn { flex:1; min-width:max-content; }
     
     @media (max-width: 620px) {
         .public-line-cover { height:140px; }
-        .public-line-name { display:block; }
         .public-rating { margin-top:8px; }
-        .line-channel { width:100%; grid-template-columns:34px minmax(0, 1fr); border-radius:12px; }
-        .line-channel strong { white-space:normal; overflow-wrap:anywhere; }
         .line-card-actions .fe-btn { width:100%; min-width:0; }
     }
 </style>
@@ -83,17 +64,15 @@
     <div class="public-line-body">
         <div class="public-line-name">
             <h2>{{ $line->name }}</h2>
+        </div>
+        <div class="public-line-meta">{{ $line->description ?: 'Alta rapida, carga de saldo y atencion directa para jugar online.' }}</div>
+        <div class="public-line-rating">
             @include('frontend.components.rating', [
                 'rating' => $avgRating,
                 'count' => $line->ratings_count,
-                'showValue' => false,
+                'showValue' => true,
                 'size' => 'sm',
             ])
-        </div>
-        <div class="public-line-meta">{{ $line->description ?: 'Alta rapida, carga de saldo y atencion directa para jugar online.' }}</div>
-        <div class="public-line-manager">
-            Encargado:
-            <span>{{ $manager?->agent?->username ?: $manager?->agent?->name ?: 'A confirmar' }}</span>
         </div>
 
         <div class="line-platforms-preview">
@@ -101,24 +80,22 @@
         </div>
 
         <div class="line-channel-list">
-            @forelse($contacts->take(2) as $contact)
-                @php
-                    $type = $normalizeChannelType($contact['type'] ?? 'web');
-                    $icon = $channelIcons[$type] ?? 'fa-solid fa-link';
-                    $name = $contact['name'] ?: ucfirst($type);
-                @endphp
-                <a class="line-channel" href="{{ $contact['value'] }}" target="_blank" rel="noopener" style="border-color:rgba(154,154,154,.18);">
-                    <i class="{{ $icon }}"></i>
-                    <strong>{{ $name }}</strong>
-                </a>
-            @empty
-                <div class="line-channel-empty">Sin canales directos</div>
-            @endforelse
+            @include('frontend.components.contact-icons', [
+                'contacts' => $contacts,
+                'limit' => 2,
+                'class' => 'compact',
+                'emptyText' => 'Sin canales directos',
+            ])
         </div>
 
+        @php
+            $detailUrl = isset($publicVendor)
+                ? route('frontend.cajero.lineas.detalle', [$publicVendor, $line])
+                : route('frontend.lineas.detalle', $line);
+        @endphp
         <div class="line-card-actions">
-            <a href="{{ route('frontend.lines.show', $line) }}" wire:navigate class="fe-btn ghost">Ver detalle</a>
-            @if($platforms->count())
+            <a href="{{ $detailUrl }}" wire:navigate class="fe-btn ghost">Ver detalle</a>
+            @if($showPlatformButton && $platforms->count())
                 <a href="{{ $platformsUrl }}" target="_blank" rel="noopener" class="fe-btn primary">
                     Plataformas
                 </a>
@@ -126,4 +103,3 @@
         </div>
     </div>
 </article>
-

@@ -39,7 +39,7 @@
                             @endif
                             <button type="button" wire:click="deleteAllRead" title="Borrar notificaciones leídas" style="font-size:10px;padding:3px 8px;color:var(--muted);">Limpiar</button>
                             @if($canOpenSettings)
-                                <a href="{{ route('settings') }}" wire:navigate class="settings-link" title="Configuración"><i class="fa-solid fa-gear"></i></a>
+                                <a href="{{ route('admin.configuracion') }}" wire:navigate class="settings-link" title="Configuración"><i class="fa-solid fa-gear"></i></a>
                             @endif
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                 </button>
 
                 <div class="header-dropdown profile-dropdown" x-show="open" x-cloak x-transition>
-                    <a href="{{ route('perfil') }}" wire:navigate>Mi perfil</a>
+                    <a href="{{ route('admin.perfil') }}" wire:navigate>Mi perfil</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit">Cerrar sesion</button>

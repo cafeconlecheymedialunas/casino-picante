@@ -110,7 +110,7 @@ class Login extends Component
         if ($user?->hasRole(Roles::ADMIN)) {
             session()->forget(['active_agent_id', 'active_line_id', 'active_vendor_id']);
 
-            $this->redirect(route('dashboard'), navigate: false);
+            $this->redirect(route('admin.dashboard'), navigate: false);
 
             return true;
         }
@@ -120,7 +120,7 @@ class Login extends Component
             session()->forget(['active_vendor_id']);
             session(['active_agent_id' => $agent->id]);
 
-            $this->redirect(route('dashboard'), navigate: false);
+            $this->redirect(route('admin.dashboard'), navigate: false);
 
             return true;
         }
@@ -129,7 +129,7 @@ class Login extends Component
             session()->forget(['active_agent_id', 'active_line_id']);
             session(['active_vendor_id' => $user->vendor_id]);
 
-            $this->redirect(route('dashboard'), navigate: false);
+            $this->redirect(route('admin.dashboard'), navigate: false);
 
             return true;
         }

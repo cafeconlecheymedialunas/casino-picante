@@ -1,18 +1,26 @@
 <header class="fe-nav">
+    @php
+        $scopedVendor = $publicVendor ?? null;
+        $homeUrl = $scopedVendor ? route('frontend.cajero.inicio', $scopedVendor) : route('frontend.home');
+        $lineasUrl = $scopedVendor ? route('frontend.cajero.lineas', $scopedVendor) : route('frontend.lineas');
+        $bonosUrl = $scopedVendor ? route('frontend.cajero.bonos', $scopedVendor) : route('frontend.bonos');
+        $sorteosUrl = $scopedVendor ? route('frontend.cajero.sorteos', $scopedVendor) : route('frontend.sorteos');
+        $blogUrl = $scopedVendor ? route('frontend.cajero.blog', $scopedVendor) : route('frontend.blog');
+    @endphp
     <div class="fe-shell">
         <div class="fe-nav-inner">
-            <a href="{{ route('frontend.home') }}" wire:navigate class="fe-brand" aria-label="RED PICANTES">
+            <a href="{{ $homeUrl }}" wire:navigate class="fe-brand" aria-label="RED PICANTES">
                 <span class="fe-brand-mark"></span>
                 <span class="fe-brand-text">RED <span>PICANTES</span></span>
             </a>
 
             <nav class="fe-nav-links" aria-label="Navegacion principal">
-                <a href="{{ route('frontend.home') }}" wire:navigate class="{{ request()->routeIs('frontend.home') ? 'active' : '' }}">Inicio</a>
-                <a href="{{ route('frontend.vendors') }}" wire:navigate class="{{ request()->routeIs('frontend.vendors') || request()->routeIs('frontend.vendor.home') ? 'active' : '' }}">Cajeros</a>
-                <a href="{{ route('frontend.lines') }}" wire:navigate class="{{ request()->routeIs('frontend.lines*') ? 'active' : '' }}">Lineas</a>
-                <a href="{{ route('frontend.bonuses') }}" wire:navigate class="{{ request()->routeIs('frontend.bonuses*') ? 'active' : '' }}">Bonos</a>
-                <a href="{{ route('frontend.raffles') }}" wire:navigate class="{{ request()->routeIs('frontend.raffles*') || request()->routeIs('sorteo.publico') ? 'active' : '' }}">Sorteo</a>
-                <a href="{{ route('frontend.blog') }}" wire:navigate class="{{ request()->routeIs('frontend.blog') ? 'active' : '' }}">Novedades</a>
+                <a href="{{ $homeUrl }}" wire:navigate class="{{ request()->routeIs('frontend.home') || request()->routeIs('frontend.cajero.inicio') ? 'active' : '' }}">Inicio</a>
+                <a href="{{ route('frontend.cajeros') }}" wire:navigate class="{{ request()->routeIs('frontend.cajeros') || request()->routeIs('frontend.cajeros') ? 'active' : '' }}">Cajeros</a>
+                <a href="{{ $lineasUrl }}" wire:navigate class="{{ request()->routeIs('frontend.lineas*') || request()->routeIs('frontend.cajero.lineas*') ? 'active' : '' }}">Lineas</a>
+                <a href="{{ $bonosUrl }}" wire:navigate class="{{ request()->routeIs('frontend.bonos*') || request()->routeIs('frontend.cajero.bonos*') ? 'active' : '' }}">Bonos</a>
+                <a href="{{ $sorteosUrl }}" wire:navigate class="{{ request()->routeIs('frontend.sorteos*') || request()->routeIs('frontend.cajero.sorteos*') || request()->routeIs('sorteo.publico') ? 'active' : '' }}">Sorteo</a>
+                <a href="{{ $blogUrl }}" wire:navigate class="{{ request()->routeIs('frontend.blog*') || request()->routeIs('frontend.cajero.blog*') ? 'active' : '' }}">Novedades</a>
             </nav>
 
             <div class="fe-nav-actions">
@@ -70,7 +78,7 @@
                         </details>
                     @endif
                     @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN) || auth()->user()?->hasRole(\App\Support\Roles::AGENTE) || auth()->user()?->hasRole(\App\Support\Roles::CAJERO))
-                        <a href="{{ route('dashboard') }}" wire:navigate class="fe-btn ghost">Panel</a>
+                        <a href="{{ route('admin.dashboard') }}" wire:navigate class="fe-btn ghost">Panel</a>
                     @endif
                     @if(!auth()->user()?->hasRole(\App\Support\Roles::CLIENTE))
                         <form method="POST" action="{{ route('logout') }}" style="display:inline">

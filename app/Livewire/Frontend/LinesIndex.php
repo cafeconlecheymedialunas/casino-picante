@@ -9,8 +9,12 @@ class LinesIndex extends Component
 {
     public function render()
     {
-        $lines = Line::with(['activePlatforms', 'lineAgents.agent', 'ratings'])
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', $vendorId))
+        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
+        $vendorId = $routeVendor?->id;
+
+        $lines = Line::withoutGlobalScopes()
+            ->with(['activePlatforms', 'lineAgents.agent', 'ratings'])
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', $vendorId))
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
