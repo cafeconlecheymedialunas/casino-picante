@@ -198,6 +198,41 @@ class AuthPermissionSecurityTest extends TestCase
         }
     }
 
+    public function test_dashboard_stale_ticket_alert_links_to_admin_tickets(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        $clientRole = $this->role(Roles::CLIENTE, 'Cliente');
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Alertas '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $client = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'vendor_id' => $vendor->id,
+            'username' => 'cliente_alerta_'.uniqid(),
+            'status' => 'active',
+        ]);
+
+        Ticket::create([
+            'vendor_id' => $vendor->id,
+            'user_id' => $client->id,
+            'line_id' => $line->id,
+            'subject' => 'Ticket viejo',
+            'status' => 'open',
+            'priority' => 'medium',
+            'created_at' => now()->subHours(3),
+            'updated_at' => now()->subHours(3),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_vendor_id' => $vendor->id])
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee(route('admin.tickets'), false);
+    }
+
     public function test_admin_can_view_panel_without_vendor_context(): void
     {
         $admin = User::factory()->create([

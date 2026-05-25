@@ -48,7 +48,7 @@ class Overview extends Component
         if ($stale > 0) {
             $alerts[] = ['type' => 'danger', 'icon' => '⚠️',
                 'msg' => "$stale ticket".($stale > 1 ? 's' : '').' sin respuesta hace más de 2 horas',
-                'route' => 'tickets', 'link' => 'Ver tickets →'];
+                'route' => 'admin.tickets', 'link' => 'Ver tickets →'];
         }
 
         return $alerts;
