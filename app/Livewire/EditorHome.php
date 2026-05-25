@@ -637,7 +637,10 @@ class EditorHome extends Component
 
     private function activeVendorId(): int
     {
-        abort_unless(session('active_vendor_id'), 403, 'Selecciona un vendor antes de editar la home.');
+        if (! session('active_vendor_id')) {
+            $this->redirect(route('admin.cajeros'), navigate: true);
+            exit;
+        }
 
         return (int) session('active_vendor_id');
     }

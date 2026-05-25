@@ -19,8 +19,8 @@
 
             <nav class="fe-nav-links" aria-label="Navegacion principal">
                 <a href="{{ $homeUrl }}" wire:navigate class="{{ request()->routeIs('frontend.home') || request()->routeIs('frontend.cajero.inicio') ? 'active' : '' }}">Inicio</a>
-                <a href="{{ route('frontend.cajeros') }}" wire:navigate class="{{ request()->routeIs('frontend.cajeros') || request()->routeIs('frontend.cajeros') ? 'active' : '' }}">Cajeros</a>
                 <a href="{{ $lineasUrl }}" wire:navigate class="{{ request()->routeIs('frontend.lineas*') || request()->routeIs('frontend.cajero.lineas*') ? 'active' : '' }}">Lineas</a>
+                <a href="{{ route('frontend.cajeros') }}" wire:navigate class="{{ request()->routeIs('frontend.cajeros') || request()->routeIs('frontend.cajeros') ? 'active' : '' }}">Cajeros</a>
                 <a href="{{ $bonosUrl }}" wire:navigate class="{{ request()->routeIs('frontend.bonos*') || request()->routeIs('frontend.cajero.bonos*') ? 'active' : '' }}">Bonos</a>
                 <a href="{{ $sorteosUrl }}" wire:navigate class="{{ request()->routeIs('frontend.sorteos*') || request()->routeIs('frontend.cajero.sorteos*') || request()->routeIs('sorteo.publico') ? 'active' : '' }}">Sorteo</a>
                 <a href="{{ $blogUrl }}" wire:navigate class="{{ request()->routeIs('frontend.blog*') || request()->routeIs('frontend.cajero.blog*') ? 'active' : '' }}">Novedades</a>

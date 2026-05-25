@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Support\CajeroVendorResolver;
 use App\Support\Roles;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Facades\Storage;
@@ -325,7 +326,7 @@ class Settings extends Component
         $user = auth()->user();
 
         if ($user?->hasRole(Roles::CAJERO)) {
-            return $user->vendor_id ? Vendor::query()->whereKey($user->vendor_id)->first() : null;
+            return CajeroVendorResolver::activeVendorFor($user);
         }
 
         $vendorId = session('active_vendor_id');

@@ -832,7 +832,8 @@
                         ->get()
                         ->pluck('line')
                     : \App\Models\Line::where('status', 'active')
-                        ->when($sidebarIsAdmin && $activeVendorId, fn ($query) => $query->where('vendor_id', (int) $activeVendorId))
+                        ->when($activeVendorId, fn ($query) => $query->where('vendor_id', (int) $activeVendorId))
+                        ->orderBy('name')
                         ->get();
             @endphp
             @if($sidebarIsAdmin && $sidebarVendors->count() > 0)

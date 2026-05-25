@@ -198,6 +198,117 @@ class AuthPermissionSecurityTest extends TestCase
         }
     }
 
+    public function test_cajero_with_assigned_vendor_but_missing_vendor_id_can_login_to_dashboard(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        $user->forceFill(['vendor_id' => null])->save();
+
+        Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Vendor '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+
+        Livewire::test(Login::class)
+            ->set('username', $user->username)
+            ->set('password', 'password')
+            ->call('login')
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame($vendor->id, session('active_vendor_id'));
+        $this->assertSame($vendor->id, $user->fresh()->vendor_id);
+
+        $this->get(route('admin.dashboard'))->assertOk();
+    }
+
+    public function test_cajero_can_login_with_email_and_stale_vendor_session_is_replaced(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        [, $staleVendor] = $this->cajeroVendor();
+
+        $this->withSession(['active_vendor_id' => $staleVendor->id]);
+
+        Livewire::test(Login::class)
+            ->set('username', $user->email)
+            ->set('password', 'password')
+            ->call('login')
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame($vendor->id, session('active_vendor_id'));
+        $this->assertNull(session('active_agent_id'));
+        $this->assertNull(session('active_line_id'));
+    }
+
+    public function test_cajero_login_prefers_assigned_vendor_over_stale_user_vendor_id(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        [, $staleVendor] = $this->cajeroVendor();
+        $user->forceFill(['vendor_id' => $staleVendor->id])->save();
+
+        Livewire::test(Login::class)
+            ->set('username', $user->username)
+            ->set('password', 'password')
+            ->call('login')
+            ->assertRedirect(route('admin.dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame($vendor->id, session('active_vendor_id'));
+        $this->assertSame($vendor->id, $user->fresh()->vendor_id);
+    }
+
+    public function test_cajero_with_inactive_vendor_cannot_login_to_panel(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        $vendor->update(['is_active' => false]);
+
+        Livewire::test(Login::class)
+            ->set('username', $user->username)
+            ->set('password', 'password')
+            ->call('login')
+            ->assertHasErrors(['username']);
+
+        $this->assertGuest();
+        $this->assertNull(session('active_vendor_id'));
+    }
+
+    public function test_cajero_direct_dashboard_request_repairs_missing_vendor_id(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        $user->forceFill(['vendor_id' => null])->save();
+
+        $this->actingAs($user)
+            ->get(route('admin.dashboard'))
+            ->assertOk();
+
+        $this->assertSame($vendor->id, session('active_vendor_id'));
+        $this->assertSame($vendor->id, $user->fresh()->vendor_id);
+    }
+
+    public function test_cajero_dashboard_drops_stale_active_line_from_another_vendor(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $otherLine = Line::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Linea Stale Dashboard '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession([
+                'active_vendor_id' => $vendor->id,
+                'active_line_id' => $otherLine->id,
+            ])
+            ->get(route('admin.dashboard'))
+            ->assertOk();
+
+        $this->assertNull(session('active_line_id'));
+    }
+
     public function test_dashboard_stale_ticket_alert_links_to_admin_tickets(): void
     {
         [$user, $vendor] = $this->cajeroVendor();
@@ -748,6 +859,57 @@ class AuthPermissionSecurityTest extends TestCase
         Livewire::test(Agentes::class)
             ->set('name', 'Agente Tamper')
             ->set('email', 'agente-tamper@example.test')
+            ->set('password', 'secret123')
+            ->set('avatar', 'avatar_adventurer__red-picantes-01')
+            ->set('cargo', 'agente')
+            ->set('lineIds', [$otherLine->id])
+            ->call('saveAgent')
+            ->assertForbidden();
+    }
+
+    public function test_admin_agent_line_selector_requires_active_vendor(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
+            'status' => 'active',
+        ]);
+
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Admin Propia '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+
+        $otherLine = Line::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Linea Admin Ajena '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(Agentes::class)
+            ->assertViewHas('lines', fn ($lines) => $lines->isEmpty())
+            ->set('name', 'Agente Sin Vendor')
+            ->set('email', 'agente-sin-vendor@example.test')
+            ->set('password', 'secret123')
+            ->set('avatar', 'avatar_adventurer__red-picantes-01')
+            ->set('cargo', 'agente')
+            ->set('lineIds', [$line->id])
+            ->call('saveAgent')
+            ->assertForbidden();
+
+        $this->withSession(['active_vendor_id' => $vendor->id]);
+
+        Livewire::test(Agentes::class)
+            ->assertViewHas('lines', fn ($lines) => $lines->pluck('id')->all() === [$line->id])
+            ->set('name', 'Agente Vendor Ajeno')
+            ->set('email', 'agente-vendor-ajeno@example.test')
             ->set('password', 'secret123')
             ->set('avatar', 'avatar_adventurer__red-picantes-01')
             ->set('cargo', 'agente')

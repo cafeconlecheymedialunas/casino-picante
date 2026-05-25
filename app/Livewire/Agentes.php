@@ -340,8 +340,11 @@ class Agentes extends Component
     {
         if ($this->isAdminMode()) {
             $vendorId = session('active_vendor_id');
+            if (! $vendorId) {
+                return Line::whereRaw('1 = 0')->get();
+            }
 
-            return Line::when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+            return Line::where('vendor_id', (int) $vendorId)
                 ->orderBy('name')
                 ->get();
         }
@@ -527,7 +530,11 @@ class Agentes extends Component
         $vendorId = session('active_vendor_id');
 
         if ($this->isAdminMode()) {
-            return Line::when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+            if (! $vendorId) {
+                return [];
+            }
+
+            return Line::where('vendor_id', (int) $vendorId)
                 ->pluck('id')
                 ->map(fn ($id) => (int) $id)
                 ->toArray();
@@ -576,7 +583,7 @@ class Agentes extends Component
     private function authorizeSelectedLines(): void
     {
         if ($this->isAdminMode() && ! session('active_vendor_id')) {
-            return;
+            abort(403, 'Selecciona un cajero antes de asignar lineas a un agente.');
         }
 
         $allowedLineIds = $this->availableLineIds();

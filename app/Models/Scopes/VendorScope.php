@@ -12,19 +12,24 @@ class VendorScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
+        $table = $model->getTable();
+
         if (! $vendorId = session('active_vendor_id')) {
             return;
         }
 
         $vendorId = (int) $vendorId;
+        $guard = auth()->guard();
 
-        if (! auth()->check()) {
-            $builder->where($model->getTable().'.vendor_id', $vendorId);
+        if (! $guard->hasUser()) {
+            if ($table !== 'users') {
+                $builder->where($table.'.vendor_id', $vendorId);
+            }
 
             return;
         }
 
-        $user = auth()->user();
+        $user = $guard->user();
 
         if ($user->hasRole(Roles::ADMIN)) {
             return;
@@ -44,16 +49,16 @@ class VendorScope implements Scope
             }
         }
 
-        if ($model->getTable() === 'users') {
-            $authUserId = (int) auth()->id();
-            $builder->where(function (Builder $query) use ($model, $vendorId, $authUserId): void {
-                $query->where($model->getTable().'.vendor_id', $vendorId)
-                    ->orWhere($model->getTable().'.id', $authUserId);
+        if ($table === 'users') {
+            $authUserId = (int) $user->id;
+            $builder->where(function (Builder $query) use ($table, $vendorId, $authUserId): void {
+                $query->where($table.'.vendor_id', $vendorId)
+                    ->orWhere($table.'.id', $authUserId);
             });
 
             return;
         }
 
-        $builder->where($model->getTable().'.vendor_id', $vendorId);
+        $builder->where($table.'.vendor_id', $vendorId);
     }
 }

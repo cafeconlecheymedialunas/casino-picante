@@ -44,6 +44,7 @@ use App\Models\LineAgent;
 use App\Models\Vendor;
 use App\Support\Permissions;
 use App\Support\Roles;
+use App\Support\CajeroVendorResolver;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -188,6 +189,10 @@ Route::get('/mi-cuenta', ClientAccount::class)
     ->middleware('auth')
     ->name('client.account');
 
+Route::get('/tickets', fn () => redirect()->route('admin.tickets'))
+    ->middleware('auth')
+    ->name('tickets');
+
 Route::post('/salir', function () {
     Auth::logout();
 
@@ -224,33 +229,39 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         if ($user->hasRole(Roles::ADMIN)) {
             if (! session('active_vendor_id')) {
-                abort(403, 'Selecciona un cajero antes de operar lineas.');
+                return redirect()->route('admin.cajeros');
             }
 
             if ($id !== 0) {
-                Line::where('status', 'active')
+                $line = Line::where('status', 'active')
                     ->where('vendor_id', session('active_vendor_id'))
-                    ->findOrFail($id);
+                    ->find($id);
+                if (! $line) {
+                    return redirect()->route('admin.dashboard');
+                }
             }
 
             session(['active_line_id' => $id ?: null]);
 
-            return back();
+            return redirect()->route('admin.dashboard');
         }
 
         if ($user->hasRole(Roles::CAJERO)) {
+            $vendor = CajeroVendorResolver::activeVendorFor($user);
+            abort_unless($vendor, 403, 'El vendor asignado no esta activo.');
+
             if ($id !== 0) {
-                Line::where('status', 'active')
-                    ->when(
-                        $user->vendor_id,
-                        fn ($q) => $q->where('vendor_id', $user->vendor_id)
-                    )
-                    ->findOrFail($id);
+                $line = Line::where('status', 'active')
+                    ->where('vendor_id', $vendor->id)
+                    ->find($id);
+                if (! $line) {
+                    abort(404);
+                }
             }
 
             session(['active_line_id' => $id ?: null]);
 
-            return back();
+            return redirect()->route('admin.dashboard');
         }
 
         if (! $user->hasRole(Roles::AGENTE)) {
@@ -274,7 +285,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'active_line_id' => $id,
         ]);
 
-        return back();
+        return redirect()->route('admin.dashboard');
     })->middleware('auth')->name('session.line');
 
     Route::post('/sesion/cajero/{id}', function (int $id) {

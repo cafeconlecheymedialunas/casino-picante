@@ -103,8 +103,8 @@
                             class="lines-tab-btn {{ $tab === 'directas' ? 'active' : '' }}"
                             wire:click="$set('tab', 'directas')"
                         >
-                            <i class="fa-solid fa-bolt" style="font-size:11px"></i>
-                            Líneas Directas
+                            <i class="fa-solid fa-crown" style="font-size:11px"></i>
+                            Admin General
                             <span class="tab-count">{{ $directLines->count() }}</span>
                         </button>
                         <button
@@ -129,7 +129,7 @@
             @else
                 <div class="empty-panel lines-empty">
                     @if($showTabs && $tab === 'directas')
-                        No hay líneas directas activas publicadas por ahora.
+                        No hay lineas del admin general publicadas por ahora.
                     @elseif($showTabs && $tab === 'cajeros')
                         No hay líneas de cajeros activas publicadas por ahora.
                     @else

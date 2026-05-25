@@ -7,8 +7,8 @@
         $blogUrl = route('frontend.blog');
     @endphp
     <a href="{{ $homeUrl }}" wire:navigate>Inicio</a>
-    <a href="{{ route('frontend.cajeros') }}" wire:navigate>Cajeros</a>
     <a href="{{ $lineasUrl }}" wire:navigate>Lineas de atencion</a>
+    <a href="{{ route('frontend.cajeros') }}" wire:navigate>Cajeros</a>
     <a href="{{ $bonosUrl }}" wire:navigate>Bonos</a>
     <a href="{{ $sorteosUrl }}" wire:navigate>Sorteo</a>
     <a href="{{ $blogUrl }}" wire:navigate>Novedades</a>

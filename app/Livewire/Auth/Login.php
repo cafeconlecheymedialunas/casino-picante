@@ -4,6 +4,7 @@ namespace App\Livewire\Auth;
 
 use App\Models\Agent;
 use App\Models\User;
+use App\Support\CajeroVendorResolver;
 use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -51,14 +52,13 @@ class Login extends Component
             return;
         }
 
-        if ($this->attemptPanelLogin('username') || $this->attemptPanelLogin('email')) {
+        if ($this->attemptPanelLogin()) {
             RateLimiter::clear($this->throttleKey());
 
             return;
         }
 
         RateLimiter::hit($this->throttleKey(), self::LOCKOUT_SECONDS);
-        $remaining = self::MAX_ATTEMPTS - RateLimiter::attempts($this->throttleKey());
         $this->addError('username', 'Usuario o contrasena incorrectos.');
         $this->reset('password');
     }
@@ -96,7 +96,7 @@ class Login extends Component
         ])->layout('layouts.auth');
     }
 
-    private function attemptPanelLogin(string $field): bool
+    private function attemptPanelLogin(): bool
     {
         $user = $this->findUserForLogin();
 
@@ -125,9 +125,9 @@ class Login extends Component
             return true;
         }
 
-        if ($user?->hasRole(Roles::CAJERO) && $user->vendor_id && $user->vendor?->is_active) {
+        if ($user?->hasRole(Roles::CAJERO) && $vendor = CajeroVendorResolver::activeVendorFor($user)) {
             session()->forget(['active_agent_id', 'active_line_id']);
-            session(['active_vendor_id' => $user->vendor_id]);
+            session(['active_vendor_id' => $vendor->id]);
 
             $this->redirect(route('admin.dashboard'), navigate: false);
 

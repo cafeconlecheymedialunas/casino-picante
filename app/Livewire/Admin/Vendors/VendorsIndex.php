@@ -8,6 +8,7 @@ use App\Models\Vendor;
 use App\Support\FontAwesomeIcons;
 use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -149,7 +150,7 @@ class VendorsIndex extends Component
                     'name' => $this->username,
                     'username' => $this->username,
                     'email' => $this->email,
-                    'password' => $this->password,
+                    'password' => Hash::make($this->password),
                     'role_id' => $role->id,
                     'status' => 'active',
                 ]));
