@@ -756,6 +756,7 @@ class DatabaseSeeder extends Seeder
 
                 $agentForLine = $agents[$index % $agents->count()];
                 LineAgent::create([
+                    'vendor_id' => $vendor->id,
                     'line_id' => $line->id,
                     'agent_id' => $agentForLine->id,
                     'role' => LineRoles::ENCARGADO,
@@ -764,6 +765,7 @@ class DatabaseSeeder extends Seeder
                 ]);
                 foreach (Permissions::all() as $perm) {
                     LineAgentPermission::create([
+                        'vendor_id' => $vendor->id,
                         'line_id' => $line->id,
                         'agent_id' => $agentForLine->id,
                         'permission' => $perm,
@@ -771,6 +773,7 @@ class DatabaseSeeder extends Seeder
                 }
 
                 LineRating::create([
+                    'vendor_id' => $vendor->id,
                     'line_id' => $line->id,
                     'user_id' => $clients[$index % $clients->count()]->id,
                     'rating' => 5,
@@ -830,6 +833,7 @@ class DatabaseSeeder extends Seeder
 
             foreach (range(1, 8) as $n) {
                 RaffleNumber::create([
+                    'vendor_id' => $vendor->id,
                     'raffle_id' => $raffle->id,
                     'user_id' => $clients[($n - 1) % $clients->count()]->id,
                     'line_id' => $vendorLines->first()->id,
