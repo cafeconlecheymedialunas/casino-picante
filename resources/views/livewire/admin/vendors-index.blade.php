@@ -14,6 +14,7 @@
     .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
     .b-active { background:rgba(37,196,107,.15); color:#25c46b; }
     .b-inactive { background:rgba(255,80,80,.15); color:#ff5050; }
+    .b-direct { background:rgba(255,106,26,.15); color:var(--orange); }
     .btn-icon { width:32px; height:32px; border:1px solid var(--line); border-radius:7px; background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
     .btn-icon:hover { border-color:var(--orange); color:var(--white); }
     .modal-overlay { position:fixed; inset:0; z-index:240; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(0,0,0,.78); }
@@ -86,6 +87,7 @@
                     <th>Nombre</th>
                     <th>Slug</th>
                     <th>Usuario Cajero</th>
+                    <th>Tipo</th>
                     <th>Estado</th>
                     <th style="text-align:right">Acciones</th>
                 </tr>
@@ -103,6 +105,13 @@
                             </div>
                         @else
                             <span style="color:#ff5050;font-size:12px">Sin usuario</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($vendor->is_direct)
+                            <span class="badge b-direct"><i class="fa-solid fa-crown" style="font-size:9px;margin-right:4px"></i>Oficial</span>
+                        @else
+                            <span class="badge" style="background:rgba(255,255,255,.06);color:var(--muted)">Cajero</span>
                         @endif
                     </td>
                     <td>
@@ -257,9 +266,19 @@
                     @error('brandingJson') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
 
-                <div class="check-row">
-                    <input type="checkbox" wire:model="is_active" id="active-check">
-                    <label for="active-check">Cajero activo</label>
+                <div style="display:flex;flex-direction:column;gap:12px;padding:16px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px">
+                    <div class="check-row">
+                        <input type="checkbox" wire:model="is_active" id="active-check">
+                        <label for="active-check">Cajero activo</label>
+                    </div>
+                    <div class="check-row">
+                        <input type="checkbox" wire:model="is_direct" id="direct-check">
+                        <label for="direct-check" style="display:flex;align-items:center;gap:6px">
+                            <i class="fa-solid fa-crown" style="color:var(--orange);font-size:12px"></i>
+                            Cajero oficial / directo
+                            <span style="font-size:11px;font-weight:400;color:var(--muted-2)">(aparece en la tab "Directas" del frontend)</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="modal-actions" style="margin-top:24px;justify-content:flex-end">

@@ -41,6 +41,8 @@ class VendorsIndex extends Component
 
     public $is_active = true;
 
+    public $is_direct = false;
+
     public $description;
 
     public $logo;
@@ -172,6 +174,7 @@ class VendorsIndex extends Component
                 'features' => $this->normalizedfeatures(),
                 'branding' => $branding,
                 'is_active' => $this->is_active,
+                'is_direct' => $this->is_direct,
             ]);
 
             if ($this->logoUpload) {
@@ -214,6 +217,7 @@ class VendorsIndex extends Component
         $this->user_id = $vendor->user_id;
         $this->selected_user_id = $vendor->user_id;
         $this->is_active = $vendor->is_active;
+        $this->is_direct = $vendor->is_direct;
         $this->description = $vendor->description;
         $this->logo = $vendor->logo;
         $this->heroImage = $vendor->hero_image;
@@ -274,6 +278,7 @@ class VendorsIndex extends Component
         $this->user_id = null;
         $this->selected_user_id = null;
         $this->is_active = true;
+        $this->is_direct = false;
         $this->description = '';
         $this->logo = '';
         $this->heroImage = '';
