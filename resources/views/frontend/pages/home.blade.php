@@ -200,19 +200,27 @@
             ])
 
             @if($bonusItems->count())
-                <div class="bonus-carousel-wrapper" x-data="bonusCarousel()">
-                    <button type="button" class="slider-btn slider-btn-prev" @click="prev()">
-                        <i class="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <div class="bonus-carousel" x-ref="track">
+                @if($bonusItems->count() > 4)
+                    <div class="bonus-carousel-wrapper" x-data="bonusCarousel()">
+                        <button type="button" class="slider-btn slider-btn-prev" @click="prev()">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="bonus-carousel" x-ref="track">
+                            @foreach($bonusItems as $bonus)
+                                @include('frontend.components.bonus-card', ['bonus' => $bonus])
+                            @endforeach
+                        </div>
+                        <button type="button" class="slider-btn slider-btn-next" @click="next()">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                @else
+                    <div class="bonus-grid">
                         @foreach($bonusItems as $bonus)
                             @include('frontend.components.bonus-card', ['bonus' => $bonus])
                         @endforeach
                     </div>
-                    <button type="button" class="slider-btn slider-btn-next" @click="next()">
-                        <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
+                @endif
             @else
                 <div class="empty-panel">No hay bonos activos vigentes.</div>
             @endif
@@ -472,6 +480,7 @@
     @media (max-width: 768px) {
         .slider-btn { display: flex !important; width: 36px; height: 36px; top: 50%; }
     }
+    .bonus-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; padding:4px 0 16px; }
     .bonus-carousel-wrapper { position:relative; width:100%; }
     .bonus-carousel-wrapper .slider-btn-prev { left:0; }
     .bonus-carousel-wrapper .slider-btn-next { right:0; }
