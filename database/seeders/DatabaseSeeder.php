@@ -90,6 +90,7 @@ class DatabaseSeeder extends Seeder
         $this->seedHomeConfig($posts, $bonuses);
         $this->seedHomeSections($posts, $bonuses);
         $vendors = $this->seedVendors($roles[Roles::CAJERO], $platforms, $agents, $clients, $bonuses, $raffles, $posts);
+        $this->assignDemoClientsToVendors($clients, $vendors);
         $this->seedVendorHomeSections($vendors, $bonuses, $raffles, $posts);
         $this->seedSupportData($lines, $agents, $clients, $posts, $platforms);
 
@@ -723,6 +724,8 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]);
 
+            $user->forceFill(['vendor_id' => $vendor->id])->save();
+
             // Lines owned by this vendor
             $vendorLines = collect();
             foreach (range(1, 2) as $lineNum) {
@@ -942,6 +945,40 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    private function assignDemoClientsToVendors(Collection $clients, Collection $vendors): void
+    {
+        if ($clients->isEmpty() || $vendors->isEmpty()) {
+            return;
+        }
+
+        $vendors = $vendors->values();
+
+        $clients->values()->each(function (User $client, int $index) use ($vendors): void {
+            $vendor = $vendors[$index % $vendors->count()];
+            $line = Line::withoutGlobalScopes()
+                ->where('vendor_id', $vendor->id)
+                ->where('status', 'active')
+                ->orderBy('id')
+                ->first();
+
+            if (! $line) {
+                return;
+            }
+
+            $client->forceFill([
+                'vendor_id' => $vendor->id,
+                'line_id' => $line->id,
+            ])->save();
+
+            $client->lines()->sync([
+                $line->id => [
+                    'vendor_id' => $vendor->id,
+                    'is_active' => $client->status === 'active',
+                ],
+            ]);
+        });
     }
 
     private function seedSupportData(Collection $lines, Collection $agents, Collection $clients, Collection $posts, Collection $platforms): void

@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\AdminPasswordReset;
 use App\Support\Roles;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -37,6 +38,15 @@ class AdminForgotPassword extends Component
         $this->error = '';
         $this->validate();
         $email = trim(strtolower($this->email));
+
+        $key = 'admin-forgot-password:' . $email;
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $seconds = RateLimiter::availableIn($key);
+            $this->addError('email', "Demasiados intentos. Intentá nuevamente en {$seconds} segundos.");
+
+            return;
+        }
+        RateLimiter::hit($key, 300);
 
         $agent = Agent::withoutGlobalScopes()->where('email', $email)->first();
         $user = User::withoutGlobalScopes()
