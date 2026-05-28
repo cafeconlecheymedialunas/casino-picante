@@ -69,6 +69,7 @@ class MessageChat extends Component
         ]);
 
         $chat = Chat::create([
+            'vendor_id' => session('active_vendor_id'),
             'user_id' => $this->userId,
             'subject' => trim($this->subject),
             'status' => 'open',
@@ -77,6 +78,7 @@ class MessageChat extends Component
         ]);
 
         ChatMessage::create([
+            'vendor_id' => $chat->vendor_id,
             'chat_id' => $chat->id,
             'user_id' => $this->userId,
             'message' => trim($this->newChatMessage),
@@ -103,6 +105,7 @@ class MessageChat extends Component
         ]);
 
         ChatMessage::create([
+            'vendor_id' => $chat->vendor_id,
             'chat_id' => $chat->id,
             'user_id' => $this->isAgent
                 ? ($this->agentId ? null : auth()->id())  // admin sin agent record usa su propio user_id
@@ -259,7 +262,7 @@ class MessageChat extends Component
             return [(int) $lineId];
         }
 
-        return LineAgent::where('agent_id', session('active_agent_id'))
+        return LineAgent::withoutGlobalScopes()->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
             ->pluck('line_id')
             ->map(fn ($id) => (int) $id)
