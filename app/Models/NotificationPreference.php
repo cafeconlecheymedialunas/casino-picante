@@ -16,14 +16,14 @@ class NotificationPreference extends Model
     public static function isEnabled(string $module, ?int $agentId = null): bool
     {
         if ($agentId) {
-            $agentPref = static::where('module', $module)
+            $agentPref = static::withoutGlobalScopes()->where('module', $module)
                 ->where('agent_id', $agentId)
                 ->first();
 
             return $agentPref ? (bool) $agentPref->is_enabled : true;
         }
 
-        $pref = static::where('module', $module)
+        $pref = static::withoutGlobalScopes()->where('module', $module)
             ->whereNull('agent_id')
             ->first();
 

@@ -49,7 +49,7 @@ class AuthorizeLine
 
         // Validate session agent_id belongs to user
         $sessionAgentId = session('active_agent_id');
-        if ($sessionAgentId && ! Agent::where('id', $sessionAgentId)->where('user_id', $user->id)->exists()) {
+        if ($sessionAgentId && ! Agent::withoutGlobalScopes()->where('id', $sessionAgentId)->where('user_id', $user->id)->exists()) {
             session()->forget(['active_agent_id', 'active_line_id']);
             $sessionAgentId = null;
         }
@@ -59,7 +59,7 @@ class AuthorizeLine
             session(['active_agent_id' => $agentId]);
         }
 
-        $agent = Agent::where('id', $agentId)->where('user_id', $user->id)->first();
+        $agent = Agent::withoutGlobalScopes()->where('id', $agentId)->where('user_id', $user->id)->first();
         if (! $agent || $agent->status !== 'active') {
             abort(403, 'Agente inactivo o no encontrado.');
         }
@@ -67,7 +67,7 @@ class AuthorizeLine
         // Resolve active line (auto-assign first available if not in session)
         $lineId = session('active_line_id');
         if (! $lineId) {
-            $first = LineAgent::where('agent_id', $agentId)->where('is_active', true)->first();
+            $first = LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)->where('is_active', true)->first();
             if (! $first) {
                 return redirect()->route('admin.perfil')->with('error', 'No tenés líneas asignadas.');
             }
@@ -76,14 +76,14 @@ class AuthorizeLine
         }
 
         // Verify agent belongs to this line
-        $lineAgent = LineAgent::where('line_id', $lineId)
+        $lineAgent = LineAgent::withoutGlobalScopes()->where('line_id', $lineId)
             ->where('agent_id', $agentId)
             ->where('is_active', true)
             ->first();
 
         if (! $lineAgent) {
             // Reassign to the agent's first active line
-            $first = LineAgent::where('agent_id', $agentId)->where('is_active', true)->first();
+            $first = LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)->where('is_active', true)->first();
             if (! $first) {
                 return redirect()->route('admin.perfil')->with('error', 'No pertenecés a ninguna línea activa.');
             }
@@ -98,7 +98,7 @@ class AuthorizeLine
             : [];
 
         if ($permissions && ! collect($permissions)->contains(fn (string $perm) => $lineAgent->hasPermission(trim($perm)))) {
-            $permittedLineAgent = LineAgent::where('agent_id', $agentId)
+            $permittedLineAgent = LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)
                 ->where('is_active', true)
                 ->whereExists(function ($permissionQuery) use ($permissions) {
                     $permissionQuery->selectRaw('1')

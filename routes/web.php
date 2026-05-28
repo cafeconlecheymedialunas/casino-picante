@@ -272,7 +272,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         if (
             ! $agentId ||
-            ! LineAgent::where('agent_id', $agentId)
+            ! LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)
                 ->where('line_id', $id)
                 ->where('is_active', true)
                 ->exists()

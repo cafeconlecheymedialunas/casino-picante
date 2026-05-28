@@ -81,7 +81,7 @@ class Bonus extends Model
 
     public function assignments()
     {
-        return $this->hasMany(BonusAssignment::class);
+        return $this->hasMany(BonusAssignment::class)->withoutGlobalScopes();
     }
 
     public function line()
