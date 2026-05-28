@@ -25,6 +25,9 @@ class ResolvePublicVendor
         $request->route()->setParameter('vendor', $vendor);
         view()->share('publicVendor', $vendor);
 
+        // Set session so /registro knows which vendor the client is registering under
+        $request->session()->put('active_vendor_id', $vendor->id);
+
         return $next($request);
     }
 }

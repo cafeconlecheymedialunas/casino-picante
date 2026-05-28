@@ -183,12 +183,16 @@ class UsersIndex extends Component
         $username = trim($this->username);
         $status = $this->userStatus === 'inactive' ? 'inactive' : 'active';
 
+        $vendorId = (int) (session('active_vendor_id')
+            ?: ($this->preferredLineId ? \App\Models\Line::withoutGlobalScopes()->find($this->preferredLineId)?->vendor_id : null));
+
         $data = [
             'role_id' => Role::where('name', Roles::CLIENTE)->value('id'),
             'username' => $username !== '' ? $username : $this->makeUsername(trim($this->name), trim($this->email)),
             'name' => trim($this->name),
             'apellido' => trim($this->apellido) ?: null,
             'line_id' => $this->preferredLineId,
+            'vendor_id' => $vendorId ?: null,
             'email' => trim($this->email),
             'phone' => $this->phone ?: null,
             'contact' => $this->contact ?: null,

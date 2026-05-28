@@ -8,7 +8,9 @@ use App\Models\Line;
 use App\Models\Platform;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Models\Role;
 use App\Support\Permissions;
+use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Carbon\Carbon;
@@ -275,7 +277,8 @@ class Bonos extends Component
                 continue;
             }
 
-            if ($user->status !== 'active' || ! $this->clientBelongsToLine($user, (int) $bonus->line_id)) {
+            $lineCheck = ! $bonus->line_id || $this->isAdminMode() || $this->clientBelongsToLine($user, (int) $bonus->line_id);
+            if ($user->status !== 'active' || ! $lineCheck) {
                 $skipped[] = $user->username ?? $user->email;
 
                 continue;
@@ -461,28 +464,12 @@ class Bonos extends Component
 
         $platform = Platform::withoutGlobalScopes()->find((int) $platformId);
         abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
-
-        $vendorId = session('active_vendor_id') ?: $line?->vendor_id;
-
-        if ($vendorId && $platform->vendor_id && (int) $platform->vendor_id !== (int) $vendorId) {
-            abort(403, 'No podes usar plataformas fuera de tu vendor.');
-        }
     }
 
     private function availablePlatforms(): Collection
     {
-        $vendorId = session('active_vendor_id');
-
-        if (! $vendorId && $this->lineId) {
-            $vendorId = Line::withoutGlobalScopes()->whereKey((int) $this->lineId)->value('vendor_id');
-        }
-
         return Platform::withoutGlobalScopes()
             ->where('is_active', true)
-            ->when($vendorId, fn ($query) => $query->where(function ($platforms) use ($vendorId) {
-                $platforms->where('vendor_id', (int) $vendorId)
-                    ->orWhereNull('vendor_id');
-            }))
             ->orderBy('name')
             ->get();
     }
@@ -524,18 +511,33 @@ class Bonos extends Component
 
     public function getUsersForAssign(): array
     {
+        $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
         $lineId = $this->selectedBonusId
             ? (int) $this->accessibleBonusesQuery()->find($this->selectedBonusId)?->line_id
             : (int) session('active_line_id');
+        $vendorId = session('active_vendor_id');
 
-        return User::where(function ($query) use ($lineId) {
-            $query->where('line_id', $lineId)
-                ->orWhereHas('lines', fn ($q) => $q->where('lines.id', $lineId)->wherePivot('is_active', true));
-        })
+        $query = User::withoutGlobalScopes()
+            ->when($clientRoleId, fn ($q) => $q->where('role_id', $clientRoleId))
             ->where('status', 'active')
-            ->orderBy('username')
-            ->get(['id', 'username', 'email'])
-            ->map(fn ($u) => ['id' => $u->id, 'label' => $u->username ?? $u->email])
+            ->orderBy('username');
+
+        // Admin sees all clients; cajero sees only their vendor's clients
+        if (! $this->isAdminMode()) {
+            if ($lineId) {
+                $query->where(function ($q) use ($lineId, $vendorId) {
+                    $q->where('line_id', $lineId)
+                        ->orWhereHas('lines', fn ($lq) => $lq->where('lines.id', $lineId)->wherePivot('is_active', true))
+                        ->orWhere('vendor_id', $vendorId);
+                });
+            } elseif ($vendorId) {
+                $query->where('vendor_id', $vendorId);
+            }
+        }
+
+        return $query
+            ->get(['id', 'username', 'name', 'email'])
+            ->map(fn ($u) => ['id' => $u->id, 'label' => $u->username ?? $u->name ?? $u->email])
             ->toArray();
     }
 

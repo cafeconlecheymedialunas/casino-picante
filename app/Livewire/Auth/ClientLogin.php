@@ -105,7 +105,7 @@ class ClientLogin extends Component
         if ($user?->hasRole(Roles::CLIENTE)) {
             if (! $user->vendor_id || ! $user->vendor?->is_active) {
                 Auth::logout();
-                $this->addGenericError();
+                $this->addError('username', 'Tu cuenta está temporalmente inactiva. Contactá a tu cajero.');
 
                 return true;
             }

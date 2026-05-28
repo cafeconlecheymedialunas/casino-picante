@@ -26,7 +26,7 @@ class LineShow extends Component
         $this->line = $line->load(['activePlatforms', 'lineAgents.agent']);
 
         if (auth()->check()) {
-            $rating = $this->line->ratings()->where('user_id', auth()->id())->first();
+            $rating = $this->line->ratings()->withoutGlobalScopes()->where('user_id', auth()->id())->first();
             $this->selectedRating = $rating?->rating;
             $this->ratingMessage = $rating?->message ?? '';
         }
@@ -55,7 +55,7 @@ class LineShow extends Component
             'ratingMessage.max' => 'El mensaje no puede superar 500 caracteres.',
         ]);
 
-        LineRating::updateOrCreate(
+        LineRating::withoutGlobalScopes()->updateOrCreate(
             ['line_id' => $this->line->id, 'user_id' => auth()->id()],
             [
                 'vendor_id' => $this->line->vendor_id,
@@ -67,8 +67,8 @@ class LineShow extends Component
 
     public function render()
     {
-        $ratingAverage = (float) $this->line->ratings()->avg('rating');
-        $ratingCount = $this->line->ratings()->count();
+        $ratingAverage = (float) $this->line->ratings()->withoutGlobalScopes()->avg('rating');
+        $ratingCount = $this->line->ratings()->withoutGlobalScopes()->count();
 
         $activeBonuses = Bonus::withoutGlobalScopes()
             ->where('line_id', $this->line->id)
@@ -88,7 +88,7 @@ class LineShow extends Component
             'line' => $this->line,
             'ratingAverage' => $ratingAverage,
             'ratingCount' => $ratingCount,
-            'ratings' => $this->line->ratings()->with('user')->latest()->take(8)->get(),
+            'ratings' => $this->line->ratings()->withoutGlobalScopes()->with('user')->latest()->take(8)->get(),
             'activeBonuses' => $activeBonuses,
             'activeRaffles' => $activeRaffles,
         ])->layout('frontend.layouts.app');

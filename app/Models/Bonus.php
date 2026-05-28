@@ -210,7 +210,7 @@ class Bonus extends Model
     {
         do {
             $code = 'BONO-'.strtoupper(substr(md5(uniqid()), 0, 8));
-        } while (self::where('code', $code)->exists());
+        } while (self::withoutGlobalScopes()->where('code', $code)->exists());
 
         return $code;
     }

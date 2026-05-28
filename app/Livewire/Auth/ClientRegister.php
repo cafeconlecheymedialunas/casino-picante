@@ -46,9 +46,18 @@ class ClientRegister extends Component
         $validated = $this->validate();
         $vendorId = session('active_vendor_id');
 
-        if (! $vendorId || ! Vendor::query()->whereKey($vendorId)->where('is_active', true)->exists()) {
+        if ($vendorId && ! Vendor::query()->whereKey($vendorId)->where('is_active', true)->exists()) {
+            $vendorId = null;
+        }
+
+        if (! $vendorId) {
+            $vendorId = Vendor::where('is_direct', true)->where('is_active', true)->value('id')
+                ?? Vendor::where('is_active', true)->value('id');
+        }
+
+        if (! $vendorId) {
             throw ValidationException::withMessages([
-                'username' => 'Ingresá desde el link de un cajero activo para registrarte.',
+                'username' => 'No hay cajeros activos disponibles en este momento.',
             ]);
         }
 

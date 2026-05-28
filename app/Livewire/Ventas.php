@@ -328,12 +328,6 @@ class Ventas extends Component
 
         $platform = Platform::withoutGlobalScopes()->find((int) $platformId);
         abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
-
-        $vendorId = session('active_vendor_id') ?: $line?->vendor_id;
-
-        if ($vendorId && $platform->vendor_id && (int) $platform->vendor_id !== (int) $vendorId) {
-            abort(403, 'No podes usar plataformas fuera de tu vendor.');
-        }
     }
 
     private function platformVendorIdForForm(): ?int

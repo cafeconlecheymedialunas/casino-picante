@@ -4,6 +4,7 @@ namespace App\Livewire\Auth;
 
 use App\Models\Agent;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\CajeroVendorResolver;
 use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
@@ -108,7 +109,15 @@ class Login extends Component
         session()->regenerate();
 
         if ($user?->hasRole(Roles::ADMIN)) {
-            session()->forget(['active_agent_id', 'active_line_id', 'active_vendor_id']);
+            session()->forget(['active_agent_id', 'active_line_id']);
+
+            if (! session('active_vendor_id')) {
+                $default = Vendor::where('is_direct', true)->where('is_active', true)->first()
+                    ?? Vendor::where('is_active', true)->first();
+                if ($default) {
+                    session(['active_vendor_id' => $default->id]);
+                }
+            }
 
             $this->redirect(route('admin.dashboard'), navigate: false);
 

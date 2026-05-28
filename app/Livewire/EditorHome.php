@@ -217,8 +217,9 @@ class EditorHome extends Component
 
         $section = $this->homeSectionQuery($key)->first();
         if ($section) {
-            $section->update(['enabled' => ! $section->enabled]);
-            $this->sections[$key]['enabled'] = ! $section->enabled;
+            $newEnabled = ! $section->enabled;
+            $section->update(['enabled' => $newEnabled]);
+            $this->sections[$key]['enabled'] = $newEnabled;
         }
     }
 

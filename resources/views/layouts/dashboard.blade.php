@@ -802,7 +802,7 @@
                 $sidebarIsPanelOwner = $sidebarIsAdmin || ($sidebarUser?->hasRole(\App\Support\Roles::CAJERO) ?? false);
                 $activeVendorId = session('active_vendor_id');
                 $sidebarVendors = $sidebarIsAdmin
-                    ? \App\Models\Vendor::query()->where('is_active', true)->orderBy('name')->get()
+                    ? \App\Models\Vendor::query()->where('is_active', true)->orderByDesc('is_direct')->orderBy('name')->get()
                     : collect();
                 $sessionAgentId = session('active_agent_id');
                 $sessionLineId  = session('active_line_id');
@@ -849,7 +849,7 @@
                         <option value="0" {{ !$activeVendorId ? 'selected' : '' }}>Global - solo lectura</option>
                         @foreach($sidebarVendors as $vendorOption)
                         <option value="{{ $vendorOption->id }}" {{ (int) $activeVendorId === (int) $vendorOption->id ? 'selected' : '' }}>
-                            {{ $vendorOption->name }}
+                            {{ $vendorOption->is_direct ? '★ ' : '' }}{{ $vendorOption->name }}
                         </option>
                         @endforeach
                     </select>

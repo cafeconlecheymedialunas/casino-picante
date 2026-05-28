@@ -320,7 +320,8 @@ class Sorteos extends Component
             return;
         }
 
-        $occupied = RaffleNumber::where('raffle_id', $raffle->id)
+        $occupied = RaffleNumber::withoutGlobalScopes()
+            ->where('raffle_id', $raffle->id)
             ->whereIn('number', $numbers)
             ->get()
             ->keyBy('number');
@@ -402,7 +403,8 @@ class Sorteos extends Component
 
         $raffle = $this->findAccessibleRaffle((int) $this->selectedRaffleId);
 
-        $occupiedSelected = RaffleNumber::where('raffle_id', $raffle->id)
+        $occupiedSelected = RaffleNumber::withoutGlobalScopes()
+            ->where('raffle_id', $raffle->id)
             ->whereIn('number', collect($this->selectedNumbers)->map(fn ($number) => (int) $number)->unique()->values())
             ->pluck('number')
             ->map(fn ($number) => (int) $number);
@@ -413,7 +415,8 @@ class Sorteos extends Component
             return;
         }
 
-        $deleted = RaffleNumber::where('raffle_id', $raffle->id)
+        $deleted = RaffleNumber::withoutGlobalScopes()
+            ->where('raffle_id', $raffle->id)
             ->whereIn('number', $occupiedSelected)
             ->delete();
 
@@ -825,21 +828,6 @@ class Sorteos extends Component
 
         $platform = Platform::withoutGlobalScopes()->find((int) $this->platform_id);
         abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
-
-        $vendorIds = collect($this->lineIds)
-            ->map(fn ($lineId) => Line::withoutGlobalScopes()->whereKey((int) $lineId)->value('vendor_id'))
-            ->filter()
-            ->map(fn ($vendorId) => (int) $vendorId)
-            ->unique()
-            ->values();
-
-        if (session('active_vendor_id')) {
-            $vendorIds = collect([(int) session('active_vendor_id')]);
-        }
-
-        if ($vendorIds->isNotEmpty() && $platform->vendor_id && ! $vendorIds->contains((int) $platform->vendor_id)) {
-            abort(403, 'No podes usar plataformas fuera de tu vendor.');
-        }
     }
 
     private function assignmentLineId(?Raffle $raffle = null): ?int
@@ -918,7 +906,14 @@ class Sorteos extends Component
             return collect();
         }
 
-        return RaffleNumber::with(['user', 'line'])
+        $userTotals = RaffleNumber::withoutGlobalScopes()
+            ->where('raffle_id', $this->selectedRaffleId)
+            ->selectRaw('user_id, COUNT(*) as total')
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
+
+        return RaffleNumber::withoutGlobalScopes()
+            ->with(['user', 'line'])
             ->where('raffle_id', $this->selectedRaffleId)
             ->when($this->participantsLineFilter !== 'all', fn ($query) => $query->where('line_id', $this->participantsLineFilter))
             ->when($this->participantsSearch, function ($query) {
@@ -932,12 +927,8 @@ class Sorteos extends Component
             ->latest()
             ->take(10)
             ->get()
-            ->map(function (RaffleNumber $number) {
-                $number->total_for_user = RaffleNumber::where('raffle_id', $number->raffle_id)
-                    ->where('user_id', $number->user_id)
-                    ->count();
-
-                return $number;
+            ->each(function (RaffleNumber $number) use ($userTotals) {
+                $number->total_for_user = $userTotals[$number->user_id] ?? 0;
             });
     }
 

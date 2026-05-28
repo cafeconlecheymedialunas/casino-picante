@@ -165,6 +165,11 @@ class Agentes extends Component
             $data['password'] = Hash::make($this->password);
         }
 
+        $vendorId = session('active_vendor_id');
+        if ($vendorId) {
+            $data['vendor_id'] = (int) $vendorId;
+        }
+
         if ($this->editingAgentId) {
             $agent = Agent::findOrFail($this->editingAgentId);
             $this->authorizeAgentScope($agent);

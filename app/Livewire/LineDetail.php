@@ -1077,11 +1077,7 @@ class LineDetail extends Component
 
     private function authorizePlatformChoice(int $platformId): void
     {
-        if (! session('active_vendor_id')) {
-            return;
-        }
-
-        abort_unless(Platform::whereKey($platformId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar plataformas fuera de tu vendor.');
+        abort_unless(Platform::whereKey($platformId)->exists(), 403, 'La plataforma seleccionada no existe.');
     }
 
     private function authorizePlatformChoices(array $platforms): void

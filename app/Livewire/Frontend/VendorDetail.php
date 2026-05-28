@@ -86,12 +86,10 @@ class VendorDetail extends Component
             'raffleLimit' => $raffleLimit,
             'totalPlatforms' => Platform::whereHas('lines', fn ($q) => $q->withoutGlobalScopes()->whereIn('lines.id', $allLineIds)->wherePivot('is_active', true)
             )->where('is_active', true)->count(),
-            'averageRating' => round((float) Line::withoutGlobalScopes()
-                ->whereIn('id', $allLineIds)->with('ratings')->get()
-                ->avg(fn ($l) => $l->average_rating), 1),
-            'ratingsCount' => (int) Line::withoutGlobalScopes()
-                ->whereIn('id', $allLineIds)->withCount('ratings')->get()
-                ->sum('ratings_count'),
+            'averageRating' => round((float) \App\Models\LineRating::withoutGlobalScopes()
+                ->whereIn('line_id', $allLineIds)->avg('rating') ?? 0, 1),
+            'ratingsCount' => (int) \App\Models\LineRating::withoutGlobalScopes()
+                ->whereIn('line_id', $allLineIds)->count(),
             'agents' => Agent::whereHas('lines', fn ($q) => $q->where('lines.vendor_id', $vendorId))->get(),
             'totalClients' => Sale::withoutGlobalScopes()
                 ->whereIn('line_id', $allLineIds)

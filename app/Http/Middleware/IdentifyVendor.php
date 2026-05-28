@@ -21,6 +21,16 @@ class IdentifyVendor
             if ($user->hasRole(Roles::ADMIN)) {
                 $activeVendorId = $request->session()->get('active_vendor_id');
 
+                // Auto-assign Cajero Oficial when admin has no vendor selected
+                if (! $activeVendorId) {
+                    $default = Vendor::where('is_direct', true)->where('is_active', true)->first()
+                        ?? Vendor::where('is_active', true)->first();
+                    if ($default) {
+                        $request->session()->put('active_vendor_id', $default->id);
+                        $activeVendorId = $default->id;
+                    }
+                }
+
                 if ($activeVendorId && ! Vendor::query()->whereKey($activeVendorId)->where('is_active', true)->exists()) {
                     $request->session()->forget(['active_vendor_id', 'active_line_id']);
                 } elseif ($activeVendorId && $request->session()->get('active_line_id')) {

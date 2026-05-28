@@ -96,6 +96,7 @@ class DatabaseSeeder extends Seeder
         $this->seedHomeSections($posts, $bonuses, $lines);
         $vendors = $this->seedVendors($roles[Roles::CAJERO], $platforms, $agents, $clients, $bonuses, $raffles, $posts);
         $this->assignDemoClientsToVendors($clients, $vendors);
+        $this->assignDemoAgentsToVendors($agents, $vendors);
         $this->seedVendorHomeSections($vendors, $bonuses, $raffles, $posts);
         $this->seedSupportData($lines, $agents, $clients, $posts, $platforms);
 
@@ -320,7 +321,8 @@ class DatabaseSeeder extends Seeder
             return $user;
         });
 
-        User::create([
+        // Inactive demo client — vendor_id assigned later via assignDemoClientsToVendors
+        $pausado = User::create([
             'role_id' => $role->id,
             'username' => 'pausado',
             'name' => 'Cliente',
@@ -328,7 +330,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'pausado@demo.test',
             'password' => Hash::make('password'),
             'status' => 'inactive',
+            'line_id' => $lines->first()?->id,
         ]);
+        $clients->push($pausado);
 
         return $clients;
     }
@@ -973,6 +977,37 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    private function assignDemoAgentsToVendors(Collection $agents, Collection $vendors): void
+    {
+        if ($agents->isEmpty() || $vendors->isEmpty()) {
+            return;
+        }
+
+        // Resolve vendor_id for each agent from their LineAgent assignments
+        $agents->each(function (Agent $agent) use ($vendors): void {
+            $vendorId = LineAgent::where('agent_id', $agent->id)
+                ->whereNotNull('vendor_id')
+                ->value('vendor_id');
+
+            // Agents without a line assignment get the first vendor
+            if (! $vendorId) {
+                $vendorId = $vendors->first()?->id;
+            }
+
+            if (! $vendorId) {
+                return;
+            }
+
+            $agent->forceFill(['vendor_id' => $vendorId])->save();
+
+            if ($agent->user_id) {
+                User::withoutGlobalScopes()
+                    ->whereKey($agent->user_id)
+                    ->update(['vendor_id' => $vendorId]);
+            }
+        });
     }
 
     private function assignDemoClientsToVendors(Collection $clients, Collection $vendors): void

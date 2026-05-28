@@ -735,26 +735,7 @@ class Lineas extends Component
 
     private function authorizePlatformChoices(): void
     {
-        if (! session('active_vendor_id')) {
-            return;
-        }
-
-        $selected = collect($this->selectedPlatformIds)
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->unique();
-
-        if ($selected->isEmpty()) {
-            return;
-        }
-
-        $allowed = Platform::whereIn('id', $selected)
-            ->where('vendor_id', (int) session('active_vendor_id'))
-            ->pluck('id');
-
-        if ($selected->diff($allowed)->isNotEmpty()) {
-            abort(403, 'No podes asignar plataformas fuera de tu vendor.');
-        }
+        // Platforms are global — no vendor restriction
     }
 
     private function authorizeAgentChoice(int $agentId): void

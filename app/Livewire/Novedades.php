@@ -282,7 +282,7 @@ class Novedades extends Component
             return;
         }
 
-        abort_unless(Category::whereKey((int) $categoryId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
+        abort_unless(Category::whereKey((int) $categoryId)->where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', (int) session('active_vendor_id')))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
     }
 
     private function authorizeVendorRecord($model): void
