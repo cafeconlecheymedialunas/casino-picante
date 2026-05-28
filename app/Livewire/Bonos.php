@@ -210,6 +210,7 @@ class Bonos extends Component
             $this->notify('Bono actualizado', "El bono {$bonus->title} fue actualizado.", 'bonuses', '/bonos', 'info');
         } else {
             $data['created_by'] = session('active_agent_id');
+            $data['vendor_id'] = $line->vendor_id ?: session('active_vendor_id');
             $bonus = Bonus::create($data);
             session()->flash('message', 'Bono creado correctamente.');
 
@@ -324,7 +325,7 @@ class Bonos extends Component
     public function markClaimed(int $assignmentId): void
     {
         $this->checkLinePermission(Permissions::BONO_READ);
-        $assignment = BonusAssignment::with('bonus')->findOrFail($assignmentId);
+        $assignment = BonusAssignment::withoutGlobalScopes()->with('bonus')->findOrFail($assignmentId);
         $this->authorizeLineChoice((int) $assignment->bonus->line_id);
         $assignment->update(['status' => 'used', 'used_at' => now()]);
 
@@ -498,7 +499,7 @@ class Bonos extends Component
             return collect();
         }
 
-        return BonusAssignment::with('user')
+        return BonusAssignment::withoutGlobalScopes()->with('user')
             ->where('bonus_id', $this->bonusForAssignments)
             ->whereHas('bonus', fn ($bonus) => $bonus->whereIn('line_id', $this->availableLines()->pluck('id')))
             ->when($this->assignmentsSearch, function ($q) {

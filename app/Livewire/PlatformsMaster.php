@@ -54,7 +54,7 @@ class PlatformsMaster extends Component
     {
         $this->ensureAdmin();
 
-        $platform = Platform::find($platformId);
+        $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
         $this->editingPlatform = $platform;
         $this->name = $platform->name;
@@ -125,6 +125,7 @@ class PlatformsMaster extends Component
             session()->flash('message', 'Plataforma actualizada.');
             $this->notify('Plataforma actualizada', "La plataforma {$this->name} fue actualizada.", 'platforms', '/plataformas', 'info');
         } else {
+            $data['vendor_id'] = session('active_vendor_id');
             Platform::create($data);
             session()->flash('message', 'Plataforma creada.');
             $this->notify('Plataforma creada', "La plataforma {$this->name} fue creada exitosamente.", 'platforms', '/plataformas', 'success');
@@ -137,7 +138,7 @@ class PlatformsMaster extends Component
     {
         $this->ensureAdmin();
 
-        $platform = Platform::find($platformId);
+        $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
         $platform->update(['is_active' => ! $platform->is_active]);
 
@@ -154,7 +155,7 @@ class PlatformsMaster extends Component
     {
         $this->ensureAdmin();
 
-        $platform = Platform::find($platformId);
+        $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
         $platformName = $platform->name;
         ImageStorage::delete($platform?->logo_url);
@@ -182,7 +183,7 @@ class PlatformsMaster extends Component
     public function render()
     {
         $this->ensureAdmin();
-        $platforms = Platform::orderBy('name')->get();
+        $platforms = Platform::withoutGlobalScopes()->orderBy('name')->get();
         $canManagePlatforms = $this->isAdminMode();
 
         return view('livewire.platforms-master', compact('platforms', 'canManagePlatforms'))->layout('layouts.dashboard');

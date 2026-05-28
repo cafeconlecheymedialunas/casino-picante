@@ -125,7 +125,7 @@ class NotificationService
         }
 
         if ($agentId) {
-            return Agent::query()->whereKey($agentId)->value('vendor_id');
+            return Agent::withoutGlobalScopes()->whereKey($agentId)->value('vendor_id');
         }
 
         if ($userId) {

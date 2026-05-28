@@ -223,6 +223,7 @@ class Sorteos extends Component
             }
 
             $this->checkLinePermission(Permissions::SORTEO_CREATE);
+            $data['vendor_id'] = session('active_vendor_id');
             $raffle = Raffle::create($data);
             $this->syncRaffleLines($raffle);
             session()->flash('message', 'Sorteo creado');
@@ -506,7 +507,7 @@ class Sorteos extends Component
     public function removeNumber(int $numberId): void
     {
         $this->checkLinePermission(Permissions::SORTEO_UPDATE);
-        $number = RaffleNumber::findOrFail($numberId);
+        $number = RaffleNumber::withoutGlobalScopes()->findOrFail($numberId);
         $this->findAccessibleRaffle((int) $number->raffle_id);
         $number->delete();
         session()->flash('message', 'Numero eliminado');

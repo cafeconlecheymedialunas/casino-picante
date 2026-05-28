@@ -30,7 +30,7 @@ class SendBatchNotificationsJob implements ShouldQueue
 
     public function handle(): void
     {
-        $isEncargado = LineAgent::where('line_id', $this->lineId)
+        $isEncargado = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('agent_id', $this->actingAgentId)
             ->where('role', LineRoles::ENCARGADO)
             ->where('is_active', true)
@@ -42,7 +42,7 @@ class SendBatchNotificationsJob implements ShouldQueue
             return;
         }
 
-        $encargadoIds = LineAgent::where('line_id', $this->lineId)
+        $encargadoIds = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('role', LineRoles::ENCARGADO)
             ->where('is_active', true)
             ->whereHas('agent', fn ($q) => $q->where('status', 'active'))

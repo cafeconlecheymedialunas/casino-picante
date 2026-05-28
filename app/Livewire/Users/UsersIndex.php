@@ -433,7 +433,7 @@ class UsersIndex extends Component
                 ->pluck('id')->map(fn ($id) => (int) $id)->toArray();
         }
 
-        return LineAgent::where('agent_id', session('active_agent_id'))
+        return LineAgent::withoutGlobalScopes()->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
             ->when($vendorId, fn ($q) => $q->whereHas('line', fn ($l) => $l->where('vendor_id', (int) $vendorId)))
             ->pluck('line_id')
