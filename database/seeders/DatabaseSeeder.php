@@ -40,7 +40,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         if (User::withoutGlobalScopes()->exists()) {
-            $this->command->info('La base ya tiene usuarios. Seeder demo omitido.');
+            $this->command->info('Base con datos existentes — corriendo solo seeders complementarios.');
+            $this->call([
+                DirectVendorSeeder::class,
+                HomeSectionSeeder::class,
+                RaffleDemoSeeder::class,
+            ]);
 
             return;
         }
@@ -88,7 +93,7 @@ class DatabaseSeeder extends Seeder
         $raffles = $this->seedRaffles($lines, $platforms, $clients);
         $this->seedCarousel($lines);
         $this->seedHomeConfig($posts, $bonuses);
-        $this->seedHomeSections($posts, $bonuses);
+        $this->seedHomeSections($posts, $bonuses, $lines);
         $vendors = $this->seedVendors($roles[Roles::CAJERO], $platforms, $agents, $clients, $bonuses, $raffles, $posts);
         $this->assignDemoClientsToVendors($clients, $vendors);
         $this->seedVendorHomeSections($vendors, $bonuses, $raffles, $posts);
@@ -508,11 +513,12 @@ class DatabaseSeeder extends Seeder
         ]));
     }
 
-    private function seedHomeSections(Collection $posts, Collection $bonuses): void
+    private function seedHomeSections(Collection $posts, Collection $bonuses, Collection $lines): void
     {
-        $raffles = Raffle::withoutGlobalScopes()->where('status', 'active')->pluck('id')->toArray();
+        $raffleIds = Raffle::withoutGlobalScopes()->where('status', 'active')->pluck('id')->toArray();
         $bonusIds = $bonuses->pluck('id')->toArray();
-        $postIds = $posts->take(3)->pluck('id')->toArray();
+        $postIds = $posts->pluck('id')->toArray();
+        $lineIds = $lines->pluck('id')->toArray();
 
         $sections = [
             [
@@ -537,6 +543,7 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Lineas de',
                 'highlight' => 'atencion',
                 'subtitle' => 'Hablá con una linea, pedi tu usuario, cargá saldo y entrate al casino en minutos.',
+                'line_ids' => $lineIds,
             ],
             [
                 'section_key' => 'sorteo',
@@ -547,7 +554,7 @@ class DatabaseSeeder extends Seeder
                 'highlight' => 'SORTEOS',
                 'subtitle' => 'Nuevas oportunidades para ganar. Registrate y enterate antes que nadie.',
                 'raffle_type' => 'active',
-                'raffle_ids' => $raffles,
+                'raffle_ids' => $raffleIds,
             ],
             [
                 'section_key' => 'nosotros',
@@ -572,6 +579,8 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Bonos',
                 'highlight' => 'activos',
                 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
+                'action_text' => 'Ver todos',
+                'action_url' => '/bonos',
                 'bonus_type' => 'active',
                 'bonus_ids' => $bonusIds,
             ],
@@ -583,6 +592,8 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Noticias y',
                 'highlight' => 'jugadas',
                 'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.',
+                'action_text' => 'Ver novedades',
+                'action_url' => '/blog',
                 'post_type' => '',
                 'post_ids' => $postIds,
             ],
@@ -599,6 +610,8 @@ class DatabaseSeeder extends Seeder
                 'highlight' => $data['highlight'],
                 'subtitle' => $data['subtitle'],
                 'content' => null,
+                'action_text' => $data['action_text'] ?? null,
+                'action_url' => $data['action_url'] ?? null,
                 'repeater_data' => $data['repeater_data'] ?? null,
                 'raffle_type' => $data['raffle_type'] ?? null,
                 'raffle_ids' => $data['raffle_ids'] ?? null,
@@ -606,6 +619,7 @@ class DatabaseSeeder extends Seeder
                 'bonus_ids' => $data['bonus_ids'] ?? null,
                 'post_type' => $data['post_type'] ?? null,
                 'post_ids' => $data['post_ids'] ?? null,
+                'line_ids' => $data['line_ids'] ?? null,
             ]);
         }
     }
@@ -851,13 +865,15 @@ class DatabaseSeeder extends Seeder
         Collection $raffles,
         Collection $posts,
     ): void {
-        $postIds = $posts->take(3)->pluck('id')->toArray();
+        $postIds = $posts->pluck('id')->toArray();
 
         foreach ($vendors as $vendor) {
             $vendorBonusIds = Bonus::withoutGlobalScopes()
                 ->where('vendor_id', $vendor->id)->pluck('id')->toArray();
             $vendorRaffleIds = Raffle::withoutGlobalScopes()
                 ->where('vendor_id', $vendor->id)->pluck('id')->toArray();
+            $vendorLineIds = Line::withoutGlobalScopes()
+                ->where('vendor_id', $vendor->id)->where('status', 'active')->pluck('id')->toArray();
 
             $sections = [
                 [
@@ -877,11 +893,12 @@ class DatabaseSeeder extends Seeder
                 [
                     'section_key' => 'lineas',
                     'order' => 1,
-                    'enabled' => true,
+                    'enabled' => ! empty($vendorLineIds),
                     'kicker' => 'Líneas activas',
                     'title' => 'Nuestras',
                     'highlight' => 'líneas',
                     'subtitle' => 'Líneas de atención propias con soporte directo, cargas rápidas y seguimiento de cada operación.',
+                    'line_ids' => $vendorLineIds,
                 ],
                 [
                     'section_key' => 'sorteo',
@@ -912,6 +929,8 @@ class DatabaseSeeder extends Seeder
                     'title' => 'Bonos de',
                     'highlight' => $vendor->name,
                     'subtitle' => 'Bonos activos para arrancar con ventaja y recargar con beneficio extra.',
+                    'action_text' => 'Ver todos',
+                    'action_url' => '/'.$vendor->slug.'/bonos',
                     'bonus_type' => 'active',
                     'bonus_ids' => $vendorBonusIds,
                 ],
@@ -923,6 +942,8 @@ class DatabaseSeeder extends Seeder
                     'title' => 'Últimas',
                     'highlight' => 'novedades',
                     'subtitle' => 'Enterate de sorteos, bonos y noticias del casino.',
+                    'action_text' => 'Ver novedades',
+                    'action_url' => '/'.$vendor->slug.'/blog',
                     'post_type' => '',
                     'post_ids' => $postIds,
                 ],
@@ -939,6 +960,8 @@ class DatabaseSeeder extends Seeder
                     'highlight' => $data['highlight'],
                     'subtitle' => $data['subtitle'] ?? null,
                     'content' => null,
+                    'action_text' => $data['action_text'] ?? null,
+                    'action_url' => $data['action_url'] ?? null,
                     'repeater_data' => $data['repeater_data'] ?? null,
                     'raffle_type' => $data['raffle_type'] ?? null,
                     'raffle_ids' => $data['raffle_ids'] ?? null,
@@ -946,6 +969,7 @@ class DatabaseSeeder extends Seeder
                     'bonus_ids' => $data['bonus_ids'] ?? null,
                     'post_type' => $data['post_type'] ?? null,
                     'post_ids' => $data['post_ids'] ?? null,
+                    'line_ids' => $data['line_ids'] ?? null,
                 ]);
             }
         }

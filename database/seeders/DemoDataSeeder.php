@@ -6,6 +6,8 @@ use App\Models\Agent;
 use App\Models\Bonus;
 use App\Models\BonusAssignment;
 use App\Models\CarouselItem;
+use App\Models\HomeConfig;
+use App\Models\HomeSection;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
@@ -234,20 +236,23 @@ class DemoDataSeeder extends Seeder
             ['code' => 'RECARGA30', 'title' => 'Bono Recarga 30%', 'percent' => 30, 'max' => 30000],
             ['code' => 'VIP200', 'title' => 'Bono VIP 200%', 'percent' => 200, 'max' => 200000],
         ];
-        foreach ($bonusData as $bd) {
-            $bonusUser = $users[$i % count($users)] ?? $users[0];
-            Bonus::firstOrCreate(
+        foreach ($bonusData as $bi => $bd) {
+            Bonus::withoutGlobalScopes()->firstOrCreate(
                 ['code' => $bd['code']],
                 [
                     'title' => $bd['title'],
                     'description' => 'Bono demo del '.$bd['percent'].'% hasta $'.number_format($bd['max']),
-                    'start_date' => Carbon::now()->subDays(30),
-                    'end_date' => Carbon::now()->addDays(30),
+                    'start_date' => Carbon::now()->subDays(5),
+                    'end_date' => Carbon::now()->addDays(30 - $bi),
+                    'type' => 'general',
                     'bonus_percent' => $bd['percent'],
+                    'bonus_amount' => 0,
+                    'min_deposit' => 0,
                     'max_bonus' => $bd['max'],
+                    'total_quantity' => 200,
+                    'per_user_limit' => 1,
                     'status' => 'active',
-                    'user_id' => $bonusUser->id,
-                    'line_id' => $lines[array_rand($lines)]->id,
+                    'line_id' => $lines[$bi % count($lines)]->id,
                 ]
             );
         }
@@ -367,15 +372,49 @@ class DemoDataSeeder extends Seeder
         $this->command->info('Sorteos listos.');
 
         // ── 12. CAROUSEL ITEMS ──
-        CarouselItem::firstOrCreate(
-            ['title' => 'Bienvenido a RED PICANTES'],
-            ['image' => '/storage/carousel/demo1.jpg', 'link' => route('admin.bonos'), 'order' => 1, 'line_id' => $lines[array_rand($lines)]->id]
-        );
-        CarouselItem::firstOrCreate(
-            ['title' => 'Bonos exclusivos'],
-            ['image' => '/storage/carousel/demo2.jpg', 'link' => route('admin.sorteos'), 'order' => 2, 'line_id' => $lines[array_rand($lines)]->id]
-        );
+        $carouselData = [
+            ['title' => 'Bienvenido a RED PICANTES', 'img' => 'https://picsum.photos/id/1057/1600/680', 'link' => '/lineas'],
+            ['title' => 'Bonos exclusivos activos',   'img' => 'https://picsum.photos/id/1058/1600/680', 'link' => '/bonos'],
+            ['title' => 'Sorteo VIP de la semana',    'img' => 'https://picsum.photos/id/1059/1600/680', 'link' => '/sorteos'],
+        ];
+        foreach ($carouselData as $ci => $cd) {
+            $item = CarouselItem::firstOrCreate(
+                ['title' => $cd['title']],
+                ['image' => $cd['img'], 'link' => $cd['link'], 'order' => $ci + 1, 'line_id' => $lines[$ci % count($lines)]->id]
+            );
+            HomeConfig::firstOrCreate(
+                ['section' => HomeConfig::SECTION_CAROUSEL, 'item_id' => $item->id],
+                ['order' => $ci + 1]
+            );
+        }
         $this->command->info('Carousel items listos.');
+
+        // ── 13. HOME SECTIONS ──
+        $activePosts = Post::withoutGlobalScopes()->where('status', Post::STATUS_PUBLISHED)->take(6)->pluck('id')->toArray();
+        $activeBonuses = Bonus::withoutGlobalScopes()->where('status', 'active')->where('end_date', '>=', now())->take(6)->pluck('id')->toArray();
+        $activeRaffles = Raffle::withoutGlobalScopes()->where('status', 'active')->where('end_date', '>=', now())->pluck('id')->toArray();
+        $activeLines = Line::withoutGlobalScopes()->where('status', 'active')->take(6)->pluck('id')->toArray();
+
+        $homeSections = [
+            ['section_key' => 'como-empezar', 'kicker' => 'Cómo funciona', 'title' => 'Empezá en', 'highlight' => '3 pasos', 'subtitle' => 'Sin vueltas: contacto, carga y juego. Si necesitás ayuda, una persona te responde.', 'repeater_data' => [['title' => 'Pedí tu usuario', 'subtitle' => 'Elegí una línea de atención y solicitá el acceso.'], ['title' => 'Cargá saldo', 'subtitle' => 'Consultá los medios de pago y acreditamos al instante.'], ['title' => 'Jugá', 'subtitle' => 'Entrá a la plataforma y disfrutá del casino online.']]],
+            ['section_key' => 'lineas', 'kicker' => 'Empezá a jugar', 'title' => 'Líneas de', 'highlight' => 'atención', 'subtitle' => 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.', 'line_ids' => $activeLines],
+            ['section_key' => 'sorteo', 'kicker' => 'Muy pronto', 'title' => 'PRÓXIMOS', 'highlight' => 'SORTEOS', 'subtitle' => 'Nuevas oportunidades para ganar. Registrate y enterate antes que nadie.', 'raffle_ids' => $activeRaffles],
+            ['section_key' => 'nosotros', 'kicker' => 'Sobre nosotros', 'title' => 'Casino online con atención', 'highlight' => 'real', 'subtitle' => 'Una experiencia pensada para jugar fácil: acceso rápido, bonos claros, sorteos activos y soporte humano.', 'repeater_data' => [['title' => 'Alta rápida', 'subtitle' => 'Pedís tu usuario sin formularios eternos.'], ['title' => 'Bonos vigentes', 'subtitle' => 'Bonos para recargar y jugar más.'], ['title' => 'Sorteos activos', 'subtitle' => 'Premios y chances extra para los participantes.'], ['title' => 'Soporte humano', 'subtitle' => 'Atención directa para cargas, retiros y dudas.']]],
+            ['section_key' => 'bonos', 'kicker' => 'Bonos para jugar más', 'title' => 'Bonos', 'highlight' => 'activos', 'subtitle' => 'Bonos vigentes para arrancar mejor y aprovechar cada jugada.', 'action_text' => 'Ver todos', 'action_url' => '/bonos', 'bonus_ids' => $activeBonuses],
+            ['section_key' => 'blog', 'kicker' => 'Noticias y jugadas', 'title' => 'Noticias y', 'highlight' => 'novedades', 'subtitle' => 'Enterate de sorteos, bonos y novedades antes que nadie.', 'action_text' => 'Ver novedades', 'action_url' => '/blog', 'post_ids' => $activePosts],
+        ];
+
+        foreach ($homeSections as $order => $data) {
+            HomeSection::withoutGlobalScopes()->updateOrCreate(
+                ['vendor_id' => null, 'section_key' => $data['section_key']],
+                array_merge($data, [
+                    'vendor_id' => null,
+                    'enabled' => true,
+                    'order' => $order,
+                ])
+            );
+        }
+        $this->command->info('HomeSections globales listas.');
 
         $this->command->info('====================================');
         $this->command->info(' DATOS DE DEMO CARGADOS');

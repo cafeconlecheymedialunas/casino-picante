@@ -36,6 +36,7 @@
                 'title' => $sections['lineas']['title'] ?? 'Lineas de',
                 'highlight' => $sections['lineas']['highlight'] ?? 'atencion',
                 'subtitle' => $sections['lineas']['subtitle'] ?? 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.',
+                'action' => $sections['lineas']['action'] ?? null,
             ])
 
             @if($lines->count())
@@ -55,7 +56,16 @@
     <section id="sorteo" class="fe-section">
         <div class="fe-shell">
             <div class="raffle-section-head">
+                @if(!empty($sections['sorteo']['kicker']))
+                    <div class="fe-kicker">{{ $sections['sorteo']['kicker'] }}</div>
+                @endif
                 <h2 class="raffle-main-title">{{ $sections['sorteo']['title'] ?? 'SORTEOS' }} <span>{{ $sections['sorteo']['highlight'] ?? 'ACTIVOS' }}</span></h2>
+                @if(!empty($sections['sorteo']['subtitle']))
+                    <p class="raffle-subtitle">{{ $sections['sorteo']['subtitle'] }}</p>
+                @endif
+                @if(!empty($sections['sorteo']['action']))
+                    {!! $sections['sorteo']['action'] !!}
+                @endif
             </div>
 
             @if($raffles->count() > 1)
@@ -196,7 +206,7 @@
                 'title' => $sections['bonos']['title'] ?? 'Bonos',
                 'highlight' => $sections['bonos']['highlight'] ?? 'activos',
                 'subtitle' => $sections['bonos']['subtitle'] ?? 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
-                'action' => '<a class="fe-btn ghost" href="'.route('frontend.bonos').'" wire:navigate>Ver todos</a>',
+                'action' => $sections['bonos']['action'] ?? '<a class="fe-btn ghost" href="'.route('frontend.bonos').'" wire:navigate>Ver todos</a>',
             ])
 
             @if($bonusItems->count())
@@ -236,7 +246,7 @@
                 'title' => $sections['blog']['title'] ?? '',
                 'highlight' => $sections['blog']['highlight'] ?? 'Novedades',
                 'subtitle' => $sections['blog']['subtitle'] ?? 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.',
-                'action' => '<a class="fe-btn ghost" href="'.route('frontend.blog').'" wire:navigate>Ver novedades</a>',
+                'action' => $sections['blog']['action'] ?? '<a class="fe-btn ghost" href="'.route('frontend.blog').'" wire:navigate>Ver novedades</a>',
             ])
 
             @if($blogPosts->count())

@@ -27,6 +27,7 @@ class HomeSection extends Model
         'post_ids',
         'bonus_type',
         'bonus_ids',
+        'line_ids',
         'repeater_data',
         'enabled',
         'order',
@@ -37,6 +38,7 @@ class HomeSection extends Model
         'raffle_ids' => 'array',
         'post_ids' => 'array',
         'bonus_ids' => 'array',
+        'line_ids' => 'array',
         'repeater_data' => 'array',
     ];
 

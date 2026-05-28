@@ -7,6 +7,7 @@ use App\Models\CarouselItem;
 use App\Models\Category;
 use App\Models\HomeConfig;
 use App\Models\HomeSection;
+use App\Models\Line;
 use App\Models\Post;
 use App\Models\Raffle;
 use App\Support\ImageStorage;
@@ -22,27 +23,17 @@ class EditorHome extends Component
     use HasLinePermissions, WithFileUploads;
 
     public $carouselItems = [];
-
     public $bonusItems = [];
-
     public $blogPosts = [];
-
     public $raffleItems = [];
-
+    public $lineItems = [];
     public $categories = [];
-
     public $selectedCarousel = [];
-
     public $newCarouselTitle = '';
-
     public $newCarouselLink = '';
-
     public $newCarouselImage = null;
-
     public $sections = [];
-
     public $editingSection = null;
-
     public $pendingSave = [];
 
     public function mount()
@@ -51,39 +42,41 @@ class EditorHome extends Component
 
         $this->loadCarouselItems();
 
-        $this->bonusItems = Bonus::where('status', 'active')
+        $this->bonusItems = Bonus::withoutGlobalScopes()
+            ->where('status', 'active')
+            ->with('vendor:id,name,is_direct')
+            ->orderByRaw('EXISTS(SELECT 1 FROM vendors WHERE vendors.id = bonuses.vendor_id AND vendors.is_direct = 1) DESC')
             ->orderBy('start_date', 'desc')
             ->get()
             ->toArray();
 
-        $this->blogPosts = Post::where('status', Post::STATUS_PUBLISHED)
+        $this->blogPosts = Post::withoutGlobalScopes()
+            ->where('status', Post::STATUS_PUBLISHED)
+            ->with('vendor:id,name,is_direct')
+            ->orderByRaw('EXISTS(SELECT 1 FROM vendors WHERE vendors.id = posts.vendor_id AND vendors.is_direct = 1) DESC')
             ->orderBy('published_at', 'desc')
             ->get()
             ->toArray();
 
-        $this->raffleItems = Raffle::whereIn('status', ['active', 'upcoming'])
+        $this->raffleItems = Raffle::withoutGlobalScopes()
+            ->whereIn('status', ['active', 'upcoming'])
+            ->with('vendor:id,name,is_direct')
+            ->orderByRaw('EXISTS(SELECT 1 FROM vendors WHERE vendors.id = raffles.vendor_id AND vendors.is_direct = 1) DESC')
             ->orderBy('start_date', 'asc')
             ->get()
             ->toArray();
 
-        $this->categories = Category::all()->toArray();
+        $this->lineItems = Line::withoutGlobalScopes()
+            ->where('status', 'active')
+            ->with('vendor:id,name,is_direct')
+            ->orderByRaw('EXISTS(SELECT 1 FROM vendors WHERE vendors.id = lines.vendor_id AND vendors.is_direct = 1) DESC')
+            ->orderBy('name')
+            ->get()
+            ->toArray();
+
+        $this->categories = Category::withoutGlobalScopes()->get()->toArray();
 
         $this->selectedCarousel = $this->homeConfigQuery(HomeConfig::SECTION_CAROUSEL)
-            ->orderBy('order')
-            ->pluck('item_id')
-            ->toArray();
-
-        $this->selectedBonuses = $this->homeConfigQuery(HomeConfig::SECTION_BONUSES)
-            ->orderBy('order')
-            ->pluck('item_id')
-            ->toArray();
-
-        $this->selectedBlogs = $this->homeConfigQuery(HomeConfig::SECTION_BLOG)
-            ->orderBy('order')
-            ->pluck('item_id')
-            ->toArray();
-
-        $this->selectedRafflesUpcoming = $this->homeConfigQuery(HomeConfig::SECTION_RAFFLES_UPCOMING)
             ->orderBy('order')
             ->pluck('item_id')
             ->toArray();
@@ -126,8 +119,8 @@ class EditorHome extends Component
         foreach ($defaultSections as $key => $defaults) {
             $section = $this->homeSectionQuery($key)->first();
             if (! $section) {
-                $section = HomeSection::create([
-                    'vendor_id' => $this->activeVendorId(),
+                $section = HomeSection::withoutGlobalScopes()->create([
+                    'vendor_id' => null,
                     'section_key' => $key,
                     'enabled' => true,
                     'order' => array_search($key, array_keys($defaultSections)),
@@ -146,6 +139,8 @@ class EditorHome extends Component
                 'highlight' => $section->highlight ?? $defaults['highlight'] ?? '',
                 'subtitle' => $section->subtitle ?? $defaults['subtitle'] ?? '',
                 'content' => $section->content ?? $defaults['content'] ?? '',
+                'action_text' => $section->action_text ?? '',
+                'action_url' => $section->action_url ?? '',
                 'repeater_data' => is_array($section->repeater_data) ? $section->repeater_data : ($defaults['repeater_data'] ?? []),
                 'raffle_type' => $section->raffle_type ?? '',
                 'raffle_ids' => is_array($section->raffle_ids) ? implode(',', $section->raffle_ids) : '',
@@ -153,6 +148,7 @@ class EditorHome extends Component
                 'post_ids' => is_array($section->post_ids) ? implode(',', $section->post_ids) : '',
                 'bonus_type' => $section->bonus_type ?? '',
                 'bonus_ids' => is_array($section->bonus_ids) ? implode(',', $section->bonus_ids) : '',
+                'line_ids' => is_array($section->line_ids) ? implode(',', $section->line_ids) : '',
                 'enabled' => $section->enabled,
             ];
         }
@@ -164,17 +160,8 @@ class EditorHome extends Component
 
         $data = $this->sections[$key] ?? [];
 
-        $raffleIds = $data['raffle_ids'] ?? '';
-        $postIds = $data['post_ids'] ?? '';
-        $bonusIds = $data['bonus_ids'] ?? '';
-
-        $parseToArray = function ($str, ?string $model = null) {
-            $arr = array_values(array_filter(array_map('trim', explode(',', (string) $str))));
-            if ($model && session('active_vendor_id')) {
-                $arr = $this->filterScopedIds($model, $arr);
-            }
-
-            return $arr; // always return array (empty = explicitly none selected)
+        $parseToArray = function ($str) {
+            return array_values(array_filter(array_map('trim', explode(',', (string) $str))));
         };
 
         $repeaterData = $data['repeater_data'] ?? null;
@@ -182,21 +169,24 @@ class EditorHome extends Component
             $repeaterData = null;
         }
 
-        HomeSection::updateOrCreate(
-            ['vendor_id' => $this->activeVendorId(), 'section_key' => $key],
+        HomeSection::withoutGlobalScopes()->updateOrCreate(
+            ['vendor_id' => null, 'section_key' => $key],
             [
                 'kicker' => $data['kicker'] ?? null,
                 'title' => $data['title'] ?? null,
                 'highlight' => $data['highlight'] ?? null,
                 'subtitle' => $data['subtitle'] ?? null,
                 'content' => $data['content'] ?? null,
+                'action_text' => $data['action_text'] ?? null,
+                'action_url' => $data['action_url'] ?? null,
                 'repeater_data' => $repeaterData,
                 'raffle_type' => $data['raffle_type'] ?? null,
-                'raffle_ids' => $parseToArray($raffleIds, Raffle::class),
+                'raffle_ids' => $parseToArray($data['raffle_ids'] ?? ''),
                 'post_type' => $data['post_type'] ?? null,
-                'post_ids' => $parseToArray($postIds, Post::class),
+                'post_ids' => $parseToArray($data['post_ids'] ?? ''),
                 'bonus_type' => $data['bonus_type'] ?? null,
-                'bonus_ids' => $parseToArray($bonusIds, Bonus::class),
+                'bonus_ids' => $parseToArray($data['bonus_ids'] ?? ''),
+                'line_ids' => $parseToArray($data['line_ids'] ?? ''),
                 'enabled' => $data['enabled'] ?? true,
             ]
         );
@@ -234,7 +224,11 @@ class EditorHome extends Component
 
     public function loadCarouselItems(): void
     {
-        $this->carouselItems = CarouselItem::where('vendor_id', $this->activeVendorId())->orderBy('order')->get()->toArray();
+        $this->carouselItems = CarouselItem::withoutGlobalScopes()
+            ->whereNull('vendor_id')
+            ->orderBy('order')
+            ->get()
+            ->toArray();
     }
 
     public function addCarouselItem(): void
@@ -247,15 +241,15 @@ class EditorHome extends Component
             'newCarouselLink' => 'nullable|string|max:500',
         ]);
 
-        $maxOrder = CarouselItem::where('vendor_id', $this->activeVendorId())->max('order') ?? 0;
+        $maxOrder = CarouselItem::withoutGlobalScopes()->whereNull('vendor_id')->max('order') ?? 0;
 
-        CarouselItem::create([
+        CarouselItem::withoutGlobalScopes()->create([
             'image' => ImageStorage::store($this->newCarouselImage, 'carousel'),
-            'vendor_id' => $this->activeVendorId(),
+            'vendor_id' => null,
+            'line_id' => null,
             'title' => $this->newCarouselTitle,
             'link' => $this->newCarouselLink,
             'order' => $maxOrder + 1,
-            'line_id' => $this->requireLineIdForScopedCreate(),
         ]);
 
         $this->newCarouselTitle = '';
@@ -269,8 +263,7 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $this->authorizeScopedItem(CarouselItem::class, $itemId);
-        $item = CarouselItem::where('vendor_id', $this->activeVendorId())->find($itemId);
+        $item = CarouselItem::withoutGlobalScopes()->whereNull('vendor_id')->find($itemId);
         if ($item) {
             ImageStorage::delete($item->image);
             $item->delete();
@@ -283,21 +276,21 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $this->authorizeScopedItem(CarouselItem::class, $itemId);
-        $item = CarouselItem::where('vendor_id', $this->activeVendorId())->find($itemId);
+        $item = CarouselItem::withoutGlobalScopes()->whereNull('vendor_id')->find($itemId);
         if (! $item) {
             return;
         }
 
-        $prev = CarouselItem::where('vendor_id', $this->activeVendorId())
+        $prev = CarouselItem::withoutGlobalScopes()
+            ->whereNull('vendor_id')
             ->where('order', '<', $item->order)
             ->orderBy('order', 'desc')
             ->first();
 
         if ($prev) {
-            $temp = $item->order;
-            $item->update(['order' => $prev->order]);
-            $prev->update(['order' => $temp]);
+            [$item->order, $prev->order] = [$prev->order, $item->order];
+            $item->save();
+            $prev->save();
         }
 
         $this->loadCarouselItems();
@@ -307,21 +300,21 @@ class EditorHome extends Component
     {
         $this->ensureCanEditHome();
 
-        $this->authorizeScopedItem(CarouselItem::class, $itemId);
-        $item = CarouselItem::where('vendor_id', $this->activeVendorId())->find($itemId);
+        $item = CarouselItem::withoutGlobalScopes()->whereNull('vendor_id')->find($itemId);
         if (! $item) {
             return;
         }
 
-        $next = CarouselItem::where('vendor_id', $this->activeVendorId())
+        $next = CarouselItem::withoutGlobalScopes()
+            ->whereNull('vendor_id')
             ->where('order', '>', $item->order)
             ->orderBy('order', 'asc')
             ->first();
 
         if ($next) {
-            $temp = $item->order;
-            $item->update(['order' => $next->order]);
-            $next->update(['order' => $temp]);
+            [$item->order, $next->order] = [$next->order, $item->order];
+            $item->save();
+            $next->save();
         }
 
         $this->loadCarouselItems();
@@ -330,7 +323,6 @@ class EditorHome extends Component
     public function toggleCarousel($itemId)
     {
         $this->ensureCanEditHome();
-        $this->authorizeScopedItem(CarouselItem::class, $itemId);
 
         if (in_array($itemId, $this->selectedCarousel)) {
             $this->homeConfigQuery(HomeConfig::SECTION_CAROUSEL)
@@ -339,8 +331,8 @@ class EditorHome extends Component
             $this->selectedCarousel = array_values(array_diff($this->selectedCarousel, [$itemId]));
         } else {
             $order = count($this->selectedCarousel);
-            HomeConfig::create([
-                'vendor_id' => $this->activeVendorId(),
+            HomeConfig::withoutGlobalScopes()->create([
+                'vendor_id' => null,
                 'section' => HomeConfig::SECTION_CAROUSEL,
                 'item_id' => $itemId,
                 'order' => $order,
@@ -352,7 +344,6 @@ class EditorHome extends Component
     public function toggleRaffle($itemId)
     {
         $this->ensureCanEditHome();
-        $this->authorizeScopedItem(Raffle::class, $itemId);
 
         $current = array_filter(array_map('trim', explode(',', $this->sections['sorteo']['raffle_ids'] ?? '')));
         $itemId = (string) $itemId;
@@ -369,7 +360,6 @@ class EditorHome extends Component
     public function toggleBonus($itemId)
     {
         $this->ensureCanEditHome();
-        $this->authorizeScopedItem(Bonus::class, $itemId);
 
         $current = array_filter(array_map('trim', explode(',', $this->sections['bonos']['bonus_ids'] ?? '')));
         $itemId = (string) $itemId;
@@ -386,7 +376,6 @@ class EditorHome extends Component
     public function togglePost($itemId)
     {
         $this->ensureCanEditHome();
-        $this->authorizeScopedItem(Post::class, $itemId);
 
         $current = array_filter(array_map('trim', explode(',', $this->sections['blog']['post_ids'] ?? '')));
         $itemId = (string) $itemId;
@@ -400,10 +389,25 @@ class EditorHome extends Component
         $this->sections['blog']['post_ids'] = implode(',', $current);
     }
 
-    public function saveAllSelections(): void
+    public function toggleLine($itemId)
     {
         $this->ensureCanEditHome();
 
+        $current = array_filter(array_map('trim', explode(',', $this->sections['lineas']['line_ids'] ?? '')));
+        $itemId = (string) $itemId;
+
+        if (in_array($itemId, $current)) {
+            $current = array_values(array_filter($current, fn ($id) => $id !== $itemId));
+        } else {
+            $current[] = $itemId;
+        }
+
+        $this->sections['lineas']['line_ids'] = implode(',', $current);
+    }
+
+    public function saveAllSelections(): void
+    {
+        $this->ensureCanEditHome();
         $this->saveSection('sorteo');
         $this->saveSection('bonos');
         $this->saveSection('blog');
@@ -415,46 +419,6 @@ class EditorHome extends Component
         $this->saveSection($key);
     }
 
-    public function moveRaffleUp($itemId)
-    {
-        $this->ensureCanEditHome();
-
-        $current = array_filter(array_map('trim', explode(',', $this->sections['sorteo']['raffle_ids'] ?? '')));
-        $itemId = (string) $itemId;
-        $idx = array_search($itemId, $current);
-
-        if ($idx === false || $idx === 0) {
-            return;
-        }
-
-        $values = array_values($current);
-        $tmp = $values[$idx];
-        $values[$idx] = $values[$idx - 1];
-        $values[$idx - 1] = $tmp;
-
-        $this->sections['sorteo']['raffle_ids'] = implode(',', $values);
-    }
-
-    public function moveRaffleDown($itemId)
-    {
-        $this->ensureCanEditHome();
-
-        $current = array_filter(array_map('trim', explode(',', $this->sections['sorteo']['raffle_ids'] ?? '')));
-        $itemId = (string) $itemId;
-        $idx = array_search($itemId, $current);
-
-        if ($idx === false || $idx === count($current) - 1) {
-            return;
-        }
-
-        $values = array_values($current);
-        $tmp = $values[$idx];
-        $values[$idx] = $values[$idx + 1];
-        $values[$idx + 1] = $tmp;
-
-        $this->sections['sorteo']['raffle_ids'] = implode(',', $values);
-    }
-
     public function moveItemUp($section, $itemId)
     {
         $this->ensureCanEditHome();
@@ -464,16 +428,11 @@ class EditorHome extends Component
             return;
         }
 
-        $prev = $this->homeConfigQuery($section)
-            ->where('order', $item->order - 1)
-            ->first();
-
+        $prev = $this->homeConfigQuery($section)->where('order', $item->order - 1)->first();
         if ($prev) {
             $prev->update(['order' => $item->order]);
             $item->update(['order' => $item->order - 1]);
         }
-
-        $this->refreshSelections();
     }
 
     public function moveItemDown($section, $itemId)
@@ -490,105 +449,11 @@ class EditorHome extends Component
             return;
         }
 
-        $next = $this->homeConfigQuery($section)
-            ->where('order', $item->order + 1)
-            ->first();
-
+        $next = $this->homeConfigQuery($section)->where('order', $item->order + 1)->first();
         if ($next) {
             $next->update(['order' => $item->order]);
             $item->update(['order' => $item->order + 1]);
         }
-
-        $this->refreshSelections();
-    }
-
-    private function reorderSection($section)
-    {
-        $items = $this->homeConfigQuery($section)->orderBy('order')->get();
-        foreach ($items as $index => $item) {
-            $item->update(['order' => $index]);
-        }
-        $this->refreshSelections();
-    }
-
-    private function refreshSelections()
-    {
-        $this->selectedBonuses = $this->homeConfigQuery(HomeConfig::SECTION_BONUSES)->orderBy('order')->pluck('item_id')->toArray();
-        $this->selectedBlogs = $this->homeConfigQuery(HomeConfig::SECTION_BLOG)->orderBy('order')->pluck('item_id')->toArray();
-        $this->selectedRafflesUpcoming = $this->homeConfigQuery(HomeConfig::SECTION_RAFFLES_UPCOMING)->orderBy('order')->pluck('item_id')->toArray();
-    }
-
-    public function saveSectionAjax()
-    {
-        $this->ensureCanEditHome();
-
-        $key = request()->input('section_key');
-        if (! in_array($key, ['sorteo', 'bonos', 'blog'])) {
-            return response()->json(['message' => 'Sección inválida'], 400);
-        }
-
-        $parseToArray = function ($str, ?string $model = null) {
-            if (empty($str)) {
-                return null;
-            }
-            $arr = array_filter(array_map('trim', explode(',', $str)));
-            if ($model && session('active_vendor_id')) {
-                $arr = $this->filterScopedIds($model, $arr);
-            }
-
-            return count($arr) ? $arr : null;
-        };
-
-        HomeSection::updateOrCreate(
-            ['vendor_id' => $this->activeVendorId(), 'section_key' => $key],
-            [
-                'raffle_ids' => $key === 'sorteo' ? $parseToArray(request()->input('raffle_ids', ''), Raffle::class) : null,
-                'bonus_ids' => $key === 'bonos' ? $parseToArray(request()->input('bonus_ids', ''), Bonus::class) : null,
-                'post_ids' => $key === 'blog' ? $parseToArray(request()->input('post_ids', ''), Post::class) : null,
-            ]
-        );
-
-        return response()->json(['message' => 'Sección guardada correctamente']);
-    }
-
-    public function saveSelections()
-    {
-        $this->ensureCanEditHome();
-
-        $parseToArray = function ($str, ?string $model = null) {
-            if (empty($str)) {
-                return null;
-            }
-            $arr = array_filter(array_map('trim', explode(',', $str)));
-            if ($model && session('active_vendor_id')) {
-                $arr = $this->filterScopedIds($model, $arr);
-            }
-
-            return count($arr) ? $arr : null;
-        };
-
-        $sorteoIds = $parseToArray(request()->input('sorteo', ''), Raffle::class);
-        $bonosIds = $parseToArray(request()->input('bonos', ''), Bonus::class);
-        $blogIds = $parseToArray(request()->input('blog', ''), Post::class);
-
-        HomeSection::updateOrCreate(
-            ['vendor_id' => $this->activeVendorId(), 'section_key' => 'sorteo'],
-            ['raffle_ids' => $sorteoIds]
-        );
-
-        HomeSection::updateOrCreate(
-            ['vendor_id' => $this->activeVendorId(), 'section_key' => 'bonos'],
-            ['bonus_ids' => $bonosIds]
-        );
-
-        HomeSection::updateOrCreate(
-            ['vendor_id' => $this->activeVendorId(), 'section_key' => 'blog'],
-            ['post_ids' => $blogIds]
-        );
-
-        session()->flash('message_success', 'Selecciones guardadas correctamente.');
-
-        return redirect()->route('admin.editor.inicio');
     }
 
     public function render()
@@ -603,59 +468,19 @@ class EditorHome extends Component
         if (! $this->hasLinePermission(Permissions::HOME_EDIT)) {
             abort(403, 'Sin permiso para editar la home.');
         }
-
-        $this->activeVendorId();
-    }
-
-    private function authorizeScopedItem(string $model, $id): void
-    {
-        if (! session('active_vendor_id')) {
-            return;
-        }
-
-        abort_unless($model::whereKey((int) $id)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes seleccionar contenido fuera de tu vendor.');
-    }
-
-    private function filterScopedIds(string $model, array $ids): array
-    {
-        $ids = collect($ids)
-            ->map(fn ($id) => (int) $id)
-            ->filter()
-            ->unique()
-            ->values();
-
-        if ($ids->isEmpty()) {
-            return [];
-        }
-
-        return $model::whereIn('id', $ids)
-            ->where('vendor_id', (int) session('active_vendor_id'))
-            ->pluck('id')
-            ->map(fn ($id) => (string) $id)
-            ->all();
-    }
-
-    private function activeVendorId(): int
-    {
-        if (! session('active_vendor_id')) {
-            $this->redirect(route('admin.cajeros'), navigate: true);
-            exit;
-        }
-
-        return (int) session('active_vendor_id');
     }
 
     private function homeConfigQuery(?string $section = null)
     {
-        return HomeConfig::query()
-            ->where('vendor_id', $this->activeVendorId())
+        return HomeConfig::withoutGlobalScopes()
+            ->whereNull('vendor_id')
             ->when($section, fn ($query) => $query->where('section', $section));
     }
 
     private function homeSectionQuery(string $key)
     {
-        return HomeSection::query()
-            ->where('vendor_id', $this->activeVendorId())
+        return HomeSection::withoutGlobalScopes()
+            ->whereNull('vendor_id')
             ->where('section_key', $key);
     }
 }

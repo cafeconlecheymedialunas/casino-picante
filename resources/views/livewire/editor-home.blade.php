@@ -10,8 +10,13 @@
         : [];
     
     $postIdsStr = $sections['blog']['post_ids'] ?? '';
-    $initialPostIds = is_string($postIdsStr) && !empty($postIdsStr) 
-        ? array_filter(array_map('trim', explode(',', $postIdsStr))) 
+    $initialPostIds = is_string($postIdsStr) && !empty($postIdsStr)
+        ? array_filter(array_map('trim', explode(',', $postIdsStr)))
+        : [];
+
+    $lineIdsStr = $sections['lineas']['line_ids'] ?? '';
+    $initialLineIds = is_string($lineIdsStr) && !empty($lineIdsStr)
+        ? array_filter(array_map('trim', explode(',', $lineIdsStr)))
         : [];
 @endphp
 
@@ -22,6 +27,15 @@
                 raffleIds: @json($initialRaffleIds),
                 bonusIds: @json($initialBonusIds),
                 postIds: @json($initialPostIds),
+                lineIds: @json($initialLineIds),
+                searchRaffle: '',
+                searchBonus: '',
+                searchPost: '',
+                searchLine: '',
+                filterRaffle: 'all',
+                filterBonus: 'all',
+                filterPost: 'all',
+                filterLine: 'all',
                 toastMsg: '',
                 toastVisible: false,
                 toastType: 'success',
@@ -30,6 +44,17 @@
                     this.toastType = type;
                     this.toastVisible = true;
                     setTimeout(() => { this.toastVisible = false; }, 3000);
+                },
+                matchesSearch(text, vendor, query) {
+                    if (!query) return true;
+                    const q = query.toLowerCase();
+                    return (text || '').toLowerCase().includes(q) || (vendor || '').toLowerCase().includes(q);
+                },
+                matchesFilter(isOficial, filter) {
+                    if (filter === 'all') return true;
+                    if (filter === 'oficial') return isOficial;
+                    if (filter === 'other') return !isOficial;
+                    return true;
                 },
                 toggleRaffle(id) {
                     id = String(id);
@@ -52,43 +77,40 @@
                 isRaffleSelected(id) { return this.raffleIds.includes(String(id)); },
                 isBonusSelected(id) { return this.bonusIds.includes(String(id)); },
                 isPostSelected(id) { return this.postIds.includes(String(id)); },
-                moveRaffleUp(id) {
+                raffleOrder(id) { const i = this.raffleIds.indexOf(String(id)); return i > -1 ? i + 1 : null; },
+                bonusOrder(id) { const i = this.bonusIds.indexOf(String(id)); return i > -1 ? i + 1 : null; },
+                postOrder(id) { const i = this.postIds.indexOf(String(id)); return i > -1 ? i + 1 : null; },
+                moveUp(arr, id) {
                     id = String(id);
-                    const idx = this.raffleIds.indexOf(id);
-                    if (idx > 0) { [this.raffleIds[idx-1], this.raffleIds[idx]] = [this.raffleIds[idx], this.raffleIds[idx-1]]; }
+                    const idx = arr.indexOf(id);
+                    if (idx > 0) { [arr[idx-1], arr[idx]] = [arr[idx], arr[idx-1]]; }
                 },
-                moveRaffleDown(id) {
+                moveDown(arr, id) {
                     id = String(id);
-                    const idx = this.raffleIds.indexOf(id);
-                    if (idx < this.raffleIds.length - 1) { [this.raffleIds[idx], this.raffleIds[idx+1]] = [this.raffleIds[idx+1], this.raffleIds[idx]]; }
+                    const idx = arr.indexOf(id);
+                    if (idx > -1 && idx < arr.length - 1) { [arr[idx], arr[idx+1]] = [arr[idx+1], arr[idx]]; }
                 },
-                moveBonusUp(id) {
+                moveRaffleUp(id) { this.moveUp(this.raffleIds, id); },
+                moveRaffleDown(id) { this.moveDown(this.raffleIds, id); },
+                moveBonusUp(id) { this.moveUp(this.bonusIds, id); },
+                moveBonusDown(id) { this.moveDown(this.bonusIds, id); },
+                movePostUp(id) { this.moveUp(this.postIds, id); },
+                movePostDown(id) { this.moveDown(this.postIds, id); },
+                moveLineUp(id) { this.moveUp(this.lineIds, id); },
+                moveLineDown(id) { this.moveDown(this.lineIds, id); },
+                toggleLine(id) {
                     id = String(id);
-                    const idx = this.bonusIds.indexOf(id);
-                    if (idx > 0) { [this.bonusIds[idx-1], this.bonusIds[idx]] = [this.bonusIds[idx], this.bonusIds[idx-1]]; }
+                    const idx = this.lineIds.indexOf(id);
+                    if (idx > -1) this.lineIds.splice(idx, 1);
+                    else this.lineIds.push(id);
                 },
-                moveBonusDown(id) {
-                    id = String(id);
-                    const idx = this.bonusIds.indexOf(id);
-                    if (idx < this.bonusIds.length - 1) { [this.bonusIds[idx], this.bonusIds[idx+1]] = [this.bonusIds[idx+1], this.bonusIds[idx]]; }
-                },
-                movePostUp(id) {
-                    id = String(id);
-                    const idx = this.postIds.indexOf(id);
-                    if (idx > 0) { [this.postIds[idx-1], this.postIds[idx]] = [this.postIds[idx], this.postIds[idx-1]]; }
-                },
-                movePostDown(id) {
-                    id = String(id);
-                    const idx = this.postIds.indexOf(id);
-                    if (idx < this.postIds.length - 1) { [this.postIds[idx], this.postIds[idx+1]] = [this.postIds[idx+1], this.postIds[idx]]; }
-                },
+                isLineSelected(id) { return this.lineIds.includes(String(id)); },
+                lineOrder(id) { const i = this.lineIds.indexOf(String(id)); return i > -1 ? i + 1 : null; },
                 saveSection(key) {
-                    const ids = key === 'sorteo' ? this.raffleIds : (key === 'bonos' ? this.bonusIds : this.postIds);
-                    const fieldKey = key === 'sorteo' ? 'raffle_ids' : (key === 'bonos' ? 'bonus_ids' : 'post_ids');
-                    
+                    const ids = key === 'sorteo' ? this.raffleIds : (key === 'bonos' ? this.bonusIds : (key === 'lineas' ? this.lineIds : this.postIds));
+                    const fieldKey = key === 'sorteo' ? 'raffle_ids' : (key === 'bonos' ? 'bonus_ids' : (key === 'lineas' ? 'line_ids' : 'post_ids'));
                     const sectionData = this.$wire.sections[key];
                     sectionData[fieldKey] = ids.join(',');
-                    
                     this.$wire.saveSection(key).then(() => {
                         this.showToast('Sección guardada correctamente', 'success');
                     }).catch(() => {
@@ -152,6 +174,25 @@
         .eh-toast.success { background:var(--good,#25c46b); color:#fff; }
         .eh-toast.error { background:#ff4757; color:#fff; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+        .eh-search-bar { display:flex; align-items:center; gap:8px; padding:10px 20px 12px; border-bottom:1px solid rgba(255,255,255,.04); }
+        .eh-search-input { flex:1; background:rgba(255,255,255,.04); border:1px solid var(--line-2); border-radius:8px; padding:7px 12px 7px 34px; color:var(--white); font-size:12px; outline:none; }
+        .eh-search-input:focus { border-color:var(--orange); box-shadow:0 0 0 2px rgba(255,106,26,.1); }
+        .eh-search-wrap { position:relative; flex:1; }
+        .eh-search-wrap i { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--muted-2); font-size:11px; pointer-events:none; }
+        .eh-vendor-badge { font-size:9px; font-weight:800; padding:2px 7px; border-radius:999px; white-space:nowrap; }
+        .eh-vendor-badge.oficial { background:rgba(255,106,26,.2); color:var(--orange); border:1px solid rgba(255,106,26,.3); }
+        .eh-vendor-badge.other { background:rgba(255,255,255,.06); color:var(--muted-2); border:1px solid rgba(255,255,255,.08); }
+        .eh-selected-list { padding:0 20px 12px; display:flex; flex-direction:column; gap:6px; }
+        .eh-selected-header { font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; padding:0 20px 6px; }
+        .eh-selected-row { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; background:rgba(255,106,26,.07); border:1px solid rgba(255,106,26,.2); }
+        .eh-selected-row-title { flex:1; font-size:12px; font-weight:700; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .eh-selected-row-pos { font-size:10px; color:var(--orange); font-weight:800; min-width:20px; }
+        .eh-filter-pills { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+        .eh-pill { font-size:10px; font-weight:700; padding:3px 10px; border-radius:999px; border:1px solid var(--line-2); background:transparent; color:var(--muted-2); cursor:pointer; transition:all .15s; }
+        .eh-pill:hover { border-color:var(--orange); color:var(--orange); }
+        .eh-pill.active { background:rgba(255,106,26,.15); border-color:var(--orange); color:var(--orange); }
+        [data-dashboard-theme="light"] .eh-search-input { background:#fff !important; color:var(--white) !important; }
+        [data-dashboard-theme="light"] .eh-selected-row { background:rgba(255,106,26,.08) !important; }
 
         [data-dashboard-theme="light"] .eh-section,
         [data-dashboard-theme="light"] .eh-card,
@@ -214,6 +255,10 @@
             .eh-repeater-actions { grid-column:1 / -1; }
             .eh-card-meta { flex-direction:column; align-items:flex-start; }
         }
+        .eh-picker-grid { display:grid; grid-template-columns:1fr 280px; gap:12px; align-items:start; }
+        @media (max-width: 680px) {
+            .eh-picker-grid { grid-template-columns:1fr; }
+        }
     </style>
 
     <template x-if="toastVisible">
@@ -264,12 +309,8 @@
                                 style="padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted-2);font-size:10px;cursor:pointer;">
                                 {{ ($sections[$key]['enabled'] ?? true) ? 'Ocultar' : 'Mostrar' }}
                             </button>
-                            @if(in_array($key, ['sorteo', 'bonos', 'blog']))
-                                <button type="button" class="eh-save-btn" @click="saveSection('{{ $key }}')">
-                                    <i class="fa-solid fa-save"></i> Guardar
-                                </button>
-                            @else
-                                <button type="button" wire:click="saveSection('{{ $key }}')" 
+                            @if(!in_array($key, ['sorteo', 'bonos', 'blog', 'lineas']))
+                                <button type="button" wire:click="saveSection('{{ $key }}')"
                                     style="padding:6px 14px;border-radius:6px;border:1px solid var(--orange);background:rgba(255,106,26,.15);color:var(--orange);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
                                     <i class="fa-solid fa-save"></i> Guardar
                                 </button>
@@ -280,9 +321,9 @@
                             <div class="eh-counter">
                                 Seleccionados: <span class="current">{{ count($selectedCarousel) }}</span>
                             </div>
-                        @elseif(in_array($key, ['sorteo', 'bonos', 'blog']))
+                        @elseif(in_array($key, ['sorteo', 'bonos', 'blog', 'lineas']))
                             <div class="eh-counter">
-                                Seleccionados: <span class="current" x-text="'{{ $key }}' === 'sorteo' ? raffleIds.length : ('{{ $key }}' === 'bonos' ? bonusIds.length : postIds.length)"></span>
+                                Seleccionados: <span class="current" x-text="'{{ $key }}' === 'sorteo' ? raffleIds.length : ('{{ $key }}' === 'bonos' ? bonusIds.length : ('{{ $key }}' === 'lineas' ? lineIds.length : postIds.length))"></span>
                             </div>
                         @endif
                 </div>
@@ -309,10 +350,16 @@
                                 <input type="text" wire:model="sections.{{ $key }}.subtitle" placeholder="Opcional">
                             </div>
 
-                            @if($key === 'nosotros')
-                            <div class="eh-repeater-field">
-                                <label>Contenido Principal (Sobre Nosotros)</label>
-                                <textarea wire:model="sections.{{ $key }}.subtitle" rows="2" style="background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-radius:6px;padding:7px 10px;color:var(--white);font-size:12px;outline:none;width:100%;resize:vertical;" placeholder="Texto descriptivo..."></textarea>
+                            @if(!in_array($key, ['carousel', 'como-empezar', 'nosotros']))
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div class="eh-repeater-field">
+                                    <label>Texto del botón de acción</label>
+                                    <input type="text" wire:model="sections.{{ $key }}.action_text" placeholder="Ej: Ver todos">
+                                </div>
+                                <div class="eh-repeater-field">
+                                    <label>URL del botón de acción</label>
+                                    <input type="text" wire:model="sections.{{ $key }}.action_url" placeholder="Ej: /bonos">
+                                </div>
                             </div>
                             @endif
 
@@ -439,98 +486,75 @@
                     @endif
 
                     @if($key === 'sorteo')
-                        @if(count($raffleItems) > 0)
-                        <div class="eh-grid" style="padding: 0;">
-                            @foreach($raffleItems as $raffle)
-                            <div class="eh-card" :class="isRaffleSelected('{{ $raffle['id'] }}') ? 'selected' : ''"
-                                 @click="toggleRaffle('{{ $raffle['id'] }}')">
-                                <template x-if="isRaffleSelected('{{ $raffle['id'] }}')">
-                                    <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
-                                </template>
-                                <template x-if="isRaffleSelected('{{ $raffle['id'] }}')">
-                                    <div style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 5;" @click.stop>
-                                        <button @click="moveRaffleUp('{{ $raffle['id'] }}')" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;">↑</button>
-                                        <button @click="moveRaffleDown('{{ $raffle['id'] }}')" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;">↓</button>
-                                    </div>
-                                </template>
-                                <div class="eh-card-title">{{ $raffle['title'] }}</div>
-                                <div class="eh-card-meta">
-                                    <span>Vence: {{ \Carbon\Carbon::parse($raffle['end_date'])->format('d/m/Y') }}</span>
-                                </div>
-                            </div>
-                            @endforeach
+                        @include('livewire.partials.eh-picker', [
+                            'items'         => $raffleItems,
+                            'searchModel'   => 'searchRaffle',
+                            'filterModel'   => 'filterRaffle',
+                            'selectedModel' => 'raffleIds',
+                            'toggleFn'      => 'toggleRaffle',
+                            'moveUpFn'      => 'moveRaffleUp',
+                            'moveDownFn'    => 'moveRaffleDown',
+                            'orderFn'       => 'raffleOrder',
+                            'emptyMsg'      => 'No hay sorteos disponibles.',
+                            'itemFields'    => ['title_field' => 'title', 'meta_field' => 'end_date', 'meta_prefix' => 'Vence: ', 'meta_format' => 'date'],
+                        ])
+                        <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                            <button type="button" class="eh-save-btn" @click="saveSection('sorteo')"><i class="fa-solid fa-save"></i> Guardar selección</button>
                         </div>
-                        @else
-                        <div class="eh-empty">No hay sorteos disponibles. Crea uno en el modulo de <strong>Sorteos</strong>.</div>
-                        @endif
                     @endif
 
                     @if($key === 'bonos')
-                        @if(count($bonusItems) > 0)
-                        <div class="eh-grid" style="padding: 0;">
-                            @foreach($bonusItems as $bonus)
-                            <div class="eh-card" :class="isBonusSelected('{{ $bonus['id'] }}') ? 'selected' : ''"
-                                 @click="toggleBonus('{{ $bonus['id'] }}')">
-                                <template x-if="isBonusSelected('{{ $bonus['id'] }}')">
-                                    <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
-                                </template>
-                                <template x-if="isBonusSelected('{{ $bonus['id'] }}')">
-                                    <div style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 5;" @click.stop>
-                                        <button @click="moveBonusUp('{{ $bonus['id'] }}')" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;">↑</button>
-                                        <button @click="moveBonusDown('{{ $bonus['id'] }}')" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;">↓</button>
-                                    </div>
-                                </template>
-                                <div class="eh-bonus-value">
-                                    @if($bonus['bonus_percent'])
-                                        {{ $bonus['bonus_percent'] }}%
-                                    @elseif($bonus['bonus_amount'])
-                                        ${{ number_format($bonus['bonus_amount'], 2) }}
-                                    @else
-                                        <i class="fa-solid fa-gift eh-card-icon"></i>
-                                    @endif
-                                </div>
-                                <div class="eh-card-title">{{ $bonus['title'] }}</div>
-                                <div class="eh-card-meta">
-                                    <span>{{ $bonus['code'] ?? 'Sin codigo' }}</span>
-                                </div>
-                            </div>
-                            @endforeach
+                        @include('livewire.partials.eh-picker', [
+                            'items'         => $bonusItems,
+                            'searchModel'   => 'searchBonus',
+                            'filterModel'   => 'filterBonus',
+                            'selectedModel' => 'bonusIds',
+                            'toggleFn'      => 'toggleBonus',
+                            'moveUpFn'      => 'moveBonusUp',
+                            'moveDownFn'    => 'moveBonusDown',
+                            'orderFn'       => 'bonusOrder',
+                            'emptyMsg'      => 'No hay bonos activos disponibles.',
+                            'itemFields'    => ['title_field' => 'title', 'meta_field' => 'code', 'meta_prefix' => '', 'meta_format' => 'text'],
+                        ])
+                        <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                            <button type="button" class="eh-save-btn" @click="saveSection('bonos')"><i class="fa-solid fa-save"></i> Guardar selección</button>
                         </div>
-                        @else
-                        <div class="eh-empty">No hay bonos activos disponibles. Crea uno en el modulo de <strong>Bonos</strong>.</div>
-                        @endif
                     @endif
 
                     @if($key === 'blog')
-                        @if(count($blogPosts) > 0)
-                        <div class="eh-grid" style="padding: 0;">
-                            @foreach($blogPosts as $post)
-                            <div class="eh-card" :class="isPostSelected('{{ $post['id'] }}') ? 'selected' : ''"
-                                 @click="togglePost('{{ $post['id'] }}')">
-                                <template x-if="isPostSelected('{{ $post['id'] }}')">
-                                    <div class="eh-card-check"><i class="fa-solid fa-check"></i></div>
-                                </template>
-                                <template x-if="isPostSelected('{{ $post['id'] }}')">
-                                    <div style="position: absolute; bottom: 8px; right: 8px; display: flex; gap: 4px; z-index: 5;" @click.stop>
-                                        <button @click="movePostUp('{{ $post['id'] }}')" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;">↑</button>
-                                        <button @click="movePostDown('{{ $post['id'] }}')" style="background: rgba(0,0,0,0.5); border: 1px solid var(--line); color: white; border-radius: 4px; padding: 2px 6px; font-size: 10px;">↓</button>
-                                    </div>
-                                </template>
-                                @if($post['image'])
-                                <img src="{{ asset('storage/' . $post['image']) }}" class="eh-card-img" alt="{{ $post['title'] }}">
-                                @else
-                                <div class="eh-card-img placeholder"><i class="fa-solid fa-newspaper"></i></div>
-                                @endif
-                                <div class="eh-card-title">{{ $post['title'] }}</div>
-                                <div class="eh-card-meta">
-                                    <span>{{ \Carbon\Carbon::parse($post['published_at'])->format('d/m/Y') }}</span>
-                                </div>
-                            </div>
-                            @endforeach
+                        @include('livewire.partials.eh-picker', [
+                            'items'         => $blogPosts,
+                            'searchModel'   => 'searchPost',
+                            'filterModel'   => 'filterPost',
+                            'selectedModel' => 'postIds',
+                            'toggleFn'      => 'togglePost',
+                            'moveUpFn'      => 'movePostUp',
+                            'moveDownFn'    => 'movePostDown',
+                            'orderFn'       => 'postOrder',
+                            'emptyMsg'      => 'No hay entradas de blog publicadas.',
+                            'itemFields'    => ['title_field' => 'title', 'meta_field' => 'published_at', 'meta_prefix' => '', 'meta_format' => 'date', 'image_field' => 'image'],
+                        ])
+                        <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                            <button type="button" class="eh-save-btn" @click="saveSection('blog')"><i class="fa-solid fa-save"></i> Guardar selección</button>
                         </div>
-                        @else
-                        <div class="eh-empty">No hay entradas de blog publicadas. Crea una en <strong>Novedades</strong> con tipo "Blog".</div>
-                        @endif
+                    @endif
+
+                    @if($key === 'lineas')
+                        @include('livewire.partials.eh-picker', [
+                            'items'         => $lineItems,
+                            'searchModel'   => 'searchLine',
+                            'filterModel'   => 'filterLine',
+                            'selectedModel' => 'lineIds',
+                            'toggleFn'      => 'toggleLine',
+                            'moveUpFn'      => 'moveLineUp',
+                            'moveDownFn'    => 'moveLineDown',
+                            'orderFn'       => 'lineOrder',
+                            'emptyMsg'      => 'No hay líneas activas disponibles.',
+                            'itemFields'    => ['title_field' => 'name', 'meta_field' => 'type', 'meta_prefix' => '', 'meta_format' => 'text'],
+                        ])
+                        <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+                            <button type="button" class="eh-save-btn" @click="saveSection('lineas')"><i class="fa-solid fa-save"></i> Guardar selección</button>
+                        </div>
                     @endif
 
                 </div>

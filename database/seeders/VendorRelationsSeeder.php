@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Agent;
 use App\Models\Bonus;
+use App\Models\HomeSection;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
@@ -289,7 +290,7 @@ class VendorRelationsSeeder extends Seeder
                         'end_date' => Carbon::now()->addDays($rd['addDays']),
                         'start_number' => 1,
                         'end_number' => $rd['end'],
-                        'prizes' => [['name' => 'Primer premio', 'value' => rand(10000, 100000)]],
+                        'prizes' => [['position' => 1, 'name' => 'Primer premio', 'amount' => rand(10000, 100000), 'image' => 'https://picsum.photos/id/1049/480/260']],
                         'slug' => Str::slug($rd['title'].'-'.$vendor->slug).'-'.uniqid(),
                     ]
                 );
@@ -337,6 +338,34 @@ class VendorRelationsSeeder extends Seeder
             }
         }
         $this->command->info('Posts listos.');
+
+        // ── HomeSections por vendor ──
+        foreach ($vendorMap as $slug => $vm) {
+            $vendor = $vm['vendor'];
+            $vLines = $vm['lines'];
+
+            $vendorBonusIds = Bonus::withoutGlobalScopes()->where('vendor_id', $vendor->id)->pluck('id')->toArray();
+            $vendorRaffleIds = Raffle::withoutGlobalScopes()->where('vendor_id', $vendor->id)->where('status', 'active')->pluck('id')->toArray();
+            $vendorPostIds = Post::withoutGlobalScopes()->where('vendor_id', $vendor->id)->where('status', Post::STATUS_PUBLISHED)->pluck('id')->toArray();
+            $vendorLineIds = collect($vLines)->pluck('id')->toArray();
+
+            $sections = [
+                ['section_key' => 'como-empezar', 'order' => 0, 'enabled' => true, 'kicker' => 'Cómo funciona', 'title' => 'Empezá con', 'highlight' => $vendor->name, 'subtitle' => 'Contactanos, pedí tu usuario y empezá a jugar en minutos.', 'repeater_data' => [['title' => 'Contactanos', 'subtitle' => 'Escribinos por WhatsApp o Telegram.'], ['title' => 'Cargá saldo', 'subtitle' => 'Acreditamos al instante con los medios disponibles.'], ['title' => 'Jugá', 'subtitle' => 'Entrá a la plataforma y disfrutá.']]],
+                ['section_key' => 'lineas', 'order' => 1, 'enabled' => ! empty($vendorLineIds), 'kicker' => 'Líneas activas', 'title' => 'Nuestras', 'highlight' => 'líneas', 'subtitle' => 'Líneas de atención directa con soporte y cargas rápidas.', 'line_ids' => $vendorLineIds],
+                ['section_key' => 'sorteo', 'order' => 2, 'enabled' => ! empty($vendorRaffleIds), 'kicker' => 'Sorteos exclusivos', 'title' => 'Sorteos de', 'highlight' => $vendor->name, 'subtitle' => 'Participá y ganá premios reales.', 'raffle_type' => 'active', 'raffle_ids' => $vendorRaffleIds],
+                ['section_key' => 'nosotros', 'order' => 3, 'enabled' => true, 'kicker' => 'Sobre '.$vendor->name, 'title' => 'Por qué elegirnos', 'highlight' => '', 'subtitle' => $vendor->description ?? '', 'repeater_data' => $vendor->features ?? []],
+                ['section_key' => 'bonos', 'order' => 4, 'enabled' => ! empty($vendorBonusIds), 'kicker' => 'Bonos exclusivos', 'title' => 'Bonos de', 'highlight' => $vendor->name, 'subtitle' => 'Bonos activos para arrancar con ventaja.', 'action_text' => 'Ver todos', 'action_url' => '/'.$vendor->slug.'/bonos', 'bonus_type' => 'active', 'bonus_ids' => $vendorBonusIds],
+                ['section_key' => 'blog', 'order' => 5, 'enabled' => true, 'kicker' => 'Novedades', 'title' => 'Últimas', 'highlight' => 'novedades', 'subtitle' => 'Enterate de sorteos, bonos y noticias.', 'action_text' => 'Ver novedades', 'action_url' => '/'.$vendor->slug.'/blog', 'post_ids' => ! empty($vendorPostIds) ? $vendorPostIds : []],
+            ];
+
+            foreach ($sections as $data) {
+                HomeSection::withoutGlobalScopes()->updateOrCreate(
+                    ['vendor_id' => $vendor->id, 'section_key' => $data['section_key']],
+                    array_merge($data, ['vendor_id' => $vendor->id, 'content' => null])
+                );
+            }
+        }
+        $this->command->info('HomeSections por vendor listas.');
 
         $this->command->info('======================================');
         $this->command->info(' RELACIONES DE VENDOR CARGADAS');

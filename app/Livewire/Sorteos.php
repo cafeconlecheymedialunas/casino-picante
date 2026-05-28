@@ -99,7 +99,7 @@ class Sorteos extends Component
             'prizes' => 'array',
             'prizes.*.position' => 'nullable|integer|min:1',
             'prizes.*.name' => 'nullable|string|max:180',
-            'prizeUploads.*' => 'nullable|image|mimes:png|max:4096',
+            'prizeUploads.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',
         ];
     }
 
@@ -886,7 +886,7 @@ class Sorteos extends Component
     private function assignableUsers(?Raffle $raffle)
     {
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
-        $vendorId = $raffle?->vendor_id ?: session('active_vendor_id');
+        $vendorId = $this->isAdminMode() ? null : ($raffle?->vendor_id ?: session('active_vendor_id'));
 
         return User::query()
             ->when($clientRoleId, fn ($query) => $query->where('role_id', $clientRoleId))
@@ -905,7 +905,7 @@ class Sorteos extends Component
         }
 
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
-        $vendorId = $raffle->vendor_id ?: session('active_vendor_id');
+        $vendorId = $this->isAdminMode() ? null : ($raffle->vendor_id ?: session('active_vendor_id'));
 
         return (! $clientRoleId || (int) $user->role_id === (int) $clientRoleId)
             && $user->status === 'active'

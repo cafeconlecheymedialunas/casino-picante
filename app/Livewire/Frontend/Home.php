@@ -51,13 +51,21 @@ class Home extends Component
 
     private function lines(): EloquentCollection
     {
-        return Line::withoutGlobalScopes()
+        $section = HomeSection::withoutGlobalScopes()
+            ->where('section_key', 'lineas')
+            ->whereNull('vendor_id')
+            ->first();
+        $ids = $this->ensureArray($section?->line_ids);
+
+        $query = Line::withoutGlobalScopes()
             ->with(['activePlatforms', 'lineAgents.agent', 'ratings', 'vendor'])
-            ->where('status', 'active')
-            ->orderByRaw('CASE WHEN vendor_id IS NOT NULL THEN 0 ELSE 1 END')
-            ->orderBy('name')
-            ->take(6)
-            ->get();
+            ->where('status', 'active');
+
+        if (! empty($ids)) {
+            return $query->whereIn('id', $ids)->get()->sortBy(fn ($l) => array_search($l->id, $ids))->values();
+        }
+
+        return new EloquentCollection;
     }
 
     private function raffles(): EloquentCollection
@@ -185,24 +193,29 @@ class Home extends Component
                 ->whereNull('vendor_id')
                 ->first();
 
-            $sections[$key] = $section ? [
-                'kicker' => $section->kicker ?? $defaults['kicker'] ?? null,
-                'title' => $section->title ?? $defaults['title'] ?? null,
-                'highlight' => $section->highlight ?? $defaults['highlight'] ?? null,
-                'subtitle' => $section->subtitle ?? $defaults['subtitle'] ?? null,
-                'content' => $section->content ?? $defaults['content'] ?? null,
-                'action' => $section->action_text && $section->action_url
-                    ? '<a class="fe-btn ghost" href="'.$section->action_url.'" wire:navigate>'.$section->action_text.'</a>'
-                    : ($defaults['action'] ?? null),
-                'enabled' => $section->enabled,
-                'raffle_type' => $section->raffle_type,
-                'raffle_ids' => $this->ensureArray($section->raffle_ids),
-                'post_type' => $section->post_type,
-                'post_ids' => $this->ensureArray($section->post_ids),
-                'bonus_type' => $section->bonus_type,
-                'bonus_ids' => $this->ensureArray($section->bonus_ids),
-                'repeater_data' => $this->ensureArray($section->repeater_data ?: ($defaults['repeater_data'] ?? [])),
-            ] : $defaults;
+            if ($section) {
+                $sections[$key] = [
+                    'kicker'       => $section->kicker ?? $defaults['kicker'] ?? null,
+                    'title'        => $section->title ?? $defaults['title'] ?? null,
+                    'highlight'    => $section->highlight ?? $defaults['highlight'] ?? null,
+                    'subtitle'     => $section->subtitle ?? $defaults['subtitle'] ?? null,
+                    'content'      => $section->content ?? $defaults['content'] ?? null,
+                    'action'       => $section->action_text && $section->action_url
+                        ? '<a class="fe-btn ghost" href="'.$section->action_url.'" wire:navigate>'.$section->action_text.'</a>'
+                        : ($defaults['action'] ?? null),
+                    'enabled'      => $section->enabled,
+                    'raffle_type'  => $section->raffle_type,
+                    'raffle_ids'   => $this->ensureArray($section->raffle_ids),
+                    'post_type'    => $section->post_type,
+                    'post_ids'     => $this->ensureArray($section->post_ids),
+                    'bonus_type'   => $section->bonus_type,
+                    'bonus_ids'    => $this->ensureArray($section->bonus_ids),
+                    'line_ids'     => $this->ensureArray($section->line_ids),
+                    'repeater_data' => $this->ensureArray($section->repeater_data ?: ($defaults['repeater_data'] ?? [])),
+                ];
+            } else {
+                $sections[$key] = array_merge(['enabled' => true, 'action' => $defaults['action'] ?? null], $defaults);
+            }
         }
 
         return $sections;
