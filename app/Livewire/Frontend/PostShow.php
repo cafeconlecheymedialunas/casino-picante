@@ -51,6 +51,7 @@ class PostShow extends Component
         ]);
 
         Comment::create([
+            'vendor_id' => $this->post->vendor_id,
             'post_id' => $this->post->id,
             'user_id' => auth()->id(),
             'content' => trim($validated['commentContent']),
@@ -91,7 +92,7 @@ class PostShow extends Component
             return;
         }
 
-        $parent = Comment::where('post_id', $this->post->id)
+        $parent = Comment::withoutGlobalScopes()->where('post_id', $this->post->id)
             ->whereNull('parent_id')
             ->where('is_approved', true)
             ->findOrFail($this->replyTo);
@@ -105,6 +106,7 @@ class PostShow extends Component
         ]);
 
         Comment::create([
+            'vendor_id' => $this->post->vendor_id,
             'post_id' => $parent->post_id,
             'parent_id' => $parent->id,
             'user_id' => auth()->id(),

@@ -55,7 +55,7 @@ class AgentMessaging extends Component
     {
         $this->authorizeDirectAgent($agentId);
 
-        $query = Chat::where('agent_id', $agentId);
+        $query = Chat::withoutGlobalScopes()->where('agent_id', $agentId);
 
         if ($this->targetUserId) {
             return $query->where('user_id', $this->targetUserId)->first();
@@ -79,6 +79,7 @@ class AgentMessaging extends Component
         $this->authorizeDirectAgent($agentId);
 
         return $this->findExistingChat($agentId) ?: Chat::create([
+            'vendor_id' => session('active_vendor_id'),
             'user_id' => $this->targetUserId,
             'agent_id' => $agentId,
             'subject' => "{$this->targetType}: {$this->targetName}",
@@ -181,7 +182,7 @@ class AgentMessaging extends Component
         }
 
         $lineIds = $this->visibleLineIds();
-        $allowed = LineAgent::where('agent_id', $agentId)
+        $allowed = LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)
             ->whereIn('line_id', $lineIds ?? [])
             ->where('is_active', true)
             ->exists();

@@ -143,10 +143,11 @@ class BlogEdit extends Component
 
         $this->validate(['replyContent' => 'required|string|min:1|max:2000']);
 
-        $parent = Comment::findOrFail($this->replyTo);
+        $parent = Comment::withoutGlobalScopes()->findOrFail($this->replyTo);
         abort_unless((int) $parent->post_id === (int) $this->post->id, 403, 'No podes responder comentarios de otro post.');
 
         Comment::create([
+            'vendor_id' => $this->post->vendor_id,
             'post_id' => $parent->post_id,
             'parent_id' => $parent->id,
             'user_id' => auth()->id(),
@@ -162,7 +163,7 @@ class BlogEdit extends Component
     public function approveComment(int $commentId): void
     {
         $this->checkLinePermission(Permissions::NEWS_UPDATE);
-        $comment = Comment::findOrFail($commentId);
+        $comment = Comment::withoutGlobalScopes()->findOrFail($commentId);
         abort_unless((int) $comment->post_id === (int) $this->post->id, 403, 'No podes moderar comentarios de otro post.');
         $comment->update(['is_approved' => true]);
         $this->refreshComments();
@@ -171,7 +172,7 @@ class BlogEdit extends Component
     public function deleteComment(int $commentId): void
     {
         $this->checkLinePermission(Permissions::NEWS_DELETE);
-        $comment = Comment::findOrFail($commentId);
+        $comment = Comment::withoutGlobalScopes()->findOrFail($commentId);
         abort_unless((int) $comment->post_id === (int) $this->post->id, 403, 'No podes moderar comentarios de otro post.');
         $comment->delete();
         $this->refreshComments();
@@ -184,6 +185,7 @@ class BlogEdit extends Component
         $this->validate(['newComment' => 'required|string|min:1|max:2000']);
 
         Comment::create([
+            'vendor_id' => $this->post->vendor_id,
             'post_id' => $this->post->id,
             'user_id' => auth()->id(),
             'content' => $this->newComment,
@@ -196,7 +198,7 @@ class BlogEdit extends Component
 
     private function refreshComments(): void
     {
-        $this->comments = Comment::where('post_id', $this->post->id)
+        $this->comments = Comment::withoutGlobalScopes()->where('post_id', $this->post->id)
             ->whereNull('parent_id')
             ->with(['user', 'replies.user'])
             ->orderBy('created_at', 'desc')

@@ -132,14 +132,14 @@ class ClientAccount extends Component
 
     public function markNotificationRead(int $notificationId): void
     {
-        DashboardNotification::where('user_id', auth()->id())
+        DashboardNotification::withoutGlobalScopes()->where('user_id', auth()->id())
             ->whereKey($notificationId)
             ->update(['read_at' => now()]);
     }
 
     public function markAllNotificationsRead(): void
     {
-        DashboardNotification::where('user_id', auth()->id())
+        DashboardNotification::withoutGlobalScopes()->where('user_id', auth()->id())
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
     }

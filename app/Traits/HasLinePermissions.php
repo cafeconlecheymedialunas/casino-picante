@@ -53,7 +53,7 @@ trait HasLinePermissions
         if (! $this->isAdminMode()) {
             $agentId = $this->validateSessionAgent();
             if ($agentId && $line) {
-                $hasAccess = LineAgent::where('line_id', $lineId)
+                $hasAccess = LineAgent::withoutGlobalScopes()->where('line_id', $lineId)
                     ->where('agent_id', $agentId)
                     ->where('is_active', true)
                     ->exists();
@@ -76,7 +76,7 @@ trait HasLinePermissions
             return null;
         }
 
-        return LineAgent::where('line_id', $lineId)
+        return LineAgent::withoutGlobalScopes()->where('line_id', $lineId)
             ->where('agent_id', $agentId)
             ->where('is_active', true)
             ->first();
@@ -166,7 +166,7 @@ trait HasLinePermissions
             return [];
         }
 
-        return LineAgent::where('agent_id', $agentId)
+        return LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)
             ->where('is_active', true)
             ->pluck('line_id')
             ->map(fn ($id) => (int) $id)
@@ -188,7 +188,7 @@ trait HasLinePermissions
 
         $permissions = array_filter(array_map('trim', (array) $permissions));
 
-        $lineIds = LineAgent::where('agent_id', $agentId)
+        $lineIds = LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)
             ->where('is_active', true)
             ->when($permissions !== [], fn ($query) => $query->whereExists(function ($permissionQuery) use ($permissions) {
                 $permissionQuery->selectRaw('1')
