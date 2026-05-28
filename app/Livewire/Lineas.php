@@ -744,7 +744,7 @@ class Lineas extends Component
             return;
         }
 
-        abort_unless(Agent::whereKey($agentId)->where('vendor_id', (int) session('active_vendor_id'))->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+        abort_unless(Agent::whereKey($agentId)->where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', (int) session('active_vendor_id')))->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
     }
 
     private function mapChannels(array $links): array
