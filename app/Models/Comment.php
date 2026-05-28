@@ -39,7 +39,7 @@ class Comment extends Model
 
     public function replies()
     {
-        return $this->hasMany(Comment::class, 'parent_id')->with('user')->orderBy('created_at');
+        return $this->hasMany(Comment::class, 'parent_id')->withoutGlobalScopes()->with('user')->orderBy('created_at');
     }
 
     public function parent()

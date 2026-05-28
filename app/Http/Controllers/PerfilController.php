@@ -16,7 +16,7 @@ class PerfilController extends Controller
         $agent = null;
 
         if (session('active_agent_id') && $user) {
-            $agent = Agent::where('id', session('active_agent_id'))
+            $agent = Agent::withoutGlobalScopes()->where('id', session('active_agent_id'))
                 ->where('user_id', $user->id)
                 ->first();
         }
@@ -39,7 +39,7 @@ class PerfilController extends Controller
         $avatarRule = ['sometimes', 'string', 'regex:/^avatar_[A-Za-z0-9_-]{1,80}$/'];
 
         if ($isAgent) {
-            $agent = Agent::where('id', session('active_agent_id'))
+            $agent = Agent::withoutGlobalScopes()->where('id', session('active_agent_id'))
                 ->where('user_id', $user->id)
                 ->first();
 
@@ -107,7 +107,7 @@ class PerfilController extends Controller
         $user = $request->user();
 
         if ($isAgent) {
-            $agent = Agent::where('id', session('active_agent_id'))
+            $agent = Agent::withoutGlobalScopes()->where('id', session('active_agent_id'))
                 ->where('user_id', $user->id)
                 ->first();
 

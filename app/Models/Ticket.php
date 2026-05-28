@@ -58,6 +58,6 @@ class Ticket extends Model
 
     public function messages()
     {
-        return $this->hasMany(TicketMessage::class);
+        return $this->hasMany(TicketMessage::class)->withoutGlobalScopes();
     }
 }

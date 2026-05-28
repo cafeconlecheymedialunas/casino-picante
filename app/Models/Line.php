@@ -76,7 +76,7 @@ class Line extends Model
 
     public function lineAgents()
     {
-        return $this->hasMany(LineAgent::class);
+        return $this->hasMany(LineAgent::class)->withoutGlobalScopes();
     }
 
     public function agents()
@@ -125,12 +125,12 @@ class Line extends Model
 
     public function sales()
     {
-        return $this->hasMany(Sale::class);
+        return $this->hasMany(Sale::class)->withoutGlobalScopes();
     }
 
     public function ratings()
     {
-        return $this->hasMany(LineRating::class);
+        return $this->hasMany(LineRating::class)->withoutGlobalScopes();
     }
 
     public function getAverageRatingAttribute()

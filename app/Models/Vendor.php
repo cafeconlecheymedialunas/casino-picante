@@ -38,6 +38,6 @@ class Vendor extends Model
 
     public function lines(): HasMany
     {
-        return $this->hasMany(Line::class);
+        return $this->hasMany(Line::class)->withoutGlobalScopes();
     }
 }

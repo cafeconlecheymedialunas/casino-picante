@@ -51,7 +51,7 @@ class Agent extends Model
 
     public function lineAgents()
     {
-        return $this->hasMany(LineAgent::class);
+        return $this->hasMany(LineAgent::class)->withoutGlobalScopes();
     }
 
     public function lines()

@@ -83,7 +83,7 @@ class Raffle extends Model
 
     public function numbers()
     {
-        return $this->hasMany(RaffleNumber::class);
+        return $this->hasMany(RaffleNumber::class)->withoutGlobalScopes();
     }
 
     /**

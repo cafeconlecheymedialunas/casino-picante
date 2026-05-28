@@ -56,11 +56,11 @@ class Post extends Model
 
     public function comments()
     {
-        return $this->hasMany(Comment::class)->where('is_approved', true);
+        return $this->hasMany(Comment::class)->withoutGlobalScopes()->where('is_approved', true);
     }
 
     public function pendingComments()
     {
-        return $this->hasMany(Comment::class)->where('is_approved', false);
+        return $this->hasMany(Comment::class)->withoutGlobalScopes()->where('is_approved', false);
     }
 }
