@@ -75,7 +75,7 @@ class Agent extends Model
 
     public function linePermissionsFor(int $lineId): array
     {
-        $lineAgent = LineAgent::where('line_id', $lineId)
+        $lineAgent = LineAgent::withoutGlobalScopes()->where('line_id', $lineId)
             ->where('agent_id', $this->id)
             ->where('is_active', true)
             ->first();
@@ -89,7 +89,7 @@ class Agent extends Model
 
     public function hasLinePermission(int $lineId, string $permission): bool
     {
-        return LineAgent::where('line_id', $lineId)
+        return LineAgent::withoutGlobalScopes()->where('line_id', $lineId)
             ->where('agent_id', $this->id)
             ->where('is_active', true)
             ->whereHas('linePermissions', fn ($q) => $q->where('permission', $permission))

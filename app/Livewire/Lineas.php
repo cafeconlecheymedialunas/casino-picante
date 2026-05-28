@@ -346,7 +346,7 @@ class Lineas extends Component
 
         // If acting as encargado (not admin) further restrict to encargado's own perms
         if (! $this->isAdminMode()) {
-            $encargadoLA = LineAgent::where('line_id', $lineAgent->line_id)
+            $encargadoLA = LineAgent::withoutGlobalScopes()->where('line_id', $lineAgent->line_id)
                 ->where('role', LineRoles::ENCARGADO)
                 ->first();
 
@@ -393,7 +393,7 @@ class Lineas extends Component
         if ($this->isAdminMode()) {
             $available = $linePerms;
         } else {
-            $encargadoLA = LineAgent::where('line_id', $lineAgent->line_id)
+            $encargadoLA = LineAgent::withoutGlobalScopes()->where('line_id', $lineAgent->line_id)
                 ->where('role', LineRoles::ENCARGADO)
                 ->first();
             if ($encargadoLA) {
@@ -423,7 +423,7 @@ class Lineas extends Component
 
         // If we're updating the encargado, remove from other agents any permissions not allowed by the new encargado set
         if ($lineAgent->role === LineRoles::ENCARGADO) {
-            $deleteQuery = LineAgentPermission::where('line_id', $lineAgent->line_id)
+            $deleteQuery = LineAgentPermission::withoutGlobalScopes()->where('line_id', $lineAgent->line_id)
                 ->where('agent_id', '!=', $lineAgent->agent_id);
 
             if (empty($filtered)) {
@@ -467,7 +467,7 @@ class Lineas extends Component
         $this->authorizeLineEdit($line);
         $this->authorizeAgentChoice($agentId);
 
-        $result = LineAgent::firstOrCreate(
+        $result = LineAgent::withoutGlobalScopes()->firstOrCreate(
             ['line_id' => $line->id, 'agent_id' => $agentId],
             ['vendor_id' => $line->vendor_id ?: session('active_vendor_id'), 'role' => LineRoles::MIEMBRO, 'is_active' => true]
         );
@@ -508,7 +508,7 @@ class Lineas extends Component
         $lineName = $lineAgent->line->name;
         $agentId = $lineAgent->agent_id;
 
-        LineAgentPermission::where('line_id', $lineAgent->line_id)
+        LineAgentPermission::withoutGlobalScopes()->where('line_id', $lineAgent->line_id)
             ->where('agent_id', $lineAgent->agent_id)
             ->delete();
 
@@ -558,7 +558,7 @@ class Lineas extends Component
             return true;
         }
 
-        return LineAgent::where('line_id', $line->id)
+        return LineAgent::withoutGlobalScopes()->where('line_id', $line->id)
             ->where('agent_id', session('active_agent_id'))
             ->where('role', LineRoles::ENCARGADO)
             ->exists();
@@ -580,7 +580,7 @@ class Lineas extends Component
                 ->get()
             : collect();
 
-        $assignedAgentIds = LineAgent::where('line_id', $this->editingLineId)
+        $assignedAgentIds = LineAgent::withoutGlobalScopes()->where('line_id', $this->editingLineId)
             ->pluck('agent_id')
             ->toArray();
 
@@ -709,12 +709,12 @@ class Lineas extends Component
 
     private function syncEncargado(Line $line, int $agentId, float $percent): void
     {
-        LineAgent::where('line_id', $line->id)
+        LineAgent::withoutGlobalScopes()->where('line_id', $line->id)
             ->where('role', LineRoles::ENCARGADO)
             ->where('agent_id', '!=', $agentId)
             ->delete();
 
-        $lineAgent = LineAgent::updateOrCreate(
+        $lineAgent = LineAgent::withoutGlobalScopes()->updateOrCreate(
             ['line_id' => $line->id, 'agent_id' => $agentId],
             ['vendor_id' => $line->vendor_id ?: session('active_vendor_id'), 'role' => LineRoles::ENCARGADO, 'is_active' => true, 'porcentaje_ganancia' => $percent]
         );
@@ -763,7 +763,7 @@ class Lineas extends Component
     {
         $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
 
-        LineAgent::where('line_id', $line->id)
+        LineAgent::withoutGlobalScopes()->where('line_id', $line->id)
             ->where('role', LineRoles::ENCARGADO)
             ->pluck('agent_id')
             ->unique()
@@ -792,7 +792,7 @@ class Lineas extends Component
             return;
         }
 
-        $canView = LineAgent::where('line_id', $line->id)
+        $canView = LineAgent::withoutGlobalScopes()->where('line_id', $line->id)
             ->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
             ->exists();

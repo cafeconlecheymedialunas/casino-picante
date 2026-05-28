@@ -218,7 +218,7 @@ class BlogEdit extends Component
         $lineIds = $this->visibleLineIds();
 
         if ($lineIds !== null) {
-            $agentIds = LineAgent::whereIn('line_id', $lineIds)
+            $agentIds = LineAgent::withoutGlobalScopes()->whereIn('line_id', $lineIds)
                 ->where('is_active', true)
                 ->pluck('agent_id');
 

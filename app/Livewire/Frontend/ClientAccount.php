@@ -119,6 +119,7 @@ class ClientAccount extends Component
         }
 
         TicketMessage::create([
+            'vendor_id' => $ticket->vendor_id,
             'ticket_id' => $ticket->id,
             'user_id' => auth()->id(),
             'message' => trim($this->replyMessage),
@@ -297,6 +298,7 @@ class ClientAccount extends Component
         }
 
         $ticket = Ticket::create([
+            'vendor_id' => $user->vendor_id ?: session('active_vendor_id'),
             'user_id' => $user->id,
             'line_id' => $lineId,
             'subject' => trim($validated['ticket_subject']),
@@ -306,6 +308,7 @@ class ClientAccount extends Component
         ]);
 
         TicketMessage::create([
+            'vendor_id' => $ticket->vendor_id,
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => trim($validated['ticket_description']),

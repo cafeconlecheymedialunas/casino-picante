@@ -39,7 +39,7 @@ class LineAgent extends Model
 
     public function linePermissions()
     {
-        return LineAgentPermission::where('line_id', $this->line_id)
+        return LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->line_id)
             ->where('agent_id', $this->agent_id);
     }
 
@@ -48,7 +48,7 @@ class LineAgent extends Model
         $cacheKey = "line_agent_permissions:{$this->line_id}:{$this->agent_id}";
 
         return Cache::remember($cacheKey, 300, function () {
-            return LineAgentPermission::where('line_id', $this->line_id)
+            return LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->line_id)
                 ->where('agent_id', $this->agent_id)
                 ->pluck('permission')
                 ->toArray();
@@ -70,7 +70,7 @@ class LineAgent extends Model
 
     public function grantPermission(string $permission): void
     {
-        LineAgentPermission::firstOrCreate(
+        LineAgentPermission::withoutGlobalScopes()->firstOrCreate(
             [
                 'line_id' => $this->line_id,
                 'agent_id' => $this->agent_id,
@@ -84,7 +84,7 @@ class LineAgent extends Model
 
     public function revokePermission(string $permission): void
     {
-        LineAgentPermission::where('line_id', $this->line_id)
+        LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->line_id)
             ->where('agent_id', $this->agent_id)
             ->where('permission', $permission)
             ->delete();
@@ -94,7 +94,7 @@ class LineAgent extends Model
 
     public function syncPermissions(array $permissions): void
     {
-        LineAgentPermission::where('line_id', $this->line_id)
+        LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->line_id)
             ->where('agent_id', $this->agent_id)
             ->delete();
 

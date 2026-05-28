@@ -206,7 +206,7 @@ class Agentes extends Component
         $agent->update(['status' => $newStatus]);
         $agent->user?->update(['status' => $newStatus]);
 
-        LineAgent::where('agent_id', $agentId)->update(['is_active' => $newStatus === 'active']);
+        LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)->update(['is_active' => $newStatus === 'active']);
         session()->flash('message', $newStatus === 'active' ? 'Agente activado.' : 'Agente pausado.');
 
         $this->notify('Estado de agente cambiado', "El agente {$agent->name} fue ".($newStatus === 'active' ? 'activado' : 'pausado').'.', 'agents', route('admin.agentes', [], false), 'warning');
@@ -257,7 +257,7 @@ class Agentes extends Component
             $available = Permissions::all();
         } else {
             $currentAgentId = (int) session('active_agent_id');
-            $myPerms = LineAgentPermission::where('line_id', $lineId)
+            $myPerms = LineAgentPermission::withoutGlobalScopes()->where('line_id', $lineId)
                 ->where('agent_id', $currentAgentId)
                 ->pluck('permission')
                 ->toArray();
@@ -269,7 +269,7 @@ class Agentes extends Component
         $this->permEditAvailable = $available;
 
         // Load current permissions; default to all available if none stored yet
-        $current = LineAgentPermission::where('line_id', $lineId)
+        $current = LineAgentPermission::withoutGlobalScopes()->where('line_id', $lineId)
             ->where('agent_id', $agentId)
             ->pluck('permission')
             ->toArray();
@@ -300,7 +300,7 @@ class Agentes extends Component
             $available = Permissions::all();
         } else {
             $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null;
-            $myPerms = LineAgentPermission::where('line_id', $this->permEditLineId)
+            $myPerms = LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->permEditLineId)
                 ->where('agent_id', $currentAgentId)
                 ->pluck('permission')
                 ->toArray();
@@ -309,7 +309,7 @@ class Agentes extends Component
 
         $toSave = array_values(array_intersect($this->permEditSelected, $available));
 
-        $lineAgent = LineAgent::where('line_id', $this->permEditLineId)
+        $lineAgent = LineAgent::withoutGlobalScopes()->where('line_id', $this->permEditLineId)
             ->where('agent_id', $this->permEditAgentId)
             ->firstOrFail();
 
@@ -459,13 +459,13 @@ class Agentes extends Component
             return;
         }
 
-        LineAgent::where('agent_id', $agent->id)
+        LineAgent::withoutGlobalScopes()->where('agent_id', $agent->id)
             ->whereNotIn('line_id', $lineIds)
             ->delete();
 
         foreach ($lineIds as $lineId) {
-            $existing = LineAgent::where('line_id', $lineId)->where('agent_id', $agent->id)->first();
-            LineAgent::updateOrCreate(
+            $existing = LineAgent::withoutGlobalScopes()->where('line_id', $lineId)->where('agent_id', $agent->id)->first();
+            LineAgent::withoutGlobalScopes()->updateOrCreate(
                 ['line_id' => $lineId, 'agent_id' => $agent->id],
                 [
                     'vendor_id' => Line::find($lineId)?->vendor_id ?: session('active_vendor_id'),
@@ -545,7 +545,7 @@ class Agentes extends Component
                 ->toArray();
         }
 
-        return LineAgent::where('agent_id', session('active_agent_id'))
+        return LineAgent::withoutGlobalScopes()->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
             ->when($vendorId, fn ($q) => $q->whereHas('line', fn ($l) => $l->where('vendor_id', (int) $vendorId)))
             ->pluck('line_id')
@@ -576,7 +576,7 @@ class Agentes extends Component
             return;
         }
 
-        $allowed = LineAgent::where('agent_id', $agent->id)
+        $allowed = LineAgent::withoutGlobalScopes()->where('agent_id', $agent->id)
             ->whereIn('line_id', $this->availableLineIds())
             ->exists();
 

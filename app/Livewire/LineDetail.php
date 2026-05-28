@@ -489,7 +489,7 @@ class LineDetail extends Component
             return collect();
         }
 
-        $alreadyIn = LineAgent::where('line_id', $this->lineId)->pluck('agent_id');
+        $alreadyIn = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)->pluck('agent_id');
 
         return Agent::where('status', 'active')
             ->whereNotIn('id', $alreadyIn)
@@ -516,7 +516,7 @@ class LineDetail extends Component
         }
         $this->authorizeAgentChoice((int) $this->assignAgentId);
 
-        LineAgent::updateOrCreate(
+        LineAgent::withoutGlobalScopes()->updateOrCreate(
             ['line_id' => $this->lineId, 'agent_id' => $this->assignAgentId],
             ['vendor_id' => $this->line->vendor_id ?: session('active_vendor_id'), 'role' => $this->assignRole, 'is_active' => true]
         );
@@ -529,11 +529,11 @@ class LineDetail extends Component
     {
         $this->checkLinePermission(Permissions::AGENT_ASSIGN);
 
-        LineAgent::where('line_id', $this->lineId)
+        LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
             ->delete();
 
-        LineAgentPermission::where('line_id', $this->lineId)
+        LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
             ->delete();
 
@@ -548,7 +548,7 @@ class LineDetail extends Component
     {
         $this->checkLinePermission(Permissions::AGENT_UPDATE);
 
-        $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
+        $la = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
         if ($la) {
             $la->update(['is_active' => ! $la->is_active]);
         }
@@ -565,7 +565,7 @@ class LineDetail extends Component
             return;
         }
 
-        $lineAgent = LineAgent::where('line_id', $this->lineId)
+        $lineAgent = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
             ->first();
 
@@ -598,7 +598,7 @@ class LineDetail extends Component
         $this->editingPermAgentId = $agentId;
 
         // Get the target agent's role on this line
-        $targetLineAgent = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
+        $targetLineAgent = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
         $targetRole = $targetLineAgent->role ?? null;
 
         $linePerms = LineAgentPermission::allPermissions();
@@ -607,7 +607,7 @@ class LineDetail extends Component
         $encargadoPerms = [];
         $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
         if ($encargadoLA) {
-            $encargadoPerms = LineAgentPermission::where('line_id', $this->lineId)
+            $encargadoPerms = LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->lineId)
                 ->where('agent_id', $encargadoLA->agent_id)
                 ->pluck('permission')
                 ->toArray();
@@ -629,7 +629,7 @@ class LineDetail extends Component
         }
 
         // Get current agent permissions
-        $granted = LineAgentPermission::where('line_id', $this->lineId)
+        $granted = LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
             ->pluck('permission')
             ->flip()
@@ -663,7 +663,7 @@ class LineDetail extends Component
         $linePerms = LineAgentPermission::allPermissions();
 
         // Get target agent's role
-        $targetLineAgent = LineAgent::where('line_id', $this->lineId)->where('agent_id', $this->editingPermAgentId)->first();
+        $targetLineAgent = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)->where('agent_id', $this->editingPermAgentId)->first();
         $targetRole = $targetLineAgent->role ?? null;
 
         // If the target agent is a miembro, restrict to non-administration permissions
@@ -684,7 +684,7 @@ class LineDetail extends Component
         $encargadoPerms = [];
         $encargadoLA = $this->line->lineAgents()->where('role', LineRoles::ENCARGADO)->first();
         if ($encargadoLA) {
-            $encargadoPerms = LineAgentPermission::where('line_id', $this->lineId)
+            $encargadoPerms = LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->lineId)
                 ->where('agent_id', $encargadoLA->agent_id)
                 ->pluck('permission')
                 ->toArray();
@@ -723,7 +723,7 @@ class LineDetail extends Component
         }
 
         // Remove old permissions for this agent/line
-        $deleteQuery = LineAgentPermission::where('line_id', $this->lineId)
+        $deleteQuery = LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('agent_id', $this->editingPermAgentId);
         if (! $isAdmin) {
             $delegatable = array_filter(LineAgentPermission::allPermissions(), fn ($p) => $this->canDelegate($p));
@@ -732,7 +732,7 @@ class LineDetail extends Component
         $deleteQuery->delete();
 
         foreach ($toGrant as $perm) {
-            LineAgentPermission::firstOrCreate(
+            LineAgentPermission::withoutGlobalScopes()->firstOrCreate(
                 [
                     'line_id' => $this->lineId,
                     'agent_id' => $this->editingPermAgentId,
@@ -743,9 +743,9 @@ class LineDetail extends Component
         }
 
         // If the edited agent is the encargado, ensure no other agent keeps permissions outside the encargado's set
-        $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $this->editingPermAgentId)->first();
+        $la = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)->where('agent_id', $this->editingPermAgentId)->first();
         if ($la && $la->role === LineRoles::ENCARGADO) {
-            $deleteQuery = LineAgentPermission::where('line_id', $this->lineId)
+            $deleteQuery = LineAgentPermission::withoutGlobalScopes()->where('line_id', $this->lineId)
                 ->where('agent_id', '!=', $this->editingPermAgentId);
 
             if (empty($toGrant)) {
@@ -860,7 +860,7 @@ class LineDetail extends Component
 
     public function getEncargadoEarningsThisMonth(): array
     {
-        $lineAgents = LineAgent::where('line_id', $this->lineId)
+        $lineAgents = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('role', LineRoles::ENCARGADO)
             ->where('is_active', true)
             ->get();
@@ -887,7 +887,7 @@ class LineDetail extends Component
     {
         $this->checkLinePermission(Permissions::LINE_EDIT);
 
-        $la = LineAgent::where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
+        $la = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)->where('agent_id', $agentId)->first();
         if ($la) {
             $this->percentageAgentId = $agentId;
             $this->percentageValue = $la->porcentaje_ganancia ?? '0';
@@ -907,7 +907,7 @@ class LineDetail extends Component
         $this->checkLinePermission(Permissions::LINE_EDIT);
 
         if ($this->percentageAgentId) {
-            LineAgent::where('line_id', $this->lineId)
+            LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)
                 ->where('agent_id', $this->percentageAgentId)
                 ->update(['porcentaje_ganancia' => (float) $this->percentageValue]);
 
@@ -1041,7 +1041,7 @@ class LineDetail extends Component
         }
 
         $agentId = $sessionAgentId ?: auth()->user()?->agent?->id;
-        $lineAgent = LineAgent::where('line_id', $this->lineId)
+        $lineAgent = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)
             ->where('agent_id', $agentId)
             ->where('is_active', true)
             ->first();

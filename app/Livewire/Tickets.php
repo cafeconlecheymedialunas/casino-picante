@@ -73,6 +73,7 @@ class Tickets extends Component
         }
 
         $ticket = Ticket::create([
+            'vendor_id' => $user->vendor_id ?: session('active_vendor_id'),
             'user_id' => $user->id,
             'line_id' => $lineId,
             'subject' => trim($this->createSubject),
@@ -82,6 +83,7 @@ class Tickets extends Component
         ]);
 
         TicketMessage::create([
+            'vendor_id' => $ticket->vendor_id,
             'ticket_id' => $ticket->id,
             'agent_id' => $this->getCurrentAgentId(),
             'message' => trim($this->createMessage),
@@ -129,6 +131,7 @@ class Tickets extends Component
         }
 
         TicketMessage::create([
+            'vendor_id' => $this->selectedTicket->vendor_id,
             'ticket_id' => $this->selectedTicket->id,
             'agent_id' => $this->getCurrentAgentId(),
             'message' => $this->newMessage,
@@ -179,6 +182,7 @@ class Tickets extends Component
         ];
 
         TicketMessage::create([
+            'vendor_id' => $this->selectedTicket->vendor_id,
             'ticket_id' => $this->selectedTicket->id,
             'agent_id' => $this->getCurrentAgentId(),
             'message' => $messages[$type] ?? $type,
@@ -220,6 +224,7 @@ class Tickets extends Component
         $this->selectedTicket->update(['status' => 'open']);
 
         TicketMessage::create([
+            'vendor_id' => $this->selectedTicket->vendor_id,
             'ticket_id' => $this->selectedTicket->id,
             'agent_id' => $this->getCurrentAgentId(),
             'message' => '🔄 Ticket reabierto',

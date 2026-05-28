@@ -130,6 +130,7 @@ class Ventas extends Component
             ->value('porcentaje_ganancia');
 
         $data = [
+            'vendor_id' => $line->vendor_id ?: session('active_vendor_id'),
             'line_id' => $line->id,
             'platform_id' => $this->salePlatformId ? (int) $this->salePlatformId : null,
             'fecha_inicio' => $this->saleFechaInicio,
@@ -140,7 +141,7 @@ class Ventas extends Component
         ];
 
         if ($this->editingSaleId) {
-            Sale::where('line_id', $line->id)->findOrFail($this->editingSaleId)->update($data);
+            Sale::withoutGlobalScopes()->where('line_id', $line->id)->findOrFail($this->editingSaleId)->update($data);
         } else {
             Sale::create($data);
         }
@@ -282,12 +283,12 @@ class Ventas extends Component
             return;
         }
 
-        $canEdit = LineAgent::where('line_id', $line->id)
+        $canEdit = LineAgent::withoutGlobalScopes()->where('line_id', $line->id)
             ->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
             ->exists();
 
-        $hasPermission = LineAgentPermission::where('line_id', $line->id)
+        $hasPermission = LineAgentPermission::withoutGlobalScopes()->where('line_id', $line->id)
             ->where('agent_id', session('active_agent_id'))
             ->where('permission', Permissions::LINE_EDIT)
             ->exists();
@@ -312,9 +313,9 @@ class Ventas extends Component
 
     private function editableLineIds(): Collection
     {
-        return LineAgentPermission::where('agent_id', session('active_agent_id'))
+        return LineAgentPermission::withoutGlobalScopes()->where('agent_id', session('active_agent_id'))
             ->where('permission', Permissions::LINE_EDIT)
-            ->whereIn('line_id', LineAgent::where('agent_id', session('active_agent_id'))
+            ->whereIn('line_id', LineAgent::withoutGlobalScopes()->where('agent_id', session('active_agent_id'))
                 ->where('is_active', true)
                 ->select('line_id'))
             ->pluck('line_id');

@@ -46,7 +46,7 @@ class NotificationSettings extends Component
 
         $this->preferences[$module] = ! $this->preferences[$module];
 
-        NotificationPreference::updateOrCreate(
+        NotificationPreference::withoutGlobalScopes()->updateOrCreate(
             ['module' => $module, 'agent_id' => $this->agentId()],
             ['is_enabled' => $this->preferences[$module]]
         );
