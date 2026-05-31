@@ -159,6 +159,24 @@
                                 @error('contacts') <div class="settings-error">{{ $message }}</div> @enderror
                             </div>
 
+                            <div class="settings-field full" style="margin-top:20px">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+                                    <label class="settings-label" style="margin-bottom:0">Características / Ventajas</label>
+                                    <button type="button" wire:click="addFeature" class="btn-ghost" style="padding:4px 10px; font-size:11px; color:var(--orange)">+ Agregar</button>
+                                </div>
+                                <div style="display:grid; gap:10px">
+                                    @foreach($features as $index => $feature)
+                                        <div style="display:grid; grid-template-columns:140px 1fr 1fr 40px; gap:10px; background:rgba(255,255,255,.02); padding:10px; border:1px solid var(--line-2); border-radius:8px">
+                                            <input type="text" wire:model="features.{{ $index }}.icon" class="settings-input" placeholder="fa-solid fa-star">
+                                            <input type="text" wire:model="features.{{ $index }}.title" class="settings-input" placeholder="Título">
+                                            <input type="text" wire:model="features.{{ $index }}.desc" class="settings-input" placeholder="Descripción corta">
+                                            <button type="button" wire:click="removeFeature({{ $index }})" class="btn-icon" style="color:#ff5050; background:none; border:none; cursor:pointer; font-size:18px">×</button>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @error('features') <div class="settings-error">{{ $message }}</div> @enderror
+                            </div>
+
                             <div class="settings-field full">
                                 <label class="settings-label">Branding JSON</label>
                                 <textarea class="settings-input" wire:model="brandingJson" rows="5" placeholder='{"primary":"#ff6a1a"}'></textarea>

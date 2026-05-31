@@ -46,11 +46,33 @@
     <div class="home-hero-carousel" x-ref="track">
         @forelse($items as $item)
             @php $src = $imageUrl($item->image ?? null); @endphp
-            <a class="home-hero-slide" href="{{ $item->link ?: '#lineas' }}" @if(! $item->link) aria-label="Ver lineas" @endif>
+            <a
+                class="home-hero-slide"
+                href="{{ $item->link ?: '#lineas' }}"
+                aria-label="{{ $item->title ?: ($item->link ? 'Abrir destacado' : 'Ver lineas') }}"
+            >
                 @if($src)
                     <img src="{{ $src }}" alt="{{ $item->title ?: 'Imagen principal' }}">
                 @else
                     <div class="home-hero-empty"></div>
+                @endif
+                @if($item->title || $item->description || $item->cta_text)
+                    <div class="home-hero-content">
+                        <div class="home-hero-copy">
+                            @if($item->title)
+                                <h2 class="home-hero-title">{{ $item->title }}</h2>
+                            @endif
+                            @if($item->description)
+                                <p class="home-hero-subtitle">{{ $item->description }}</p>
+                            @endif
+                            @if($item->cta_text)
+                                <span class="home-hero-cta">
+                                    {{ $item->cta_text }}
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </span>
+                            @endif
+                        </div>
+                    </div>
                 @endif
             </a>
         @empty

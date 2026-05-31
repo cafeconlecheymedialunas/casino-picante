@@ -4,52 +4,56 @@ namespace App\Http\Controllers;
 
 use App\Models\Bonus;
 use App\Models\HomeSection;
+use App\Models\Line;
 use App\Models\Post;
 use App\Models\Raffle;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 
 class HomeSectionController extends Controller
 {
     public function saveSection(Request $request)
     {
-        abort_unless(session('active_vendor_id'), 403, 'Selecciona un vendor antes de editar la home.');
-
         $key = $request->input('section_key');
-        if (! in_array($key, ['sorteo', 'bonos', 'blog'])) {
-            return response()->json(['message' => 'Sección inválida'], 400);
+        if (! in_array($key, ['sorteo', 'bonos', 'blog', 'lineas'])) {
+            return response()->json(['message' => 'Seccion invalida'], 400);
         }
 
-        $parseToArray = function ($str, ?string $model = null) {
-            if (empty($str)) {
-                return null;
-            }
-            $arr = array_filter(array_map('trim', explode(',', $str)));
-            if ($model && session('active_vendor_id')) {
-                $ids = collect($arr)
-                    ->map(fn ($id) => (int) $id)
-                    ->filter()
-                    ->unique()
-                    ->values();
-
-                $arr = $model::whereIn('id', $ids)
-                    ->where('vendor_id', (int) session('active_vendor_id'))
-                    ->pluck('id')
-                    ->map(fn ($id) => (string) $id)
-                    ->all();
-            }
-
-            return count($arr) ? $arr : null;
-        };
-
-        HomeSection::updateOrCreate(
-            ['vendor_id' => (int) session('active_vendor_id'), 'section_key' => $key],
+        HomeSection::withoutGlobalScopes()->updateOrCreate(
+            ['vendor_id' => null, 'section_key' => $key],
             [
-                'raffle_ids' => $key === 'sorteo' ? $parseToArray($request->input('raffle_ids', ''), Raffle::class) : null,
-                'bonus_ids' => $key === 'bonos' ? $parseToArray($request->input('bonus_ids', ''), Bonus::class) : null,
-                'post_ids' => $key === 'blog' ? $parseToArray($request->input('post_ids', ''), Post::class) : null,
+                'vendor_id' => null,
+                'raffle_ids' => $key === 'sorteo' ? $this->parseIds($request->input('raffle_ids', ''), Raffle::class) : null,
+                'bonus_ids' => $key === 'bonos' ? $this->parseIds($request->input('bonus_ids', ''), Bonus::class) : null,
+                'post_ids' => $key === 'blog' ? $this->parseIds($request->input('post_ids', ''), Post::class) : null,
+                'line_ids' => $key === 'lineas' ? $this->parseIds($request->input('line_ids', ''), Line::class) : null,
             ]
         );
 
-        return response()->json(['message' => 'Sección guardada correctamente']);
+        return response()->json(['message' => 'Seccion guardada correctamente']);
+    }
+
+    /**
+     * @param  class-string<Model>  $model
+     */
+    private function parseIds(string $value, string $model): ?array
+    {
+        $ids = collect(explode(',', $value))
+            ->map(fn ($id) => (int) trim($id))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return null;
+        }
+
+        $validIds = $model::withoutGlobalScopes()
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+
+        return $validIds ?: null;
     }
 }

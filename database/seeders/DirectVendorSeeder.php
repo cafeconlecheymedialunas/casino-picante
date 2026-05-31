@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Support\Roles;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class DirectVendorSeeder extends Seeder
 {
@@ -77,14 +78,19 @@ class DirectVendorSeeder extends Seeder
         }
 
         // ── Bonuses ──────────────────────────────────────────────────────────
+        $firstLineId  = $lineIds[0] ?? null;
+        $firstPlatId  = $platformIds[0] ?? null;
+
         $bonusData = [
             [
+                'code'           => 'BIENVENIDA-OFICIAL',
                 'title'          => 'Bono de Bienvenida Oficial',
                 'description'    => '100% de bonificación en tu primer depósito hasta $10.000. Solo para líneas directas.',
                 'type'           => 'welcome',
                 'bonus_amount'   => 10000,
                 'bonus_percent'  => 100,
                 'min_deposit'    => 1000,
+                'max_bonus'      => 10000,
                 'total_quantity' => 500,
                 'per_user_limit' => 1,
                 'status'         => 'active',
@@ -92,12 +98,14 @@ class DirectVendorSeeder extends Seeder
                 'end_date'       => now()->addYear(),
             ],
             [
+                'code'           => 'RECARGA-VIP',
                 'title'          => 'Recarga Semanal VIP',
                 'description'    => '30% extra en cada recarga los fines de semana. Exclusivo cajero oficial.',
                 'type'           => 'reload',
                 'bonus_amount'   => 5000,
                 'bonus_percent'  => 30,
                 'min_deposit'    => 500,
+                'max_bonus'      => 5000,
                 'total_quantity' => 1000,
                 'per_user_limit' => 4,
                 'status'         => 'active',
@@ -105,12 +113,14 @@ class DirectVendorSeeder extends Seeder
                 'end_date'       => now()->addYear(),
             ],
             [
+                'code'           => 'FREESPINS50',
                 'title'          => 'Free Spins Pack 50',
                 'description'    => '50 giros gratis en los mejores slots. Sin depósito mínimo requerido.',
                 'type'           => 'freespins',
                 'bonus_amount'   => 0,
                 'bonus_percent'  => 0,
                 'min_deposit'    => 0,
+                'max_bonus'      => 0,
                 'total_quantity' => 300,
                 'per_user_limit' => 1,
                 'status'         => 'active',
@@ -123,7 +133,14 @@ class DirectVendorSeeder extends Seeder
         foreach ($bonusData as $bd) {
             $bonus = Bonus::withoutGlobalScopes()->updateOrCreate(
                 ['vendor_id' => $vendor->id, 'title' => $bd['title']],
-                array_merge($bd, ['vendor_id' => $vendor->id])
+                array_merge($bd, [
+                    'vendor_id'  => $vendor->id,
+                    'slug'       => Str::slug($bd['title']),
+                    'user_id'    => null,
+                    'created_by' => $admin?->id,
+                    'line_id'    => $firstLineId,
+                    'platform_id' => $firstPlatId,
+                ])
             );
             $bonusIds[] = $bonus->id;
         }
@@ -132,59 +149,30 @@ class DirectVendorSeeder extends Seeder
         $raffle = Raffle::withoutGlobalScopes()->updateOrCreate(
             ['title' => 'SORTEO EXCLUSIVO CAJERO OFICIAL'],
             [
-                'description'   => 'Participá cargando saldo por el cajero oficial. Cada $500 cargados = 1 número.',
-                'status'        => 'active',
-                'start_date'    => now()->subDays(1),
-                'end_date'      => now()->addDays(14),
-                'start_number'  => 100,
-                'end_number'    => 2000,
-                'numbers_limit' => 1900,
-                'line_id'       => $lineIds[0] ?? null,
-                'prizes'        => [
-                    ['position' => 1, 'name' => 'Smart TV 65" 4K',    'amount' => 2200, 'image' => 'https://picsum.photos/id/1050/480/260'],
-                    ['position' => 2, 'name' => 'iPhone 16 Pro',       'amount' => 1500, 'image' => 'https://picsum.photos/id/1060/480/260'],
-                    ['position' => 3, 'name' => 'Créditos $20.000',    'amount' => 20000,'image' => 'https://picsum.photos/id/1070/480/260'],
+                'vendor_id'      => $vendor->id,
+                'slug'           => 'sorteo-exclusivo-cajero-oficial',
+                'description'    => 'Participá cargando saldo por el cajero oficial. Cada $500 cargados = 1 número.',
+                'status'         => 'active',
+                'start_date'     => now()->subDays(1),
+                'end_date'       => now()->addDays(14),
+                'start_number'   => 100,
+                'end_number'     => 2000,
+                'numbers_limit'  => 1900,
+                'winner_user_id' => null,
+                'winner_number'  => null,
+                'line_id'        => $lineIds[0] ?? null,
+                'platform_id'    => $firstPlatId,
+                'prizes'         => [
+                    ['position' => 1, 'name' => 'Smart TV 65" 4K', 'amount' => 2200,  'image' => 'https://picsum.photos/id/1050/480/260'],
+                    ['position' => 2, 'name' => 'iPhone 16 Pro',   'amount' => 1500,  'image' => 'https://picsum.photos/id/1060/480/260'],
+                    ['position' => 3, 'name' => 'Créditos $20.000','amount' => 20000, 'image' => 'https://picsum.photos/id/1070/480/260'],
                 ],
             ]
         );
         $raffle->lines()->sync($lineIds);
         $raffleIds = [$raffle->id];
 
-        // ── HomeSection ──────────────────────────────────────────────────────
-        $sectionDefaults = [
-            'sorteo'  => ['kicker' => 'Sorteo Oficial', 'title' => 'GRAN SORTEO', 'highlight' => 'CAJERO OFICIAL', 'subtitle' => 'Cargá saldo y participá automáticamente.', 'action_text' => 'Ver sorteo', 'action_url' => '/sorteos'],
-            'bonos'   => ['kicker' => 'Bonos Exclusivos', 'title' => 'Bonos para', 'highlight' => 'líneas directas', 'subtitle' => 'Los mejores bonos solo para clientes del cajero oficial.', 'action_text' => 'Ver bonos', 'action_url' => '/bonos'],
-            'lineas'  => ['kicker' => 'Nuestras Plataformas', 'title' => 'Jugá en las', 'highlight' => 'mejores plataformas', 'subtitle' => 'Todas las plataformas con atención directa 24/7.', 'action_text' => 'Ver todas', 'action_url' => '/lineas'],
-            'blog'    => ['kicker' => 'Novedades', 'title' => 'Noticias del', 'highlight' => 'cajero', 'subtitle' => 'Promociones, sorteos y novedades exclusivas.', 'action_text' => 'Ver todo', 'action_url' => '/blog'],
-            'nosotros'=> ['kicker' => 'Quiénes somos', 'title' => 'Casino online con', 'highlight' => 'atención directa', 'subtitle' => null, 'content' => 'Somos el cajero oficial de la red. Operamos líneas directas en las principales plataformas con la mejor atención y los mejores bonos del mercado.'],
-            'como-empezar' => ['title' => 'Cómo empezar', 'highlight' => 'en 3 pasos', 'subtitle' => 'Crear tu cuenta y empezar a jugar es muy fácil.'],
-        ];
-
-        $postIds = Post::withoutGlobalScopes()->where('vendor_id', $vendor->id)->pluck('id')->take(6)->join(',');
-
-        foreach ($sectionDefaults as $key => $defaults) {
-            $data = array_merge([
-                'enabled'     => true,
-                'vendor_id'   => $vendor->id,
-                'section_key' => $key,
-            ], $defaults);
-
-            if ($key === 'sorteo') {
-                $data['raffle_ids'] = implode(',', $raffleIds);
-            } elseif ($key === 'bonos') {
-                $data['bonus_ids'] = implode(',', $bonusIds);
-            } elseif ($key === 'lineas') {
-                $data['line_ids'] = implode(',', $lineIds);
-            } elseif ($key === 'blog') {
-                $data['post_ids'] = $postIds;
-            }
-
-            HomeSection::withoutGlobalScopes()->updateOrCreate(
-                ['vendor_id' => $vendor->id, 'section_key' => $key],
-                $data
-            );
-        }
-
-        $this->command->info('DirectVendorSeeder: Cajero Oficial creado con líneas, bonos, sorteo y secciones.');
+        $this->command->info('DirectVendorSeeder: Cajero Oficial creado con lineas, bonos y sorteo.');
     }
 }
+

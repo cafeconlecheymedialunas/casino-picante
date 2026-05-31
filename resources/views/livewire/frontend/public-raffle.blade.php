@@ -1,10 +1,6 @@
 @push('styles')
 <style>
-    .raffles-page { padding:42px 0 60px; }
-    .raffles-header { text-align:center; margin-bottom:42px; }
-    .raffles-header h1 { font-family:var(--font-display); font-size:56px; line-height:.9; letter-spacing:.03em; margin:0 0 12px; }
-    .raffles-header h1 span { color:var(--orange); }
-    .raffles-header p { color:var(--muted); font-size:15px; max-width:600px; margin:0 auto; }
+    .raffles-page { padding:42px 0 60px; --page-top-pad: 42px; }
     .raffles-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:20px; }
     .raffle-card { display:flex; flex-direction:column; border:1px solid var(--line); border-radius:var(--r-xl); background:linear-gradient(180deg,#180b08,#0d0707); overflow:hidden; text-decoration:none; transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
     .raffle-card:hover { transform:translateY(-6px); border-color:var(--orange); box-shadow:0 20px 50px rgba(255,106,26,.15); }
@@ -62,25 +58,24 @@
 
 <section class="raffles-page">
     <div class="fe-shell">
-        @include('frontend.components.breadcrumbs', [
-            'items' => isset($publicVendor)
-                ? [
-                    ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
-                    ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
-                    ['label' => 'Sorteos'],
-                ]
-                : [
-                    ['label' => 'Inicio', 'url' => route('frontend.home')],
-                    ['label' => 'Sorteos'],
-                ],
-        ])
-        <div class="raffles-header">
-            <h1>SORTEOS <span>ACTIVOS</span></h1>
-            <p>Participa en los sorteos de las lineas activas y acumula chances de ganar premios exclusivos.</p>
-        </div>
+        <x-page-header
+            :section="$pageSection"
+            :breadcrumbs="isset($publicVendor)
+                ? [['label'=>'Cajeros','url'=>route('frontend.cajeros')],['label'=>$publicVendor->name,'url'=>route('frontend.cajero.inicio',$publicVendor)],['label'=>'Sorteos']]
+                : [['label'=>'Inicio','url'=>route('frontend.home')],['label'=>'Sorteos']]"
+        />
 
         @if($showTabs)
             <div class="lines-tabs" style="margin-bottom:24px">
+                @isset($tabs)
+                    @foreach($tabs as $tabItem)
+                        <button type="button" class="lines-tab-btn {{ $tab === $tabItem['key'] ? 'active' : '' }}" wire:click="$set('tab','{{ $tabItem['key'] }}')">
+                            <i class="fa-solid fa-ticket" style="font-size:11px"></i>
+                            {{ $tabItem['title'] }}
+                            <span class="tab-count">{{ count($tabItem['item_ids'] ?? []) }}</span>
+                        </button>
+                    @endforeach
+                @else
                 <button type="button" class="lines-tab-btn {{ $tab === 'general' ? 'active' : '' }}" wire:click="$set('tab','general')">
                     <i class="fa-solid fa-crown" style="font-size:11px"></i>
                     Admin General
@@ -91,7 +86,11 @@
                     Cajeros
                     <span class="tab-count">{{ $cajeroRaffles->count() }}</span>
                 </button>
+                @endisset
             </div>
+            @if(!empty($activeTab['subtitle']))
+                <p class="fe-subtitle" style="margin:-10px 0 24px;text-align:center;">{{ $activeTab['subtitle'] }}</p>
+            @endif
         @endif
 
         @if($raffles->isEmpty())

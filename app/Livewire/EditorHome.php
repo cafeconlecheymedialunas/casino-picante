@@ -30,8 +30,11 @@ class EditorHome extends Component
     public $categories = [];
     public $selectedCarousel = [];
     public $newCarouselTitle = '';
+    public $newCarouselDescription = '';
+    public $newCarouselCtaText = '';
     public $newCarouselLink = '';
     public $newCarouselImage = null;
+    public $editCarouselImages = [];
     public $sections = [];
     public $editingSection = null;
     public $pendingSave = [];
@@ -86,62 +89,29 @@ class EditorHome extends Component
 
     public function loadSections(): void
     {
-        $defaultSections = [
-            'como-empezar' => [
-                'kicker' => 'Como funciona',
-                'title' => 'Empeza en',
-                'highlight' => '3 pasos',
-                'subtitle' => 'Sin vueltas: contacto, carga y juego. Si necesitás ayuda, una persona te responde.',
-                'repeater_data' => [
-                    ['title' => 'Pedí tu usuario', 'subtitle' => 'Elegí una línea de atención y solicitá el acceso para empezar a jugar.'],
-                    ['title' => 'Cargá saldo', 'subtitle' => 'Consultá medios de carga y bonos disponibles para tu cuenta.'],
-                    ['title' => 'Entrá a jugar', 'subtitle' => 'Disfrutá tus juegos favoritos, participá en sorteos y pedí asistencia cuando quieras.'],
-                ],
-            ],
-            'lineas' => ['kicker' => 'Empeza a jugar', 'title' => 'Lineas de', 'highlight' => 'atencion', 'subtitle' => 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.'],
-            'sorteo' => ['kicker' => 'Muy pronto', 'title' => 'PRÓXIMOS', 'highlight' => 'SORTEOS', 'subtitle' => 'Nuevas oportunidades para ganar. Registrate y enterate antes que nadie.'],
-            'nosotros' => [
-                'kicker' => 'Sobre RED PICANTES',
-                'title' => 'Casino online con atencion',
-                'highlight' => 'real',
-                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, bonos claros, sorteos activos y soporte humano para acompaniarte.',
-                'repeater_data' => [
-                    ['title' => 'Alta rapida', 'subtitle' => 'Contactás una línea y pedís tu usuario sin formularios eternos.'],
-                    ['title' => 'Bonos vigentes', 'subtitle' => 'Bonos para recargar, arrancar con ventaja y jugar más.'],
-                    ['title' => 'Sorteos activos', 'subtitle' => 'Premios y chances extra para usuarios que participan.'],
-                    ['title' => 'Soporte humano', 'subtitle' => 'Atención directa para cargas, retiros, dudas y novedades.'],
-                ],
-            ],
-            'bonos' => ['kicker' => 'Bonos para jugar mas', 'title' => 'Bonos', 'highlight' => 'activos', 'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.'],
-            'blog' => ['kicker' => 'Noticias y jugadas', 'title' => 'Noticias y', 'highlight' => 'jugadas', 'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.'],
-        ];
+        $sectionKeys = ['como-empezar', 'lineas', 'sorteo', 'nosotros', 'bonos', 'blog'];
 
-        foreach ($defaultSections as $key => $defaults) {
+        foreach ($sectionKeys as $order => $key) {
             $section = $this->homeSectionQuery($key)->first();
             if (! $section) {
                 $section = HomeSection::withoutGlobalScopes()->create([
                     'vendor_id' => null,
                     'section_key' => $key,
-                    'enabled' => true,
-                    'order' => array_search($key, array_keys($defaultSections)),
-                    'kicker' => $defaults['kicker'] ?? null,
-                    'title' => $defaults['title'] ?? null,
-                    'highlight' => $defaults['highlight'] ?? null,
-                    'subtitle' => $defaults['subtitle'] ?? null,
-                    'repeater_data' => isset($defaults['repeater_data']) ? json_encode($defaults['repeater_data']) : null,
+                    'enabled' => false,
+                    'order' => $order,
                 ]);
             }
 
             $this->sections[$key] = [
                 'id' => $section->id,
-                'kicker' => $section->kicker ?? $defaults['kicker'] ?? '',
-                'title' => $section->title ?? $defaults['title'] ?? '',
-                'highlight' => $section->highlight ?? $defaults['highlight'] ?? '',
-                'subtitle' => $section->subtitle ?? $defaults['subtitle'] ?? '',
-                'content' => $section->content ?? $defaults['content'] ?? '',
+                'kicker' => $section->kicker ?? '',
+                'title' => $section->title ?? '',
+                'highlight' => $section->highlight ?? '',
+                'subtitle' => $section->subtitle ?? '',
+                'content' => $section->content ?? '',
                 'action_text' => $section->action_text ?? '',
                 'action_url' => $section->action_url ?? '',
-                'repeater_data' => is_array($section->repeater_data) ? $section->repeater_data : ($defaults['repeater_data'] ?? []),
+                'repeater_data' => is_array($section->repeater_data) ? $section->repeater_data : [],
                 'raffle_type' => $section->raffle_type ?? '',
                 'raffle_ids' => is_array($section->raffle_ids) ? implode(',', $section->raffle_ids) : '',
                 'post_type' => $section->post_type ?? '',
@@ -149,11 +119,11 @@ class EditorHome extends Component
                 'bonus_type' => $section->bonus_type ?? '',
                 'bonus_ids' => is_array($section->bonus_ids) ? implode(',', $section->bonus_ids) : '',
                 'line_ids' => is_array($section->line_ids) ? implode(',', $section->line_ids) : '',
+                'image' => $section->image ?? '',
                 'enabled' => $section->enabled,
             ];
         }
     }
-
     public function saveSection(string $key): void
     {
         $this->ensureCanEditHome();
@@ -239,6 +209,8 @@ class EditorHome extends Component
         $this->validate([
             'newCarouselImage' => 'required|image|max:5120',
             'newCarouselTitle' => 'nullable|string|max:255',
+            'newCarouselDescription' => 'nullable|string|max:500',
+            'newCarouselCtaText' => 'nullable|string|max:255',
             'newCarouselLink' => 'nullable|string|max:500',
         ]);
 
@@ -249,11 +221,15 @@ class EditorHome extends Component
             'vendor_id' => null,
             'line_id' => null,
             'title' => $this->newCarouselTitle,
+            'description' => $this->newCarouselDescription,
+            'cta_text' => $this->newCarouselCtaText,
             'link' => $this->newCarouselLink,
             'order' => $maxOrder + 1,
         ]);
 
         $this->newCarouselTitle = '';
+        $this->newCarouselDescription = '';
+        $this->newCarouselCtaText = '';
         $this->newCarouselLink = '';
         $this->newCarouselImage = null;
 
@@ -270,6 +246,79 @@ class EditorHome extends Component
             $item->delete();
         }
 
+        $this->loadCarouselItems();
+    }
+
+    public function saveCarouselItem($itemId, int $index): void
+    {
+        $this->ensureCanEditHome();
+
+        $this->validate([
+            "carouselItems.$index.title" => 'nullable|string|max:255',
+            "carouselItems.$index.description" => 'nullable|string|max:500',
+            "carouselItems.$index.cta_text" => 'nullable|string|max:255',
+            "carouselItems.$index.link" => 'nullable|string|max:500',
+            "editCarouselImages.$itemId" => 'nullable|image|max:5120',
+        ]);
+
+        $item = CarouselItem::withoutGlobalScopes()->whereNull('vendor_id')->find($itemId);
+        if (! $item || ! isset($this->carouselItems[$index])) {
+            return;
+        }
+
+        $data = $this->carouselItems[$index];
+        $updates = [
+            'title' => $data['title'] ?? null,
+            'description' => $data['description'] ?? null,
+            'cta_text' => $data['cta_text'] ?? null,
+            'link' => $data['link'] ?? null,
+        ];
+
+        if ($image = ($this->editCarouselImages[$itemId] ?? null)) {
+            ImageStorage::delete($item->image);
+            $updates['image'] = ImageStorage::store($image, 'carousel');
+        }
+
+        $item->update($updates);
+        unset($this->editCarouselImages[$itemId]);
+
+        $this->loadCarouselItems();
+        session()->flash('message_success', 'Imagen del carrusel guardada correctamente.');
+    }
+
+    public function reorderCarousel(array $itemIds): void
+    {
+        $this->ensureCanEditHome();
+
+        $existingIds = CarouselItem::withoutGlobalScopes()
+            ->whereNull('vendor_id')
+            ->orderBy('order')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $orderedIds = collect($itemIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->filter(fn ($id) => in_array($id, $existingIds, true))
+            ->values()
+            ->all();
+
+        foreach ($existingIds as $id) {
+            if (! in_array($id, $orderedIds, true)) {
+                $orderedIds[] = $id;
+            }
+        }
+
+        foreach ($orderedIds as $index => $id) {
+            CarouselItem::withoutGlobalScopes()
+                ->whereNull('vendor_id')
+                ->whereKey($id)
+                ->update(['order' => $index + 1]);
+        }
+
+        $this->syncCarouselHomeConfigOrder($orderedIds);
         $this->loadCarouselItems();
     }
 
@@ -294,6 +343,7 @@ class EditorHome extends Component
             $prev->save();
         }
 
+        $this->syncCarouselHomeConfigOrder($this->orderedCarouselIds());
         $this->loadCarouselItems();
     }
 
@@ -318,6 +368,7 @@ class EditorHome extends Component
             $next->save();
         }
 
+        $this->syncCarouselHomeConfigOrder($this->orderedCarouselIds());
         $this->loadCarouselItems();
     }
 
@@ -484,4 +535,48 @@ class EditorHome extends Component
             ->whereNull('vendor_id')
             ->where('section_key', $key);
     }
+
+    private function orderedCarouselIds(): array
+    {
+        return CarouselItem::withoutGlobalScopes()
+            ->whereNull('vendor_id')
+            ->orderBy('order')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    private function syncCarouselHomeConfigOrder(array $orderedIds): void
+    {
+        $selectedIds = $this->homeConfigQuery(HomeConfig::SECTION_CAROUSEL)
+            ->pluck('item_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if (! $selectedIds) {
+            return;
+        }
+
+        $selectedById = array_flip($selectedIds);
+        $orderedSelectedIds = array_values(array_filter(
+            $orderedIds,
+            fn ($id) => isset($selectedById[(int) $id])
+        ));
+
+        foreach ($selectedIds as $id) {
+            if (! in_array($id, $orderedSelectedIds, true)) {
+                $orderedSelectedIds[] = $id;
+            }
+        }
+
+        foreach ($orderedSelectedIds as $index => $id) {
+            $this->homeConfigQuery(HomeConfig::SECTION_CAROUSEL)
+                ->where('item_id', $id)
+                ->update(['order' => $index]);
+        }
+
+        $this->selectedCarousel = $orderedSelectedIds;
+    }
 }
+
+

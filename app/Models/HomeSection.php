@@ -11,6 +11,8 @@ class HomeSection extends Model
 
     protected $table = 'home_sections';
 
+    protected bool $preserveNullVendorId = true;
+
     protected $fillable = [
         'vendor_id',
         'section_key',
@@ -19,6 +21,7 @@ class HomeSection extends Model
         'kicker',
         'highlight',
         'content',
+        'image',
         'action_text',
         'action_url',
         'raffle_type',

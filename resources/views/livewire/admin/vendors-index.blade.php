@@ -30,8 +30,6 @@
     .form-error { color:#ff4757; font-size:11px; margin-top:4px; }
     .check-row { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:13px; font-weight:700; }
     .modal-actions { display:flex; gap:10px; }
-    .feature-icon-field { display:grid; grid-template-columns:44px minmax(0,1fr); gap:8px; align-items:end; }
-    .feature-icon-preview { width:44px; height:38px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line-2); border-radius:7px; background:rgba(255,106,26,.08); color:var(--orange); font-size:17px; }
 
     [data-dashboard-theme="light"] .vendors-page .admin-table,
     [data-dashboard-theme="light"] .vendors-page .modal-panel {
@@ -64,7 +62,7 @@
         color: var(--muted) !important;
         border-color: var(--line) !important;
     }
-    [data-dashboard-theme="light"] .vendors-page .feature-icon-preview {
+    [data-dashboard-theme="light"] .vendors-page .icon-library-preview-icon {
         background: rgba(255,106,26,.10) !important;
         border-color: var(--line) !important;
     }
@@ -222,39 +220,53 @@
                         <label class="form-label" style="margin:0">Características</label>
                         <button type="button" class="btn-soft" style="padding:2px 8px;font-size:11px" wire:click="addFeature">+ Agregar</button>
                     </div>
-                    <div style="display:grid;gap:10px">
+                    <div style="display:grid;gap:8px">
                         @foreach($features as $index => $char)
-                        <div style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 40px;gap:10px;align-items:start">
-                            <div style="grid-column:1 / span 2">
-                                <label class="form-label" style="font-size:9px">Icono (FontAwesome)</label>
-                                <div class="feature-icon-field">
-                                    <span class="feature-icon-preview">
-                                        <i class="{{ $char['icon'] ?? 'fa-solid fa-star' }}"></i>
-                                    </span>
-                                    <select class="form-input" wire:model.live="features.{{$index}}.icon">
-                                        @foreach(collect($fontAwesomeIcons)->groupBy('style') as $style => $icons)
-                                            <optgroup label="{{ $style }}">
-                                                @foreach($icons as $icon)
-                                                    <option value="{{ $icon['class'] }}">{{ $icon['label'] }}</option>
-                                                @endforeach
-                                            </optgroup>
-                                        @endforeach
-                                    </select>
+                        <div
+                            style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:44px 1fr 1fr auto;gap:10px;align-items:center"
+                            @icon-selected.window="if($event.detail.name === 'feature_icon_{{ $index }}') $wire.set('features.{{ $index }}.icon', $event.detail.value)"
+                            x-data="{ iconOpen: false }"
+                        >
+                            {{-- Preview + toggle icono --}}
+                            <div style="position:relative">
+                                <button
+                                    type="button"
+                                    title="Cambiar icono"
+                                    @click="iconOpen = !iconOpen"
+                                    style="width:44px;height:44px;border-radius:8px;border:1px solid rgba(255,106,26,.3);background:rgba(255,106,26,.10);color:var(--orange);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
+                                >
+                                    <i class="{{ $char['icon'] ?? 'fa-solid fa-star' }}"></i>
+                                </button>
+                                <div
+                                    x-show="iconOpen"
+                                    @click.outside="iconOpen = false"
+                                    x-cloak
+                                    style="position:absolute;top:52px;left:0;z-index:50;width:320px;background:#120707;border:1px solid var(--line);border-radius:10px;padding:10px;box-shadow:0 20px 48px rgba(0,0,0,.5)"
+                                >
+                                    <x-icon-library
+                                        label=""
+                                        name="feature_icon_{{ $index }}"
+                                        :selected="$char['icon'] ?? 'fa-solid fa-star'"
+                                    />
                                 </div>
                             </div>
+
+                            {{-- Título --}}
                             <div>
-                                <label class="form-label" style="font-size:9px">Título</label>
+                                <div style="font-size:9px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Título</div>
                                 <input class="form-input" wire:model="features.{{$index}}.title" placeholder="Ej: Atención 24/7">
                             </div>
+
+                            {{-- Descripción --}}
                             <div>
-                                <label class="form-label" style="font-size:9px">Descripción</label>
+                                <div style="font-size:9px;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Descripción</div>
                                 <input class="form-input" wire:model="features.{{$index}}.description" placeholder="Ej: Soporte personalizado">
                             </div>
-                            <div style="padding-top:20px">
-                                <button type="button" class="btn-icon" style="color:#ff5050;border-color:rgba(255,80,80,.2)" wire:click="removeFeature({{$index}})">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
+
+                            {{-- Eliminar --}}
+                            <button type="button" class="btn-icon" style="color:#ff5050;border-color:rgba(255,80,80,.2)" wire:click="removeFeature({{$index}})">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                         @endforeach
                     </div>

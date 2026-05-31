@@ -4,12 +4,13 @@ namespace App\Livewire\Frontend;
 
 use App\Models\Raffle;
 use App\Models\Vendor;
+use App\Support\PublicPageContent;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class PublicRaffle extends Component
 {
-    public string $tab = 'general';
+    public string $tab = '';
 
     public function getActiveRaffle(): ?Raffle
     {
@@ -91,8 +92,32 @@ class PublicRaffle extends Component
             return view('livewire.frontend.public-raffle', compact(
                 'activeRaffle', 'upcomingRaffle', 'endedRaffle', 'myNumbers',
                 'isLogged', 'user', 'raffles'
-            ) + ['showTabs' => false, 'generalRaffles' => collect(), 'cajeroRaffles' => collect()])
+            ) + ['showTabs' => false, 'generalRaffles' => collect(), 'cajeroRaffles' => collect(), 'pageSection' => null, 'activeTab' => null])
                 ->layout('frontend.layouts.app');
+        }
+
+        $pageSection = PublicPageContent::page('sorteos');
+        $tabs = PublicPageContent::tabs($pageSection);
+
+        if ($tabs) {
+            if (! collect($tabs)->firstWhere('key', $this->tab)) {
+                $this->tab = $tabs[0]['key'];
+            }
+
+            $activeTab = collect($tabs)->firstWhere('key', $this->tab) ?: $tabs[0];
+            $raffles = PublicPageContent::orderedItems('sorteos', $activeTab['item_ids']);
+
+            return view('livewire.frontend.public-raffle', compact(
+                'activeRaffle', 'upcomingRaffle', 'endedRaffle', 'myNumbers',
+                'isLogged', 'user', 'raffles'
+            ) + [
+                'showTabs' => count($tabs) > 1,
+                'tabs' => $tabs,
+                'activeTab' => $activeTab,
+                'pageSection' => $pageSection,
+                'generalRaffles' => collect(),
+                'cajeroRaffles' => collect(),
+            ])->layout('frontend.layouts.app');
         }
 
         $directIds     = Vendor::where('is_direct', true)->pluck('id');
@@ -103,7 +128,7 @@ class PublicRaffle extends Component
         return view('livewire.frontend.public-raffle', compact(
             'activeRaffle', 'upcomingRaffle', 'endedRaffle', 'myNumbers',
             'isLogged', 'user', 'raffles'
-        ) + ['showTabs' => true, 'generalRaffles' => $generalRaffles, 'cajeroRaffles' => $cajeroRaffles])
+        ) + ['showTabs' => true, 'generalRaffles' => $generalRaffles, 'cajeroRaffles' => $cajeroRaffles, 'pageSection' => null, 'activeTab' => null])
             ->layout('frontend.layouts.app');
     }
 }

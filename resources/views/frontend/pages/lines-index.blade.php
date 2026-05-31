@@ -1,38 +1,14 @@
 @push('styles')
 <style>
-    .lines-page { padding: 52px 0 64px; }
-
-    /* Hero */
-    .lines-hero { margin-bottom: 36px; }
-    .lines-hero-inner { max-width: 680px; }
-    .lines-title { font-family: var(--font-display); font-size: clamp(48px, 8vw, 80px); line-height: .9; letter-spacing: .02em; margin: 8px 0 0; }
-    .lines-title span { color: var(--orange); }
-
-    /* Tabs */
+    .lines-page { padding: 52px 0 64px; --page-top-pad: 52px; }
     .lines-tabs-wrap { margin-bottom: 28px; border-bottom: 1px solid rgba(255,255,255,.09); }
-    .lines-tabs { display: flex; gap: 4px; }
-    .lines-tab-btn {
-        position: relative; display: inline-flex; align-items: center; gap: 8px;
-        height: 44px; padding: 0 22px; border: none; background: none;
-        color: rgba(255,255,255,.46); font-size: 13px; font-weight: 800; cursor: pointer;
-        font-family: var(--font-body); text-transform: uppercase; letter-spacing: .06em;
-        border-radius: 8px 8px 0 0; transition: color .15s, background .15s;
-    }
+    .lines-tabs { display: flex; gap: 4px; flex-wrap:wrap; }
+    .lines-tab-btn { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 22px; border: none; background: none; color: rgba(255,255,255,.46); font-size: 13px; font-weight: 800; cursor: pointer; font-family: var(--font-body); text-transform: uppercase; letter-spacing: .06em; border-radius: 8px 8px 0 0; transition: color .15s, background .15s; }
     .lines-tab-btn:hover { color: rgba(255,255,255,.78); background: rgba(255,255,255,.03); }
     .lines-tab-btn.active { color: #fff; background: rgba(255,255,255,.04); }
-    .lines-tab-btn.active::after {
-        content: ""; position: absolute; bottom: -1px; left: 0; right: 0;
-        height: 2px; background: var(--orange); border-radius: 2px 2px 0 0;
-    }
-    .lines-tab-btn .tab-count {
-        display: inline-flex; align-items: center; justify-content: center;
-        min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px;
-        font-size: 10px; font-weight: 900;
-        background: rgba(255,255,255,.07); color: rgba(255,255,255,.44);
-    }
+    .lines-tab-btn.active::after { content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--orange); border-radius: 2px 2px 0 0; }
+    .lines-tab-btn .tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 900; background: rgba(255,255,255,.07); color: rgba(255,255,255,.44); }
     .lines-tab-btn.active .tab-count { background: rgba(255,106,26,.18); color: var(--orange); }
-
-    /* Line card styles (garantizados en esta página) */
     .public-line-card { overflow:hidden; border:1px solid var(--line-warm); border-radius:var(--r-lg); background:linear-gradient(180deg,#170b0b,#0b0505); box-shadow:0 20px 52px rgba(0,0,0,.34); min-width:0; position:relative; }
     .public-line-card::before { content:""; position:absolute; top:-34px; right:-34px; width:130px; height:130px; border-radius:999px; background:radial-gradient(circle, rgba(255,106,26,.38), transparent 70%); pointer-events:none; z-index:1; }
     .public-line-cover { height:158px; position:relative; background:radial-gradient(90% 90% at 70% 0%, rgba(255,106,26,.36), transparent 70%), #130807; }
@@ -50,74 +26,51 @@
     .line-channel-list { margin-top:14px; }
     .line-card-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
     .line-card-actions .fe-btn { flex:1; min-width:max-content; }
-
-    /* Grid */
-    .public-lines-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
-    }
+    .public-lines-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
     .lines-empty { margin-top: 28px; }
-
-    @media (max-width: 980px) {
-        .public-lines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 620px) {
-        .lines-page { padding-top: 34px; }
-        .lines-title { font-size: 44px; }
-        .public-lines-grid { grid-template-columns: 1fr; }
-        .lines-tab-btn { padding: 0 14px; font-size: 11px; }
-    }
+    @media (max-width: 980px) { .public-lines-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 620px) { .lines-page { padding-top: 34px; } .lines-title { font-size: 44px; } .public-lines-grid { grid-template-columns: 1fr; } .lines-tab-btn { padding: 0 14px; font-size: 11px; } }
 </style>
 @endpush
 
 <div>
     <section class="lines-page">
         <div class="fe-shell">
-            @include('frontend.components.breadcrumbs', [
-                'items' => isset($publicVendor)
-                    ? [
-                        ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
-                        ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
-                        ['label' => 'Lineas'],
-                    ]
-                    : [
-                        ['label' => 'Inicio', 'url' => route('frontend.home')],
-                        ['label' => 'Lineas'],
-                    ],
-            ])
-
-            <div class="lines-hero">
-                <div class="lines-hero-inner">
-                    <div class="fe-kicker">Lineas disponibles</div>
-                    <h1 class="lines-title">Elegí una línea <span>activa</span></h1>
-                    <p class="fe-subtitle" style="margin-top:10px">Pedí tu usuario, consultá plataformas disponibles y contactá al canal asignado para empezar a jugar.</p>
-                </div>
-            </div>
+            <x-page-header
+                :section="$pageSection"
+                :breadcrumbs="isset($publicVendor)
+                    ? [['label'=>'Cajeros','url'=>route('frontend.cajeros')],['label'=>$publicVendor->name,'url'=>route('frontend.cajero.inicio',$publicVendor)],['label'=>'Lineas']]
+                    : [['label'=>'Inicio','url'=>route('frontend.home')],['label'=>'Lineas']]"
+            />
 
             @if($showTabs)
                 <div class="lines-tabs-wrap">
                     <div class="lines-tabs">
-                        <button
-                            type="button"
-                            class="lines-tab-btn {{ $tab === 'directas' ? 'active' : '' }}"
-                            wire:click="$set('tab', 'directas')"
-                        >
-                            <i class="fa-solid fa-crown" style="font-size:11px"></i>
-                            Admin General
-                            <span class="tab-count">{{ $directLines->count() }}</span>
-                        </button>
-                        <button
-                            type="button"
-                            class="lines-tab-btn {{ $tab === 'cajeros' ? 'active' : '' }}"
-                            wire:click="$set('tab', 'cajeros')"
-                        >
-                            <i class="fa-solid fa-user-tie" style="font-size:11px"></i>
-                            Cajeros
-                            <span class="tab-count">{{ $cajeroLines->count() }}</span>
-                        </button>
+                        @isset($tabs)
+                            @foreach($tabs as $tabItem)
+                                <button type="button" class="lines-tab-btn {{ $tab === $tabItem['key'] ? 'active' : '' }}" wire:click="$set('tab', '{{ $tabItem['key'] }}')">
+                                    <i class="fa-solid fa-layer-group" style="font-size:11px"></i>
+                                    {{ $tabItem['title'] }}
+                                    <span class="tab-count">{{ count($tabItem['item_ids'] ?? []) }}</span>
+                                </button>
+                            @endforeach
+                        @else
+                            <button type="button" class="lines-tab-btn {{ $tab === 'directas' ? 'active' : '' }}" wire:click="$set('tab', 'directas')">
+                                <i class="fa-solid fa-crown" style="font-size:11px"></i>
+                                Admin General
+                                <span class="tab-count">{{ $directLines->count() }}</span>
+                            </button>
+                            <button type="button" class="lines-tab-btn {{ $tab === 'cajeros' ? 'active' : '' }}" wire:click="$set('tab', 'cajeros')">
+                                <i class="fa-solid fa-user-tie" style="font-size:11px"></i>
+                                Cajeros
+                                <span class="tab-count">{{ $cajeroLines->count() }}</span>
+                            </button>
+                        @endisset
                     </div>
                 </div>
+                @if(!empty($activeTab['subtitle']))
+                    <p class="fe-subtitle" style="margin:-12px 0 22px;max-width:640px;">{{ $activeTab['subtitle'] }}</p>
+                @endif
             @endif
 
             @if($lines->count())
@@ -128,12 +81,14 @@
                 </div>
             @else
                 <div class="empty-panel lines-empty">
-                    @if($showTabs && $tab === 'directas')
+                    @if(isset($activeTab))
+                        No hay lineas seleccionadas para esta tab.
+                    @elseif($showTabs && $tab === 'directas')
                         No hay lineas del admin general publicadas por ahora.
                     @elseif($showTabs && $tab === 'cajeros')
-                        No hay líneas de cajeros activas publicadas por ahora.
+                        No hay lineas de cajeros activas publicadas por ahora.
                     @else
-                        No hay líneas activas publicadas por ahora.
+                        No hay lineas activas publicadas por ahora.
                     @endif
                 </div>
             @endif

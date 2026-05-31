@@ -5,11 +5,12 @@ namespace App\Livewire\Frontend;
 use App\Models\Bonus;
 use App\Models\BonusAssignment;
 use App\Models\Vendor;
+use App\Support\PublicPageContent;
 use Livewire\Component;
 
 class BonusesIndex extends Component
 {
-    public string $tab = 'general';
+    public string $tab = '';
 
     public function render()
     {
@@ -37,6 +38,31 @@ class BonusesIndex extends Component
                 'showTabs'       => false,
                 'generalBonuses' => collect(),
                 'cajeroBonuses'  => collect(),
+                'pageSection' => null,
+                'activeTab' => null,
+            ])->layout('frontend.layouts.app');
+        }
+
+        $pageSection = PublicPageContent::page('bonos');
+        $tabs = PublicPageContent::tabs($pageSection);
+
+        if ($tabs) {
+            if (! collect($tabs)->firstWhere('key', $this->tab)) {
+                $this->tab = $tabs[0]['key'];
+            }
+
+            $activeTab = collect($tabs)->firstWhere('key', $this->tab) ?: $tabs[0];
+            $bonuses = PublicPageContent::orderedItems('bonos', $activeTab['item_ids']);
+
+            return view('frontend.pages.bonuses-index', [
+                'bonuses' => $bonuses,
+                'assignments' => $this->assignments($userId, $bonuses),
+                'showTabs' => count($tabs) > 1,
+                'tabs' => $tabs,
+                'activeTab' => $activeTab,
+                'pageSection' => $pageSection,
+                'generalBonuses' => collect(),
+                'cajeroBonuses' => collect(),
             ])->layout('frontend.layouts.app');
         }
 
@@ -52,6 +78,8 @@ class BonusesIndex extends Component
             'showTabs'       => true,
             'generalBonuses' => $generalBonuses,
             'cajeroBonuses'  => $cajeroBonuses,
+            'pageSection' => null,
+            'activeTab' => null,
         ])->layout('frontend.layouts.app');
     }
 

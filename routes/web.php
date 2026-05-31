@@ -14,6 +14,7 @@ use App\Livewire\BlogEdit;
 use App\Livewire\Bonos;
 use App\Livewire\Chats;
 use App\Livewire\EditorHome;
+use App\Livewire\EditorPages;
 use App\Livewire\Frontend\Blog;
 use App\Livewire\Frontend\BonusesIndex;
 use App\Livewire\Frontend\BonusShow;
@@ -380,6 +381,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::match(['get', 'post'], '/editor-inicio', EditorHome::class)
             ->middleware('line.authorize:'.Permissions::HOME_EDIT)
             ->name('editor.inicio');
+
+        Route::get('/paginas/{page?}', EditorPages::class)
+            ->middleware('line.authorize:'.Permissions::HOME_EDIT)
+            ->name('editor.paginas');
 
         Route::post('/editor-inicio/guardar-seccion', [HomeSectionController::class, 'saveSection'])
             ->middleware('line.authorize:'.Permissions::HOME_EDIT)

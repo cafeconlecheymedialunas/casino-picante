@@ -12,7 +12,6 @@ use App\Models\ChatMessage;
 use App\Models\Comment;
 use App\Models\DashboardNotification;
 use App\Models\HomeConfig;
-use App\Models\HomeSection;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
@@ -93,11 +92,10 @@ class DatabaseSeeder extends Seeder
         $raffles = $this->seedRaffles($lines, $platforms, $clients);
         $this->seedCarousel($lines);
         $this->seedHomeConfig($posts, $bonuses);
-        $this->seedHomeSections($posts, $bonuses, $lines);
+        $this->call(HomeSectionSeeder::class);
         $vendors = $this->seedVendors($roles[Roles::CAJERO], $platforms, $agents, $clients, $bonuses, $raffles, $posts);
         $this->assignDemoClientsToVendors($clients, $vendors);
         $this->assignDemoAgentsToVendors($agents, $vendors);
-        $this->seedVendorHomeSections($vendors, $bonuses, $raffles, $posts);
         $this->seedSupportData($lines, $agents, $clients, $posts, $platforms);
 
         $this->command->info('Base demo cargada.');
@@ -153,18 +151,19 @@ class DatabaseSeeder extends Seeder
     private function seedPlatforms(): Collection
     {
         return collect([
-            ['name' => 'VIP Casino',   'slug' => 'vip-casino',   'img' => '1051075', 'description' => 'Slots, ruleta en vivo y mesas premium con carga rapida.',              'contacts' => [['name' => 'Soporte VIP',     'type' => 'whatsapp', 'value' => 'https://wa.me/5491151003301']]],
-            ['name' => 'Hybrid Club',  'slug' => 'hybrid-club',  'img' => '1047887', 'description' => 'Casino online con torneos diarios y juegos en vivo.',                  'contacts' => [['name' => 'Alta Hybrid',     'type' => 'telegram', 'value' => 'https://t.me/redpicantes']]],
-            ['name' => 'Etoile Play',  'slug' => 'etoile-play',  'img' => '1055680', 'description' => 'Experiencia simple para cargar, jugar y retirar sin vueltas.',         'contacts' => [['name' => 'Mesa Etoile',     'type' => 'instagram', 'value' => 'https://instagram.com/redpicantes']]],
-            ['name' => 'Golden Bet',   'slug' => 'golden-bet',   'img' => '1068523', 'description' => 'Bonos de recarga, ruleta y premios semanales.',                        'contacts' => [['name' => 'Golden Atencion', 'type' => 'web',      'value' => 'https://redpicantes.test']]],
-        ])->map(fn ($platform) => Platform::create([
-            'name' => $platform['name'],
-            'slug' => $platform['slug'],
-            'description' => $platform['description'],
-            'contacts' => $platform['contacts'],
-            'logo_url' => 'https://picsum.photos/id/'.$platform['img'].'/256/256',
-            'website_url' => 'https://redpicantes.test/'.$platform['slug'],
-            'is_active' => true,
+            ['name' => 'VIP Casino',  'slug' => 'vip-casino',  'img' => '1051075', 'description' => 'Slots, ruleta en vivo y mesas premium con carga rapida.',             'contacts' => [['name' => 'Soporte VIP',     'type' => 'whatsapp', 'value' => 'https://wa.me/5491151003301']]],
+            ['name' => 'Hybrid Club', 'slug' => 'hybrid-club', 'img' => '1047887', 'description' => 'Casino online con torneos diarios y juegos en vivo.',                 'contacts' => [['name' => 'Alta Hybrid',     'type' => 'telegram', 'value' => 'https://t.me/redpicantes']]],
+            ['name' => 'Etoile Play', 'slug' => 'etoile-play', 'img' => '1055680', 'description' => 'Experiencia simple para cargar, jugar y retirar sin vueltas.',        'contacts' => [['name' => 'Mesa Etoile',     'type' => 'instagram', 'value' => 'https://instagram.com/redpicantes']]],
+            ['name' => 'Golden Bet',  'slug' => 'golden-bet',  'img' => '1068523', 'description' => 'Bonos de recarga, ruleta y premios semanales.',                       'contacts' => [['name' => 'Golden Atencion', 'type' => 'web',       'value' => 'https://redpicantes.test']]],
+        ])->map(fn ($p) => Platform::create([
+            'vendor_id'   => null,
+            'name'        => $p['name'],
+            'slug'        => $p['slug'],
+            'description' => $p['description'],
+            'logo_url'    => 'https://picsum.photos/id/'.$p['img'].'/256/256',
+            'website_url' => 'https://redpicantes.test/'.$p['slug'],
+            'is_active'   => true,
+            'contacts'    => $p['contacts'],
         ]));
     }
 
@@ -230,16 +229,18 @@ class DatabaseSeeder extends Seeder
 
         return collect($lineData)->map(function ($data) use ($agents, $platforms) {
             $line = Line::create([
-                'name' => $data['name'],
-                'type' => $data['type'],
-                'phone' => '+54 9 11 5100-44'.random_int(10, 99),
-                'icon' => 'fa-solid fa-fire',
-                'description' => $data['description'],
-                'status' => 'active',
+                'vendor_id'     => null,
+                'name'          => $data['name'],
+                'slug'          => Str::slug($data['name']),
+                'type'          => $data['type'],
+                'phone'         => '+54 9 11 5100-44'.random_int(10, 99),
+                'icon'          => 'fa-solid fa-fire',
+                'description'   => $data['description'],
+                'status'        => 'active',
                 'contact_links' => $data['contact_links'],
-                'best_sales' => random_int(1800000, 5400000),
-                'portada_url' => $data['portada_url'],
-                'perfil_url' => $data['perfil_url'],
+                'best_sales'    => random_int(1800000, 5400000),
+                'portada_url'   => $data['portada_url'],
+                'perfil_url'    => $data['perfil_url'],
             ]);
 
             $line->platforms()->sync(collect($data['platforms'])->mapWithKeys(fn ($index) => [
@@ -394,22 +395,25 @@ class DatabaseSeeder extends Seeder
 
         return collect($bonusData)->map(function ($bonus, $index) use ($lines, $platforms, $adminAgent, $clients) {
             $created = Bonus::withoutGlobalScopes()->create([
-                'code' => $bonus[0],
-                'title' => $bonus[1],
-                'description' => $bonus[2],
-                'start_date' => now()->subDays(3),
-                'end_date' => now()->addDays(28 - $index),
-                'type' => 'general',
-                'status' => 'active',
-                'created_by' => $adminAgent->id,
+                'vendor_id'     => null,
+                'code'          => $bonus[0],
+                'slug'          => Str::slug($bonus[1]),
+                'title'         => $bonus[1],
+                'description'   => $bonus[2],
+                'start_date'    => now()->subDays(3),
+                'end_date'      => now()->addDays(28 - $index),
+                'type'          => 'general',
+                'status'        => 'active',
+                'created_by'    => $adminAgent->id,
+                'user_id'       => null,
                 'bonus_percent' => $bonus[3],
-                'bonus_amount' => 0,
-                'min_deposit' => 0,
-                'max_bonus' => $bonus[4],
+                'bonus_amount'  => 0,
+                'min_deposit'   => 0,
+                'max_bonus'     => $bonus[4],
                 'total_quantity' => 250,
                 'per_user_limit' => 1,
-                'line_id' => $lines[$bonus[5]]->id,
-                'platform_id' => $platforms[$index % $platforms->count()]->id,
+                'line_id'       => $lines[$bonus[5]]->id,
+                'platform_id'   => $platforms[$index % $platforms->count()]->id,
             ]);
 
             BonusAssignment::create([
@@ -429,16 +433,20 @@ class DatabaseSeeder extends Seeder
         $created = collect();
 
         $active = Raffle::withoutGlobalScopes()->create([
-            'title' => 'Sorteo VIP Mayo',
-            'description' => 'Ganate un viaje a Brasil, un auto y premios sorpresa por participar con tus cargas semanales.',
-            'status' => 'active',
-            'start_date' => now()->subDays(4),
-            'end_date' => now()->addHours(34),
-            'start_number' => 1,
-            'end_number' => 500,
-            'numbers_limit' => 500,
-            'line_id' => $lines[0]->id,
-            'platform_id' => $platforms[0]->id,
+            'vendor_id'      => null,
+            'slug'           => 'sorteo-vip-mayo',
+            'title'          => 'Sorteo VIP Mayo',
+            'description'    => 'Ganate un viaje a Brasil, un auto y premios sorpresa por participar con tus cargas semanales.',
+            'status'         => 'active',
+            'start_date'     => now()->subDays(4),
+            'end_date'       => now()->addHours(34),
+            'start_number'   => 1,
+            'end_number'     => 500,
+            'numbers_limit'  => 500,
+            'line_id'        => $lines[0]->id,
+            'platform_id'    => $platforms[0]->id,
+            'winner_user_id' => null,
+            'winner_number'  => null,
             'prizes' => [
                 ['position' => 1, 'name' => 'Viaje a Brasil',  'amount' => 7000, 'image' => 'https://picsum.photos/id/1049/480/260'],
                 ['position' => 2, 'name' => 'Moto 0km',        'amount' => 3200, 'image' => 'https://picsum.photos/id/1082/480/260'],
@@ -457,18 +465,20 @@ class DatabaseSeeder extends Seeder
         }
 
         $finished = Raffle::withoutGlobalScopes()->create([
-            'title' => 'Sorteo Express Slots',
-            'description' => 'Premios entregados a usuarios activos de Slots Express.',
-            'status' => 'finished',
-            'start_date' => now()->subDays(30),
-            'end_date' => now()->subDays(2),
-            'start_number' => 1,
-            'end_number' => 300,
-            'numbers_limit' => 300,
+            'vendor_id'      => null,
+            'slug'           => 'sorteo-express-slots',
+            'title'          => 'Sorteo Express Slots',
+            'description'    => 'Premios entregados a usuarios activos de Slots Express.',
+            'status'         => 'finished',
+            'start_date'     => now()->subDays(30),
+            'end_date'       => now()->subDays(2),
+            'start_number'   => 1,
+            'end_number'     => 300,
+            'numbers_limit'  => 300,
             'winner_user_id' => $clients[2]->id,
-            'winner_number' => 88,
-            'line_id' => $lines[2]->id,
-            'platform_id' => $platforms[1]->id,
+            'winner_number'  => 88,
+            'line_id'        => $lines[2]->id,
+            'platform_id'    => $platforms[1]->id,
             'prizes' => [
                 ['position' => 1, 'name' => 'Combo tecnologia', 'amount' => 1200, 'image' => 'https://picsum.photos/id/1/480/260'],
             ],
@@ -482,13 +492,20 @@ class DatabaseSeeder extends Seeder
     private function seedCarousel(Collection $lines): void
     {
         foreach ([
-            ['1057', 'Casino online con atencion real', '/lineas'],
+            ['1057', 'Casino online with atencion real', '/lineas'],
             ['1058', 'Bonos activos para jugar mas',    '/#bonos'],
             ['1059', 'Sorteo VIP de la semana',         '/sorteo'],
         ] as $index => $item) {
             CarouselItem::create([
+                'vendor_id' => null,
                 'image' => 'https://picsum.photos/id/'.$item[0].'/1600/680',
                 'title' => $item[1],
+                'description' => $index === 0
+                    ? 'Elegi una linea activa, pedi tu usuario y empeza a jugar con soporte humano.'
+                    : ($index === 1
+                        ? 'Promociones vigentes y beneficios para aprovechar cada carga.'
+                        : 'Participa en sorteos activos y segui los premios disponibles.'),
+                'cta_text' => $index === 0 ? 'Ver lineas' : ($index === 1 ? 'Ver bonos' : 'Ver sorteos'),
                 'link' => $item[2],
                 'order' => $index + 1,
                 'line_id' => $lines[$index % $lines->count()]->id,
@@ -499,133 +516,25 @@ class DatabaseSeeder extends Seeder
     private function seedHomeConfig(Collection $posts, Collection $bonuses): void
     {
         CarouselItem::orderBy('order')->get()->each(fn ($item, $index) => HomeConfig::create([
+            'vendor_id' => null,
             'section' => HomeConfig::SECTION_CAROUSEL,
             'item_id' => $item->id,
             'order' => $index + 1,
         ]));
 
         $bonuses->take(4)->values()->each(fn ($bonus, $index) => HomeConfig::create([
+            'vendor_id' => null,
             'section' => HomeConfig::SECTION_BONUSES,
             'item_id' => $bonus->id,
             'order' => $index + 1,
         ]));
 
         $posts->take(3)->values()->each(fn ($post, $index) => HomeConfig::create([
+            'vendor_id' => null,
             'section' => HomeConfig::SECTION_BLOG,
             'item_id' => $post->id,
             'order' => $index + 1,
         ]));
-    }
-
-    private function seedHomeSections(Collection $posts, Collection $bonuses, Collection $lines): void
-    {
-        $raffleIds = Raffle::withoutGlobalScopes()->where('status', 'active')->pluck('id')->toArray();
-        $bonusIds = $bonuses->pluck('id')->toArray();
-        $postIds = $posts->pluck('id')->toArray();
-        $lineIds = $lines->pluck('id')->toArray();
-
-        $sections = [
-            [
-                'section_key' => 'como-empezar',
-                'order' => 0,
-                'enabled' => true,
-                'kicker' => 'Como funciona',
-                'title' => 'Empeza en',
-                'highlight' => '3 pasos',
-                'subtitle' => 'Sin vueltas: contacto, carga y juego. Si necesitas ayuda, una persona te responde.',
-                'repeater_data' => [
-                    ['title' => 'Pedi tu usuario', 'subtitle' => 'Elegi una linea de atencion y solicitá el acceso para empezar a jugar.'],
-                    ['title' => 'Cargá saldo', 'subtitle' => 'Consulta medios de carga y bonos disponibles para tu cuenta.'],
-                    ['title' => 'Entrate a jugar', 'subtitle' => 'Disfrutá tus juegos favoritos, participá en sorteos y pedi asistencia cuando quieras.'],
-                ],
-            ],
-            [
-                'section_key' => 'lineas',
-                'order' => 1,
-                'enabled' => true,
-                'kicker' => 'Empeza a jugar',
-                'title' => 'Lineas de',
-                'highlight' => 'atencion',
-                'subtitle' => 'Hablá con una linea, pedi tu usuario, cargá saldo y entrate al casino en minutos.',
-                'line_ids' => $lineIds,
-            ],
-            [
-                'section_key' => 'sorteo',
-                'order' => 2,
-                'enabled' => true,
-                'kicker' => 'Muy pronto',
-                'title' => 'PROXIMOS',
-                'highlight' => 'SORTEOS',
-                'subtitle' => 'Nuevas oportunidades para ganar. Registrate y enterate antes que nadie.',
-                'raffle_type' => 'active',
-                'raffle_ids' => $raffleIds,
-            ],
-            [
-                'section_key' => 'nosotros',
-                'order' => 3,
-                'enabled' => true,
-                'kicker' => 'Sobre RED PICANTES',
-                'title' => 'Casino online con atencion',
-                'highlight' => 'real',
-                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, bonos claros, sorteos activos y soporte humano para acompaniarte.',
-                'repeater_data' => [
-                    ['title' => 'Alta rapida', 'subtitle' => 'Contactas una linea y pedes tu usuario sin formularios eternos.'],
-                    ['title' => 'Bonos vigentes', 'subtitle' => 'Bonos para recargar, arrancar con ventaja y jugar mas.'],
-                    ['title' => 'Sorteos activos', 'subtitle' => 'Premios y chances extra para usuarios que participan.'],
-                    ['title' => 'Soporte humano', 'subtitle' => 'Atencion directa para cargas, retiros, dudas y novedades.'],
-                ],
-            ],
-            [
-                'section_key' => 'bonos',
-                'order' => 4,
-                'enabled' => true,
-                'kicker' => 'Bonos para jugar mas',
-                'title' => 'Bonos',
-                'highlight' => 'activos',
-                'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
-                'action_text' => 'Ver todos',
-                'action_url' => '/bonos',
-                'bonus_type' => 'active',
-                'bonus_ids' => $bonusIds,
-            ],
-            [
-                'section_key' => 'blog',
-                'order' => 5,
-                'enabled' => true,
-                'kicker' => 'Noticias y jugadas',
-                'title' => 'Noticias y',
-                'highlight' => 'jugadas',
-                'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.',
-                'action_text' => 'Ver novedades',
-                'action_url' => '/blog',
-                'post_type' => '',
-                'post_ids' => $postIds,
-            ],
-        ];
-
-        foreach ($sections as $data) {
-            HomeSection::create([
-                'vendor_id' => null,
-                'section_key' => $data['section_key'],
-                'order' => $data['order'],
-                'enabled' => $data['enabled'],
-                'kicker' => $data['kicker'],
-                'title' => $data['title'],
-                'highlight' => $data['highlight'],
-                'subtitle' => $data['subtitle'],
-                'content' => null,
-                'action_text' => $data['action_text'] ?? null,
-                'action_url' => $data['action_url'] ?? null,
-                'repeater_data' => $data['repeater_data'] ?? null,
-                'raffle_type' => $data['raffle_type'] ?? null,
-                'raffle_ids' => $data['raffle_ids'] ?? null,
-                'bonus_type' => $data['bonus_type'] ?? null,
-                'bonus_ids' => $data['bonus_ids'] ?? null,
-                'post_type' => $data['post_type'] ?? null,
-                'post_ids' => $data['post_ids'] ?? null,
-                'line_ids' => $data['line_ids'] ?? null,
-            ]);
-        }
     }
 
     private function seedVendors(
@@ -645,7 +554,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'fuego@cajero.test',
                 'first' => 'Rodrigo',
                 'last' => 'Fuentes',
-                'description' => 'Cajero con atención rápida, cargas en minutos y líneas activas las 24hs. Operamos VIP Casino y Golden Bet.',
+                'description' => 'Cajero with atención rápida, cargas en minutos y líneas activas las 24hs. Operamos VIP Casino y Golden Bet.',
                 'contacts' => [
                     ['name' => 'WhatsApp', 'type' => 'whatsapp', 'value' => '5491151110001'],
                     ['name' => 'Telegram',  'type' => 'telegram',  'value' => 'https://t.me/cajerofuego'],
@@ -696,7 +605,7 @@ class DatabaseSeeder extends Seeder
                 'email' => 'norte@cajero.test',
                 'first' => 'Matias',
                 'last' => 'Olmedo',
-                'description' => 'Cajero regional con líneas en todas las plataformas. Pagos ordenados, retiros rápidos y seguimiento de cada operación.',
+                'description' => 'Cajero regional with líneas en todas las plataformas. Pagos ordenados, retiros rápidos y seguimiento de cada operación.',
                 'contacts' => [
                     ['name' => 'WhatsApp', 'type' => 'whatsapp', 'value' => '5491151110003'],
                     ['name' => 'Email',     'type' => 'email',    'value' => 'norte@cajero.test'],
@@ -730,16 +639,18 @@ class DatabaseSeeder extends Seeder
             ]);
 
             $vendor = Vendor::create([
-                'user_id' => $user->id,
-                'name' => $data['name'],
-                'slug' => $data['slug'],
-                'logo' => 'https://picsum.photos/id/'.$data['logo_id'].'/256/256',
-                'hero_image' => 'https://picsum.photos/id/'.$data['hero_id'].'/1400/500',
-                'portrait_image' => 'https://picsum.photos/id/'.$data['portrait_id'].'/600/800',
-                'description' => $data['description'],
-                'contacts' => $data['contacts'],
-                'features' => $data['features'],
-                'is_active' => true,
+                'user_id'         => $user->id,
+                'name'            => $data['name'],
+                'slug'            => $data['slug'],
+                'logo'            => 'https://picsum.photos/id/'.$data['logo_id'].'/256/256',
+                'hero_image'      => 'https://picsum.photos/id/'.$data['hero_id'].'/1400/500',
+                'portrait_image'  => 'https://picsum.photos/id/'.$data['portrait_id'].'/600/800',
+                'description'     => $data['description'],
+                'contacts'        => $data['contacts'],
+                'features'        => $data['features'],
+                'branding'        => [],
+                'is_active'       => true,
+                'is_direct'       => false,
             ]);
 
             $user->forceFill(['vendor_id' => $vendor->id])->save();
@@ -747,20 +658,22 @@ class DatabaseSeeder extends Seeder
             // Lines owned by this vendor
             $vendorLines = collect();
             foreach (range(1, 2) as $lineNum) {
+                $lineName = $data['name'].' — '.($lineNum === 1 ? 'Principal' : 'Secundaria');
                 $line = Line::create([
-                    'vendor_id' => $vendor->id,
-                    'name' => 'Línea '.($lineNum === 1 ? 'Principal' : 'Secundaria'),
-                    'type' => $lineNum === 1 ? 'vip' : 'express',
-                    'phone' => '+54 9 11 5111-0'.($index * 10 + $lineNum),
-                    'icon' => 'fa-solid fa-fire',
-                    'description' => 'Línea de atención directa del cajero '.$data['name'].'. Cargas, retiros y soporte personalizado.',
-                    'status' => 'active',
+                    'vendor_id'     => $vendor->id,
+                    'name'          => $lineName,
+                    'slug'          => Str::slug($lineName).'-'.$lineNum,
+                    'type'          => $lineNum === 1 ? 'vip' : 'express',
+                    'phone'         => '+54 9 11 5111-0'.($index * 10 + $lineNum),
+                    'icon'          => 'fa-solid fa-fire',
+                    'description'   => 'Línea de atención directa del cajero '.$data['name'].'. Cargas, retiros y soporte personalizado.',
+                    'status'        => 'active',
                     'contact_links' => [
                         ['name' => 'WhatsApp', 'type' => 'whatsapp', 'value' => $data['contacts'][0]['value']],
                     ],
-                    'best_sales' => random_int(500000, 3000000),
+                    'best_sales'  => random_int(500000, 3000000),
                     'portada_url' => 'https://picsum.photos/id/'.($data['line_img_ids'][$lineNum - 1] ?? '1060').'/1200/420',
-                    'perfil_url' => 'https://picsum.photos/id/'.($data['line_img_ids'][$lineNum - 1] ?? '1060').'/256/256',
+                    'perfil_url'  => 'https://picsum.photos/id/'.($data['line_img_ids'][$lineNum - 1] ?? '1060').'/256/256',
                 ]);
 
                 $line->platforms()->sync(
@@ -808,40 +721,45 @@ class DatabaseSeeder extends Seeder
                 ['RECARGA-'.strtoupper($data['slug']),    'Bono Recarga '.$data['name'],     'Recarga con ventaja en '.$data['name'].'.', 30, 30000],
             ] as $bi => $bdata) {
                 $bonus = Bonus::withoutGlobalScopes()->create([
-                    'code' => $bdata[0],
-                    'title' => $bdata[1],
-                    'description' => $bdata[2],
-                    'start_date' => now()->subDays(2),
-                    'end_date' => now()->addDays(20),
-                    'type' => 'general',
-                    'status' => 'active',
-                    'created_by' => $agents[0]->id,
-                    'bonus_percent' => $bdata[3],
-                    'bonus_amount' => 0,
-                    'min_deposit' => 0,
-                    'max_bonus' => $bdata[4],
+                    'vendor_id'      => $vendor->id,
+                    'code'           => $bdata[0],
+                    'slug'           => Str::slug($bdata[1]).'-'.$bi,
+                    'title'          => $bdata[1],
+                    'description'    => $bdata[2],
+                    'start_date'     => now()->subDays(2),
+                    'end_date'       => now()->addDays(20),
+                    'type'           => 'general',
+                    'status'         => 'active',
+                    'created_by'     => $agents[0]->id,
+                    'user_id'        => null,
+                    'bonus_percent'  => $bdata[3],
+                    'bonus_amount'   => 0,
+                    'min_deposit'    => 0,
+                    'max_bonus'      => $bdata[4],
                     'total_quantity' => 100,
                     'per_user_limit' => 1,
-                    'vendor_id' => $vendor->id,
-                    'line_id' => $vendorLines->first()->id,
-                    'platform_id' => $platforms[$data['platform_indices'][0]]->id,
+                    'line_id'        => $vendorLines->first()->id,
+                    'platform_id'    => $platforms[$data['platform_indices'][0]]->id,
                 ]);
                 $vendorBonuses->push($bonus);
             }
 
             // Raffle for this vendor
             $raffle = Raffle::withoutGlobalScopes()->create([
-                'vendor_id' => $vendor->id,
-                'title' => 'Sorteo '.$data['name'],
-                'description' => 'Sorteo exclusivo para usuarios activos de '.$data['name'].'. Participá con tus cargas semanales.',
-                'status' => 'active',
-                'start_date' => now()->subDays(2),
-                'end_date' => now()->addDays(14),
-                'start_number' => 1,
-                'end_number' => 200,
-                'numbers_limit' => 200,
-                'line_id' => $vendorLines->first()->id,
-                'platform_id' => $platforms[$data['platform_indices'][0]]->id,
+                'vendor_id'      => $vendor->id,
+                'slug'           => 'sorteo-'.Str::slug($data['name']),
+                'title'          => 'Sorteo '.$data['name'],
+                'description'    => 'Sorteo exclusivo para usuarios activos de '.$data['name'].'. Participá con tus cargas semanales.',
+                'status'         => 'active',
+                'start_date'     => now()->subDays(2),
+                'end_date'       => now()->addDays(14),
+                'start_number'   => 1,
+                'end_number'     => 200,
+                'numbers_limit'  => 200,
+                'winner_user_id' => null,
+                'winner_number'  => null,
+                'line_id'        => $vendorLines->first()->id,
+                'platform_id'    => $platforms[$data['platform_indices'][0]]->id,
                 'prizes' => [
                     ['position' => 1, 'name' => 'Premio Principal',  'amount' => 3000, 'image' => 'https://picsum.photos/id/'.($data['prize_img_ids'][0] ?? '1049').'/480/260'],
                     ['position' => 2, 'name' => 'Premio Secundario', 'amount' => 1000, 'image' => 'https://picsum.photos/id/'.($data['prize_img_ids'][1] ?? '1050').'/480/260'],
@@ -861,122 +779,6 @@ class DatabaseSeeder extends Seeder
 
             return $vendor;
         });
-    }
-
-    private function seedVendorHomeSections(
-        Collection $vendors,
-        Collection $bonuses,
-        Collection $raffles,
-        Collection $posts,
-    ): void {
-        $postIds = $posts->pluck('id')->toArray();
-
-        foreach ($vendors as $vendor) {
-            $vendorBonusIds = Bonus::withoutGlobalScopes()
-                ->where('vendor_id', $vendor->id)->pluck('id')->toArray();
-            $vendorRaffleIds = Raffle::withoutGlobalScopes()
-                ->where('vendor_id', $vendor->id)->pluck('id')->toArray();
-            $vendorLineIds = Line::withoutGlobalScopes()
-                ->where('vendor_id', $vendor->id)->where('status', 'active')->pluck('id')->toArray();
-
-            $sections = [
-                [
-                    'section_key' => 'como-empezar',
-                    'order' => 0,
-                    'enabled' => true,
-                    'kicker' => 'Cómo funciona',
-                    'title' => 'Empezá con',
-                    'highlight' => $vendor->name,
-                    'subtitle' => 'Contactanos, pedí tu usuario y empezá a jugar en minutos. Atención directa, sin vueltas.',
-                    'repeater_data' => [
-                        ['title' => 'Contactanos', 'subtitle' => 'Escribinos por WhatsApp o Telegram y pedí tu acceso.'],
-                        ['title' => 'Cargá saldo', 'subtitle' => 'Te indicamos los medios de pago disponibles y acreditamos al instante.'],
-                        ['title' => 'Jugá', 'subtitle' => 'Entrá a la plataforma con tu usuario y disfrutá del casino online.'],
-                    ],
-                ],
-                [
-                    'section_key' => 'lineas',
-                    'order' => 1,
-                    'enabled' => ! empty($vendorLineIds),
-                    'kicker' => 'Líneas activas',
-                    'title' => 'Nuestras',
-                    'highlight' => 'líneas',
-                    'subtitle' => 'Líneas de atención propias con soporte directo, cargas rápidas y seguimiento de cada operación.',
-                    'line_ids' => $vendorLineIds,
-                ],
-                [
-                    'section_key' => 'sorteo',
-                    'order' => 2,
-                    'enabled' => ! empty($vendorRaffleIds),
-                    'kicker' => 'Sorteos exclusivos',
-                    'title' => 'Sorteos de',
-                    'highlight' => $vendor->name,
-                    'subtitle' => 'Participá en nuestros sorteos exclusivos y ganá premios reales.',
-                    'raffle_type' => 'active',
-                    'raffle_ids' => $vendorRaffleIds,
-                ],
-                [
-                    'section_key' => 'nosotros',
-                    'order' => 3,
-                    'enabled' => true,
-                    'kicker' => 'Sobre '.$vendor->name,
-                    'title' => 'Por qué elegirnos',
-                    'highlight' => '',
-                    'subtitle' => $vendor->description,
-                    'repeater_data' => $vendor->features ?? [],
-                ],
-                [
-                    'section_key' => 'bonos',
-                    'order' => 4,
-                    'enabled' => ! empty($vendorBonusIds),
-                    'kicker' => 'Bonos exclusivos',
-                    'title' => 'Bonos de',
-                    'highlight' => $vendor->name,
-                    'subtitle' => 'Bonos activos para arrancar con ventaja y recargar con beneficio extra.',
-                    'action_text' => 'Ver todos',
-                    'action_url' => '/'.$vendor->slug.'/bonos',
-                    'bonus_type' => 'active',
-                    'bonus_ids' => $vendorBonusIds,
-                ],
-                [
-                    'section_key' => 'blog',
-                    'order' => 5,
-                    'enabled' => true,
-                    'kicker' => 'Novedades',
-                    'title' => 'Últimas',
-                    'highlight' => 'novedades',
-                    'subtitle' => 'Enterate de sorteos, bonos y noticias del casino.',
-                    'action_text' => 'Ver novedades',
-                    'action_url' => '/'.$vendor->slug.'/blog',
-                    'post_type' => '',
-                    'post_ids' => $postIds,
-                ],
-            ];
-
-            foreach ($sections as $data) {
-                HomeSection::create([
-                    'vendor_id' => $vendor->id,
-                    'section_key' => $data['section_key'],
-                    'order' => $data['order'],
-                    'enabled' => $data['enabled'],
-                    'kicker' => $data['kicker'],
-                    'title' => $data['title'],
-                    'highlight' => $data['highlight'],
-                    'subtitle' => $data['subtitle'] ?? null,
-                    'content' => null,
-                    'action_text' => $data['action_text'] ?? null,
-                    'action_url' => $data['action_url'] ?? null,
-                    'repeater_data' => $data['repeater_data'] ?? null,
-                    'raffle_type' => $data['raffle_type'] ?? null,
-                    'raffle_ids' => $data['raffle_ids'] ?? null,
-                    'bonus_type' => $data['bonus_type'] ?? null,
-                    'bonus_ids' => $data['bonus_ids'] ?? null,
-                    'post_type' => $data['post_type'] ?? null,
-                    'post_ids' => $data['post_ids'] ?? null,
-                    'line_ids' => $data['line_ids'] ?? null,
-                ]);
-            }
-        }
     }
 
     private function assignDemoAgentsToVendors(Collection $agents, Collection $vendors): void

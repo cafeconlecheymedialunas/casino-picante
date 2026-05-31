@@ -911,9 +911,36 @@
             @endif
 
             @if($sidebarCanEditHome)
-            <a href="{{ route('admin.editor.inicio') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.inicio*') ? 'active' : '' }}">
-                <span class="sidebar-item-icon"><i class="fa-solid fa-house-chimney"></i></span> Editar Home
-            </a>
+            @php
+                $paginasActive = request()->routeIs('admin.editor.inicio*') || request()->routeIs('admin.editor.paginas*');
+            @endphp
+            <div x-data="{ open: {{ $paginasActive ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="sidebar-item" style="width:100%;border:none;background:none;cursor:pointer;text-align:left;" :class="open ? 'active' : ''">
+                    <span class="sidebar-item-icon"><i class="fa-solid fa-file-lines"></i></span>
+                    Páginas
+                    <i class="fa-solid" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'" style="margin-left:auto;font-size:10px;opacity:0.6;"></i>
+                </button>
+                <div x-show="open" x-collapse style="padding-left:10px;">
+                    <a href="{{ route('admin.editor.inicio') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.inicio*') ? 'active' : '' }}" style="font-size:13px;">
+                        <span class="sidebar-item-icon"><i class="fa-solid fa-house-chimney"></i></span> Home
+                    </a>
+                    <a href="{{ route('admin.editor.paginas', 'sorteos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.paginas') && request()->route('page') === 'sorteos' ? 'active' : '' }}" style="font-size:13px;">
+                        <span class="sidebar-item-icon"><i class="fa-solid fa-dice"></i></span> Sorteos
+                    </a>
+                    <a href="{{ route('admin.editor.paginas', 'lineas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.paginas') && request()->route('page') === 'lineas' ? 'active' : '' }}" style="font-size:13px;">
+                        <span class="sidebar-item-icon"><i class="fa-solid fa-layer-group"></i></span> Lineas
+                    </a>
+                    <a href="{{ route('admin.editor.paginas', 'bonos') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.paginas') && request()->route('page') === 'bonos' ? 'active' : '' }}" style="font-size:13px;">
+                        <span class="sidebar-item-icon"><i class="fa-solid fa-gift"></i></span> Bonos
+                    </a>
+                    <a href="{{ route('admin.editor.paginas', 'cajeros') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.paginas') && request()->route('page') === 'cajeros' ? 'active' : '' }}" style="font-size:13px;">
+                        <span class="sidebar-item-icon"><i class="fa-solid fa-cash-register"></i></span> Cajeros
+                    </a>
+                    <a href="{{ route('admin.editor.paginas', 'novedades') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.editor.paginas') && request()->route('page') === 'novedades' ? 'active' : '' }}" style="font-size:13px;">
+                        <span class="sidebar-item-icon"><i class="fa-solid fa-newspaper"></i></span> Novedades
+                    </a>
+                </div>
+            </div>
             @endif
 
             @if($sidebarCan([\App\Support\Permissions::NEWS_READ, \App\Support\Permissions::NEWS_CREATE, \App\Support\Permissions::NEWS_UPDATE, \App\Support\Permissions::NEWS_DELETE]))

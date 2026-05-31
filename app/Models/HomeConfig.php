@@ -11,6 +11,8 @@ class HomeConfig extends Model
 
     protected $table = 'home_config';
 
+    protected bool $preserveNullVendorId = true;
+
     protected $fillable = [
         'vendor_id',
         'section',

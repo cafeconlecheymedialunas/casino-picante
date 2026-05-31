@@ -46,9 +46,7 @@ class VendorLineSeeder extends Seeder
         $bonuses = $this->seedBonuses($vendors, $lines, $platforms, $agents, $clients);
         $raffles = $this->seedRaffles($vendors, $lines, $platforms, $clients);
         $this->seedSales($vendors, $lines, $agents, $clients, $platforms);
-        $this->seedCarousel($vendors, $lines);
         $this->seedRatings($vendors, $lines, $clients);
-        $this->seedHomeSections($vendors, $lines, $bonuses, $raffles, $posts);
 
         $this->command->info('=== VendorLineSeeder completo ===');
     }
@@ -615,81 +613,6 @@ class VendorLineSeeder extends Seeder
         $this->command->info($count.' ventas creadas.');
     }
 
-    private function seedCarousel(array $vendors, array $lines): void
-    {
-        $count = 0;
-        foreach ($vendors as $vi => $vendor) {
-            $vendorLines = array_values(array_filter($lines, fn ($l) => (int) $l->vendor_id === (int) $vendor->id));
-
-            foreach ([
-                ['Bienvenido a '.$vendor->name, '/'.$vendor->slug],
-                ['Bonos activos en '.$vendor->name, '/'.$vendor->slug.'/bonos'],
-                ['Sorteo '.$vendor->name, '/'.$vendor->slug.'/sorteos'],
-            ] as $ci => $item) {
-                CarouselItem::updateOrCreate(
-                    ['title' => $item[0], 'vendor_id' => $vendor->id],
-                    [
-                        'image' => 'https://picsum.photos/seed/'.$vendor->slug.'-carousel-'.$ci.'/1600/680',
-                        'link' => $item[1],
-                        'order' => $ci + 1,
-                        'line_id' => $vendorLines[$ci % count($vendorLines)]->id,
-                    ]
-                );
-                $count++;
-            }
-        }
-
-        $this->command->info($count.' items de carrusel creados.');
-    }
-
-    private function seedHomeSections(array $vendors, array $lines, array $bonuses, array $raffles, array $posts): void
-    {
-        $allPostIds = collect($posts)->pluck('id')->toArray();
-
-        foreach ($vendors as $vendor) {
-            $vendorLineIds = collect($lines)->filter(fn ($l) => (int) $l->vendor_id === (int) $vendor->id)->pluck('id')->values()->toArray();
-            $vendorBonusIds = collect($bonuses)->filter(fn ($b) => (int) $b->vendor_id === (int) $vendor->id)->pluck('id')->values()->toArray();
-            $vendorRaffleIds = collect($raffles)->filter(fn ($r) => (int) $r->vendor_id === (int) $vendor->id)->pluck('id')->values()->toArray();
-            $vendorPostIds = collect($posts)->filter(fn ($p) => (int) $p->vendor_id === (int) $vendor->id)->pluck('id')->values()->toArray();
-            $postIds = ! empty($vendorPostIds) ? $vendorPostIds : array_slice($allPostIds, 0, 6);
-
-            $sections = [
-                ['section_key' => 'como-empezar', 'order' => 0, 'enabled' => true, 'kicker' => 'Cómo funciona', 'title' => 'Empezá con', 'highlight' => $vendor->name, 'subtitle' => 'Contactanos, pedí tu usuario y empezá a jugar en minutos.', 'repeater_data' => [['title' => 'Contactanos', 'subtitle' => 'Escribinos por WhatsApp o Telegram y pedí tu acceso.'], ['title' => 'Cargá saldo', 'subtitle' => 'Acreditamos al instante con los medios disponibles.'], ['title' => 'Jugá', 'subtitle' => 'Entrá a la plataforma y disfrutá el casino online.']]],
-                ['section_key' => 'lineas', 'order' => 1, 'enabled' => ! empty($vendorLineIds), 'kicker' => 'Líneas activas', 'title' => 'Nuestras', 'highlight' => 'líneas', 'subtitle' => 'Líneas con soporte directo, cargas rápidas y seguimiento de cada operación.', 'line_ids' => $vendorLineIds],
-                ['section_key' => 'sorteo', 'order' => 2, 'enabled' => ! empty($vendorRaffleIds), 'kicker' => 'Sorteos exclusivos', 'title' => 'Sorteos de', 'highlight' => $vendor->name, 'subtitle' => 'Participá en nuestros sorteos y ganá premios reales.', 'raffle_type' => 'active', 'raffle_ids' => $vendorRaffleIds],
-                ['section_key' => 'nosotros', 'order' => 3, 'enabled' => true, 'kicker' => 'Sobre '.$vendor->name, 'title' => 'Por qué elegirnos', 'highlight' => '', 'subtitle' => $vendor->description ?? '', 'repeater_data' => $vendor->features ?? []],
-                ['section_key' => 'bonos', 'order' => 4, 'enabled' => ! empty($vendorBonusIds), 'kicker' => 'Bonos exclusivos', 'title' => 'Bonos de', 'highlight' => $vendor->name, 'subtitle' => 'Bonos activos para arrancar con ventaja.', 'action_text' => 'Ver todos', 'action_url' => '/'.$vendor->slug.'/bonos', 'bonus_type' => 'active', 'bonus_ids' => $vendorBonusIds],
-                ['section_key' => 'blog', 'order' => 5, 'enabled' => true, 'kicker' => 'Novedades', 'title' => 'Últimas', 'highlight' => 'novedades', 'subtitle' => 'Enterate de sorteos, bonos y noticias del casino.', 'action_text' => 'Ver novedades', 'action_url' => '/'.$vendor->slug.'/blog', 'post_ids' => $postIds],
-            ];
-
-            foreach ($sections as $data) {
-                HomeSection::withoutGlobalScopes()->updateOrCreate(
-                    ['vendor_id' => $vendor->id, 'section_key' => $data['section_key']],
-                    [
-                        'order' => $data['order'],
-                        'enabled' => $data['enabled'],
-                        'kicker' => $data['kicker'],
-                        'title' => $data['title'],
-                        'highlight' => $data['highlight'],
-                        'subtitle' => $data['subtitle'] ?? null,
-                        'action_text' => $data['action_text'] ?? null,
-                        'action_url' => $data['action_url'] ?? null,
-                        'repeater_data' => $data['repeater_data'] ?? null,
-                        'raffle_type' => $data['raffle_type'] ?? null,
-                        'raffle_ids' => $data['raffle_ids'] ?? null,
-                        'bonus_type' => $data['bonus_type'] ?? null,
-                        'bonus_ids' => $data['bonus_ids'] ?? null,
-                        'post_type' => $data['post_type'] ?? null,
-                        'post_ids' => $data['post_ids'] ?? null,
-                        'line_ids' => $data['line_ids'] ?? null,
-                    ]
-                );
-            }
-        }
-
-        $this->command->info(count($vendors).' vendors con HomeSections pobladas.');
-    }
-
     private function seedRatings(array $vendors, array $lines, array $clients): void
     {
         $count = 0;
@@ -713,3 +636,4 @@ class VendorLineSeeder extends Seeder
         $this->command->info($count.' valoraciones creadas.');
     }
 }
+

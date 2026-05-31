@@ -777,7 +777,7 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
     }
 
-    public function test_each_vendor_can_have_independent_home_sections(): void
+    public function test_editor_home_uses_global_home_sections(): void
     {
         [$firstUser, $firstVendor] = $this->cajeroVendor();
         [$secondUser, $secondVendor] = $this->cajeroVendor();
@@ -806,13 +806,11 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseHas('home_sections', [
-            'vendor_id' => $firstVendor->id,
+            'vendor_id' => null,
             'section_key' => 'como-empezar',
         ]);
-        $this->assertDatabaseHas('home_sections', [
-            'vendor_id' => $secondVendor->id,
-            'section_key' => 'como-empezar',
-        ]);
+        $this->assertDatabaseMissing('home_sections', ['vendor_id' => $firstVendor->id]);
+        $this->assertDatabaseMissing('home_sections', ['vendor_id' => $secondVendor->id]);
     }
 
     public function test_cajero_cannot_assign_client_to_other_vendor_line_by_tampering(): void

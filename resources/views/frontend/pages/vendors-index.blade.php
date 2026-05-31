@@ -60,24 +60,10 @@
 <div class="vendors-public-page">
     <section class="vpi-hero">
         <div class="fe-shell">
-            @include('frontend.components.breadcrumbs', [
-                'items' => [
-                    ['label' => 'Inicio', 'url' => route('frontend.home')],
-                    ['label' => 'Cajeros'],
-                ],
-            ])
-            <div class="vpi-hero-grid">
-                <div>
-                    <p class="vpi-kicker">Cajeros verificados</p>
-                    <h1>Elegí tu <span>cajero</span> y empezá con una línea activa.</h1>
-                    <p class="vpi-lead">Todos los cajeros publicados tienen perfil propio, canales de contacto, líneas disponibles, bonos y sorteos asociados.</p>
-                </div>
-                <div class="vpi-hero-card">
-                    <strong>{{ $vendors->count() }}</strong>
-                    <span>Cajeros activos</span>
-                    <em>Perfiles públicos listos para compartir</em>
-                </div>
-            </div>
+            <x-page-header-cajeros
+                :section="$pageSection"
+                :vendor-count="$vendors->count()"
+            />
         </div>
     </section>
 
@@ -111,6 +97,17 @@
                             <p class="vpi-slug">{{ $vendor->slug }}</p>
                             <h2>{{ $vendor->name }}</h2>
                             <p class="vpi-description">{{ $vendor->description ?: 'Cajero con atención personalizada, carga rápida y líneas disponibles para jugar online.' }}</p>
+
+                            @if($vendor->features && count($vendor->features))
+                                <div class="vpi-features-list">
+                                    @foreach(collect($vendor->features)->take(2) as $feature)
+                                        <div class="vpi-feature-tag">
+                                            <i class="{{ $feature['icon'] ?? 'fa-solid fa-check' }}"></i>
+                                            <span>{{ $feature['title'] }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
 
                             <div class="vpi-reputation">
                                 <div class="vpi-rep-left">
@@ -176,7 +173,7 @@
             #080404;
         padding-bottom: 28px;
     }
-    .vpi-hero { padding: 76px 0 42px; border-bottom: 1px solid rgba(255,255,255,.08); background: linear-gradient(180deg, rgba(255,255,255,.025), transparent); }
+    .vpi-hero { padding: 76px 0 42px; --page-top-pad: 76px; }
     .vpi-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 28px; align-items: end; }
     .vpi-kicker { margin: 0 0 12px; color: var(--orange); font-size: 11px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
     .vpi-hero h1 { max-width: 780px; margin: 0; font-family: var(--font-display); font-size: clamp(48px, 8vw, 88px); line-height: .88; letter-spacing: .015em; text-transform: uppercase; }

@@ -35,190 +35,138 @@ class Home extends Component
             ->pluck('item_id')
             ->toArray();
 
-        if (! empty($ids)) {
-            return CarouselItem::withoutGlobalScopes()
-                ->whereIn('id', $ids)
-                ->get()
-                ->sortBy(fn ($c) => array_search($c->id, $ids))
-                ->values();
+        if (empty($ids)) {
+            return new EloquentCollection;
         }
 
         return CarouselItem::withoutGlobalScopes()
-            ->orderBy('order')
-            ->take(5)
-            ->get();
+            ->whereNull('vendor_id')
+            ->whereIn('id', $ids)
+            ->get()
+            ->sortBy(fn ($c) => array_search($c->id, $ids))
+            ->values();
     }
 
     private function lines(): EloquentCollection
     {
-        $section = HomeSection::withoutGlobalScopes()
-            ->where('section_key', 'lineas')
-            ->whereNull('vendor_id')
-            ->first();
+        $section = $this->globalSection('lineas');
         $ids = $this->ensureArray($section?->line_ids);
 
-        $query = Line::withoutGlobalScopes()
-            ->with(['activePlatforms', 'lineAgents.agent', 'ratings', 'vendor'])
-            ->where('status', 'active');
-
-        if (! empty($ids)) {
-            return $query->whereIn('id', $ids)->get()->sortBy(fn ($l) => array_search($l->id, $ids))->values();
+        if (empty($ids)) {
+            return new EloquentCollection;
         }
 
-        return new EloquentCollection;
+        return Line::withoutGlobalScopes()
+            ->with(['activePlatforms', 'lineAgents.agent', 'ratings', 'vendor'])
+            ->where('status', 'active')
+            ->whereIn('id', $ids)
+            ->get()
+            ->sortBy(fn ($line) => array_search($line->id, $ids))
+            ->values();
     }
 
     private function raffles(): EloquentCollection
     {
-        $section = HomeSection::withoutGlobalScopes()
-            ->where('section_key', 'sorteo')
-            ->whereNull('vendor_id')
-            ->first();
+        $section = $this->globalSection('sorteo');
         $ids = $this->ensureArray($section?->raffle_ids);
-        $raffleType = $section?->raffle_type ?? '';
 
-        $query = Raffle::withoutGlobalScopes()
+        if (empty($ids)) {
+            return new EloquentCollection;
+        }
+
+        return Raffle::withoutGlobalScopes()
             ->with(['lines', 'platform'])
             ->where('status', 'active')
             ->where('start_date', '<=', now())
-            ->where('end_date', '>=', now());
-
-        if ($raffleType === 'active') {
-            $query->where('status', 'active');
-        }
-
-        if (! empty($ids)) {
-            return $query->whereIn('id', $ids)->get()->sortBy(fn ($r) => array_search($r->id, $ids))->values();
-        }
-
-        return new EloquentCollection;
+            ->where('end_date', '>=', now())
+            ->whereIn('id', $ids)
+            ->get()
+            ->sortBy(fn ($raffle) => array_search($raffle->id, $ids))
+            ->values();
     }
 
     private function bonusItems(): EloquentCollection
     {
-        $section = HomeSection::withoutGlobalScopes()
-            ->where('section_key', 'bonos')
-            ->whereNull('vendor_id')
-            ->first();
+        $section = $this->globalSection('bonos');
         $ids = $this->ensureArray($section?->bonus_ids);
-        $bonusType = $section?->bonus_type ?? '';
 
-        $baseQuery = Bonus::withoutGlobalScopes()
+        if (empty($ids)) {
+            return new EloquentCollection;
+        }
+
+        return Bonus::withoutGlobalScopes()
             ->with(['line', 'platform'])
             ->where('status', 'active')
-            ->where('end_date', '>=', now());
-
-        if ($bonusType === 'active') {
-            $baseQuery->where('status', 'active');
-        }
-
-        if (! empty($ids)) {
-            return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($b) => array_search($b->id, $ids))->values();
-        }
-
-        return new EloquentCollection;
+            ->where('end_date', '>=', now())
+            ->whereIn('id', $ids)
+            ->get()
+            ->sortBy(fn ($bonus) => array_search($bonus->id, $ids))
+            ->values();
     }
 
     private function blogPosts(): EloquentCollection
     {
-        $section = HomeSection::withoutGlobalScopes()
-            ->where('section_key', 'blog')
-            ->whereNull('vendor_id')
-            ->first();
+        $section = $this->globalSection('blog');
         $ids = $this->ensureArray($section?->post_ids);
-        $postType = $section?->post_type ?? '';
 
-        $baseQuery = Post::withoutGlobalScopes()
+        if (empty($ids)) {
+            return new EloquentCollection;
+        }
+
+        $query = Post::withoutGlobalScopes()
             ->with(['category', 'authorAgent'])
             ->where('status', Post::STATUS_PUBLISHED)
-            ->whereNotNull('published_at');
+            ->whereNotNull('published_at')
+            ->whereIn('id', $ids);
 
-        if ($postType && is_numeric($postType)) {
-            $baseQuery->where('category_id', $postType);
+        if ($section?->post_type && is_numeric($section->post_type)) {
+            $query->where('category_id', $section->post_type);
         }
 
-        if (! empty($ids)) {
-            return $baseQuery->whereIn('id', $ids)->get()->sortBy(fn ($p) => array_search($p->id, $ids))->values();
-        }
-
-        return new EloquentCollection;
+        return $query->get()
+            ->sortBy(fn ($post) => array_search($post->id, $ids))
+            ->values();
     }
 
     private function sections(): array
     {
-        $defaultSections = [
-            'como-empezar' => [
-                'kicker' => 'Como funciona',
-                'title' => 'Empeza en',
-                'highlight' => '3 pasos',
-                'subtitle' => 'Sin vueltas: contacto, carga y juego. Si necesitás ayuda, una persona te responde.',
-            ],
-            'lineas' => [
-                'kicker' => 'Empeza a jugar',
-                'title' => 'Lineas de',
-                'highlight' => 'atencion',
-                'subtitle' => 'Hablá con una línea, pedí tu usuario, cargá saldo y entrá al casino en minutos.',
-            ],
-            'sorteo' => [
-                'kicker' => 'Muy pronto',
-                'title' => 'PRÓXIMOS',
-                'highlight' => 'SORTEOS',
-                'subtitle' => 'Nuevas oportunidades para ganar. Registrate y enterate antes que nadie.',
-            ],
-            'nosotros' => [
-                'kicker' => 'Sobre RED PICANTES',
-                'title' => 'Casino online con atencion',
-                'highlight' => 'real',
-                'subtitle' => 'Una experiencia pensada para jugar facil: acceso rapido, bonos claros, sorteos activos y soporte humano para acompaniarte.',
-            ],
-            'bonos' => [
-                'kicker' => 'Bonos para jugar mas',
-                'title' => 'Bonos',
-                'highlight' => 'activos',
-                'subtitle' => 'Bonos vigentes para arrancar mejor, recargar con ventaja y aprovechar cada jugada.',
-            ],
-            'blog' => [
-                'kicker' => 'Noticias y jugadas',
-                'title' => 'Noticias y',
-                'highlight' => 'jugadas',
-                'subtitle' => 'Enterate de novedades, sorteos, recomendaciones y bonos nuevos antes de que pasen.',
-            ],
-        ];
-
         $sections = [];
 
-        foreach ($defaultSections as $key => $defaults) {
-            $section = HomeSection::withoutGlobalScopes()
-                ->where('section_key', $key)
-                ->whereNull('vendor_id')
-                ->first();
-
-            if ($section) {
-                $sections[$key] = [
-                    'kicker'       => $section->kicker ?? $defaults['kicker'] ?? null,
-                    'title'        => $section->title ?? $defaults['title'] ?? null,
-                    'highlight'    => $section->highlight ?? $defaults['highlight'] ?? null,
-                    'subtitle'     => $section->subtitle ?? $defaults['subtitle'] ?? null,
-                    'content'      => $section->content ?? $defaults['content'] ?? null,
-                    'action'       => $section->action_text && $section->action_url
+        HomeSection::withoutGlobalScopes()
+            ->whereNull('vendor_id')
+            ->orderBy('order')
+            ->get()
+            ->each(function (HomeSection $section) use (&$sections): void {
+                $sections[$section->section_key] = [
+                    'kicker' => $section->kicker,
+                    'title' => $section->title,
+                    'highlight' => $section->highlight,
+                    'subtitle' => $section->subtitle,
+                    'content' => $section->content,
+                    'action' => $section->action_text && $section->action_url
                         ? '<a class="fe-btn ghost" href="'.$section->action_url.'" wire:navigate>'.$section->action_text.'</a>'
-                        : ($defaults['action'] ?? null),
-                    'enabled'      => $section->enabled,
-                    'raffle_type'  => $section->raffle_type,
-                    'raffle_ids'   => $this->ensureArray($section->raffle_ids),
-                    'post_type'    => $section->post_type,
-                    'post_ids'     => $this->ensureArray($section->post_ids),
-                    'bonus_type'   => $section->bonus_type,
-                    'bonus_ids'    => $this->ensureArray($section->bonus_ids),
-                    'line_ids'     => $this->ensureArray($section->line_ids),
-                    'repeater_data' => $this->ensureArray($section->repeater_data ?: ($defaults['repeater_data'] ?? [])),
+                        : null,
+                    'enabled' => $section->enabled,
+                    'raffle_type' => $section->raffle_type,
+                    'raffle_ids' => $this->ensureArray($section->raffle_ids),
+                    'post_type' => $section->post_type,
+                    'post_ids' => $this->ensureArray($section->post_ids),
+                    'bonus_type' => $section->bonus_type,
+                    'bonus_ids' => $this->ensureArray($section->bonus_ids),
+                    'line_ids' => $this->ensureArray($section->line_ids),
+                    'repeater_data' => $this->ensureArray($section->repeater_data),
                 ];
-            } else {
-                $sections[$key] = array_merge(['enabled' => true, 'action' => $defaults['action'] ?? null], $defaults);
-            }
-        }
+            });
 
         return $sections;
+    }
+
+    private function globalSection(string $key): ?HomeSection
+    {
+        return HomeSection::withoutGlobalScopes()
+            ->whereNull('vendor_id')
+            ->where('section_key', $key)
+            ->first();
     }
 
     private function ensureArray($value): array

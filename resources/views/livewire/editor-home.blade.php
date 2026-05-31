@@ -144,10 +144,14 @@
         .flash-error { border:1px solid rgba(255,71,87,.35); background:rgba(255,71,87,.12); color:#ff4757; border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; margin-bottom:16px; }
         .flash-success { border:1px solid rgba(37,196,107,.35); background:rgba(37,196,107,.12); color:var(--good); border-radius:8px; padding:12px 14px; font-size:13px; font-weight:700; margin-bottom:16px; }
         .eh-repeater { padding:12px 16px; display:flex; flex-direction:column; gap:8px; }
+        .eh-carousel-item { display:flex; flex-direction:column; gap:8px; }
+        .eh-carousel-item.is-dragging { opacity:.45; }
+        .eh-carousel-item.is-drag-over > .eh-repeater-item:first-child { border-color:var(--orange); background:rgba(255,106,26,.08); }
         .eh-repeater-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:10px; background:rgba(255,255,255,.025); border:1px solid var(--line); transition:border-color .15s, background .15s; }
         .eh-repeater-item:hover { border-color:var(--line-2); background:rgba(255,255,255,.04); }
         .eh-repeater-item.new-row { background:rgba(255,106,26,.04); border-color:rgba(255,106,26,.25); }
         .eh-repeater-item .drag-handle { width:20px; flex-shrink:0; display:flex; flex-direction:column; gap:2px; cursor:grab; opacity:.4; }
+        .eh-repeater-item .drag-handle:active { cursor:grabbing; }
         .eh-repeater-item .drag-handle span { display:block; height:2px; border-radius:2px; background:var(--muted-2); }
         .eh-repeater-thumb { width:72px; height:36px; border-radius:6px; object-fit:cover; flex-shrink:0; background:rgba(255,255,255,.04); }
         .eh-repeater-body { flex:1; min-width:0; display:flex; flex-direction:column; }
@@ -309,12 +313,6 @@
                                 style="padding:4px 10px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--muted-2);font-size:10px;cursor:pointer;">
                                 {{ ($sections[$key]['enabled'] ?? true) ? 'Ocultar' : 'Mostrar' }}
                             </button>
-                            @if(!in_array($key, ['sorteo', 'bonos', 'blog', 'lineas']))
-                                <button type="button" wire:click="saveSection('{{ $key }}')"
-                                    style="padding:6px 14px;border-radius:6px;border:1px solid var(--orange);background:rgba(255,106,26,.15);color:var(--orange);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
-                                    <i class="fa-solid fa-save"></i> Guardar
-                                </button>
-                            @endif
                         @endif
                         
                         @if($key === 'carousel')
@@ -398,25 +396,104 @@
                     @endif
 
                     @if($key === 'carousel')
-                        <div class="eh-repeater" x-data="{ open: false }" style="padding: 0;">
+                        <div class="eh-repeater" x-data="{
+                            open: false,
+                            editing: null,
+                            dragging: null,
+                            startDrag(id, event) {
+                                this.dragging = id;
+                                event.dataTransfer.effectAllowed = 'move';
+                                event.dataTransfer.setData('text/plain', id);
+                                event.currentTarget.closest('.eh-carousel-item')?.classList.add('is-dragging');
+                            },
+                            endDrag(event) {
+                                event.currentTarget.closest('.eh-carousel-item')?.classList.remove('is-dragging');
+                                this.dragging = null;
+                            },
+                            ids() {
+                                return Array.from(this.$refs.carouselList.querySelectorAll('[data-carousel-id]')).map((el) => Number(el.dataset.carouselId));
+                            },
+                            dropOn(id, event) {
+                                const draggedId = this.dragging || Number(event.dataTransfer.getData('text/plain'));
+                                if (!draggedId || draggedId === id) {
+                                    return;
+                                }
+
+                                const dragged = this.$refs.carouselList.querySelector(`[data-carousel-id='${draggedId}']`);
+                                const target = this.$refs.carouselList.querySelector(`[data-carousel-id='${id}']`);
+                                if (!dragged || !target) {
+                                    return;
+                                }
+
+                                const rect = target.getBoundingClientRect();
+                                const before = event.clientY < rect.top + (rect.height / 2);
+                                target.parentNode.insertBefore(dragged, before ? target : target.nextSibling);
+                                this.$wire.reorderCarousel(this.ids());
+                            }
+                        }" style="padding: 0;">
+                            <div x-ref="carouselList" class="eh-repeater" style="padding:0;">
                             @forelse($carouselItems as $i => $item)
-                            <div class="eh-repeater-item">
-                                <div class="drag-handle"><span></span><span></span><span></span></div>
-                                <img src="{{ $item['image'] }}" class="eh-repeater-thumb" alt="">
-                                <div class="eh-repeater-body">
-                                    <div class="eh-repeater-title">{{ $item['title'] ?: 'Sin titulo' }}</div>
-                                    <div class="eh-repeater-sub">{{ $item['link'] ?: 'Sin enlace' }}</div>
+                            <div class="eh-carousel-item" data-carousel-id="{{ $item['id'] }}" wire:key="carousel-item-{{ $item['id'] }}"
+                                @dragover.prevent="$event.currentTarget.classList.add('is-drag-over')"
+                                @dragleave="$event.currentTarget.classList.remove('is-drag-over')"
+                                @drop.prevent="$event.currentTarget.classList.remove('is-drag-over'); dropOn({{ $item['id'] }}, $event)">
+                                <div class="eh-repeater-item">
+                                    <div class="drag-handle" draggable="true" title="Arrastrar para ordenar"
+                                        @dragstart="startDrag({{ $item['id'] }}, $event)"
+                                        @dragend="endDrag($event)">
+                                        <span></span><span></span><span></span>
+                                    </div>
+                                    <img src="{{ $item['image'] }}" class="eh-repeater-thumb" alt="">
+                                    <div class="eh-repeater-body">
+                                        <div class="eh-repeater-title">{{ $item['title'] ?: 'Sin titulo' }}</div>
+                                        <div class="eh-repeater-sub">{{ $item['description'] ?: ($item['link'] ?: 'Sin enlace') }}</div>
+                                    </div>
+                                    <div class="eh-repeater-actions">
+                                        <button wire:click="moveCarouselUp({{ $item['id'] }})" title="Subir" {{ $i === 0 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-up"></i></button>
+                                        <button wire:click="moveCarouselDown({{ $item['id'] }})" title="Bajar" {{ $i === count($carouselItems) - 1 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-down"></i></button>
+                                        <button wire:click="toggleCarousel({{ $item['id'] }})"
+                                            class="{{ in_array($item['id'], $selectedCarousel) ? 'btn-visible' : 'btn-hidden' }}"
+                                            title="{{ in_array($item['id'], $selectedCarousel) ? 'Ocultar' : 'Mostrar' }}">
+                                            <i class="fa-solid {{ in_array($item['id'], $selectedCarousel) ? 'fa-eye' : 'fa-eye-slash' }}"></i>
+                                            {{ in_array($item['id'], $selectedCarousel) ? 'Visible' : 'Oculto' }}
+                                        </button>
+                                        <button type="button" @click="editing = editing === {{ $item['id'] }} ? null : {{ $item['id'] }}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                                        <button wire:click="removeCarouselItem({{ $item['id'] }})" wire:confirm="Eliminar esta imagen?" class="btn-del" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
                                 </div>
-                                <div class="eh-repeater-actions">
-                                    <button wire:click="moveCarouselUp({{ $item['id'] }})" title="Subir" {{ $i === 0 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-up"></i></button>
-                                    <button wire:click="moveCarouselDown({{ $item['id'] }})" title="Bajar" {{ $i === count($carouselItems) - 1 ? 'disabled' : '' }}><i class="fa-solid fa-arrow-down"></i></button>
-                                    <button wire:click="toggleCarousel({{ $item['id'] }})"
-                                        class="{{ in_array($item['id'], $selectedCarousel) ? 'btn-visible' : 'btn-hidden' }}"
-                                        title="{{ in_array($item['id'], $selectedCarousel) ? 'Ocultar' : 'Mostrar' }}">
-                                        <i class="fa-solid {{ in_array($item['id'], $selectedCarousel) ? 'fa-eye' : 'fa-eye-slash' }}"></i>
-                                        {{ in_array($item['id'], $selectedCarousel) ? 'Visible' : 'Oculto' }}
+                                <div x-show="editing === {{ $item['id'] }}" x-cloak class="eh-repeater-item new-row" style="flex-wrap:wrap; align-items:flex-end;">
+                                    <div class="eh-repeater-field" style="flex:1;min-width:150px;">
+                                        <label>Titulo</label>
+                                        <input type="text" wire:model.defer="carouselItems.{{ $i }}.title" placeholder="Opcional">
+                                        @error("carouselItems.$i.title") <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:2;min-width:220px;">
+                                        <label>Descripcion</label>
+                                        <input type="text" wire:model.defer="carouselItems.{{ $i }}.description" placeholder="Opcional">
+                                        @error("carouselItems.$i.description") <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:1;min-width:130px;">
+                                        <label>CTA</label>
+                                        <input type="text" wire:model.defer="carouselItems.{{ $i }}.cta_text" placeholder="Ej: Ver lineas">
+                                        @error("carouselItems.$i.cta_text") <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:1;min-width:160px;">
+                                        <label>Link</label>
+                                        <input type="text" wire:model.defer="carouselItems.{{ $i }}.link" placeholder="Opcional">
+                                        @error("carouselItems.$i.link") <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:1;min-width:170px;">
+                                        <label>Reemplazar imagen</label>
+                                        <x-upload-image label="" model="editCarouselImages.{{ $item['id'] }}" :value="$item['image'] ?? ''" aspect="851/315" hint="Opcional">
+                                            @error("editCarouselImages.{$item['id']}") <div style="color:#ff4757;font-size:10px;margin-top:2px;">{{ $message }}</div> @enderror
+                                        </x-upload-image>
+                                    </div>
+                                    <button type="button" @click="$wire.saveCarouselItem({{ $item['id'] }}, {{ $i }}).then(() => editing = null)" wire:loading.attr="disabled" class="eh-save-btn">
+                                        <i class="fa-solid fa-save"></i> Guardar
                                     </button>
-                                    <button wire:click="removeCarouselItem({{ $item['id'] }})" wire:confirm="Eliminar esta imagen?" class="btn-del" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
+                                    <button type="button" @click="editing = null; $wire.loadCarouselItems()" class="eh-repeater-addbtn" style="border-style:solid;">
+                                        <i class="fa-solid fa-xmark"></i> Cancelar
+                                    </button>
                                 </div>
                             </div>
                             @empty
@@ -425,6 +502,7 @@
                                 No hay imagenes en el carrusel
                             </div>
                             @endforelse
+                            </div>
 
                             <button type="button" @click="open = !open" class="eh-repeater-addbtn">
                                 <i class="fa-solid" :class="open ? 'fa-xmark' : 'fa-plus'"></i>
@@ -441,6 +519,14 @@
                                     <div class="eh-repeater-field" style="flex:1;min-width:100px;">
                                         <label>Titulo</label>
                                         <input type="text" wire:model="newCarouselTitle" placeholder="Opcional">
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:2;min-width:180px;">
+                                        <label>Descripcion</label>
+                                        <input type="text" wire:model="newCarouselDescription" placeholder="Opcional">
+                                    </div>
+                                    <div class="eh-repeater-field" style="flex:1;min-width:120px;">
+                                        <label>CTA</label>
+                                        <input type="text" wire:model="newCarouselCtaText" placeholder="Ej: Ver lineas">
                                     </div>
                                     <div class="eh-repeater-field" style="flex:1;min-width:100px;">
                                         <label>Link</label>
@@ -554,6 +640,14 @@
                         ])
                         <div style="margin-top:12px;display:flex;justify-content:flex-end;">
                             <button type="button" class="eh-save-btn" @click="saveSection('lineas')"><i class="fa-solid fa-save"></i> Guardar selección</button>
+                        </div>
+                    @endif
+
+                    @if($key !== 'carousel' && !in_array($key, ['sorteo', 'bonos', 'blog', 'lineas']))
+                        <div style="margin-top:14px;display:flex;justify-content:flex-end;">
+                            <button type="button" wire:click="saveSection('{{ $key }}')" class="eh-save-btn">
+                                <i class="fa-solid fa-save"></i> Guardar
+                            </button>
                         </div>
                     @endif
 

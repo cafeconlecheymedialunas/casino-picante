@@ -55,6 +55,10 @@ class Settings extends Component
 
     public array $contacts = [];
 
+    public bool $isActive = true;
+
+    public array $features = [];
+
     public string $brandingJson = '{}';
 
     public ?int $cajeroUserId = null;
@@ -172,10 +176,15 @@ class Settings extends Component
             'heroImageUpload' => ['nullable', 'image', 'max:5120'],
             'portraitImageUpload' => ['nullable', 'image', 'max:5120'],
             'description' => ['nullable', 'string', 'max:1200'],
+            'isActive' => ['boolean'],
             'contacts' => ['array'],
             'contacts.*.type' => ['nullable', 'string', 'max:40'],
             'contacts.*.value' => ['nullable', 'string', 'max:255'],
             'contacts.*.name' => ['nullable', 'string', 'max:80'],
+            'features' => ['array'],
+            'features.*.icon' => ['nullable', 'string', 'max:80'],
+            'features.*.title' => ['nullable', 'string', 'max:120'],
+            'features.*.desc' => ['nullable', 'string', 'max:255'],
             'brandingJson' => ['nullable', 'string'],
         ]);
 
@@ -203,7 +212,9 @@ class Settings extends Component
             'hero_image' => $heroImage,
             'portrait_image' => $portraitImage,
             'description' => trim($this->description) ?: null,
+            'is_active' => $this->isActive,
             'contacts' => $this->normalizedContacts(),
+            'features' => $this->normalizedFeatures(),
             'branding' => $branding,
         ]);
 
@@ -215,6 +226,30 @@ class Settings extends Component
         $this->portraitImageUpload = null;
         session()->flash('vendor_message', 'Cajero actualizado correctamente.');
         $this->notify('Datos de cajero actualizados', "Se actualizaron los datos del cajero {$this->name}.", 'settings', '/configuracion', 'info');
+    }
+
+    public function addFeature(): void
+    {
+        $this->features[] = ['icon' => 'fa-solid fa-star', 'title' => '', 'desc' => ''];
+    }
+
+    public function removeFeature(int $index): void
+    {
+        unset($this->features[$index]);
+        $this->features = array_values($this->features);
+    }
+
+    private function normalizedFeatures(): array
+    {
+        return collect($this->features)
+            ->filter(fn ($f) => filled($f['title'] ?? null))
+            ->map(fn ($f) => [
+                'icon' => $f['icon'] ?? 'fa-solid fa-star',
+                'title' => trim((string) ($f['title'] ?? '')),
+                'desc' => trim((string) ($f['desc'] ?? '')),
+            ])
+            ->values()
+            ->all();
     }
 
     public function saveCajeroUser(): void

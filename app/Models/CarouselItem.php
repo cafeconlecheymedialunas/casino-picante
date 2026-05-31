@@ -9,10 +9,14 @@ class CarouselItem extends Model
 {
     use HasVendorScope;
 
+    protected bool $preserveNullVendorId = true;
+
     protected $fillable = [
         'vendor_id',
         'image',
         'title',
+        'description',
+        'cta_text',
         'link',
         'order',
         'line_id',

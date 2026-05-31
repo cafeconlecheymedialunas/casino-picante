@@ -5,6 +5,16 @@ $metaPrefix  = $itemFields['meta_prefix'] ?? '';
 $metaFormat  = $itemFields['meta_format'] ?? 'text';
 $imageField  = $itemFields['image_field'] ?? null;
 $totalCount  = count($items);
+$itemsById = collect($items)->mapWithKeys(function ($item) use ($titleField) {
+    $id = (string) $item['id'];
+    $vendor = $item['vendor'] ?? null;
+
+    return [$id => [
+        'title' => $item[$titleField] ?? 'Item',
+        'vendorName' => is_array($vendor) ? ($vendor['name'] ?? '') : '',
+        'isOficial' => is_array($vendor) && ! empty($vendor['is_direct']),
+    ]];
+})->all();
 @endphp
 
 <style>
@@ -31,8 +41,6 @@ $totalCount  = count($items);
     <div class="eh-empty">{{ $emptyMsg }}</div>
 @else
 <div class="eh-picker-grid">
-
-    {{-- COLUMNA IZQ: Buscador + Lista disponibles --}}
     <div>
         <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
             <div style="position:relative;flex:1;min-width:160px;">
@@ -46,7 +54,7 @@ $totalCount  = count($items);
             </div>
             <div style="display:flex;gap:4px;flex-shrink:0;">
                 <button class="ehp-pill" :class="{{ $filterModel }} === 'all' ? 'active' : ''" @click="{{ $filterModel }} = 'all'">Todos</button>
-                <button class="ehp-pill" :class="{{ $filterModel }} === 'oficial' ? 'active' : ''" @click="{{ $filterModel }} = 'oficial'">★ Oficial</button>
+                <button class="ehp-pill" :class="{{ $filterModel }} === 'oficial' ? 'active' : ''" @click="{{ $filterModel }} = 'oficial'">Oficial</button>
                 <button class="ehp-pill" :class="{{ $filterModel }} === 'other' ? 'active' : ''" @click="{{ $filterModel }} = 'other'">Otros</button>
             </div>
         </div>
@@ -55,7 +63,7 @@ $totalCount  = count($items);
             @foreach($items as $item)
             @php
                 $id         = (string) $item['id'];
-                $title      = $item[$titleField] ?? '—';
+                $title      = $item[$titleField] ?? 'Item';
                 $vendor     = $item['vendor'] ?? null;
                 $vendorName = is_array($vendor) ? ($vendor['name'] ?? '') : '';
                 $isOficial  = is_array($vendor) && !empty($vendor['is_direct']);
@@ -101,7 +109,6 @@ $totalCount  = count($items);
         </div>
     </div>
 
-    {{-- COLUMNA DER: Seleccionados --}}
     <div>
         <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
             <span>Seleccionados</span>
@@ -111,42 +118,29 @@ $totalCount  = count($items);
         <template x-if="{{ $selectedModel }}.length === 0">
             <div style="border:1px dashed var(--line-2);border-radius:8px;padding:24px 12px;text-align:center;color:var(--muted-2);font-size:11px;line-height:1.5;">
                 <i class="fa-solid fa-hand-pointer" style="display:block;font-size:20px;margin-bottom:6px;opacity:.25;"></i>
-                Hacé click en items<br>de la izquierda
+                Hace click en items<br>de la izquierda
             </div>
         </template>
 
         <template x-if="{{ $selectedModel }}.length > 0">
-            <div style="display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto;">
-                @foreach($items as $item)
-                @php
-                    $id         = (string) $item['id'];
-                    $title      = $item[$titleField] ?? '—';
-                    $vendor     = $item['vendor'] ?? null;
-                    $vendorName = is_array($vendor) ? ($vendor['name'] ?? '') : '';
-                    $isOficial  = is_array($vendor) && !empty($vendor['is_direct']);
-                @endphp
-                <template x-if="{{ $selectedModel }}.includes('{{ $id }}')">
-                    <div class="ehp-sel-row">
-                        <span style="font-size:10px;font-weight:900;color:var(--orange);min-width:16px;text-align:center;flex-shrink:0;" x-text="{{ $orderFn }}('{{ $id }}') + '.'"></span>
+            <div x-data="{ itemsById: @js($itemsById) }" style="display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto;">
+                <template x-for="(selectedId, selectedIndex) in {{ $selectedModel }}" :key="'{{ $selectedModel }}-' + selectedId">
+                    <div class="ehp-sel-row" x-data="{ item() { return itemsById[String(selectedId)] || { title: 'Item no disponible', vendorName: '', isOficial: false }; } }">
+                        <span style="font-size:10px;font-weight:900;color:var(--orange);min-width:16px;text-align:center;flex-shrink:0;" x-text="(selectedIndex + 1) + '.'"></span>
                         <div style="flex:1;min-width:0;">
-                            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $title }}</div>
-                            @if($isOficial)
-                            <span style="font-size:9px;color:var(--orange);font-weight:700;">OFICIAL</span>
-                            @elseif($vendorName)
-                            <span style="font-size:9px;color:var(--muted-2);">{{ $vendorName }}</span>
-                            @endif
+                            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" x-text="item().title"></div>
+                            <span x-show="item().isOficial" style="font-size:9px;color:var(--orange);font-weight:700;">OFICIAL</span>
+                            <span x-show="!item().isOficial && item().vendorName" style="font-size:9px;color:var(--muted-2);" x-text="item().vendorName"></span>
                         </div>
                         <div style="display:flex;gap:2px;flex-shrink:0;">
-                            <button class="ehp-btn" @click.stop="{{ $moveUpFn }}('{{ $id }}')" :disabled="{{ $selectedModel }}.indexOf('{{ $id }}') === 0"><i class="fa-solid fa-arrow-up"></i></button>
-                            <button class="ehp-btn" @click.stop="{{ $moveDownFn }}('{{ $id }}')" :disabled="{{ $selectedModel }}.indexOf('{{ $id }}') === {{ $selectedModel }}.length - 1"><i class="fa-solid fa-arrow-down"></i></button>
-                            <button class="ehp-btn del" @click.stop="{{ $toggleFn }}('{{ $id }}')"><i class="fa-solid fa-xmark"></i></button>
+                            <button class="ehp-btn" @click.stop="{{ $moveUpFn }}(selectedId)" :disabled="selectedIndex === 0"><i class="fa-solid fa-arrow-up"></i></button>
+                            <button class="ehp-btn" @click.stop="{{ $moveDownFn }}(selectedId)" :disabled="selectedIndex === {{ $selectedModel }}.length - 1"><i class="fa-solid fa-arrow-down"></i></button>
+                            <button class="ehp-btn del" @click.stop="{{ $toggleFn }}(selectedId)"><i class="fa-solid fa-xmark"></i></button>
                         </div>
                     </div>
                 </template>
-                @endforeach
             </div>
         </template>
     </div>
-
 </div>
 @endif

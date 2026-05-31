@@ -4,11 +4,12 @@ namespace App\Livewire\Frontend;
 
 use App\Models\Line;
 use App\Models\Vendor;
+use App\Support\PublicPageContent;
 use Livewire\Component;
 
 class LinesIndex extends Component
 {
-    public string $tab = 'directas';
+    public string $tab = '';
 
     public function render()
     {
@@ -26,6 +27,29 @@ class LinesIndex extends Component
             return view('frontend.pages.lines-index', [
                 'lines'      => $lines,
                 'showTabs'   => false,
+                'directLines' => collect(),
+                'cajeroLines' => collect(),
+                'pageSection' => null,
+                'activeTab' => null,
+            ])->layout('frontend.layouts.app');
+        }
+
+        $pageSection = PublicPageContent::page('lineas');
+        $tabs = PublicPageContent::tabs($pageSection);
+
+        if ($tabs) {
+            if (! collect($tabs)->firstWhere('key', $this->tab)) {
+                $this->tab = $tabs[0]['key'];
+            }
+
+            $activeTab = collect($tabs)->firstWhere('key', $this->tab) ?: $tabs[0];
+
+            return view('frontend.pages.lines-index', [
+                'lines' => PublicPageContent::orderedItems('lineas', $activeTab['item_ids']),
+                'showTabs' => count($tabs) > 1,
+                'tabs' => $tabs,
+                'activeTab' => $activeTab,
+                'pageSection' => $pageSection,
                 'directLines' => collect(),
                 'cajeroLines' => collect(),
             ])->layout('frontend.layouts.app');
@@ -52,6 +76,8 @@ class LinesIndex extends Component
             'showTabs'    => true,
             'directLines' => $directLines,
             'cajeroLines' => $cajeroLines,
+            'pageSection' => null,
+            'activeTab' => null,
         ])->layout('frontend.layouts.app');
     }
 }

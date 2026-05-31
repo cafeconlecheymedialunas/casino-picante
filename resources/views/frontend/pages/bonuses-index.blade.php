@@ -1,11 +1,6 @@
 @push('styles')
 <style>
-    .bonuses-page { padding:46px 0 0; }
-    .bonuses-head { display:flex; align-items:end; justify-content:space-between; gap:18px; margin-bottom:22px; flex-wrap:wrap; }
-    .bonuses-kicker { color:var(--orange); font-size:11px; font-weight:900; letter-spacing:.16em; text-transform:uppercase; }
-    .bonuses-title { font-family:var(--font-display); font-size:58px; line-height:.9; margin:8px 0 0; letter-spacing:.02em; }
-    .bonuses-title span { color:var(--orange); }
-    .bonuses-copy { color:var(--muted); font-size:14px; line-height:1.55; max-width:560px; margin:8px 0 0; }
+    .bonuses-page { padding:46px 0 0; --page-top-pad: 46px; }
     .bonuses-grid { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }
     .bonus-public-card { position:relative; min-height:270px; display:flex; flex-direction:column; justify-content:space-between; gap:18px; border:1px solid rgba(255,255,255,.1); border-radius:12px; background:radial-gradient(110% 90% at 0% 0%, rgba(255,106,26,.2), transparent 56%), linear-gradient(180deg,#180907,#090403); padding:22px; box-shadow:0 18px 48px rgba(0,0,0,.34); overflow:hidden; }
     .bonus-public-card::before { content:""; position:absolute; inset:10px; border:2px dashed rgba(255,106,26,.34); border-radius:9px; pointer-events:none; }
@@ -45,29 +40,24 @@
 
 <section class="bonuses-page">
     <div class="fe-shell">
-        @include('frontend.components.breadcrumbs', [
-            'items' => isset($publicVendor)
-                ? [
-                    ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
-                    ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
-                    ['label' => 'Bonos'],
-                ]
-                : [
-                    ['label' => 'Inicio', 'url' => route('frontend.home')],
-                    ['label' => 'Bonos'],
-                ],
-        ])
-        <div class="bonuses-head">
-            <div>
-                <div class="bonuses-kicker">Bonos disponibles</div>
-                <h1 class="bonuses-title">Bonos <span>activos</span></h1>
-                <p class="bonuses-copy">Listado completo conectado al modulo de bonos del dashboard. Revisa codigo, linea disponible y vigencia antes de reclamar.</p>
-            </div>
-            <a href="{{ isset($publicVendor) ? route('frontend.cajero.lineas', $publicVendor) : route('frontend.lineas') }}" wire:navigate class="fe-btn ghost">Lineas de atencion</a>
-        </div>
+        <x-page-header
+            :section="$pageSection"
+            :breadcrumbs="isset($publicVendor)
+                ? [['label'=>'Cajeros','url'=>route('frontend.cajeros')],['label'=>$publicVendor->name,'url'=>route('frontend.cajero.inicio',$publicVendor)],['label'=>'Bonos']]
+                : [['label'=>'Inicio','url'=>route('frontend.home')],['label'=>'Bonos']]"
+        />
 
         @if($showTabs)
             <div class="lines-tabs">
+                @isset($tabs)
+                    @foreach($tabs as $tabItem)
+                        <button type="button" class="lines-tab-btn {{ $tab === $tabItem['key'] ? 'active' : '' }}" wire:click="$set('tab','{{ $tabItem['key'] }}')">
+                            <i class="fa-solid fa-tag" style="font-size:11px"></i>
+                            {{ $tabItem['title'] }}
+                            <span class="tab-count">{{ count($tabItem['item_ids'] ?? []) }}</span>
+                        </button>
+                    @endforeach
+                @else
                 <button type="button" class="lines-tab-btn {{ $tab === 'general' ? 'active' : '' }}" wire:click="$set('tab','general')">
                     <i class="fa-solid fa-crown" style="font-size:11px"></i>
                     Admin General
@@ -78,7 +68,11 @@
                     Cajeros
                     <span class="tab-count">{{ $cajeroBonuses->count() }}</span>
                 </button>
+                @endisset
             </div>
+            @if(!empty($activeTab['subtitle']))
+                <p class="bonuses-copy" style="margin:14px 0 0;">{{ $activeTab['subtitle'] }}</p>
+            @endif
         @endif
 
         @if($bonuses->count())
