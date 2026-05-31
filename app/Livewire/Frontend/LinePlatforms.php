@@ -10,21 +10,14 @@ class LinePlatforms extends Component
 {
     public Line $line;
 
-    public ?Vendor $vendor = null;
+    public Vendor $vendor;
 
-    public function mount(Line $line, ?Vendor $vendor = null): void
+    public function mount(Vendor $vendor, Line $line): void
     {
         abort_unless($line->status === 'active', 404);
+        abort_unless($vendor->is_active && (int) $line->vendor_id === (int) $vendor->id, 404);
 
-        if ($vendor) {
-            abort_unless($vendor->is_active && (int) $line->vendor_id === (int) $vendor->id, 404);
-            $this->vendor = $vendor;
-        } else {
-            $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
-            $vendorId = $routeVendor?->id;
-            abort_unless(! $vendorId || (int) $line->vendor_id === (int) $vendorId, 404);
-        }
-
+        $this->vendor = $vendor;
         $this->line = $line->load('vendor');
     }
 

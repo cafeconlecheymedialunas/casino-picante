@@ -153,7 +153,7 @@
                     @endif
                     @if($raffle->status === 'active')
                         @auth
-                            <a href="{{ isset($publicVendor) ? route('frontend.cajero.lineas', $publicVendor) : route('frontend.lineas') }}" wire:navigate class="fe-btn primary">Suma puntos</a>
+                            <a href="{{ route('frontend.cajero.lineas', $raffle->vendor) }}" wire:navigate class="fe-btn primary">Suma puntos</a>
                         @else
                             <a href="{{ route('login') }}" wire:navigate class="fe-btn primary">Registrarme o iniciar sesion</a>
                         @endauth

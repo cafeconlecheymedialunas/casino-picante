@@ -6,6 +6,7 @@ use App\Models\Bonus;
 use App\Models\Line;
 use App\Models\LineRating;
 use App\Models\Raffle;
+use App\Models\Vendor;
 use Livewire\Component;
 
 class LineShow extends Component
@@ -16,12 +17,10 @@ class LineShow extends Component
 
     public string $ratingMessage = '';
 
-    public function mount(Line $line): void
+    public function mount(Vendor $vendor, Line $line): void
     {
         abort_unless($line->status === 'active', 404);
-        $routeVendor = request()->routeIs('frontend.cajero.*') ? request()->route('vendor') : null;
-        $vendorId = $routeVendor?->id;
-        abort_unless(! $vendorId || (int) $line->vendor_id === (int) $vendorId, 404);
+        abort_unless((int) $line->vendor_id === (int) $vendor->id, 404);
 
         $this->line = $line->load(['activePlatforms', 'lineAgents.agent']);
 

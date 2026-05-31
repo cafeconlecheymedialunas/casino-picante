@@ -4,9 +4,7 @@
     $contacts = collect($line->contact_links ?? [])->filter(fn ($contact) => filled($contact['value'] ?? null))->values();
     $platforms = $line->activePlatforms;
     $avgRating = (float) $line->average_rating;
-    $platformsUrl = isset($publicVendor)
-        ? route('frontend.cajero.lineas.plataformas', [$publicVendor, $line])
-        : route('frontend.lineas.plataformas', $line);
+    $platformsUrl = route('frontend.cajero.lineas.plataformas', [$line->vendor, $line]);
 
 @endphp
 
@@ -55,7 +53,7 @@
         @if($line->portada_url)
             <img src="{{ $line->portada_url }}" alt="{{ $line->name }}" onerror="this.style.display='none'">
         @endif
-        @if(! isset($publicVendor) && $line->vendor)
+        @if($line->vendor)
             @php
                 $vendorLogo = $line->vendor->logo;
                 if ($vendorLogo && !\Illuminate\Support\Str::startsWith($vendorLogo, ['http://', 'https://', '/storage/'])) {
@@ -110,9 +108,7 @@
         </div>
 
         @php
-            $detailUrl = isset($publicVendor)
-                ? route('frontend.cajero.lineas.detalle', [$publicVendor, $line])
-                : route('frontend.lineas.detalle', $line);
+            $detailUrl = route('frontend.cajero.lineas.detalle', [$line->vendor, $line]);
         @endphp
         <div class="line-card-actions">
             <a href="{{ $detailUrl }}" wire:navigate class="fe-btn ghost">Ver detalle</a>

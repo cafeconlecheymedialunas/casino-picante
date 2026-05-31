@@ -161,7 +161,7 @@
                             ? (\Illuminate\Support\Str::startsWith($featuredPost->image, ['http://', 'https://', '/storage/']) ? $featuredPost->image : asset('storage/'.$featuredPost->image))
                             : null;
                     @endphp
-                    <a class="blog-featured-card" href="{{ isset($publicVendor) ? route('frontend.cajero.blog.detalle', [$publicVendor, $featuredPost->slug]) : route('frontend.blog.detalle', $featuredPost->slug) }}" wire:navigate>
+                    <a class="blog-featured-card" href="{{ route('frontend.cajero.blog.detalle', [$featuredPost->vendor, $featuredPost->slug]) }}" wire:navigate>
                         @if($featuredImage)
                             <img src="{{ $featuredImage }}" alt="{{ $featuredPost->title }}">
                         @endif
@@ -185,51 +185,50 @@
                         </div>
                     </a>
                 @endif
-            </div>
 
-            @if($posts->count() > 1)
-                <div class="blog-grid">
-                    @foreach($posts->slice(1) as $post)
-                        @php
-                            $img = $post->image
-                                ? (\Illuminate\Support\Str::startsWith($post->image, ['http://', 'https://', '/storage/']) ? $post->image : asset('storage/'.$post->image))
-                                : null;
-                            $authorName = $post->authorAgent?->name ?: 'RED PICANTES';
-                            $initials = strtoupper(mb_substr($authorName, 0, 2));
-                        @endphp
-                        <a class="blog-card-new" href="{{ isset($publicVendor) ? route('frontend.cajero.blog.detalle', [$publicVendor, $post->slug]) : route('frontend.blog.detalle', $post->slug) }}" wire:navigate>
-                            <div class="blog-card-thumb">
-                                @if($img)
-                                    <img src="{{ $img }}" alt="{{ $post->title }}">
-                                @endif
-                                <div class="blog-card-thumb-overlay"></div>
-                                @if($post->category)
-                                    <span class="blog-card-category">{{ $post->category->name }}</span>
-                                @endif
-                            </div>
-                            <div class="blog-card-body">
-                                <h3>{{ $post->title }}</h3>
-                                <p class="blog-card-excerpt">{{ $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($post->content), 110) }}</p>
-                                <div class="blog-card-footer">
-                                    <div class="blog-card-author">
-                                        <div class="blog-card-avatar">
-                                            @if($post->authorAgent?->avatar)
-                                                <img src="{{ $post->authorAgent->avatar }}" alt="{{ $authorName }}">
-                                            @else
-                                                {{ $initials }}
-                                            @endif
-                                        </div>
-                                        <span class="blog-card-author-name">{{ $authorName }}</span>
-                                    </div>
-                                    <span class="blog-card-date">{{ $post->published_at?->format('d/m/Y') }}</span>
+                @if($posts->count() > 1)
+                    <div class="blog-grid">
+                        @foreach($posts->slice(1) as $post)
+                            @php
+                                $img = $post->image
+                                    ? (\Illuminate\Support\Str::startsWith($post->image, ['http://', 'https://', '/storage/']) ? $post->image : asset('storage/'.$post->image))
+                                    : null;
+                                $authorName = $post->authorAgent?->name ?: 'RED PICANTES';
+                                $initials = strtoupper(mb_substr($authorName, 0, 2));
+                            @endphp
+                            <a class="blog-card-new" href="{{ route('frontend.cajero.blog.detalle', [$post->vendor, $post->slug]) }}" wire:navigate>
+                                <div class="blog-card-thumb">
+                                    @if($img)
+                                        <img src="{{ $img }}" alt="{{ $post->title }}">
+                                    @endif
+                                    <div class="blog-card-thumb-overlay"></div>
+                                    @if($post->category)
+                                        <span class="blog-card-category">{{ $post->category->name }}</span>
+                                    @endif
                                 </div>
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            @elseif(!$featuredPost)
-                <div class="empty-panel blog-empty">No hay novedades publicadas por ahora.</div>
-            @endif
-        </div>
+                                <div class="blog-card-body">
+                                    <h3>{{ $post->title }}</h3>
+                                    <p class="blog-card-excerpt">{{ $post->excerpt ?: \Illuminate\Support\Str::limit(strip_tags($post->content), 110) }}</p>
+                                    <div class="blog-card-footer">
+                                        <div class="blog-card-author">
+                                            <div class="blog-card-avatar">
+                                                @if($post->authorAgent?->avatar)
+                                                    <img src="{{ $post->authorAgent->avatar }}" alt="{{ $authorName }}">
+                                                @else
+                                                    {{ $initials }}
+                                                @endif
+                                            </div>
+                                            <span class="blog-card-author-name">{{ $authorName }}</span>
+                                        </div>
+                                        <span class="blog-card-date">{{ $post->published_at?->format('d/m/Y') }}</span>
+                                    </div>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @elseif(!$featuredPost)
+                    <div class="empty-panel blog-empty">No hay novedades publicadas por ahora.</div>
+                @endif
+            </div>
     </section>
 </div>

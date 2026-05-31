@@ -120,27 +120,19 @@
 @php
     $contacts = collect($line->contact_links ?? [])->filter(fn ($contact) => filled($contact['value'] ?? null))->values();
     $platforms = $line->activePlatforms;
-    $platformsUrl = isset($publicVendor)
-        ? route('frontend.cajero.lineas.plataformas', [$publicVendor, $line])
-        : route('frontend.lineas.plataformas', $line);
+    $platformsUrl = route('frontend.cajero.lineas.plataformas', [$publicVendor, $line]);
 @endphp
 
 <div>
     <section class="line-detail-page">
         <div class="fe-shell">
             @include('frontend.components.breadcrumbs', [
-                'items' => isset($publicVendor)
-                    ? [
-                        ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
-                        ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
-                        ['label' => 'Lineas', 'url' => route('frontend.cajero.lineas', $publicVendor)],
-                        ['label' => $line->name],
-                    ]
-                    : [
-                        ['label' => 'Inicio', 'url' => route('frontend.home')],
-                        ['label' => 'Lineas', 'url' => route('frontend.lineas')],
-                        ['label' => $line->name],
-                    ],
+                'items' => [
+                    ['label' => 'Cajeros', 'url' => route('frontend.cajeros')],
+                    ['label' => $publicVendor->name, 'url' => route('frontend.cajero.inicio', $publicVendor)],
+                    ['label' => 'Lineas', 'url' => route('frontend.cajero.lineas', $publicVendor)],
+                    ['label' => $line->name],
+                ],
             ])
             <article class="line-detail-hero">
                 <div class="line-detail-cover">
@@ -272,7 +264,7 @@
                                                 <span class="prize-badge more">+{{ $displayPrizes->count() - 3 }}</span>
                                             @endif
                                         </div>
-                                        <a href="{{ isset($publicVendor) ? route('frontend.cajero.sorteos.detalle', [$publicVendor, $raffle]) : route('frontend.sorteos.detalle', $raffle) }}" wire:navigate class="raffle-card-btn">
+                                        <a href="{{ route('frontend.cajero.sorteos.detalle', [$publicVendor, $raffle]) }}" wire:navigate class="raffle-card-btn">
                                             Ver detalles
                                         </a>
                                     </div>

@@ -7,15 +7,9 @@
     $limitReached = $bonus->total_quantity !== null && $bonus->active_assignments_count >= $bonus->total_quantity;
     $isAvailable = ! $isExpired && ! $isUpcoming && ! $isClaimed && ! $limitReached && $bonus->line?->status === 'active';
     $claimHref = $bonus->line
-        ? (isset($publicVendor)
-            ? route('frontend.cajero.lineas.detalle', [$publicVendor, $bonus->line])
-            : route('frontend.lineas.detalle', $bonus->line))
-        : (isset($publicVendor)
-            ? route('frontend.cajero.lineas', $publicVendor)
-            : route('frontend.lineas'));
-    $detailHref = isset($publicVendor)
-        ? route('frontend.cajero.bonos.detalle', [$publicVendor, $bonus])
-        : route('frontend.bonos.detalle', $bonus);
+        ? route('frontend.cajero.lineas.detalle', [$bonus->line->vendor, $bonus->line])
+        : route('frontend.cajero.lineas', $bonus->vendor);
+    $detailHref = route('frontend.cajero.bonos.detalle', [$bonus->vendor, $bonus]);
 @endphp
 
 @once

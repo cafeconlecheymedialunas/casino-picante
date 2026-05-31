@@ -47,8 +47,8 @@
     $limitReached = $bonus->total_quantity !== null && $bonus->active_assignments_count >= $bonus->total_quantity;
     $isAvailable = ! $isExpired && ! $isUpcoming && ! $isClaimed && ! $limitReached && $bonus->line?->status === 'active';
     $claimHref = $bonus->line
-        ? (isset($publicVendor) ? route('frontend.cajero.lineas.detalle', [$publicVendor, $bonus->line]) : route('frontend.lineas.detalle', $bonus->line))
-        : (isset($publicVendor) ? route('frontend.cajero.lineas', $publicVendor) : route('frontend.lineas'));
+        ? route('frontend.cajero.lineas.detalle', [$bonus->line->vendor, $bonus->line])
+        : route('frontend.cajero.lineas', $bonus->vendor);
 @endphp
 
 <section class="bonus-detail-page">
@@ -134,7 +134,7 @@
                             @endif
                         </span>
                     @endif
-                    <a href="{{ isset($publicVendor) ? route('frontend.cajero.lineas', $publicVendor) : route('frontend.lineas') }}" wire:navigate class="fe-btn ghost" style="width:100%;">Lineas de atencion</a>
+                    <a href="{{ route('frontend.cajero.lineas', $bonus->vendor) }}" wire:navigate class="fe-btn ghost" style="width:100%;">Lineas de atencion</a>
                 </div>
             </aside>
         </div>

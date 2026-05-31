@@ -7,7 +7,7 @@
     $authorName = $post->authorAgent?->username ?: $post->authorAgent?->name ?: 'RED PICANTES BET';
 @endphp
 
-<a class="blog-card" href="{{ isset($publicVendor) ? route('frontend.cajero.blog.detalle', [$publicVendor, $post->slug]) : route('frontend.blog.detalle', $post->slug) }}" wire:navigate style="display:block;text-decoration:none;color:inherit">
+<a class="blog-card" href="{{ route('frontend.cajero.blog.detalle', [$post->vendor, $post->slug]) }}" wire:navigate style="display:block;text-decoration:none;color:inherit">
     <div class="blog-thumb">
         @if($image)
             <img src="{{ $image }}" alt="{{ $post->title }}">

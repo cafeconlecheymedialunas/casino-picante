@@ -43,9 +43,9 @@ use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Vendor;
+use App\Support\CajeroVendorResolver;
 use App\Support\Permissions;
 use App\Support\Roles;
-use App\Support\CajeroVendorResolver;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -114,7 +114,7 @@ Route::prefix('cajeros/{vendor:slug}')
         Route::get('/lineas/{line}', LineShow::class)
             ->name('lineas.detalle');
 
-        Route::get('/plataformas/{line}', LinePlatforms::class)
+        Route::get('/lineas/{line}/plataformas', LinePlatforms::class)
             ->name('lineas.plataformas');
 
         Route::get('/plataformas', VendorPlatforms::class)
@@ -150,23 +150,8 @@ Route::prefix('cajeros/{vendor:slug}')
         })->name('agentes');
     });
 
-/*
-|--------------------------------------------------------------------------
-| Globales
-|--------------------------------------------------------------------------
-*/
-
 Route::get('/lineas', LinesIndex::class)
     ->name('frontend.lineas');
-
-Route::get('/lineas/{line}', LineShow::class)
-    ->name('frontend.lineas.detalle');
-
-Route::get('/plataformas/{line}', LinePlatforms::class)
-    ->name('frontend.lineas.plataformas');
-
-Route::get('/plataformas', fn () => redirect()->route('frontend.lineas'))
-    ->name('frontend.plataformas');
 
 Route::get('/bonos', BonusesIndex::class)
     ->name('frontend.bonos');
