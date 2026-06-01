@@ -369,7 +369,7 @@ class Agentes extends Component
     public function render()
     {
         $query = Agent::query()
-            ->with(['assignedLines'])
+            ->with(['assignedLines', 'vendor'])
             ->when($this->search, function ($query) {
                 $search = '%'.$this->search.'%';
                 $query->where(function ($inner) use ($search) {
@@ -389,7 +389,7 @@ class Agentes extends Component
         $metricsQuery = Agent::query();
         $this->scopeAgentsToAvailableLines($metricsQuery);
         $detailAgent = $this->detailAgentId
-            ? Agent::with(['assignedLines'])->find($this->detailAgentId)
+            ? Agent::with(['assignedLines', 'vendor'])->find($this->detailAgentId)
             : null;
 
         $metrics = [

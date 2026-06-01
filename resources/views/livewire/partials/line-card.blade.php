@@ -129,9 +129,11 @@
                     </a>
                 @endif
             </div>
-            <a href="{{ route('admin.lineas.detalle', $line->id) }}" class="btn-soft">
-                Ver más →
+            @if($line->vendor)
+            <a href="{{ route('frontend.cajero.lineas.detalle', [$line->vendor, $line]) }}" target="_blank" rel="noopener" class="btn-soft">
+                Ver en frontend →
             </a>
+            @endif
         </div>
 
     </div>

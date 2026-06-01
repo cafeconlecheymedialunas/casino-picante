@@ -327,7 +327,7 @@ class UsersIndex extends Component
         $this->checkLinePermission(Permissions::USER_READ);
 
         $query = User::query()
-            ->with(['preferredLine', 'role'])
+            ->with(['preferredLine', 'role', 'vendor'])
             ->whereHas('role', fn ($role) => $role->where('name', Roles::CLIENTE))
             ->when($this->search, function ($q) {
                 $search = '%'.$this->search.'%';

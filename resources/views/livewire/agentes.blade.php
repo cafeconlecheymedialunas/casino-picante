@@ -35,13 +35,14 @@
         .table-count { color: var(--muted-2); font-size: 11px; }
         .table-scroll { overflow-x: auto; }
         .t-head, .t-row {
-            display: grid; grid-template-columns: minmax(160px,1.6fr) 1fr 128px 1fr 122px auto;
-            gap: 12px; align-items: center; min-width: 900px; padding: 11px 18px;
+            display: grid; grid-template-columns: minmax(160px,1.6fr) 1fr 1fr 1fr 122px auto;
+            gap: 12px; align-items: center; min-width: 920px; padding: 11px 18px;
         }
         .col-agent { display:flex; align-items:center; gap:10px; min-width:0; }
         .col-agent .table-avatar { flex-shrink:0; }
         .col-agent .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .col-username, .col-cargo, .col-status, .col-msg { display:block; }
+        .col-username, .col-vendor-agent, .col-status, .col-msg { display:block; }
+        .col-vendor-agent { font-size:12px; color:var(--muted-2); }
         .t-head { color: var(--muted-2); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; border-bottom: 1px solid var(--line); }
         .t-row { border-bottom: 1px solid var(--line); font-size: 13px; transition: background .15s; }
         .t-row:last-child { border-bottom: 0; }
@@ -187,7 +188,7 @@
                 min-width: 0;
             }
             .col-username,
-            .col-cargo,
+            .col-vendor-agent,
             .col-status,
             .col-msg { display: none !important; }
             .col-agent .table-avatar { width: 26px; height: 26px; border-radius: 6px; }
@@ -212,10 +213,12 @@
 @endsection
 
 <div class="module-top-bar">
+    @if($this->canMutateVendorContext())
     <button type="button" class="btn-primary" wire:click="openCreateModal">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         Crear agente
     </button>
+    @endif
 </div>
 
 <div class="agents-page">
@@ -258,7 +261,7 @@
                     <div class="t-head">
                         <div>Agente</div>
                         <div class="col-username">Username</div>
-                        <div class="col-cargo">Cargo</div>
+                        <div class="col-vendor-agent">Cajero</div>
                         <div class="col-status">Estado</div>
                         <div class="col-msg">Mensaje</div>
                         <div>Acciones</div>
@@ -273,11 +276,7 @@
                                 <span class="strong truncate">{{ $fullName ?: '-' }}</span>
                             </div>
                             <div class="strong truncate col-username">{{ $agent->username ?? '-' }}</div>
-                            <div class="col-cargo">
-                                <span class="role-badge {{ $agent->cargo === 'super_agente' ? 'role-super' : 'role-agent' }}">
-                                    {{ $agent->cargo === 'super_agente' ? 'Encargado' : 'Agente' }}
-                                </span>
-                            </div>
+                            <div class="col-vendor-agent truncate">{{ $agent->vendor?->name ?? '-' }}</div>
                             <div class="col-status">
                                 <span class="status-badge {{ $isActive ? 'status-active' : 'status-inactive' }}">
                                     {{ $isActive ? 'Activo' : 'Inactivo' }}
@@ -307,12 +306,14 @@
                                 <button wire:click="openDetailModal({{ $agent->id }})" class="btn-icon" title="Ver detalle">
                                     <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
                                 </button>
+                                @if($this->canMutateVendorContext())
                                 <button wire:click="openEditModal({{ $agent->id }})" class="btn-icon" title="Editar agente">
                                     <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
                                 </button>
                                 <button wire:click="deleteAgent({{ $agent->id }})" wire:confirm="Eliminar al agente {{ $fullName }}?" class="btn-icon danger" title="Eliminar agente">
                                     <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
                                 </button>
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -422,6 +423,7 @@
                 </div>
                 <div class="detail-grid">
                     <div class="detail-item"><label>ID</label><p>#{{ $detailAgent->id }}</p></div>
+                    <div class="detail-item"><label>Cajero</label><p>{{ $detailAgent->vendor?->name ?? '-' }}</p></div>
                     <div class="detail-item"><label>Username</label><p>{{ $detailAgent->username ?? '-' }}</p></div>
                     <div class="detail-item"><label>Nombre y apellido</label><p>{{ trim($detailAgent->name.' '.($detailAgent->apellido ?? '')) ?: '-' }}</p></div>
                     <div class="detail-item"><label>Email</label><p>{{ $detailAgent->email }}</p></div>
@@ -445,10 +447,12 @@
                                     <button wire:click="closePermissions" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Cancelar</button>
                                 @else
                                     @php $currentAgentId = session('active_agent_id') ? (int) session('active_agent_id') : null; @endphp
-                                    @if(auth()->user()?->hasRole('\App\Support\Roles::ADMIN') || $detailAgent->id !== $currentAgentId)
-                                        <button wire:click="openPermissions({{ $detailAgent->id }}, {{ $assignedLine->id }})" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Editar permisos</button>
-                                    @else
-                                        <button class="btn-ghost disabled" style="font-size:11px;padding:4px 10px;opacity:.5;cursor:not-allowed" title="No podés editar tus propios permisos">Editar permisos</button>
+                                    @if($this->canMutateVendorContext())
+                                        @if(auth()->user()?->hasRole('\App\Support\Roles::ADMIN') || $detailAgent->id !== $currentAgentId)
+                                            <button wire:click="openPermissions({{ $detailAgent->id }}, {{ $assignedLine->id }})" class="btn-ghost" style="font-size: 11px; padding: 4px 10px;">Editar permisos</button>
+                                        @else
+                                            <button class="btn-ghost disabled" style="font-size:11px;padding:4px 10px;opacity:.5;cursor:not-allowed" title="No podés editar tus propios permisos">Editar permisos</button>
+                                        @endif
                                     @endif
                                 @endif
                             </div>
@@ -473,9 +477,11 @@
                                     </div>
                                     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
                                         <button wire:click="closePermissions" class="btn-ghost" style="font-size:12px">Cancelar</button>
+                                        @if($this->canMutateVendorContext())
                                         <button wire:click="savePermissions" class="btn-primary" style="font-size:12px">
                                             <i class="fa-solid fa-floppy-disk"></i> Guardar
                                         </button>
+                                        @endif
                                     </div>
                                 @endif
                             @else
@@ -502,6 +508,7 @@
                     @endforelse
                 </div>
 
+                @if($this->canMutateVendorContext())
                 <div class="modal-actions" style="margin: 0 22px 22px;">
                     @if($detailAgent->status === 'active')
                         <button wire:click="toggleStatus({{ $detailAgent->id }})" class="btn-ghost">Pausar agente</button>
@@ -510,6 +517,7 @@
                     @endif
                     <button wire:click="openEditModal({{ $detailAgent->id }})" class="btn-primary">Editar agente</button>
                 </div>
+                @endif
             </div>
         </div>
     @endif

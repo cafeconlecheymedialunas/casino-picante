@@ -61,7 +61,7 @@
 
     .t-head, .t-row {
         display: grid;
-        grid-template-columns: minmax(140px,1.6fr) 1fr 1.4fr auto;
+        grid-template-columns: minmax(140px,1.6fr) 1fr 1fr 1.4fr auto;
         gap: 12px;
         align-items: center;
         padding: 11px 20px;
@@ -76,7 +76,8 @@
     .t-row:last-child { border-bottom: 0; }
     .t-row:hover { background: rgba(255,106,26,.04); }
 
-    .col-username, .col-email, .col-msg { display:block; }
+    .col-username, .col-email, .col-msg, .col-vendor-user { display:block; }
+    .col-vendor-user { font-size:12px; color:var(--muted-2); }
     .col-username-label, .col-email-label, .col-msg-label { display:none; }
     .toggle-btn {
         position: relative;
@@ -401,6 +402,7 @@
             <div class="t-head">
                 <div>Cliente</div>
                 <div class="col-username">Username</div>
+                <div class="col-vendor-user">Cajero</div>
                 <div class="col-email">Email</div>
                 <div>Acciones</div>
             </div>
@@ -420,6 +422,7 @@
                         </span>
                     </div>
                     <div class="strong truncate col-username">{{ $user->username ?? '-' }}</div>
+                    <div class="col-vendor-user truncate">{{ $user->vendor?->name ?? '-' }}</div>
                     <div class="truncate col-email">{{ $user->email }}</div>
                     <div class="action-row">
                         @if($this->canMutateVendorContext())
@@ -603,6 +606,7 @@
         <div class="modal-body">
             <div class="detail-grid">
                 <div class="detail-item"><label>ID</label><p>#{{ $detailUser->id }}</p></div>
+                <div class="detail-item"><label>Cajero</label><p>{{ $detailUser->vendor?->name ?? '-' }}</p></div>
                 <div class="detail-item"><label>Username</label><p>{{ $detailUser->username ?? '-' }}</p></div>
                 <div class="detail-item"><label>Nombre y apellido</label><p>{{ trim($detailUser->name.' '.($detailUser->apellido ?? '')) ?: '-' }}</p></div>
                 <div class="detail-item"><label>Email</label><p>{{ $detailUser->email }}</p></div>
