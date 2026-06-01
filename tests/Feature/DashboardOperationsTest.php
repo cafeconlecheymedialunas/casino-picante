@@ -6,7 +6,6 @@ use App\Livewire\Agentes;
 use App\Livewire\Bonos;
 use App\Livewire\Lineas;
 use App\Livewire\Novedades;
-use App\Livewire\PlatformsMaster;
 use App\Livewire\Sorteos;
 use App\Livewire\Tickets;
 use App\Livewire\Users\UsersIndex;
@@ -49,14 +48,12 @@ class DashboardOperationsTest extends TestCase
         $line = Line::where('name', 'Linea Operativa')->firstOrFail();
         session(['active_line_id' => $line->id]);
 
-        Livewire::test(PlatformsMaster::class)
-            ->set('name', 'Plataforma Operativa')
-            ->set('slug', 'plataforma-operativa')
-            ->set('is_active', true)
-            ->call('savePlatform')
-            ->assertHasNoErrors();
-
-        $platform = Platform::where('slug', 'plataforma-operativa')->firstOrFail();
+        $platform = Platform::withoutGlobalScopes()->create([
+            'vendor_id' => null,
+            'name' => 'Plataforma Operativa',
+            'slug' => 'plataforma-operativa',
+            'is_active' => true,
+        ]);
 
         Livewire::test(UsersIndex::class)
             ->set('username', 'cliente_operativo')

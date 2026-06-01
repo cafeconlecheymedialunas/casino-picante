@@ -14,13 +14,12 @@ trait HasVendorScope
 
         static::creating(function ($model): void {
             if (
-                property_exists($model, 'preserveNullVendorId') &&
-                $model->preserveNullVendorId === true &&
-                array_key_exists('vendor_id', $model->getAttributes()) &&
-                $model->vendor_id === null
-            ) {
-                return;
-            }
+            property_exists($model, 'preserveNullVendorId') &&
+            $model->preserveNullVendorId === true &&
+            $model->getAttribute('vendor_id') === null
+        ) {
+            return;
+        }
 
             if (auth()->user()?->hasRole(Roles::ADMIN) && ! session('active_vendor_id')) {
                 throw ValidationException::withMessages([

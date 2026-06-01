@@ -479,7 +479,9 @@ class Bonos extends Component
 
         return Platform::withoutGlobalScopes()
             ->where('is_active', true)
-            ->when($vendorId, fn ($query) => $query->where('vendor_id', (int) $vendorId))
+            ->when($vendorId, fn ($query) => $query->where(fn ($platforms) => $platforms
+                ->whereNull('vendor_id')
+                ->orWhere('vendor_id', (int) $vendorId)))
             ->orderBy('name')
             ->get();
     }

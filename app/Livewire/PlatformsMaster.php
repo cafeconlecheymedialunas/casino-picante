@@ -38,8 +38,7 @@ class PlatformsMaster extends Component
 
     public function openCreateModal()
     {
-        $this->ensureAdmin();
-        $this->requireVendorContextForWrite();
+        $this->ensurePlatformAdmin();
         $this->resetForm();
         $this->showModal = true;
     }
@@ -53,8 +52,7 @@ class PlatformsMaster extends Component
 
     public function openEditModal($platformId)
     {
-        $this->ensureAdmin();
-        $this->requireVendorContextForWrite();
+        $this->ensurePlatformAdmin();
 
         $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
@@ -89,8 +87,7 @@ class PlatformsMaster extends Component
 
     public function savePlatform()
     {
-        $this->ensureAdmin();
-        $this->requireVendorContextForWrite();
+        $this->ensurePlatformAdmin();
 
         $rules = [
             'name' => 'required|min:2',
@@ -98,7 +95,6 @@ class PlatformsMaster extends Component
                 'required',
                 'min:2',
                 Rule::unique('platforms', 'slug')
-                    ->where(fn ($query) => $query->where('vendor_id', session('active_vendor_id')))
                     ->ignore($this->editingPlatform?->id),
             ],
             'logoUpload' => 'nullable|image|max:4096',
@@ -126,12 +122,12 @@ class PlatformsMaster extends Component
             $this->authorizeVendorRecord($this->editingPlatform);
             $this->editingPlatform->update($data);
             session()->flash('message', 'Plataforma actualizada.');
-            $this->notify('Plataforma actualizada', "La plataforma {$this->name} fue actualizada.", 'platforms', '/plataformas', 'info');
+            $this->notifyPlatform('Plataforma actualizada', "La plataforma {$this->name} fue actualizada.", 'info');
         } else {
-            $data['vendor_id'] = session('active_vendor_id');
+            $data['vendor_id'] = null;
             Platform::create($data);
             session()->flash('message', 'Plataforma creada.');
-            $this->notify('Plataforma creada', "La plataforma {$this->name} fue creada exitosamente.", 'platforms', '/plataformas', 'success');
+            $this->notifyPlatform('Plataforma creada', "La plataforma {$this->name} fue creada exitosamente.", 'success');
         }
 
         $this->closeModal();
@@ -139,26 +135,22 @@ class PlatformsMaster extends Component
 
     public function toggleActive($platformId)
     {
-        $this->ensureAdmin();
-        $this->requireVendorContextForWrite();
+        $this->ensurePlatformAdmin();
 
         $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
         $platform->update(['is_active' => ! $platform->is_active]);
 
-        $this->notify(
+        $this->notifyPlatform(
             'Estado de plataforma cambiado',
             "La plataforma {$platform->name} fue ".($platform->is_active ? 'activada' : 'pausada').'.',
-            'platforms',
-            '/plataformas',
             'warning'
         );
     }
 
     public function deletePlatform($platformId)
     {
-        $this->ensureAdmin();
-        $this->requireVendorContextForWrite();
+        $this->ensurePlatformAdmin();
 
         $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
@@ -169,13 +161,12 @@ class PlatformsMaster extends Component
             $this->closeModal();
         }
         session()->flash('message', 'Plataforma eliminada.');
-        $this->notify('Plataforma eliminada', "La plataforma {$platformName} fue eliminada del sistema.", 'platforms', '/plataformas', 'danger');
+        $this->notifyPlatform('Plataforma eliminada', "La plataforma {$platformName} fue eliminada del sistema.", 'danger');
     }
 
     public function removeLogo(): void
     {
-        $this->ensureAdmin();
-        $this->requireVendorContextForWrite();
+        $this->ensurePlatformAdmin();
 
         if ($this->editingPlatform && $this->logo_url) {
             ImageStorage::delete($this->logo_url);
@@ -191,10 +182,13 @@ class PlatformsMaster extends Component
         $this->ensureAdmin();
         $vendorId = session('active_vendor_id');
         $platforms = Platform::withoutGlobalScopes()
-            ->when($vendorId, fn ($query) => $query->where('vendor_id', (int) $vendorId))
+            ->where(function ($query) use ($vendorId) {
+                $query->whereNull('vendor_id')
+                    ->when($vendorId, fn ($platforms) => $platforms->orWhere('vendor_id', (int) $vendorId));
+            })
             ->orderBy('name')
             ->get();
-        $canManagePlatforms = $this->isAdminMode() && $this->canMutateVendorContext();
+        $canManagePlatforms = auth()->user()?->hasRole(\App\Support\Roles::ADMIN) ?? false;
 
         return view('livewire.platforms-master', compact('platforms', 'canManagePlatforms'))->layout('layouts.dashboard');
     }
@@ -206,12 +200,26 @@ class PlatformsMaster extends Component
         }
     }
 
-    private function authorizeVendorRecord(?Platform $platform): void
+    private function ensurePlatformAdmin(): void
     {
-        if (! $platform || ! session('active_vendor_id')) {
+        abort_unless(auth()->user()?->hasRole(\App\Support\Roles::ADMIN), 403, 'Solo el administrador puede gestionar el catalogo universal de plataformas.');
+    }
+
+    private function notifyPlatform(string $title, string $message, string $type): void
+    {
+        if (! session('active_vendor_id')) {
             return;
         }
 
-        abort_unless((int) $platform->vendor_id === (int) session('active_vendor_id'), 403, 'No podes operar plataformas fuera del vendor activo.');
+        $this->notify($title, $message, 'platforms', '/plataformas', $type);
+    }
+
+    private function authorizeVendorRecord(?Platform $platform): void
+    {
+        if (! $platform) {
+            return;
+        }
+
+        abort_unless($platform->vendor_id === null, 403, 'Solo se puede editar el catalogo universal de plataformas.');
     }
 }

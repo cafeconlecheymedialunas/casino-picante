@@ -9,6 +9,8 @@ class Platform extends Model
 {
     use HasVendorScope;
 
+    public bool $preserveNullVendorId = true;
+
     protected $fillable = [
         'vendor_id',
         'name',

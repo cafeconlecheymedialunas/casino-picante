@@ -611,6 +611,82 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertViewHas('sales', fn ($sales) => $sales->pluck('id')->contains($visibleSale->id) && ! $sales->pluck('id')->contains($hiddenSale->id));
     }
 
+    public function test_admin_global_can_create_universal_platform(): void
+    {
+        $adminRole = $this->role(Roles::ADMIN, 'Administrador');
+        $admin = User::factory()->create([
+            'role_id' => $adminRole->id,
+            'username' => 'admin_platform_global_'.uniqid(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(PlatformsMaster::class)
+            ->set('name', 'Universal Platform '.uniqid())
+            ->set('slug', 'universal-platform-'.uniqid())
+            ->set('website_url', 'https://universal.example.test')
+            ->call('savePlatform')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('platforms', [
+            'vendor_id' => null,
+            'website_url' => 'https://universal.example.test',
+        ]);
+    }
+
+    public function test_vendor_line_can_use_universal_platform(): void
+    {
+        $adminRole = $this->role(Roles::ADMIN, 'Administrador');
+        $admin = User::factory()->create([
+            'role_id' => $adminRole->id,
+            'username' => 'admin_platform_assign_'.uniqid(),
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Plataforma Global '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $universalPlatform = Platform::withoutGlobalScopes()->create([
+            'vendor_id' => null,
+            'name' => 'Universal Assign '.uniqid(),
+            'slug' => 'universal-assign-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $vendorPlatform = Platform::withoutGlobalScopes()->create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Vendor Assign '.uniqid(),
+            'slug' => 'vendor-assign-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $otherPlatform = Platform::withoutGlobalScopes()->create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Other Assign '.uniqid(),
+            'slug' => 'other-assign-'.uniqid(),
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->withSession(['active_vendor_id' => $vendor->id]);
+
+        Livewire::test(Lineas::class)
+            ->assertViewHas('allPlatforms', fn ($platforms) => $platforms->pluck('id')->contains($universalPlatform->id)
+                && $platforms->pluck('id')->contains($vendorPlatform->id)
+                && ! $platforms->pluck('id')->contains($otherPlatform->id))
+            ->call('openEditModal', $line->id)
+            ->set('selectedPlatformIds', [(string) $universalPlatform->id])
+            ->call('saveLine')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('line_platform', [
+            'line_id' => $line->id,
+            'platform_id' => $universalPlatform->id,
+            'vendor_id' => $vendor->id,
+            'is_active' => true,
+        ]);
+    }
+
     public function test_cajero_cannot_switch_to_another_vendor_line(): void
     {
         [$user, $vendor] = $this->cajeroVendor();

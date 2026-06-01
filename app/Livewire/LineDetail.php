@@ -49,8 +49,11 @@ class LineDetail extends Component
     // Available platforms from master catalog
     public function getAvailablePlatformsProperty()
     {
-        return Platform::where('is_active', true)
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
+        return Platform::withoutGlobalScopes()
+            ->where('is_active', true)
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where(fn ($platforms) => $platforms
+                ->whereNull('vendor_id')
+                ->orWhere('vendor_id', (int) $vendorId)))
             ->orderBy('name')
             ->get();
     }
@@ -1080,8 +1083,11 @@ class LineDetail extends Component
 
     private function authorizePlatformChoice(int $platformId): void
     {
-        abort_unless(Platform::whereKey($platformId)
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
+        abort_unless(Platform::withoutGlobalScopes()
+            ->whereKey($platformId)
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where(fn ($platforms) => $platforms
+                ->whereNull('vendor_id')
+                ->orWhere('vendor_id', (int) $vendorId)))
             ->exists(), 403, 'La plataforma seleccionada no existe.');
     }
 
