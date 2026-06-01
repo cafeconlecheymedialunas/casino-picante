@@ -181,6 +181,10 @@
                                 'size' => 'sm',
                             ])
                         </div>
+                        <a href="{{ route('client.register', ['vendor' => $vendor->slug]) }}" class="vd-register-btn" wire:navigate>
+                            <i class="fa-solid fa-user-plus"></i>
+                            Registrarme con este cajero
+                        </a>
                     </aside>
                 </div>
             </div>
@@ -401,6 +405,7 @@
     .vd-panel-head a { color: var(--orange); text-decoration: none; font-size: 11px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
     .vd-panel-btn { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:0 14px; border:1px solid rgba(255,106,26,.38); border-radius:6px; background:rgba(255,106,26,.07); color:var(--orange) !important; font-size:11px; font-weight:900; text-transform:uppercase; text-decoration:none; white-space:nowrap; transition:background .18s,border-color .18s; flex-shrink:0; }
     .vd-panel-btn:hover { background:rgba(255,106,26,.14); border-color:rgba(255,106,26,.6); }
+    .vd-register-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:42px; margin-top:16px; border:1px solid rgba(255,106,26,.48); border-radius:8px; background:linear-gradient(135deg, rgba(255,106,26,.92), rgba(255,183,77,.86)); color:#180804 !important; font-size:12px; font-weight:1000; text-transform:uppercase; text-decoration:none; }
     /* Lines — altura uniforme */
     .vd-lines-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
     .vd-lines-grid > * { display: flex; flex-direction: column; height: 100%; }

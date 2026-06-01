@@ -173,8 +173,10 @@ class Bonos extends Component
 
         $specificUser = null;
         if ($this->bonusType === 'specific') {
-            $specificUser = User::where('email', $this->specificUsername)
-                ->orWhere('username', $this->specificUsername)
+            $specificUser = User::where('vendor_id', $line->vendor_id)
+                ->where(fn ($query) => $query
+                    ->where('email', $this->specificUsername)
+                    ->orWhere('username', $this->specificUsername))
                 ->first();
 
             if (! $specificUser || $specificUser->status !== 'active' || ! $this->clientBelongsToLine($specificUser, (int) $this->lineId)) {

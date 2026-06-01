@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -76,19 +77,19 @@ class UsersIndex extends Component
 
     protected function rules(): array
     {
-        $uniqueEmail = $this->editingUserId
-            ? 'unique:users,email,'.$this->editingUserId
-            : 'unique:users,email';
-
-        $uniqueUsername = $this->editingUserId
-            ? 'unique:users,username,'.$this->editingUserId
-            : 'unique:users,username';
+        $vendorId = (int) session('active_vendor_id');
+        $uniqueEmail = Rule::unique('users', 'email')
+            ->where(fn ($query) => $query->where('vendor_id', $vendorId))
+            ->ignore($this->editingUserId);
+        $uniqueUsername = Rule::unique('users', 'username')
+            ->where(fn ($query) => $query->where('vendor_id', $vendorId))
+            ->ignore($this->editingUserId);
 
         return [
-            'username' => ['nullable', 'min:3', 'max:60', 'alpha_dash', $uniqueUsername],
+            'username' => ['nullable', 'min:3', 'max:60', 'alpha_dash', $uniqueUsername, $this->panelCredentialRule('username')],
             'name' => 'required|min:2|max:100',
             'apellido' => 'nullable|max:100',
-            'email' => "required|email|{$uniqueEmail}",
+            'email' => ['required', 'email', $uniqueEmail, $this->panelCredentialRule('email')],
             'password' => $this->editingUserId ? 'nullable|min:6' : 'required|min:6',
             'phone' => 'nullable|max:30',
             'contact' => 'nullable|max:100',
@@ -99,6 +100,25 @@ class UsersIndex extends Component
             'selectedLines' => 'array',
             'selectedLines.*' => 'integer|exists:lines,id',
         ];
+    }
+
+    private function panelCredentialRule(string $column): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($column): void {
+            $query = User::withoutGlobalScopes()
+                ->where($column, $value)
+                ->whereHas('role', fn ($roleQuery) => $roleQuery->where('name', '!=', Roles::CLIENTE));
+
+            if ($this->editingUserId) {
+                $query->whereKeyNot($this->editingUserId);
+            }
+
+            if ($query->exists()) {
+                $fail($attribute === 'email'
+                    ? 'Este email ya esta reservado para una cuenta del panel.'
+                    : 'Este username ya esta reservado para una cuenta del panel.');
+            }
+        };
     }
 
     public function getAllLinesProperty()
@@ -330,7 +350,7 @@ class UsersIndex extends Component
         $this->scopeClientsToAvailableLines($query);
 
         $users = $query->orderBy('created_at', 'desc')->paginate(15);
-        $detailUser = $this->detailUserId ? User::with('preferredLine')->find($this->detailUserId) : null;
+        $detailUser = $this->detailUserId ? User::with(['preferredLine', 'vendor'])->find($this->detailUserId) : null;
         if ($detailUser) {
             $this->authorizeClientScope($detailUser);
         }

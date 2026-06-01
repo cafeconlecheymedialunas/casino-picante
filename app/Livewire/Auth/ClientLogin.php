@@ -3,6 +3,7 @@
 namespace App\Livewire\Auth;
 
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -15,19 +16,28 @@ class ClientLogin extends Component
 
     public string $password = '';
 
+    public string $selectedVendorId = '';
+
     protected $rules = [
         'username' => 'required|string',
         'password' => 'required|string',
+        'selectedVendorId' => 'required|integer|exists:vendors,id',
     ];
 
     protected $messages = [
         'username.required' => 'Ingresa tu usuario o email.',
         'password.required' => 'Ingresa tu contrasena.',
+        'selectedVendorId.required' => 'Elegi el cajero de tu cuenta.',
     ];
 
     private const MAX_ATTEMPTS = 5;
 
     private const LOCKOUT_SECONDS = 60;
+
+    public function mount(): void
+    {
+        $this->selectedVendorId = (string) $this->defaultVendorId();
+    }
 
     public function login(): void
     {
@@ -65,8 +75,11 @@ class ClientLogin extends Component
     private function findUserForLogin(): ?User
     {
         return User::withoutGlobalScopes()
-            ->where('username', $this->username)
-            ->orWhere('email', $this->username)
+            ->where('vendor_id', (int) $this->selectedVendorId)
+            ->where(function ($query) {
+                $query->where('username', $this->username)
+                    ->orWhere('email', $this->username);
+            })
             ->first();
     }
 
@@ -89,7 +102,12 @@ class ClientLogin extends Component
 
     public function render()
     {
-        return view('livewire.auth.client-login')->layout('layouts.auth');
+        return view('livewire.auth.client-login', [
+            'vendors' => Vendor::where('is_active', true)
+                ->orderByDesc('is_direct')
+                ->orderBy('name')
+                ->get(),
+        ])->layout('layouts.auth');
     }
 
     private function attemptClientLogin(string $field): bool
@@ -130,5 +148,17 @@ class ClientLogin extends Component
     {
         $this->addError('username', 'Usuario o contrasena incorrectos.');
         $this->reset('password');
+    }
+
+    private function defaultVendorId(): ?int
+    {
+        $vendorId = session('active_vendor_id');
+
+        if ($vendorId && Vendor::whereKey($vendorId)->where('is_active', true)->exists()) {
+            return (int) $vendorId;
+        }
+
+        return Vendor::where('is_direct', true)->where('is_active', true)->value('id')
+            ?? Vendor::where('is_active', true)->value('id');
     }
 }

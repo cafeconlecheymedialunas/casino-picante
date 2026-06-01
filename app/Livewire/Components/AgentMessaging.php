@@ -110,8 +110,18 @@ class AgentMessaging extends Component
         }
 
         if ($this->targetUserId) {
-            return session('active_agent_id')
-                ?: Agent::where('status', 'active')->orderBy('id')->value('id');
+            if (session('active_agent_id')) {
+                return session('active_agent_id');
+            }
+
+            $activeVendorId = session('active_vendor_id');
+            $query = Agent::where('status', 'active');
+
+            if ($activeVendorId) {
+                $query->where('vendor_id', $activeVendorId);
+            }
+
+            return $query->orderBy('id')->value('id');
         }
 
         return null;

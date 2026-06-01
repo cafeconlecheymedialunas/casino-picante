@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Auth\AdminForgotPassword;
 use App\Livewire\Auth\ClientForgotPassword;
+use App\Livewire\Auth\ClientResetPassword;
 use App\Livewire\Bonos;
 use App\Livewire\Frontend\Blog;
 use App\Livewire\Frontend\PublicRaffle;
@@ -21,10 +22,14 @@ use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Notifications\ClientPasswordReset;
 use App\Support\LineRoles;
 use App\Support\Permissions;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -155,12 +160,102 @@ class AuditedFlowsTest extends TestCase
 
     public function test_client_password_recovery_rejects_panel_accounts(): void
     {
+        $vendor = Vendor::create([
+            'user_id' => $this->userWithRole(Roles::CAJERO)->id,
+            'name' => 'Vendor Recovery '.uniqid(),
+            'slug' => 'vendor-recovery-'.uniqid(),
+            'is_active' => true,
+        ]);
         $admin = $this->userWithRole(Roles::ADMIN, ['email' => 'admin@example.test']);
 
         Livewire::test(ClientForgotPassword::class)
+            ->set('selectedVendorId', (string) $vendor->id)
             ->set('email', $admin->email)
             ->call('sendResetLink')
             ->assertHasErrors(['email']);
+    }
+
+    public function test_client_password_recovery_is_scoped_to_selected_vendor(): void
+    {
+        Notification::fake();
+
+        $firstVendor = Vendor::create([
+            'user_id' => $this->userWithRole(Roles::CAJERO)->id,
+            'name' => 'Vendor Reset A '.uniqid(),
+            'slug' => 'vendor-reset-a-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $secondVendor = Vendor::create([
+            'user_id' => $this->userWithRole(Roles::CAJERO)->id,
+            'name' => 'Vendor Reset B '.uniqid(),
+            'slug' => 'vendor-reset-b-'.uniqid(),
+            'is_active' => true,
+        ]);
+
+        $firstClient = $this->userWithRole(Roles::CLIENTE, [
+            'vendor_id' => $firstVendor->id,
+            'email' => 'cliente-reset@example.test',
+        ]);
+        $secondClient = $this->userWithRole(Roles::CLIENTE, [
+            'vendor_id' => $secondVendor->id,
+            'email' => 'cliente-reset@example.test',
+        ]);
+
+        Livewire::test(ClientForgotPassword::class)
+            ->set('selectedVendorId', (string) $firstVendor->id)
+            ->set('email', 'cliente-reset@example.test')
+            ->call('sendResetLink')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => $firstVendor->id.'|cliente-reset@example.test']);
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $secondVendor->id.'|cliente-reset@example.test']);
+        Notification::assertSentTo($firstClient, ClientPasswordReset::class);
+        Notification::assertNotSentTo($secondClient, ClientPasswordReset::class);
+    }
+
+    public function test_client_password_reset_updates_only_selected_vendor_account(): void
+    {
+        $firstVendor = Vendor::create([
+            'user_id' => $this->userWithRole(Roles::CAJERO)->id,
+            'name' => 'Vendor Reset Form A '.uniqid(),
+            'slug' => 'vendor-reset-form-a-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $secondVendor = Vendor::create([
+            'user_id' => $this->userWithRole(Roles::CAJERO)->id,
+            'name' => 'Vendor Reset Form B '.uniqid(),
+            'slug' => 'vendor-reset-form-b-'.uniqid(),
+            'is_active' => true,
+        ]);
+
+        $firstClient = $this->userWithRole(Roles::CLIENTE, [
+            'vendor_id' => $firstVendor->id,
+            'email' => 'cliente-reset-form@example.test',
+            'password' => Hash::make('OldPassword123'),
+        ]);
+        $secondClient = $this->userWithRole(Roles::CLIENTE, [
+            'vendor_id' => $secondVendor->id,
+            'email' => 'cliente-reset-form@example.test',
+            'password' => Hash::make('OldPassword123'),
+        ]);
+
+        DB::table('password_reset_tokens')->insert([
+            'email' => $firstVendor->id.'|cliente-reset-form@example.test',
+            'token' => Hash::make('reset-token'),
+            'created_at' => now(),
+        ]);
+
+        Livewire::test(ClientResetPassword::class, ['token' => 'reset-token'])
+            ->set('selectedVendorId', (string) $firstVendor->id)
+            ->set('email', 'cliente-reset-form@example.test')
+            ->set('password', 'NewPassword123')
+            ->set('password_confirmation', 'NewPassword123')
+            ->call('resetPassword')
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue(Hash::check('NewPassword123', $firstClient->fresh()->password));
+        $this->assertTrue(Hash::check('OldPassword123', $secondClient->fresh()->password));
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $firstVendor->id.'|cliente-reset-form@example.test']);
     }
 
     public function test_admin_password_recovery_rejects_client_accounts(): void

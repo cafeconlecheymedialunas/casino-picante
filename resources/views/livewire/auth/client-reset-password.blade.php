@@ -9,6 +9,7 @@
     .auth-field { margin-bottom:15px; }
     .auth-label { display:block; color:var(--muted); font-size:10px; font-weight:900; letter-spacing:.12em; text-transform:uppercase; margin-bottom:6px; }
     .auth-input { width:100%; border:1px solid rgba(255,120,50,.22); border-radius:8px; background:#100706; color:#fff; padding:12px 13px; font:700 13px var(--font-body); outline:none; }
+    .auth-input option { background:#100706; color:#fff; }
     .auth-input:focus { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,106,26,.12); }
     .auth-error-box { background:rgba(255,71,87,.1); border:1px solid rgba(255,71,87,.35); border-radius:8px; padding:12px 14px; margin-bottom:18px; color:#ff8a8a; font-size:13px; font-weight:800; }
     .auth-foot { margin-top:16px; color:var(--muted); font-size:12px; text-align:center; }
@@ -39,6 +40,15 @@
                 @endif
 
                 <input type="hidden" wire:model="token">
+
+                <div class="auth-field">
+                    <label class="auth-label" for="selected_vendor">Cajero</label>
+                    <select id="selected_vendor" class="auth-input" wire:model.defer="selectedVendorId">
+                        @foreach($vendors as $vendor)
+                            <option value="{{ $vendor->id }}">{{ $vendor->name }}{{ $vendor->is_direct ? ' - Oficial' : '' }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
                 <div class="auth-field">
                     <label class="auth-label" for="email">Email</label>

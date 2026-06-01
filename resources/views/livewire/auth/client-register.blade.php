@@ -20,6 +20,15 @@
     .client-check { display:flex; gap:9px; align-items:flex-start; color:var(--muted); font-size:12px; line-height:1.4; margin:4px 0 16px; }
     .client-auth-foot { margin-top:16px; color:var(--muted); font-size:12px; text-align:center; }
     .client-auth-foot a { color:var(--orange); font-weight:900; text-decoration:none; }
+    .vendor-choice-grid { display:grid; gap:10px; margin-bottom:14px; }
+    .vendor-choice-card { width:100%; display:flex; align-items:center; gap:12px; text-align:left; border:1px solid rgba(255,120,50,.22); border-radius:10px; background:#100706; color:#fff; padding:12px; cursor:pointer; transition:all .16s; }
+    .vendor-choice-card:hover, .vendor-choice-card.selected { border-color:var(--orange); background:rgba(255,106,26,.11); }
+    .vendor-choice-logo { width:42px; height:42px; border-radius:8px; object-fit:cover; background:rgba(255,255,255,.06); flex-shrink:0; }
+    .vendor-choice-logo.placeholder { display:flex; align-items:center; justify-content:center; color:var(--orange); font-weight:900; }
+    .vendor-choice-name { font-weight:900; font-size:14px; }
+    .vendor-choice-note { color:var(--muted); font-size:11px; margin-top:2px; }
+    .vendor-selected-row { display:flex; align-items:center; justify-content:space-between; gap:10px; border:1px solid rgba(255,120,50,.22); border-radius:8px; padding:10px 12px; margin-bottom:14px; background:rgba(255,106,26,.08); }
+    .vendor-change-btn { border:0; background:transparent; color:var(--orange); font-weight:900; font-size:11px; cursor:pointer; }
     @media (max-width: 860px) {
         .client-auth-grid { grid-template-columns:1fr; }
         .client-auth-title { font-size:46px; }
@@ -50,7 +59,39 @@
 
             <div class="client-auth-card">
                 <h1>Registro</h1>
+                @if(!$showForm)
+                    <div class="vendor-choice-grid">
+                        @forelse($vendors as $vendor)
+                            <button type="button" class="vendor-choice-card {{ (int) $selectedVendorId === $vendor->id ? 'selected' : '' }}" wire:click="selectVendor({{ $vendor->id }})">
+                                @if($vendor->logo)
+                                    <img class="vendor-choice-logo" src="{{ $vendor->logo }}" alt="">
+                                @else
+                                    <span class="vendor-choice-logo placeholder">{{ strtoupper(mb_substr($vendor->name, 0, 2)) }}</span>
+                                @endif
+                                <span>
+                                    <span class="vendor-choice-name">{{ $vendor->name }}</span>
+                                    <span class="vendor-choice-note">
+                                        {{ $vendor->is_direct ? 'Recomendado si no sabes que cajero elegir.' : 'Crear cuenta para este cajero.' }}
+                                    </span>
+                                </span>
+                            </button>
+                        @empty
+                            <div class="client-error">No hay cajeros activos disponibles.</div>
+                        @endforelse
+                    </div>
+                @else
                 <form wire:submit.prevent="register">
+                    <input type="hidden" wire:model="selectedVendorId">
+                    @if($selectedVendor)
+                        <div class="vendor-selected-row">
+                            <div>
+                                <div class="vendor-choice-note">Cajero seleccionado</div>
+                                <div class="vendor-choice-name">{{ $selectedVendor->name }}</div>
+                            </div>
+                            <button type="button" class="vendor-change-btn" wire:click="backToVendors">Cambiar</button>
+                        </div>
+                    @endif
+                    @error('selectedVendorId') <div class="client-error" style="margin-bottom:12px;">{{ $message }}</div> @enderror
                     <div class="client-field">
                         <label class="client-label" for="name">Nombre</label>
                         <input id="name" class="client-input" type="text" wire:model.defer="name" autocomplete="name">
@@ -93,6 +134,7 @@
 
                     <button type="submit" class="fe-btn primary" style="width:100%;height:46px;">Crear cuenta</button>
                 </form>
+                @endif
                 <div class="client-auth-foot">
                     Ya tenes cuenta? <a href="{{ route('login') }}" wire:navigate>Ingresar</a>
                     <br>

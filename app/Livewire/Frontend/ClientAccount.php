@@ -9,8 +9,11 @@ use App\Models\Raffle;
 use App\Models\RaffleNumber;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\User;
 use App\Support\AvatarLibrary;
+use App\Support\Roles;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
@@ -199,8 +202,22 @@ class ClientAccount extends Component
         $validated = $this->validate([
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'apellido' => ['nullable', 'string', 'max:255'],
-            'username' => ['required', 'string', 'min:3', 'max:40', 'alpha_dash', "unique:users,username,{$user->id}"],
-            'email' => ['required', 'email', 'max:255', "unique:users,email,{$user->id}"],
+            'username' => [
+                'required',
+                'string',
+                'min:3',
+                'max:40',
+                'alpha_dash',
+                Rule::unique('users', 'username')->where(fn ($query) => $query->where('vendor_id', $user->vendor_id))->ignore($user->id),
+                $this->panelCredentialRule('username', $user->id),
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->where(fn ($query) => $query->where('vendor_id', $user->vendor_id))->ignore($user->id),
+                $this->panelCredentialRule('email', $user->id),
+            ],
             'phone' => ['nullable', 'string', 'max:50'],
             'contact' => ['nullable', 'string', 'max:500'],
             'avatar' => ['nullable', 'string', function ($attribute, $value, $fail) {
@@ -237,6 +254,23 @@ class ClientAccount extends Component
             'line_id' => $validated['preferred_line_id'] ?: null,
         ]);
         session()->flash('client_message', 'Tus datos personales fueron actualizados.');
+    }
+
+    private function panelCredentialRule(string $column, int $currentUserId): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($column, $currentUserId): void {
+            $exists = User::withoutGlobalScopes()
+                ->whereKeyNot($currentUserId)
+                ->where($column, $value)
+                ->whereHas('role', fn ($query) => $query->where('name', '!=', Roles::CLIENTE))
+                ->exists();
+
+            if ($exists) {
+                $fail($attribute === 'email'
+                    ? 'Ese email ya esta reservado para una cuenta del panel.'
+                    : 'Ese nombre de cliente ya esta reservado para una cuenta del panel.');
+            }
+        };
     }
 
     public function savePassword(): void

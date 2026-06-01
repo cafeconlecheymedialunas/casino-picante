@@ -1107,8 +1107,10 @@ class AuthPermissionSecurityTest extends TestCase
     public function test_inactive_client_cannot_login(): void
     {
         $role = $this->role(Roles::CLIENTE, 'Cliente');
+        [, $vendor] = $this->cajeroVendor();
         User::factory()->create([
             'role_id' => $role->id,
+            'vendor_id' => $vendor->id,
             'username' => 'cliente_inactivo',
             'email' => 'cliente-inactivo@test.local',
             'password' => Hash::make('password'),
@@ -1116,6 +1118,7 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
 
         Livewire::test(ClientLogin::class)
+            ->set('selectedVendorId', (string) $vendor->id)
             ->set('username', 'cliente_inactivo')
             ->set('password', 'password')
             ->call('login')
@@ -1147,8 +1150,10 @@ class AuthPermissionSecurityTest extends TestCase
     public function test_admin_cannot_login_to_client_frontend(): void
     {
         $role = $this->role(Roles::ADMIN, 'Admin');
+        [, $vendor] = $this->cajeroVendor();
         User::factory()->create([
             'role_id' => $role->id,
+            'vendor_id' => $vendor->id,
             'username' => 'admin_cliente',
             'email' => 'admin-cliente@test.local',
             'password' => Hash::make('password'),
@@ -1156,6 +1161,7 @@ class AuthPermissionSecurityTest extends TestCase
         ]);
 
         Livewire::test(ClientLogin::class)
+            ->set('selectedVendorId', (string) $vendor->id)
             ->set('username', 'admin_cliente')
             ->set('password', 'password')
             ->call('login')
@@ -1188,7 +1194,7 @@ class AuthPermissionSecurityTest extends TestCase
         $this->assertNull(session('active_vendor_id'));
     }
 
-    public function test_client_login_uses_clients_own_vendor_when_public_context_is_stale(): void
+    public function test_client_login_uses_selected_vendor_context(): void
     {
         $role = $this->role(Roles::CLIENTE, 'Cliente');
         [, $staleVendor] = $this->cajeroVendor();
@@ -1205,6 +1211,7 @@ class AuthPermissionSecurityTest extends TestCase
         $this->withSession(['active_vendor_id' => $staleVendor->id]);
 
         Livewire::test(ClientLogin::class)
+            ->set('selectedVendorId', (string) $clientVendor->id)
             ->set('username', 'cliente_vendor_stale')
             ->set('password', 'password')
             ->call('login')
@@ -1229,21 +1236,91 @@ class AuthPermissionSecurityTest extends TestCase
             ->set('username', 'cliente_sin_vendor')
             ->set('password', 'password')
             ->call('login')
-            ->assertHasErrors(['username']);
+            ->assertHasErrors(['selectedVendorId']);
 
         $this->assertGuest();
     }
 
-    public function test_client_registration_requires_public_vendor_context(): void
+    public function test_client_registration_allows_same_credentials_in_different_vendors(): void
     {
+        [, $firstVendor] = $this->cajeroVendor();
+        [, $secondVendor] = $this->cajeroVendor();
+        Event::fake();
+
         Livewire::test(ClientRegister::class)
+            ->set('selectedVendorId', (string) $firstVendor->id)
             ->set('name', 'Cliente')
-            ->set('username', 'cliente_registro_sin_vendor')
-            ->set('email', 'cliente-registro-sin-vendor@test.local')
+            ->set('username', 'cliente_repetido')
+            ->set('email', 'cliente-repetido@test.local')
             ->set('password', 'Password123')
             ->set('password_confirmation', 'Password123')
             ->call('register')
-            ->assertHasErrors(['username']);
+            ->assertRedirect(route('client.account'));
+
+        auth()->logout();
+
+        Livewire::test(ClientRegister::class)
+            ->set('selectedVendorId', (string) $secondVendor->id)
+            ->set('name', 'Cliente')
+            ->set('username', 'cliente_repetido')
+            ->set('email', 'cliente-repetido@test.local')
+            ->set('password', 'Password123')
+            ->set('password_confirmation', 'Password123')
+            ->call('register')
+            ->assertRedirect(route('client.account'));
+
+        $this->assertDatabaseHas('users', ['vendor_id' => $firstVendor->id, 'email' => 'cliente-repetido@test.local']);
+        $this->assertDatabaseHas('users', ['vendor_id' => $secondVendor->id, 'email' => 'cliente-repetido@test.local']);
+    }
+
+    public function test_client_registration_blocks_duplicate_credentials_in_same_vendor(): void
+    {
+        [, $vendor] = $this->cajeroVendor();
+        Event::fake();
+
+        Livewire::test(ClientRegister::class)
+            ->set('selectedVendorId', (string) $vendor->id)
+            ->set('name', 'Cliente')
+            ->set('username', 'cliente_mismo_vendor')
+            ->set('email', 'cliente-mismo-vendor@test.local')
+            ->set('password', 'Password123')
+            ->set('password_confirmation', 'Password123')
+            ->call('register')
+            ->assertRedirect(route('client.account'));
+
+        auth()->logout();
+
+        Livewire::test(ClientRegister::class)
+            ->set('selectedVendorId', (string) $vendor->id)
+            ->set('name', 'Cliente')
+            ->set('username', 'cliente_mismo_vendor')
+            ->set('email', 'cliente-mismo-vendor@test.local')
+            ->set('password', 'Password123')
+            ->set('password_confirmation', 'Password123')
+            ->call('register')
+            ->assertHasErrors(['username', 'email']);
+    }
+
+    public function test_client_registration_blocks_panel_credentials(): void
+    {
+        [, $vendor] = $this->cajeroVendor();
+        $role = $this->role(Roles::ADMIN, 'Admin');
+        User::factory()->create([
+            'role_id' => $role->id,
+            'vendor_id' => $vendor->id,
+            'username' => 'admin_reservado',
+            'email' => 'admin-reservado@test.local',
+        ]);
+
+        Livewire::test(ClientRegister::class)
+            ->set('selectedVendorId', (string) $vendor->id)
+            ->set('name', 'Cliente')
+            ->set('username', 'admin_reservado')
+            ->set('email', 'admin-reservado@test.local')
+            ->set('password', 'Password123')
+            ->set('password_confirmation', 'Password123')
+            ->call('register')
+            ->assertHasErrors(['username', 'email']);
     }
 
     public function test_client_registration_uses_vendor_from_slug_context(): void
@@ -1254,6 +1331,7 @@ class AuthPermissionSecurityTest extends TestCase
         $this->withSession(['active_vendor_id' => $vendor->id]);
 
         Livewire::test(ClientRegister::class)
+            ->set('selectedVendorId', (string) $vendor->id)
             ->set('name', 'Cliente')
             ->set('username', 'cliente_registro_vendor')
             ->set('email', 'cliente-registro-vendor@test.local')
