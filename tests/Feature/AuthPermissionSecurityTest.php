@@ -6,6 +6,7 @@ use App\Livewire\Agentes;
 use App\Livewire\Auth\ClientLogin;
 use App\Livewire\Auth\ClientRegister;
 use App\Livewire\Auth\Login;
+use App\Livewire\Bonos;
 use App\Livewire\Lineas;
 use App\Livewire\Novedades;
 use App\Livewire\PlatformsMaster;
@@ -15,6 +16,8 @@ use App\Livewire\Tickets;
 use App\Livewire\Users\UsersIndex;
 use App\Livewire\Ventas;
 use App\Models\Agent;
+use App\Models\Bonus;
+use App\Models\BonusAssignment;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
@@ -936,6 +939,163 @@ class AuthPermissionSecurityTest extends TestCase
             'id' => $otherPost->id,
             'vendor_id' => $otherVendor->id,
         ]);
+    }
+
+    public function test_admin_active_vendor_cannot_update_other_vendor_bonus_by_tampering(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
+            'username' => 'admin_bonus_vendor',
+            'status' => 'active',
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Bono Propia '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $otherLine = Line::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Linea Bono Ajena '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $otherBonus = Bonus::withoutGlobalScopes()->create([
+            'vendor_id' => $otherVendor->id,
+            'line_id' => $otherLine->id,
+            'title' => 'Bono Ajeno',
+            'code' => 'BONO-AJENO-'.uniqid(),
+            'type' => 'general',
+            'status' => 'active',
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession(['active_vendor_id' => $vendor->id, 'active_line_id' => $line->id]);
+
+        Livewire::test(Bonos::class)
+            ->set('editingBonusId', $otherBonus->id)
+            ->set('title', 'Bono cruzado')
+            ->set('startDate', now()->format('Y-m-d'))
+            ->set('startTime', '00:00')
+            ->set('endDate', now()->addDay()->format('Y-m-d'))
+            ->set('endTime', '23:59')
+            ->set('lineId', (string) $line->id)
+            ->call('saveBonus')
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('bonuses', [
+            'id' => $otherBonus->id,
+            'vendor_id' => $otherVendor->id,
+            'line_id' => $otherLine->id,
+            'title' => 'Bono Ajeno',
+        ]);
+    }
+
+    public function test_bonus_user_picker_only_lists_clients_from_bonus_line(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
+            'status' => 'active',
+        ]);
+        $clientRole = $this->role(Roles::CLIENTE, 'Cliente');
+        [, $vendor] = $this->cajeroVendor();
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Picker '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $otherLine = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Picker Otra '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $lineClient = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'vendor_id' => $vendor->id,
+            'line_id' => $line->id,
+            'username' => 'cliente_linea_picker',
+            'status' => 'active',
+        ]);
+        $otherLineClient = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'vendor_id' => $vendor->id,
+            'line_id' => $otherLine->id,
+            'username' => 'cliente_otra_linea_picker',
+            'status' => 'active',
+        ]);
+        $bonus = Bonus::withoutGlobalScopes()->create([
+            'vendor_id' => $vendor->id,
+            'line_id' => $line->id,
+            'title' => 'Bono Picker',
+            'code' => 'BONO-PICKER-'.uniqid(),
+            'type' => 'general',
+            'status' => 'active',
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession(['active_vendor_id' => $vendor->id, 'active_line_id' => $line->id]);
+
+        $component = Livewire::test(Bonos::class)
+            ->set('selectedBonusId', $bonus->id);
+
+        $userIds = collect($component->instance()->getUsersForAssign())->pluck('id');
+
+        $this->assertTrue($userIds->contains($lineClient->id));
+        $this->assertFalse($userIds->contains($otherLineClient->id));
+    }
+
+    public function test_bonus_assignment_rejects_cross_vendor_client_even_with_contaminated_line(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
+            'status' => 'active',
+        ]);
+        $clientRole = $this->role(Roles::CLIENTE, 'Cliente');
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Bono Segura '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $otherVendorClient = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'vendor_id' => $otherVendor->id,
+            'line_id' => $line->id,
+            'username' => 'cliente_bono_ajeno',
+            'status' => 'active',
+        ]);
+        $bonus = Bonus::withoutGlobalScopes()->create([
+            'vendor_id' => $vendor->id,
+            'line_id' => $line->id,
+            'title' => 'Bono Seguro',
+            'code' => 'BONO-SEGURO-'.uniqid(),
+            'type' => 'general',
+            'status' => 'active',
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addDay(),
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession(['active_vendor_id' => $vendor->id, 'active_line_id' => $line->id]);
+
+        Livewire::test(Bonos::class)
+            ->set('selectedBonusId', $bonus->id)
+            ->set('assignLineId', (string) $line->id)
+            ->set('assignUserIds', [$otherVendorClient->id])
+            ->call('assignToUser')
+            ->assertHasNoErrors();
+
+        $this->assertSame(0, BonusAssignment::withoutGlobalScopes()->where('bonus_id', $bonus->id)->count());
     }
 
     public function test_editor_home_uses_global_home_sections(): void

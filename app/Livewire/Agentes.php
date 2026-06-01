@@ -203,7 +203,10 @@ class Agentes extends Component
         $agent->update(['status' => $newStatus]);
         $agent->user?->update(['status' => $newStatus]);
 
-        LineAgent::withoutGlobalScopes()->where('agent_id', $agentId)->update(['is_active' => $newStatus === 'active']);
+        LineAgent::withoutGlobalScopes()
+            ->where('agent_id', $agentId)
+            ->whereIn('line_id', $this->availableLineIds())
+            ->update(['is_active' => $newStatus === 'active']);
         session()->flash('message', $newStatus === 'active' ? 'Agente activado.' : 'Agente pausado.');
 
         $this->notify('Estado de agente cambiado', "El agente {$agent->name} fue ".($newStatus === 'active' ? 'activado' : 'pausado').'.', 'agents', route('admin.agentes', [], false), 'warning');

@@ -285,13 +285,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
             abort(403, 'Solo el administrador puede cambiar de cajero.');
         }
 
+        $referer = request()->headers->get('referer');
+        $back = $referer && str_contains($referer, request()->getHost())
+            ? $referer
+            : route('admin.dashboard');
+        if ($referer && str_contains($referer, route('admin.cajeros'))) {
+            $back = route('admin.dashboard');
+        }
+
         if ($id === 0) {
             session()->forget([
                 'active_vendor_id',
                 'active_line_id',
             ]);
 
-            return redirect()->route('admin.dashboard');
+            return redirect($back);
         }
 
         Vendor::query()
@@ -303,7 +311,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             'active_line_id' => null,
         ]);
 
-        return redirect()->route('admin.dashboard');
+        return redirect($back);
     })->middleware(['auth', 'admin'])->name('session.vendor');
 
     Route::middleware('line.authorize')->group(function () {

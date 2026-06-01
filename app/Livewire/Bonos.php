@@ -205,7 +205,8 @@ class Bonos extends Component
         ];
 
         if ($this->editingBonusId) {
-            $bonus = Bonus::withoutGlobalScopes()->findOrFail($this->editingBonusId);
+            $bonus = $this->accessibleBonusesQuery()->find($this->editingBonusId);
+            abort_unless($bonus, 403, 'No podes operar bonos fuera del vendor activo.');
             $bonus->update($data);
             session()->flash('message', 'Bono actualizado correctamente.');
 
@@ -283,7 +284,8 @@ class Bonos extends Component
             }
 
             $lineCheck = ! $bonus->line_id || $this->clientBelongsToLine($user, (int) $bonus->line_id);
-            if ($user->status !== 'active' || ! $lineCheck) {
+            $vendorCheck = ! $bonus->vendor_id || (int) $user->vendor_id === (int) $bonus->vendor_id;
+            if ($user->status !== 'active' || ! $lineCheck || ! $vendorCheck) {
                 $skipped[] = $user->username ?? $user->email;
 
                 continue;
@@ -535,11 +537,11 @@ class Bonos extends Component
             ->orderBy('username');
 
         if ($lineId) {
-            $query->where(function ($q) use ($lineId, $vendorId) {
+            $query->where(function ($q) use ($lineId) {
                 $q->where('line_id', $lineId)
-                    ->orWhereHas('lines', fn ($lq) => $lq->where('lines.id', $lineId)->wherePivot('is_active', true))
-                    ->when($vendorId, fn ($inner) => $inner->orWhere('vendor_id', $vendorId));
+                    ->orWhereHas('lines', fn ($lq) => $lq->where('lines.id', $lineId)->wherePivot('is_active', true));
             });
+            $query->when($vendorId, fn ($q) => $q->where('vendor_id', $vendorId));
         } elseif ($vendorId) {
             $query->where('vendor_id', $vendorId);
         }
@@ -564,6 +566,10 @@ class Bonos extends Component
 
     private function refreshOperationalStatuses(): void
     {
+        if ($this->isGlobalAdminMode()) {
+            return;
+        }
+
         $lineIds = $this->availableLines()->pluck('id');
 
         if ($lineIds->isEmpty()) {
