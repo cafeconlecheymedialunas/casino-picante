@@ -11,6 +11,7 @@ use App\Models\Sale;
 use App\Support\ImageStorage;
 use App\Support\LineRoles;
 use App\Support\Permissions;
+use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
@@ -497,7 +498,7 @@ class LineDetail extends Component
 
         $alreadyIn = LineAgent::withoutGlobalScopes()->where('line_id', $this->lineId)->pluck('agent_id');
 
-        return Agent::where('status', 'active')
+        return $this->agentAssignmentQuery()
             ->whereNotIn('id', $alreadyIn)
             ->where(function ($q) {
                 $q->where('name', 'like', "%{$this->assignAgentSearch}%")
@@ -510,7 +511,7 @@ class LineDetail extends Component
     public function selectAssignAgent(int $agentId): void
     {
         $this->assignAgentId = $agentId;
-        $this->assignAgentSearch = Agent::find($agentId)?->name ?? '';
+        $this->assignAgentSearch = Agent::withoutGlobalScopes()->find($agentId)?->name ?? '';
     }
 
     public function confirmAssign(): void
@@ -972,7 +973,7 @@ class LineDetail extends Component
 
     public function getAvailableAgentsProperty(): Collection
     {
-        return Agent::where('status', 'active')
+        return $this->agentAssignmentQuery()
             ->orderBy('name')
             ->get();
     }
@@ -1078,7 +1079,18 @@ class LineDetail extends Component
             return;
         }
 
-        abort_unless(Agent::whereKey($agentId)->where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', (int) session('active_vendor_id')))->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+        abort_unless($this->agentAssignmentQuery()->whereKey($agentId)->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+    }
+
+    private function agentAssignmentQuery()
+    {
+        $query = Agent::withoutGlobalScopes()->where('status', 'active');
+
+        if (auth()->user()?->hasRole(Roles::ADMIN)) {
+            return $query;
+        }
+
+        return $query->where('vendor_id', (int) session('active_vendor_id'));
     }
 
     private function authorizePlatformChoice(int $platformId): void

@@ -111,6 +111,7 @@ class Agentes extends Component
         $this->cargo = $agent->cargo ?: 'agente';
         $this->password = '';
         $assignedLineIds = $agent->lineAgents()
+            ->whereIn('line_id', $this->availableLineIds())
             ->pluck('line_id')
             ->map(fn ($lineId) => (int) $lineId)
             ->toArray();
@@ -165,11 +166,6 @@ class Agentes extends Component
             $data['password'] = Hash::make($this->password);
         }
 
-        $vendorId = session('active_vendor_id');
-        if ($vendorId) {
-            $data['vendor_id'] = (int) $vendorId;
-        }
-
         if ($this->editingAgentId) {
             $agent = Agent::findOrFail($this->editingAgentId);
             $this->authorizeAgentScope($agent);
@@ -181,6 +177,7 @@ class Agentes extends Component
             $this->notify('Agente actualizado', "{$editorName} actualizó los datos del agente {$agent->name}.", 'agents', route('admin.agentes', [], false), 'info');
             $this->notifyAffectedAgent($agent, 'Tu perfil fue actualizado', "{$editorName} modificó tus datos de agente.", 'info');
         } else {
+            $data['vendor_id'] = (int) session('active_vendor_id');
             $data['password'] = Hash::make($this->password);
             $agent = Agent::create($data);
             $this->syncAgentUser($agent);
@@ -459,7 +456,10 @@ class Agentes extends Component
             return;
         }
 
+        $manageableLineIds = $this->availableLineIds();
+
         LineAgent::withoutGlobalScopes()->where('agent_id', $agent->id)
+            ->whereIn('line_id', $manageableLineIds)
             ->whereNotIn('line_id', $lineIds)
             ->delete();
 
@@ -574,6 +574,10 @@ class Agentes extends Component
     {
         if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
+        }
+
+        if (! auth()->user()?->hasRole(Roles::ADMIN) && (int) $agent->vendor_id !== (int) session('active_vendor_id')) {
+            abort(403, 'Solo podes gestionar agentes propios de tu cajero.');
         }
 
         $allowed = LineAgent::withoutGlobalScopes()->where('agent_id', $agent->id)

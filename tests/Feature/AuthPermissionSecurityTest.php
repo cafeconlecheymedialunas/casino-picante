@@ -1026,6 +1026,128 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_share_agent_from_another_vendor_to_active_vendor_line(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
+            'status' => 'active',
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Share Agent '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $sharedAgent = Agent::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Agente Compartible '.uniqid(),
+            'email' => 'agente-compartible-'.uniqid().'@example.test',
+            'password' => Hash::make('password'),
+            'cargo' => 'agente',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin)->withSession(['active_vendor_id' => $vendor->id]);
+
+        Livewire::test(Lineas::class)
+            ->call('openEditModal', $line->id)
+            ->call('switchTab', 'agentes')
+            ->assertViewHas('availableAgents', fn ($agents) => $agents->pluck('id')->contains($sharedAgent->id))
+            ->call('addAgent', $sharedAgent->id)
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('line_agents', [
+            'vendor_id' => $vendor->id,
+            'line_id' => $line->id,
+            'agent_id' => $sharedAgent->id,
+            'is_active' => true,
+        ]);
+        $this->assertSame($otherVendor->id, $sharedAgent->fresh()->vendor_id);
+    }
+
+    public function test_cajero_cannot_assign_agent_owned_by_another_vendor(): void
+    {
+        [$user, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Cajero No Share '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $otherAgent = Agent::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Agente Ajeno '.uniqid(),
+            'email' => 'agente-ajeno-'.uniqid().'@example.test',
+            'password' => Hash::make('password'),
+            'cargo' => 'agente',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)->withSession(['active_vendor_id' => $vendor->id]);
+
+        Livewire::test(Lineas::class)
+            ->call('openEditModal', $line->id)
+            ->call('switchTab', 'agentes')
+            ->assertViewHas('availableAgents', fn ($agents) => ! $agents->pluck('id')->contains($otherAgent->id))
+            ->call('addAgent', $otherAgent->id)
+            ->assertForbidden();
+    }
+
+    public function test_editing_shared_agent_preserves_owner_and_external_assignments(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
+            'status' => 'active',
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Share Edit '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $otherLine = Line::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Linea Owner Edit '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $sharedAgent = Agent::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Agente Shared Edit',
+            'email' => 'agente-shared-edit-'.uniqid().'@example.test',
+            'password' => Hash::make('password'),
+            'cargo' => 'agente',
+            'status' => 'active',
+        ]);
+        LineAgent::create(['vendor_id' => $vendor->id, 'line_id' => $line->id, 'agent_id' => $sharedAgent->id, 'role' => LineRoles::MIEMBRO, 'is_active' => true]);
+        LineAgent::create(['vendor_id' => $otherVendor->id, 'line_id' => $otherLine->id, 'agent_id' => $sharedAgent->id, 'role' => LineRoles::MIEMBRO, 'is_active' => true]);
+
+        $this->actingAs($admin)->withSession(['active_vendor_id' => $vendor->id]);
+
+        Livewire::test(Agentes::class)
+            ->call('openEditModal', $sharedAgent->id)
+            ->assertSet('lineIds', [$line->id])
+            ->set('name', 'Agente Shared Editado')
+            ->call('saveAgent')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('agents', [
+            'id' => $sharedAgent->id,
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Agente Shared Editado',
+        ]);
+        $this->assertDatabaseHas('line_agents', [
+            'vendor_id' => $otherVendor->id,
+            'line_id' => $otherLine->id,
+            'agent_id' => $sharedAgent->id,
+        ]);
+    }
+
     public function test_admin_agent_line_selector_requires_active_vendor(): void
     {
         $admin = User::factory()->create([

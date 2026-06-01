@@ -11,6 +11,7 @@ use App\Services\SalesStats;
 use App\Support\ImageStorage;
 use App\Support\LineRoles;
 use App\Support\Permissions;
+use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Collection;
@@ -595,10 +596,7 @@ class Lineas extends Component
             ->toArray();
 
         $availableAgents = ($this->editingLineId && $this->editTab === 'agentes')
-            ? Agent::where('status', 'active')
-                ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where(fn ($agents) => $agents
-                    ->whereNull('vendor_id')
-                    ->orWhere('vendor_id', (int) $vendorId)))
+            ? $this->agentAssignmentQuery()
                 ->whereNotIn('id', $assignedAgentIds)
                 ->orderBy('name')
                 ->get()
@@ -713,12 +711,7 @@ class Lineas extends Component
 
     private function availableEncargados(): Collection
     {
-        $vendorId = session('active_vendor_id');
-
-        return Agent::where('status', 'active')
-            ->when($vendorId, fn ($query) => $query->where(fn ($agents) => $agents
-                ->whereNull('vendor_id')
-                ->orWhere('vendor_id', (int) $vendorId)))
+        return $this->agentAssignmentQuery()
             ->orderBy('name')
             ->get();
     }
@@ -773,7 +766,18 @@ class Lineas extends Component
             return;
         }
 
-        abort_unless(Agent::whereKey($agentId)->where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', (int) session('active_vendor_id')))->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+        abort_unless($this->agentAssignmentQuery()->whereKey($agentId)->exists(), 403, 'No podes asignar agentes fuera de tu vendor.');
+    }
+
+    private function agentAssignmentQuery()
+    {
+        $query = Agent::withoutGlobalScopes()->where('status', 'active');
+
+        if (auth()->user()?->hasRole(Roles::ADMIN)) {
+            return $query;
+        }
+
+        return $query->where('vendor_id', (int) session('active_vendor_id'));
     }
 
     private function mapChannels(array $links): array
