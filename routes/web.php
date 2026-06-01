@@ -291,7 +291,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 'active_line_id',
             ]);
 
-            return redirect()->route('admin.cajeros');
+            return redirect()->route('admin.dashboard');
         }
 
         Vendor::query()

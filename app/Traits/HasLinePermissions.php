@@ -154,7 +154,21 @@ trait HasLinePermissions
         $activeLineId = session('active_line_id');
 
         if ($this->isAdminMode()) {
-            return $activeLineId ? [(int) $activeLineId] : null;
+            if ($activeLineId) {
+                return [(int) $activeLineId];
+            }
+
+            $activeVendorId = session('active_vendor_id');
+
+            if ($activeVendorId) {
+                return Line::where('vendor_id', (int) $activeVendorId)
+                    ->where('status', 'active')
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+
+            return null;
         }
 
         if ($activeLineId) {
