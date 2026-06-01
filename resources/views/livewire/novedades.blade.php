@@ -148,7 +148,8 @@
 
     <div class="nv-list">
         @forelse($posts as $post)
-        <a href="{{ route('admin.blog.editar', $post->id) }}" class="nv-item" wire:navigate>
+        @php($publicUrl = $this->publicPostUrl($post))
+        <div class="nv-item">
             <div class="nv-thumb">
                 @if($post->image)
                     <img src="{{ $post->image }}" style="width:100%;height:100%;object-fit:cover;">
@@ -173,7 +174,18 @@
                 @endif
             </span>
             <div class="nv-actions">
-                <span class="nv-action-btn" title="Editar"><i class="fa-solid fa-pen"></i></span>
+                @if($publicUrl)
+                    <a href="{{ $publicUrl }}" target="_blank" rel="noopener" class="nv-action-btn" title="Ver en frontend">
+                        <i class="fa-solid fa-eye"></i>
+                    </a>
+                @else
+                    <span class="nv-action-btn disabled" title="Solo los posts publicados se pueden ver en frontend">
+                        <i class="fa-solid fa-eye-slash"></i>
+                    </span>
+                @endif
+                <a href="{{ route('admin.blog.editar', $post->id) }}" class="nv-action-btn" title="Editar" wire:navigate>
+                    <i class="fa-solid fa-pen"></i>
+                </a>
                 @if($canDelete)
                 <button class="nv-action-btn danger"
                     wire:click.prevent.stop="deletePost({{ $post->id }})"
@@ -183,7 +195,7 @@
                 </button>
                 @endif
             </div>
-        </a>
+        </div>
         @empty
         <div class="nv-empty">No hay publicaciones</div>
         @endforelse
@@ -216,6 +228,7 @@
     .nv-actions { display:flex;gap:4px;justify-content:flex-end; }
     .nv-action-btn { width:28px;height:28px;padding:0;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:8px;color:var(--muted);cursor:pointer;font-size:11px;transition:all .2s;display:flex;align-items:center;justify-content:center;text-decoration:none; }
     .nv-action-btn:hover { background:var(--orange);color:#190702;border-color:var(--orange); }
+    .nv-action-btn.disabled { opacity:.45;cursor:not-allowed;pointer-events:none; }
     .nv-action-btn.danger:hover { background:rgba(255,71,87,.15);color:#ff4757;border-color:rgba(255,71,87,.5); }
     .nv-empty { text-align:center;color:var(--muted);padding:40px; }
 

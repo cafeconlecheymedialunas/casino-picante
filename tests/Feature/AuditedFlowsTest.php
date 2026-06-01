@@ -65,6 +65,54 @@ class AuditedFlowsTest extends TestCase
         $this->assertNotNull(Post::withoutGlobalScopes()->where('title', 'Post visible')->value('published_at'));
     }
 
+    public function test_blog_list_links_published_posts_to_frontend(): void
+    {
+        $admin = $this->userWithRole(Roles::ADMIN);
+        $cajero = $this->userWithRole(Roles::CAJERO);
+        $vendor = Vendor::create([
+            'user_id' => $cajero->id,
+            'name' => 'Vendor Post Link '.uniqid(),
+            'slug' => 'vendor-post-link-'.uniqid(),
+            'is_active' => true,
+        ]);
+        $line = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Post Link',
+            'status' => 'active',
+        ]);
+
+        $published = Post::withoutGlobalScopes()->create([
+            'vendor_id' => $vendor->id,
+            'line_id' => $line->id,
+            'title' => 'Post Link Frontend',
+            'slug' => 'post-link-frontend',
+            'content' => 'Contenido',
+            'excerpt' => 'Resumen',
+            'status' => Post::STATUS_PUBLISHED,
+            'published_at' => now(),
+        ]);
+        $draft = Post::withoutGlobalScopes()->create([
+            'vendor_id' => $vendor->id,
+            'line_id' => $line->id,
+            'title' => 'Draft Link Frontend',
+            'slug' => 'draft-link-frontend',
+            'content' => 'Contenido',
+            'excerpt' => 'Resumen',
+            'status' => Post::STATUS_DRAFT,
+            'published_at' => null,
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession([
+                'active_vendor_id' => $vendor->id,
+                'active_line_id' => $line->id,
+            ]);
+
+        Livewire::test(Novedades::class)
+            ->assertSee(route('frontend.cajero.blog.detalle', [$vendor, $published->slug]), false)
+            ->assertDontSee(route('frontend.cajero.blog.detalle', [$vendor, $draft->slug]), false);
+    }
+
     public function test_current_active_raffle_ignores_future_active_raffles(): void
     {
         $line = Line::create(['name' => 'Linea', 'status' => 'active']);

@@ -210,7 +210,7 @@ class Novedades extends Component
         $this->checkLinePermission(Permissions::NEWS_READ);
 
         $lineIds = $this->visibleLineIds();
-        $query = Post::with(['category', 'authorAgent']);
+        $query = Post::with(['category', 'authorAgent', 'vendor']);
 
         if ($lineIds !== null) {
             $query->whereIn('line_id', $lineIds);
@@ -234,6 +234,19 @@ class Novedades extends Component
         }
 
         return $query->orderBy('created_at', 'desc')->paginate(10);
+    }
+
+    public function publicPostUrl(Post $post): ?string
+    {
+        if ($post->status !== Post::STATUS_PUBLISHED || ! $post->published_at) {
+            return null;
+        }
+
+        if ($post->vendor) {
+            return route('frontend.cajero.blog.detalle', [$post->vendor, $post->slug]);
+        }
+
+        return route('frontend.blog.detalle', $post->slug);
     }
 
     public function render()
