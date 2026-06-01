@@ -591,7 +591,7 @@ class Sorteos extends Component
         // Notify winners
         foreach ($prizes as $prize) {
             if (! empty($prize['winner_user_id']) && ! empty($prize['winner_number'])) {
-                \App\Services\NotificationService::sendToClient(
+                NotificationService::sendToClient(
                     '¡Ganaste un premio!',
                     "Salió tu número {$prize['winner_number']} en el sorteo {$raffle->title}. Premio: {$prize['name']}",
                     (int) $prize['winner_user_id'],
@@ -778,8 +778,8 @@ class Sorteos extends Component
             ->where('agent_id', session('active_agent_id'))
             ->where('is_active', true)
         )
-        ->when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
-        ->orderBy('name')->get();
+            ->when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+            ->orderBy('name')->get();
     }
 
     private function accessibleRafflesQuery()
@@ -790,7 +790,15 @@ class Sorteos extends Component
             $query->where('vendor_id', (int) $vendorId);
         }
 
-        if (! $this->isAdminMode()) {
+        $lineId = session('active_line_id');
+
+        if ($lineId) {
+            $lineId = (int) $lineId;
+            $query->where(function ($raffles) use ($lineId) {
+                $raffles->where('line_id', $lineId)
+                    ->orWhereHas('lines', fn ($lines) => $lines->where('lines.id', $lineId));
+            });
+        } elseif (! $this->isAdminMode()) {
             $allowedLineIds = $this->availableLines()->pluck('id')->map(fn ($id) => (int) $id)->values();
 
             $query->where(function ($raffles) use ($allowedLineIds) {

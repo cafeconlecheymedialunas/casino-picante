@@ -13,15 +13,20 @@ class LineShow extends Component
 {
     public Line $line;
 
+    public Vendor $vendor;
+
     public ?int $selectedRating = null;
 
     public string $ratingMessage = '';
+
+    public bool $showRatingForm = false;
 
     public function mount(Vendor $vendor, Line $line): void
     {
         abort_unless($line->status === 'active', 404);
         abort_unless((int) $line->vendor_id === (int) $vendor->id, 404);
 
+        $this->vendor = $vendor;
         $this->line = $line->load(['activePlatforms', 'lineAgents.agent']);
 
         if (auth()->check()) {
@@ -38,11 +43,20 @@ class LineShow extends Component
         $this->selectedRating = $rating;
     }
 
+    public function toggleRatingForm(): void
+    {
+        $this->showRatingForm = ! $this->showRatingForm;
+    }
+
     public function saveRating(): void
     {
         if (! auth()->check()) {
             $this->redirectRoute('login', navigate: true);
 
+            return;
+        }
+
+        if ($this->selectedRating) {
             return;
         }
 
@@ -54,14 +68,18 @@ class LineShow extends Component
             'ratingMessage.max' => 'El mensaje no puede superar 500 caracteres.',
         ]);
 
-        LineRating::withoutGlobalScopes()->updateOrCreate(
-            ['line_id' => $this->line->id, 'user_id' => auth()->id()],
+        LineRating::withoutGlobalScopes()->create(
             [
+                'line_id' => $this->line->id,
+                'user_id' => auth()->id(),
                 'vendor_id' => $this->line->vendor_id,
                 'rating' => $validated['selectedRating'],
                 'message' => trim($validated['ratingMessage'] ?? '') ?: null,
             ]
         );
+
+        $this->dispatch('rating-saved');
+        $this->showRatingForm = false;
     }
 
     public function render()
@@ -85,6 +103,8 @@ class LineShow extends Component
 
         return view('frontend.pages.line-show', [
             'line' => $this->line,
+            'publicVendor' => $this->vendor,
+            'vendor' => $this->vendor,
             'ratingAverage' => $ratingAverage,
             'ratingCount' => $ratingCount,
             'ratings' => $this->line->ratings()->withoutGlobalScopes()->with('user')->latest()->take(8)->get(),

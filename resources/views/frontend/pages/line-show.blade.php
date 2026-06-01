@@ -94,6 +94,8 @@
     .prize-badge.more { background:rgba(255,255,255,.06); border-color:var(--line); color:var(--muted); }
     .raffle-card-btn { display:block; text-align:center; padding:10px 16px; border:1px solid var(--orange); border-radius:var(--r-md); background:rgba(255,106,26,.08); color:var(--orange); font-size:12px; font-weight:800; text-decoration:none; transition:all .2s; }
     .raffle-card-btn:hover { background:var(--orange); color:#190702; }
+    .rating-form-actions { display:flex; gap:10px; margin-top:12px; }
+    .rating-form-toggle { margin-bottom:14px; }
 
     @media (max-width: 920px) {
         .line-detail-profile, .line-detail-grid { grid-template-columns:1fr; }
@@ -108,7 +110,9 @@
         .line-detail-title h1 { font-size:42px; }
         .line-info-row { display:grid; grid-template-columns:1fr; gap:4px; }
         .line-info-row strong { text-align:left; overflow-wrap:anywhere; }
-        .line-login-box .fe-btn, .rating-form .fe-btn { width:100%; }
+        .rating-form-actions { display:flex; gap:10px; margin-top:12px; }
+        .rating-form-actions .fe-btn,
+        .rating-form-toggle .fe-btn { width:100%; }
         .rating-item { grid-template-columns:1fr; }
         .rating-head { display:block; }
         .rating-date { display:block; margin-top:3px; }
@@ -294,17 +298,30 @@
                     </div>
 
                     @auth
-                        <form wire:submit.prevent="saveRating" class="rating-form">
-                            <div class="rating-pick" aria-label="Elegir valoracion">
-                                @for($star = 1; $star <= 5; $star++)
-                                    <button type="button" wire:click="setRating({{ $star }})" class="rating-star-btn {{ ($selectedRating ?? 0) >= $star ? 'active' : '' }}">&#9733;</button>
-                                @endfor
+                        @unless($selectedRating)
+                            <div class="rating-form-toggle">
+                                <button type="button" wire:click="toggleRatingForm" class="fe-btn primary">
+                                    Valorar esta linea
+                                </button>
                             </div>
-                            @error('selectedRating') <div class="rating-error">{{ $message }}</div> @enderror
-                            <textarea wire:model.defer="ratingMessage" class="line-rating-input" placeholder="Deja un mensaje sobre tu experiencia con esta linea" aria-label="Mensaje de valoracion"></textarea>
-                            @error('ratingMessage') <div class="rating-error">{{ $message }}</div> @enderror
-                            <div><button type="submit" class="fe-btn primary">Guardar valoracion</button></div>
-                        </form>
+
+                            @if($showRatingForm)
+                                <form wire:submit.prevent="saveRating" class="rating-form">
+                                    <div class="rating-pick" aria-label="Elegir valoracion">
+                                        @for($star = 1; $star <= 5; $star++)
+                                            <button type="button" wire:click="setRating({{ $star }})" class="rating-star-btn {{ ($selectedRating ?? 0) >= $star ? 'active' : '' }}">&#9733;</button>
+                                        @endfor
+                                    </div>
+                                    @error('selectedRating') <div class="rating-error">{{ $message }}</div> @enderror
+                                    <textarea wire:model="ratingMessage" class="line-rating-input" placeholder="Deja un mensaje sobre tu experiencia con esta linea" aria-label="Mensaje de valoracion"></textarea>
+                                    @error('ratingMessage') <div class="rating-error">{{ $message }}</div> @enderror
+                                    <div class="rating-form-actions">
+                                        <button type="submit" class="fe-btn primary">Guardar valoracion</button>
+                                        <button type="button" wire:click="toggleRatingForm" class="fe-btn ghost">Cancelar</button>
+                                    </div>
+                                </form>
+                            @endif
+                        @endunless
                     @else
                         <div class="line-login-box">
                             <span>Inicia sesion para valorar esta linea.</span>

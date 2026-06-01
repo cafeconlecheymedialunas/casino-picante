@@ -31,6 +31,7 @@ class LinePlatforms extends Component
         return view('frontend.pages.line-platforms', [
             'line' => $this->line,
             'vendor' => $this->vendor ?: $this->line->vendor,
+            'publicVendor' => $this->vendor ?: $this->line->vendor,
             'platforms' => $platforms,
         ])->layout('frontend.layouts.app', [
             'title' => 'Plataformas '.$this->line->name.' - RED PICANTES',
