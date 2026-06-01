@@ -11,7 +11,6 @@ use App\Models\Sale;
 use App\Support\ImageStorage;
 use App\Support\LineRoles;
 use App\Support\Permissions;
-use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
@@ -1084,13 +1083,9 @@ class LineDetail extends Component
 
     private function agentAssignmentQuery()
     {
-        $query = Agent::withoutGlobalScopes()->where('status', 'active');
-
-        if (auth()->user()?->hasRole(Roles::ADMIN)) {
-            return $query;
-        }
-
-        return $query->where('vendor_id', (int) session('active_vendor_id'));
+        return Agent::withoutGlobalScopes()
+            ->where('status', 'active')
+            ->where('vendor_id', (int) session('active_vendor_id'));
     }
 
     private function authorizePlatformChoice(int $platformId): void

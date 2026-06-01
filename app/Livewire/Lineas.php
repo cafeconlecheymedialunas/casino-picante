@@ -11,7 +11,6 @@ use App\Services\SalesStats;
 use App\Support\ImageStorage;
 use App\Support\LineRoles;
 use App\Support\Permissions;
-use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Collection;
@@ -771,13 +770,9 @@ class Lineas extends Component
 
     private function agentAssignmentQuery()
     {
-        $query = Agent::withoutGlobalScopes()->where('status', 'active');
-
-        if (auth()->user()?->hasRole(Roles::ADMIN)) {
-            return $query;
-        }
-
-        return $query->where('vendor_id', (int) session('active_vendor_id'));
+        return Agent::withoutGlobalScopes()
+            ->where('status', 'active')
+            ->where('vendor_id', (int) session('active_vendor_id'));
     }
 
     private function mapChannels(array $links): array

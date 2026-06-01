@@ -1026,7 +1026,7 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_admin_can_share_agent_from_another_vendor_to_active_vendor_line(): void
+    public function test_admin_cannot_assign_agent_owned_by_another_vendor(): void
     {
         $admin = User::factory()->create([
             'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
@@ -1040,10 +1040,10 @@ class AuthPermissionSecurityTest extends TestCase
             'status' => 'active',
             'permissions' => Permissions::all(),
         ]);
-        $sharedAgent = Agent::create([
+        $otherAgent = Agent::create([
             'vendor_id' => $otherVendor->id,
-            'name' => 'Agente Compartible '.uniqid(),
-            'email' => 'agente-compartible-'.uniqid().'@example.test',
+            'name' => 'Agente Ajeno Admin '.uniqid(),
+            'email' => 'agente-ajeno-admin-'.uniqid().'@example.test',
             'password' => Hash::make('password'),
             'cargo' => 'agente',
             'status' => 'active',
@@ -1054,17 +1054,9 @@ class AuthPermissionSecurityTest extends TestCase
         Livewire::test(Lineas::class)
             ->call('openEditModal', $line->id)
             ->call('switchTab', 'agentes')
-            ->assertViewHas('availableAgents', fn ($agents) => $agents->pluck('id')->contains($sharedAgent->id))
-            ->call('addAgent', $sharedAgent->id)
-            ->assertHasNoErrors();
-
-        $this->assertDatabaseHas('line_agents', [
-            'vendor_id' => $vendor->id,
-            'line_id' => $line->id,
-            'agent_id' => $sharedAgent->id,
-            'is_active' => true,
-        ]);
-        $this->assertSame($otherVendor->id, $sharedAgent->fresh()->vendor_id);
+            ->assertViewHas('availableAgents', fn ($agents) => ! $agents->pluck('id')->contains($otherAgent->id))
+            ->call('addAgent', $otherAgent->id)
+            ->assertForbidden();
     }
 
     public function test_cajero_cannot_assign_agent_owned_by_another_vendor(): void
@@ -1096,7 +1088,60 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_editing_shared_agent_preserves_owner_and_external_assignments(): void
+    public function test_same_agent_person_can_exist_as_separate_accounts_per_vendor(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
+            'status' => 'active',
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $firstLine = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Agent Separate A '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $secondLine = Line::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Linea Agent Separate B '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+
+        $this->actingAs($admin)->withSession(['active_vendor_id' => $vendor->id]);
+        Livewire::test(Agentes::class)
+            ->set('name', 'Agente Repetido')
+            ->set('email', 'agente-repetido-a@example.test')
+            ->set('password', 'secret123')
+            ->set('avatar', 'avatar_adventurer__red-picantes-01')
+            ->set('cargo', 'agente')
+            ->set('lineIds', [$firstLine->id])
+            ->call('saveAgent')
+            ->assertHasNoErrors();
+
+        $this->withSession(['active_vendor_id' => $otherVendor->id]);
+        Livewire::test(Agentes::class)
+            ->set('name', 'Agente Repetido')
+            ->set('email', 'agente-repetido-b@example.test')
+            ->set('password', 'secret123')
+            ->set('avatar', 'avatar_adventurer__red-picantes-01')
+            ->set('cargo', 'agente')
+            ->set('lineIds', [$secondLine->id])
+            ->call('saveAgent')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('agents', [
+            'vendor_id' => $vendor->id,
+            'email' => 'agente-repetido-a@example.test',
+        ]);
+        $this->assertDatabaseHas('agents', [
+            'vendor_id' => $otherVendor->id,
+            'email' => 'agente-repetido-b@example.test',
+        ]);
+    }
+
+    public function test_legacy_cross_vendor_agent_assignment_does_not_make_agent_manageable(): void
     {
         $admin = User::factory()->create([
             'role_id' => $this->role(Roles::ADMIN, 'Admin')->id,
@@ -1106,46 +1151,32 @@ class AuthPermissionSecurityTest extends TestCase
         [, $otherVendor] = $this->cajeroVendor();
         $line = Line::create([
             'vendor_id' => $vendor->id,
-            'name' => 'Linea Share Edit '.uniqid(),
+            'name' => 'Linea Legacy Cross Agent '.uniqid(),
             'status' => 'active',
             'permissions' => Permissions::all(),
         ]);
-        $otherLine = Line::create([
+        $otherAgent = Agent::create([
             'vendor_id' => $otherVendor->id,
-            'name' => 'Linea Owner Edit '.uniqid(),
-            'status' => 'active',
-            'permissions' => Permissions::all(),
-        ]);
-        $sharedAgent = Agent::create([
-            'vendor_id' => $otherVendor->id,
-            'name' => 'Agente Shared Edit',
-            'email' => 'agente-shared-edit-'.uniqid().'@example.test',
+            'name' => 'Agente Legacy Cross '.uniqid(),
+            'email' => 'agente-legacy-cross-'.uniqid().'@example.test',
             'password' => Hash::make('password'),
             'cargo' => 'agente',
             'status' => 'active',
         ]);
-        LineAgent::create(['vendor_id' => $vendor->id, 'line_id' => $line->id, 'agent_id' => $sharedAgent->id, 'role' => LineRoles::MIEMBRO, 'is_active' => true]);
-        LineAgent::create(['vendor_id' => $otherVendor->id, 'line_id' => $otherLine->id, 'agent_id' => $sharedAgent->id, 'role' => LineRoles::MIEMBRO, 'is_active' => true]);
+        LineAgent::create([
+            'vendor_id' => $vendor->id,
+            'line_id' => $line->id,
+            'agent_id' => $otherAgent->id,
+            'role' => LineRoles::MIEMBRO,
+            'is_active' => true,
+        ]);
 
         $this->actingAs($admin)->withSession(['active_vendor_id' => $vendor->id]);
 
         Livewire::test(Agentes::class)
-            ->call('openEditModal', $sharedAgent->id)
-            ->assertSet('lineIds', [$line->id])
-            ->set('name', 'Agente Shared Editado')
-            ->call('saveAgent')
-            ->assertHasNoErrors();
-
-        $this->assertDatabaseHas('agents', [
-            'id' => $sharedAgent->id,
-            'vendor_id' => $otherVendor->id,
-            'name' => 'Agente Shared Editado',
-        ]);
-        $this->assertDatabaseHas('line_agents', [
-            'vendor_id' => $otherVendor->id,
-            'line_id' => $otherLine->id,
-            'agent_id' => $sharedAgent->id,
-        ]);
+            ->assertViewHas('agents', fn ($agents) => ! $agents->pluck('id')->contains($otherAgent->id))
+            ->call('openEditModal', $otherAgent->id)
+            ->assertForbidden();
     }
 
     public function test_admin_agent_line_selector_requires_active_vendor(): void

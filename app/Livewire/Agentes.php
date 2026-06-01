@@ -559,6 +559,10 @@ class Agentes extends Component
             return;
         }
 
+        if (session('active_vendor_id')) {
+            $query->where('vendor_id', (int) session('active_vendor_id'));
+        }
+
         $lineIds = $this->availableLineIds();
 
         if (empty($lineIds)) {
@@ -576,7 +580,7 @@ class Agentes extends Component
             return;
         }
 
-        if (! auth()->user()?->hasRole(Roles::ADMIN) && (int) $agent->vendor_id !== (int) session('active_vendor_id')) {
+        if ((int) $agent->vendor_id !== (int) session('active_vendor_id')) {
             abort(403, 'Solo podes gestionar agentes propios de tu cajero.');
         }
 
