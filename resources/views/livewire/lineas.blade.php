@@ -332,7 +332,7 @@
          1. LIST VIEW
          ════════════════════════════════════════════════════════════════════════ --}}
 @if(!$showModal && !$showDetailsModal)
-        @if($this->isAdminMode())
+        @if($this->isAdminMode() && $this->canMutateVendorContext())
         <div class="module-top-bar">
             <button type="button" class="btn-primary" wire:click="openCreateModal">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -395,7 +395,7 @@
                 <svg class="mini-icon" viewBox="0 0 15 15"><path d="M9 3L4 7.5 9 12"/></svg>
                 Volver a lineas
             </button>
-            @if($this->canManageLine($detailLine))
+            @if($this->canManageLine($detailLine) && $this->canMutateVendorContext())
             <button type="button" class="btn-primary" wire:click="editFromDetail">
                 <svg class="mini-icon" viewBox="0 0 15 15"><path d="M10.5 2.5l2 2-8.5 8.5H2.5v-2l8.5-8.5z"/></svg>
                 Editar
@@ -1074,13 +1074,15 @@
     </div>{{-- /edit-content --}}
         <div class="editor-fixed-actions">
             <div class="editor-fixed-actions-left">
-                @if($editingLineId)
+                @if($editingLineId && $this->canMutateVendorContext())
                     <button type="button" class="btn-soft btn-danger" wire:click="deleteLine({{ $editingLineId }})" wire:confirm="¿Eliminar esta linea?">Eliminar</button>
                 @endif
             </div>
             <div class="editor-fixed-actions-right">
                 <button type="button" wire:click="closeModal" class="btn-soft">Cancelar</button>
-                <button type="button" wire:click="saveLine" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
+                @if($this->canMutateVendorContext())
+                    <button type="button" wire:click="saveLine" class="btn-primary">{{ $editingLineId ? 'Guardar cambios' : 'Crear linea' }}</button>
+                @endif
             </div>
         </div>
     </div>{{-- /edit-layout --}}

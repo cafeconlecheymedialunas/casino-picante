@@ -6,7 +6,7 @@
         ? $line->getRelation('platforms')
         : $line->platforms()->get();
     $contactLinks  = $line->contact_links ?? [];
-    $canManage     = $this->canManageLine($line);
+    $canManage     = $this->canManageLine($line) && $this->canMutateVendorContext();
     $isActive      = $line->status === 'active';
     $initial       = strtoupper(mb_substr($line->name, 0, 2));
 @endphp
@@ -33,6 +33,7 @@
             <span class="status-badge {{ $isActive ? 'status-active' : 'status-inactive' }}">
                 {{ $isActive ? '● Activa' : '○ Inactiva' }}
             </span>
+            @if($canManage)
             <button type="button"
                     wire:click="toggleLine({{ $line->id }})"
                     class="btn-icon"
@@ -44,6 +45,7 @@
                     <svg class="mini-icon" viewBox="0 0 15 15"><path d="M5 3l8 4.5L5 12V3z"/></svg>
                 @endif
             </button>
+            @endif
         </div>
     </div>
 

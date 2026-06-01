@@ -70,6 +70,7 @@ class Ventas extends Component
     public function openCreateModal(): void
     {
         $this->authorizeSalesAccess();
+        $this->requireVendorContextForWrite();
 
         $this->resetSaleForm();
 
@@ -84,6 +85,7 @@ class Ventas extends Component
 
     public function openEditModal(int $saleId): void
     {
+        $this->requireVendorContextForWrite();
         $sale = Sale::with(['line', 'platform'])->findOrFail($saleId);
         $this->authorizeLineEdit($sale->line);
 
@@ -111,6 +113,8 @@ class Ventas extends Component
 
     public function saveSale(): void
     {
+        $this->requireVendorContextForWrite();
+
         $this->validate([
             'saleLineId' => 'required|integer|exists:lines,id',
             'salePlatformId' => 'nullable|integer|exists:platforms,id',
@@ -161,6 +165,7 @@ class Ventas extends Component
 
     public function deleteSale(int $saleId): void
     {
+        $this->requireVendorContextForWrite();
         $sale = Sale::with('line')->findOrFail($saleId);
         $this->authorizeLineEdit($sale->line);
         $lineName = $sale->line?->name ?? 'Sin linea';
@@ -179,6 +184,9 @@ class Ventas extends Component
     public function availableLines(): Collection
     {
         $query = Line::with(['platforms', 'lineAgents.agent']);
+        $vendorId = session('active_vendor_id');
+
+        $query->when($vendorId, fn ($lines) => $lines->where('vendor_id', (int) $vendorId));
 
         if (! $this->isAdminMode()) {
             $query->whereHas('lineAgents', fn ($inner) => $inner
@@ -329,6 +337,7 @@ class Ventas extends Component
 
         $platform = Platform::withoutGlobalScopes()->find((int) $platformId);
         abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
+        abort_unless(! $platform->vendor_id || (int) $platform->vendor_id === (int) $line?->vendor_id, 403, 'No podes usar plataformas fuera del vendor activo.');
     }
 
     private function platformVendorIdForForm(): ?int

@@ -264,6 +264,7 @@
                                 <div class="panel-title">{{ $selectedRaffle->title }}</div>
                                 <div class="raffle-meta">{{ $selectedRaffle->description ?: 'Sin descripcion' }}</div>
                             </div>
+                            @if($this->canMutateVendorContext())
                             <div class="action-row">
                                 <button class="btn-soft" wire:click="openEdit({{ $selectedRaffle->id }})">Editar</button>
                                 <button class="btn-soft" wire:click="openWinnerModal({{ $selectedRaffle->id }})">
@@ -278,6 +279,7 @@
                                     <svg class="mini-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/></svg>
                                 </button>
                             </div>
+                            @endif
                         </div>
                         <div class="panel-body">
                             @if($selectedRaffle->isFinished())
@@ -445,12 +447,14 @@
                                 @endforeach
                             </div>
                             <div class="assign-controls" style="margin-bottom:10px;">
+                                @if($this->canMutateVendorContext())
                                 <button type="button" @click="$wire.saveSelectedNumbersFromClient(selected)" class="btn-primary">
                                     Guardar seleccion (<span x-text="selected.length"></span>)
                                 </button>
                                 <button type="button" @click="$wire.unassignSelectedNumbersFromClient(selected)" class="btn-soft btn-danger">
                                     Desocupar seleccionados (<span x-text="occupiedSelected().length"></span>)
                                 </button>
+                                @endif
                                 <button type="button" @click="clear(); $wire.clearSelectedNumbers()" class="btn-soft">Limpiar</button>
                             </div>
                             @if (session()->has('message'))

@@ -36,6 +36,7 @@ class AgentMessaging extends Component
     public function openPanel(): void
     {
         $this->authorizeMessaging();
+        $this->requireVendorContextForWrite();
         $this->activeChatId = $this->findOrCreateDirectChat()?->id;
         $this->open = true;
     }
@@ -140,15 +141,15 @@ class AgentMessaging extends Component
 
     private function authorizeTargetUser(int $userId): void
     {
-        if (auth()->user()?->hasRole(Roles::ADMIN)) {
-            return;
-        }
-
         $user = User::findOrFail($userId);
         $activeVendorId = session('active_vendor_id');
 
         if ($activeVendorId && (int) $user->vendor_id !== (int) $activeVendorId) {
             abort(403, 'No podes enviar mensajes a clientes de otro vendor.');
+        }
+
+        if (auth()->user()?->hasRole(Roles::ADMIN) && ! $activeVendorId) {
+            return;
         }
 
         if ($this->isAdminMode()) {
@@ -166,15 +167,15 @@ class AgentMessaging extends Component
 
     private function authorizeDirectAgent(int $agentId): void
     {
-        if (auth()->user()?->hasRole(Roles::ADMIN)) {
-            return;
-        }
-
         $agent = Agent::findOrFail($agentId);
         $activeVendorId = session('active_vendor_id');
 
         if ($activeVendorId && (int) $agent->vendor_id !== (int) $activeVendorId) {
             abort(403, 'No podes enviar mensajes a agentes de otro vendor.');
+        }
+
+        if (auth()->user()?->hasRole(Roles::ADMIN) && ! $activeVendorId) {
+            return;
         }
 
         if ($this->isAdminMode()) {

@@ -4,10 +4,12 @@
 @endsection
 
 <div class="module-top-bar">
+    @if($canManagePlatforms)
     <button type="button" class="btn-primary" wire:click="openCreateModal">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         Nueva plataforma
     </button>
+    @endif
 </div>
 
     @if(session()->has('message'))
@@ -27,11 +29,13 @@
                     <div class="pm-name">{{ $platform->name }}</div>
                     <div class="pm-slug">{{ $platform->slug }}</div>
                 </div>
+                @if($canManagePlatforms)
                 <div class="pm-actions">
                     <button class="btn-ghost pm-btn" wire:click="openEditModal({{ $platform->id }})" aria-label="Editar {{ $platform->name }}"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-ghost pm-btn danger" wire:click="deletePlatform({{ $platform->id }})"
                         wire:confirm="¿Eliminar '{{ $platform->name }}'? Se desasociará de todas las líneas." aria-label="Eliminar {{ $platform->name }}"><i class="fa-solid fa-trash"></i></button>
                 </div>
+                @endif
             </div>
 
             @if($platform->description)
@@ -46,9 +50,11 @@
                     <i class="fa-solid fa-circle" aria-hidden="true"></i>
                     {{ $platform->is_active ? 'Activa' : 'Inactiva' }}
                 </span>
+                @if($canManagePlatforms)
                 <button class="pm-toggle" wire:click="toggleActive({{ $platform->id }})">
                     {{ $platform->is_active ? 'Desactivar' : 'Activar' }}
                 </button>
+                @endif
                 <span class="pm-lines-count">
                     {{ $platform->lines->count() }} {{ $platform->lines->count() === 1 ? 'línea' : 'líneas' }}
                 </span>

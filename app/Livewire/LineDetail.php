@@ -49,7 +49,10 @@ class LineDetail extends Component
     // Available platforms from master catalog
     public function getAvailablePlatformsProperty()
     {
-        return Platform::where('is_active', true)->orderBy('name')->get();
+        return Platform::where('is_active', true)
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
+            ->orderBy('name')
+            ->get();
     }
 
     // Assign agent modal
@@ -1077,7 +1080,9 @@ class LineDetail extends Component
 
     private function authorizePlatformChoice(int $platformId): void
     {
-        abort_unless(Platform::whereKey($platformId)->exists(), 403, 'La plataforma seleccionada no existe.');
+        abort_unless(Platform::whereKey($platformId)
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
+            ->exists(), 403, 'La plataforma seleccionada no existe.');
     }
 
     private function authorizePlatformChoices(array $platforms): void

@@ -334,6 +334,7 @@ class Tickets extends Component
         $metrics = $this->getMetrics();
         $lineId = session('active_line_id');
         $assignableUsers = User::where('status', 'active')
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
             ->when($lineId, fn ($q) => $q->where(function ($inner) use ($lineId) {
                 $inner->where('line_id', $lineId)
                     ->orWhereHas('lines', fn ($l) => $l->where('lines.id', $lineId)->where('line_clients.is_active', true));

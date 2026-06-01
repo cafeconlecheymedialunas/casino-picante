@@ -339,10 +339,12 @@
 </style>
 
 <div class="module-top-bar">
+    @if($this->canMutateVendorContext())
     <button type="button" class="new-client-btn" wire:click="openCreateModal">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
         Nuevo cliente
     </button>
+    @endif
 </div>
 
 <div class="stats-row">
@@ -420,6 +422,7 @@
                     <div class="strong truncate col-username">{{ $user->username ?? '-' }}</div>
                     <div class="truncate col-email">{{ $user->email }}</div>
                     <div class="action-row">
+                        @if($this->canMutateVendorContext())
                         <livewire:components.agent-messaging
                             :target-user-id="$user->id"
                             :target-name="$fullName ?: $user->name"
@@ -443,15 +446,18 @@
                                 <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7V5Z"/></svg>
                             </button>
                         @endif
+                        @endif
                         <button wire:click="openDetailModal({{ $user->id }})" class="btn-icon" title="Ver">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><path d="M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6Z"/></svg>
                         </button>
+                        @if($this->canMutateVendorContext())
                         <button wire:click="openEditModal({{ $user->id }})" class="btn-icon" title="Editar">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
                         </button>
                         <button wire:click="deleteUser({{ $user->id }})" wire:confirm="¿Eliminar a {{ $fullName ?: $user->name }}?" class="btn-icon danger" title="Eliminar">
                             <svg class="mini-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
                         </button>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -609,12 +615,16 @@
             </div>
 
             <div class="modal-foot">
+                @if($this->canMutateVendorContext())
                 @if($detailUser->status === 'active')
                     <button wire:click="setStatus({{ $detailUser->id }}, 'inactive')" class="btn-ghost">Pausar acceso</button>
                 @else
                     <button wire:click="setStatus({{ $detailUser->id }}, 'active')" class="btn-ghost">Activar acceso</button>
                 @endif
                 <button wire:click="openEditModal({{ $detailUser->id }})" class="btn-primary">Editar cliente</button>
+                @else
+                    <button type="button" wire:click="closeModal" class="btn-ghost">Cerrar</button>
+                @endif
             </div>
         </div>
     </div>

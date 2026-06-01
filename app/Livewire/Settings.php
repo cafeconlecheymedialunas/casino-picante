@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Support\CajeroVendorResolver;
 use App\Support\Roles;
+use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,7 +18,7 @@ use Livewire\WithFileUploads;
 
 class Settings extends Component
 {
-    use WithFileUploads, SendsNotifications;
+    use WithFileUploads, SendsNotifications, HasLinePermissions;
 
     public string $activeTab = 'notifications';
 
@@ -111,6 +112,7 @@ class Settings extends Component
     public function saveDashboardTheme(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
 
         $this->validate([
             'dashboardTheme' => ['required', Rule::in(['dark', 'light'])],
@@ -129,6 +131,7 @@ class Settings extends Component
     public function saveBrandingAssets(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
 
         $this->validate([
             'siteTitle' => ['required', 'string', 'min:2', 'max:80'],
@@ -166,6 +169,7 @@ class Settings extends Component
     public function saveVendor(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $vendor = $this->currentVendor();
         abort_unless($vendor, 403, 'No hay cajero activo para editar.');
 
@@ -255,6 +259,7 @@ class Settings extends Component
     public function saveCajeroUser(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $user = $this->currentCajeroUser();
         abort_unless($user, 403, 'No hay usuario cajero para editar.');
 
@@ -290,6 +295,7 @@ class Settings extends Component
     public function removeLogo(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $vendor = $this->currentVendor();
         abort_unless($vendor, 403, 'No hay cajero activo para editar.');
 
@@ -301,6 +307,7 @@ class Settings extends Component
     public function removeHeroImage(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $vendor = $this->currentVendor();
         abort_unless($vendor, 403, 'No hay cajero activo para editar.');
 
@@ -312,6 +319,7 @@ class Settings extends Component
     public function removePortraitImage(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $vendor = $this->currentVendor();
         abort_unless($vendor, 403, 'No hay cajero activo para editar.');
 
@@ -323,6 +331,7 @@ class Settings extends Component
     public function removeSiteLogo(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $this->deletePublicAsset($this->siteLogo);
 
         Setting::updateOrCreate(['key' => 'site_logo'], ['value' => Setting::DEFAULT_LOGO]);
@@ -333,6 +342,7 @@ class Settings extends Component
     public function removeSiteFavicon(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $this->deletePublicAsset($this->siteFavicon);
 
         Setting::updateOrCreate(['key' => 'site_favicon'], ['value' => Setting::DEFAULT_FAVICON]);
@@ -343,7 +353,7 @@ class Settings extends Component
     public function render()
     {
         return view('livewire.settings', [
-            'canEditVendor' => (bool) $this->currentVendor(),
+            'canEditVendor' => (bool) $this->currentVendor() && $this->canMutateVendorContext(),
         ])->layout('layouts.dashboard');
     }
 

@@ -443,7 +443,7 @@ class UsersIndex extends Component
 
     private function scopeClientsToAvailableLines($query): void
     {
-        if ($this->isAdminMode()) {
+        if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
         }
 
@@ -466,7 +466,7 @@ class UsersIndex extends Component
             abort(403, 'Solo podes gestionar clientes desde esta pantalla.');
         }
 
-        if ($this->isAdminMode()) {
+        if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
         }
 
@@ -481,9 +481,7 @@ class UsersIndex extends Component
 
     private function authorizeSelectedLines(): void
     {
-        if ($this->isAdminMode() && ! session('active_vendor_id')) {
-            return;
-        }
+        $this->requireVendorContextForWrite();
 
         $selected = collect($this->selectedLines)
             ->push($this->preferredLineId)

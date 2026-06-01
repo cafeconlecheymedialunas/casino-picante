@@ -94,6 +94,9 @@ class MessageChat extends Component
     public function sendReply(): void
     {
         $this->authorizeChatAccess();
+        if ($this->isAgent) {
+            $this->requireVendorContextForWrite();
+        }
         $chat = $this->selectedChat();
 
         if (! $chat) {
@@ -145,6 +148,7 @@ class MessageChat extends Component
     public function closeChat(): void
     {
         $this->authorizeChatAccess();
+        $this->requireVendorContextForWrite();
 
         if (! $this->isAgent) {
             return;
@@ -226,6 +230,11 @@ class MessageChat extends Component
     {
         if (! $this->isAgent) {
             return;
+        }
+
+        $activeVendorId = session('active_vendor_id');
+        if ($activeVendorId) {
+            $query->where('vendor_id', (int) $activeVendorId);
         }
 
         if ($this->isAdminMode()) {

@@ -555,7 +555,7 @@ class Agentes extends Component
 
     private function scopeAgentsToAvailableLines($query): void
     {
-        if ($this->isAdminMode()) {
+        if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
         }
 
@@ -572,7 +572,7 @@ class Agentes extends Component
 
     private function authorizeAgentScope(Agent $agent): void
     {
-        if ($this->isAdminMode()) {
+        if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
         }
 
@@ -605,7 +605,7 @@ class Agentes extends Component
 
     private function authorizeLineScope(int $lineId): void
     {
-        if ($this->isAdminMode()) {
+        if ($this->isAdminMode() && ! session('active_vendor_id')) {
             return;
         }
 

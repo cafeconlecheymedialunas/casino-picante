@@ -282,15 +282,17 @@
                                     <span class="btn-badge">{{ $bonus->assigned_count }}</span>
                                     @endif
                                 </button>
-                                <button class="btn-icon" wire:click="openAssignModal({{ $bonus->id }})" title="Otorgar bono">
-                                    <svg class="mini-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><path d="M12 7a4 4 0 1 0 0 .1"/><path d="M19 8v6M22 11h-6"/></svg>
-                                </button>
-                                @if($this->hasLinePermission(\App\Support\Permissions::BONO_UPDATE))
+                                @if($this->canMutateVendorContext())
+                                    <button class="btn-icon" wire:click="openAssignModal({{ $bonus->id }})" title="Otorgar bono">
+                                        <svg class="mini-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><path d="M12 7a4 4 0 1 0 0 .1"/><path d="M19 8v6M22 11h-6"/></svg>
+                                    </button>
+                                @endif
+                                @if($this->hasLinePermission(\App\Support\Permissions::BONO_UPDATE) && $this->canMutateVendorContext())
                                     <button class="btn-icon" wire:click="openEditModal({{ $bonus->id }})" title="Editar">
                                         <svg class="mini-icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"/></svg>
                                     </button>
                                 @endif
-                                @if($this->hasLinePermission(\App\Support\Permissions::BONO_DELETE))
+                                @if($this->hasLinePermission(\App\Support\Permissions::BONO_DELETE) && $this->canMutateVendorContext())
                                     <button class="btn-icon btn-danger" wire:click="deleteBonus({{ $bonus->id }})" wire:confirm="Eliminar bono {{ $bonus->code }}?" title="Eliminar">
                                         <svg class="mini-icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
                                     </button>
@@ -334,10 +336,12 @@
                             <span class="ap-badge claimed"><i class="fa-solid fa-check"></i> Reclamado</span>
                         @elseif($a->status === 'expired')
                             <span class="ap-badge expired">Vencido</span>
-                        @else
+                        @elseif($this->canMutateVendorContext())
                             <button wire:click="markClaimed({{ $a->id }})" class="ap-claim-btn" title="Marcar reclamado">
                                 <i class="fa-solid fa-circle-check"></i>
                             </button>
+                        @else
+                            <span class="ap-badge pending">Pendiente</span>
                         @endif
                     </div>
                 </div>

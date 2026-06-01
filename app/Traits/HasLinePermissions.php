@@ -6,6 +6,7 @@ use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
+use App\Support\Permissions;
 use App\Support\Roles;
 use Illuminate\Validation\ValidationException;
 
@@ -102,10 +103,38 @@ trait HasLinePermissions
         return ($user?->hasRole(Roles::ADMIN) || $user?->hasRole(Roles::CAJERO)) ?? false;
     }
 
+    public function isGlobalAdminMode(): bool
+    {
+        return (auth()->user()?->hasRole(Roles::ADMIN) ?? false)
+            && ! session('active_vendor_id');
+    }
+
+    public function canMutateVendorContext(): bool
+    {
+        return ! $this->isGlobalAdminMode();
+    }
+
+    public function requireVendorContextForWrite(string $message = 'Selecciona un cajero para operar. El modo global es solo lectura.'): void
+    {
+        if ($this->isGlobalAdminMode()) {
+            abort(403, $message);
+        }
+    }
+
+    private function isReadOnlyPermission(string $permission): bool
+    {
+        return $permission === Permissions::DASHBOARD_READ
+            || str_ends_with($permission, '.read');
+    }
+
     // True if current agent has the given permission on the active line.
     // Always true in admin mode.
     public function hasLinePermission(string $permission): bool
     {
+        if ($this->isGlobalAdminMode() && ! $this->isReadOnlyPermission($permission)) {
+            return false;
+        }
+
         if ($this->isAdminMode()) {
             return true;
         }

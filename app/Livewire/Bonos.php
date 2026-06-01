@@ -223,6 +223,7 @@ class Bonos extends Component
     public function openAssignModal(int $bonusId): void
     {
         $this->checkLinePermission(Permissions::BONO_READ);
+        $this->requireVendorContextForWrite();
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
         $this->authorizeLineChoice((int) $bonus->line_id);
         $this->selectedBonusId = $bonus->id;
@@ -243,6 +244,7 @@ class Bonos extends Component
     public function assignToUser(): void
     {
         $this->checkLinePermission(Permissions::BONO_READ);
+        $this->requireVendorContextForWrite();
 
         if (empty($this->assignUserIds)) {
             $this->addError('assignUserIds', 'Seleccioná al menos un usuario.');
@@ -278,7 +280,7 @@ class Bonos extends Component
                 continue;
             }
 
-            $lineCheck = ! $bonus->line_id || $this->isAdminMode() || $this->clientBelongsToLine($user, (int) $bonus->line_id);
+            $lineCheck = ! $bonus->line_id || $this->clientBelongsToLine($user, (int) $bonus->line_id);
             if ($user->status !== 'active' || ! $lineCheck) {
                 $skipped[] = $user->username ?? $user->email;
 
@@ -325,6 +327,7 @@ class Bonos extends Component
     public function markClaimed(int $assignmentId): void
     {
         $this->checkLinePermission(Permissions::BONO_READ);
+        $this->requireVendorContextForWrite();
         $assignment = BonusAssignment::withoutGlobalScopes()->with('bonus')->findOrFail($assignmentId);
         $this->authorizeLineChoice((int) $assignment->bonus->line_id);
         $assignment->update(['status' => 'used', 'used_at' => now()]);
@@ -465,12 +468,16 @@ class Bonos extends Component
 
         $platform = Platform::withoutGlobalScopes()->find((int) $platformId);
         abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
+        abort_unless(! $platform->vendor_id || (int) $platform->vendor_id === (int) $line?->vendor_id, 403, 'No podes usar plataformas fuera del vendor activo.');
     }
 
     private function availablePlatforms(): Collection
     {
+        $vendorId = session('active_vendor_id');
+
         return Platform::withoutGlobalScopes()
             ->where('is_active', true)
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', (int) $vendorId))
             ->orderBy('name')
             ->get();
     }
@@ -523,17 +530,14 @@ class Bonos extends Component
             ->where('status', 'active')
             ->orderBy('username');
 
-        // Admin sees all clients; cajero sees only their vendor's clients
-        if (! $this->isAdminMode()) {
-            if ($lineId) {
-                $query->where(function ($q) use ($lineId, $vendorId) {
-                    $q->where('line_id', $lineId)
-                        ->orWhereHas('lines', fn ($lq) => $lq->where('lines.id', $lineId)->wherePivot('is_active', true))
-                        ->orWhere('vendor_id', $vendorId);
-                });
-            } elseif ($vendorId) {
-                $query->where('vendor_id', $vendorId);
-            }
+        if ($lineId) {
+            $query->where(function ($q) use ($lineId, $vendorId) {
+                $q->where('line_id', $lineId)
+                    ->orWhereHas('lines', fn ($lq) => $lq->where('lines.id', $lineId)->wherePivot('is_active', true))
+                    ->when($vendorId, fn ($inner) => $inner->orWhere('vendor_id', $vendorId));
+            });
+        } elseif ($vendorId) {
+            $query->where('vendor_id', $vendorId);
         }
 
         return $query

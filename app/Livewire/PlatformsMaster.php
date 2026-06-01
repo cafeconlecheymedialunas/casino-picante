@@ -39,6 +39,7 @@ class PlatformsMaster extends Component
     public function openCreateModal()
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
         $this->resetForm();
         $this->showModal = true;
     }
@@ -53,6 +54,7 @@ class PlatformsMaster extends Component
     public function openEditModal($platformId)
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
 
         $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
@@ -88,6 +90,7 @@ class PlatformsMaster extends Component
     public function savePlatform()
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
 
         $rules = [
             'name' => 'required|min:2',
@@ -137,6 +140,7 @@ class PlatformsMaster extends Component
     public function toggleActive($platformId)
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
 
         $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
@@ -154,6 +158,7 @@ class PlatformsMaster extends Component
     public function deletePlatform($platformId)
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
 
         $platform = Platform::withoutGlobalScopes()->find($platformId);
         $this->authorizeVendorRecord($platform);
@@ -170,6 +175,7 @@ class PlatformsMaster extends Component
     public function removeLogo(): void
     {
         $this->ensureAdmin();
+        $this->requireVendorContextForWrite();
 
         if ($this->editingPlatform && $this->logo_url) {
             ImageStorage::delete($this->logo_url);
@@ -183,8 +189,12 @@ class PlatformsMaster extends Component
     public function render()
     {
         $this->ensureAdmin();
-        $platforms = Platform::withoutGlobalScopes()->orderBy('name')->get();
-        $canManagePlatforms = $this->isAdminMode();
+        $vendorId = session('active_vendor_id');
+        $platforms = Platform::withoutGlobalScopes()
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', (int) $vendorId))
+            ->orderBy('name')
+            ->get();
+        $canManagePlatforms = $this->isAdminMode() && $this->canMutateVendorContext();
 
         return view('livewire.platforms-master', compact('platforms', 'canManagePlatforms'))->layout('layouts.dashboard');
     }

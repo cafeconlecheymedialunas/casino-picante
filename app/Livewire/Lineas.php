@@ -109,6 +109,7 @@ class Lineas extends Component
         if (! $this->isAdminMode()) {
             abort(403, 'Solo el administrador puede crear líneas.');
         }
+        $this->requireVendorContextForWrite();
         $this->resetForm();
         $this->editTab = 'info';
         $this->showModal = true;
@@ -163,6 +164,7 @@ class Lineas extends Component
             }
         }
 
+        $this->requireVendorContextForWrite();
         $this->validate();
         $this->authorizePlatformChoices();
 
@@ -201,6 +203,10 @@ class Lineas extends Component
             'contact_links' => $this->normalizedChannels(),
             'porcentaje_encargado' => $percent,
         ];
+
+        if (! $this->editingLineId) {
+            $data['vendor_id'] = session('active_vendor_id');
+        }
 
         $line = $this->editingLineId
             ? tap(Line::findOrFail($this->editingLineId))->update($data)
@@ -242,7 +248,9 @@ class Lineas extends Component
 
     public function toggleLine(int $lineId): void
     {
+        $this->requireVendorContextForWrite();
         $line = Line::findOrFail($lineId);
+        $this->ensureLineMatchesActiveVendor($line);
         $this->authorizeLineEdit($line);
 
         $line->update([
@@ -273,7 +281,9 @@ class Lineas extends Component
             abort(403, 'Solo el administrador puede eliminar líneas.');
         }
 
+        $this->requireVendorContextForWrite();
         $line = Line::findOrFail($lineId);
+        $this->ensureLineMatchesActiveVendor($line);
         $lineName = $line->name;
 
         $this->notifyLineEncargados(
@@ -586,17 +596,25 @@ class Lineas extends Component
 
         $availableAgents = ($this->editingLineId && $this->editTab === 'agentes')
             ? Agent::where('status', 'active')
+                ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where(fn ($agents) => $agents
+                    ->whereNull('vendor_id')
+                    ->orWhere('vendor_id', (int) $vendorId)))
                 ->whereNotIn('id', $assignedAgentIds)
                 ->orderBy('name')
                 ->get()
             : collect();
+
+        $allPlatforms = Platform::where('is_active', true)
+            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
+            ->orderBy('name')
+            ->get();
 
         return view('livewire.lineas', [
             'activeLines' => $lines->where('status', 'active'),
             'inactiveLines' => $lines->where('status', 'inactive'),
             'linesTotal' => $lines->count(),
             'availableEncargados' => $this->availableEncargados(),
-            'allPlatforms' => Platform::where('is_active', true)->orderBy('name')->get(),
+            'allPlatforms' => $allPlatforms,
             'detailLine' => $detailLine,
             'editLineAgents' => $editLineAgents,
             'availableAgents' => $availableAgents,
@@ -654,7 +672,10 @@ class Lineas extends Component
 
     private function lines(): Collection
     {
+        $vendorId = session('active_vendor_id');
+
         $query = Line::with(['lineAgents.agent', 'sales.platform'])
+            ->when($vendorId, fn ($query) => $query->where('vendor_id', (int) $vendorId))
             ->when($this->search, function ($query) {
                 $search = '%'.$this->search.'%';
                 $query->where(function ($inner) use ($search) {
@@ -689,7 +710,12 @@ class Lineas extends Component
 
     private function availableEncargados(): Collection
     {
+        $vendorId = session('active_vendor_id');
+
         return Agent::where('status', 'active')
+            ->when($vendorId, fn ($query) => $query->where(fn ($agents) => $agents
+                ->whereNull('vendor_id')
+                ->orWhere('vendor_id', (int) $vendorId)))
             ->orderBy('name')
             ->get();
     }
@@ -789,6 +815,8 @@ class Lineas extends Component
     private function authorizeLineView(Line $line): void
     {
         if ($this->isAdminMode()) {
+            $this->ensureLineMatchesActiveVendor($line, 'No podes ver lineas fuera del vendor activo.');
+
             return;
         }
 

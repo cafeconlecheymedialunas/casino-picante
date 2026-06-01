@@ -6,6 +6,7 @@ use App\Livewire\Lineas;
 use App\Models\Line;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Support\Roles;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -28,9 +29,17 @@ class LineasImageUploadTest extends TestCase
         ]);
 
         $line = Line::create([
+            'vendor_id' => $vendorId = Vendor::create([
+                'user_id' => $user->id,
+                'name' => 'Vendor Imagen',
+                'slug' => 'vendor-imagen',
+                'is_active' => true,
+            ])->id,
             'name' => 'Linea Imagen',
             'status' => 'active',
         ]);
+
+        session(['active_vendor_id' => $vendorId]);
 
         Livewire::actingAs($user)
             ->test(Lineas::class)
@@ -42,8 +51,8 @@ class LineasImageUploadTest extends TestCase
 
         $line->refresh();
 
-        $this->assertStringStartsWith('/storage/lineas/portadas/', $line->portada_url);
-        $this->assertStringStartsWith('/storage/lineas/perfiles/', $line->perfil_url);
+        $this->assertStringStartsWith("/storage/vendors/{$vendorId}/lineas/portadas/", $line->portada_url);
+        $this->assertStringStartsWith("/storage/vendors/{$vendorId}/lineas/perfiles/", $line->perfil_url);
         Storage::disk('public')->assertExists(substr($line->portada_url, 9));
         Storage::disk('public')->assertExists(substr($line->perfil_url, 9));
     }
@@ -59,9 +68,17 @@ class LineasImageUploadTest extends TestCase
         ]);
 
         $line = Line::create([
+            'vendor_id' => $vendorId = Vendor::create([
+                'user_id' => $user->id,
+                'name' => 'Vendor Portada',
+                'slug' => 'vendor-portada',
+                'is_active' => true,
+            ])->id,
             'name' => 'Linea Portada Grande',
             'status' => 'active',
         ]);
+
+        session(['active_vendor_id' => $vendorId]);
 
         Livewire::actingAs($user)
             ->test(Lineas::class)
@@ -72,6 +89,6 @@ class LineasImageUploadTest extends TestCase
 
         $line->refresh();
 
-        $this->assertStringStartsWith('/storage/lineas/portadas/', $line->portada_url);
+        $this->assertStringStartsWith("/storage/vendors/{$vendorId}/lineas/portadas/", $line->portada_url);
     }
 }

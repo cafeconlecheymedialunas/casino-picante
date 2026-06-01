@@ -8,17 +8,21 @@ use App\Livewire\Auth\ClientRegister;
 use App\Livewire\Auth\Login;
 use App\Livewire\Lineas;
 use App\Livewire\Novedades;
+use App\Livewire\PlatformsMaster;
 use App\Livewire\Settings;
 use App\Livewire\Sorteos;
 use App\Livewire\Tickets;
 use App\Livewire\Users\UsersIndex;
+use App\Livewire\Ventas;
 use App\Models\Agent;
 use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\LineAgentPermission;
+use App\Models\Platform;
 use App\Models\Post;
 use App\Models\Raffle;
 use App\Models\Role;
+use App\Models\Sale;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vendor;
@@ -406,7 +410,7 @@ class AuthPermissionSecurityTest extends TestCase
             ->set('name', 'Linea Sin Vendor')
             ->set('status', 'active')
             ->call('saveLine')
-            ->assertHasErrors(['vendor_id']);
+            ->assertForbidden();
     }
 
     public function test_admin_creates_vendor_scoped_content_after_selecting_vendor(): void
@@ -524,6 +528,87 @@ class AuthPermissionSecurityTest extends TestCase
             ->assertOk()
             ->assertSee($visibleLine->name)
             ->assertDontSee($hiddenLine->name);
+    }
+
+    public function test_admin_active_vendor_filters_vendor_scoped_module_items(): void
+    {
+        $admin = User::factory()->create([
+            'role_id' => $this->role(Roles::ADMIN, 'Administrador')->id,
+            'username' => 'admin_vendor_filter_'.uniqid(),
+            'status' => 'active',
+        ]);
+        [, $vendor] = $this->cajeroVendor();
+        [, $otherVendor] = $this->cajeroVendor();
+        $clientRole = $this->role(Roles::CLIENTE, 'Cliente');
+
+        $visibleLine = Line::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Linea Visible '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+        $hiddenLine = Line::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Linea Oculta '.uniqid(),
+            'status' => 'active',
+            'permissions' => Permissions::all(),
+        ]);
+
+        $visibleClient = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'vendor_id' => $vendor->id,
+            'line_id' => $visibleLine->id,
+            'username' => 'cliente_visible_'.uniqid(),
+            'status' => 'active',
+        ]);
+        $hiddenClient = User::factory()->create([
+            'role_id' => $clientRole->id,
+            'vendor_id' => $otherVendor->id,
+            'line_id' => $hiddenLine->id,
+            'username' => 'cliente_oculto_'.uniqid(),
+            'status' => 'active',
+        ]);
+
+        $visibleAgent = Agent::create([
+            'vendor_id' => $vendor->id,
+            'name' => 'Agente Visible '.uniqid(),
+            'email' => 'visible-agent-'.uniqid().'@example.test',
+            'password' => Hash::make('password'),
+            'cargo' => 'agente',
+            'status' => 'active',
+        ]);
+        $hiddenAgent = Agent::create([
+            'vendor_id' => $otherVendor->id,
+            'name' => 'Agente Oculto '.uniqid(),
+            'email' => 'hidden-agent-'.uniqid().'@example.test',
+            'password' => Hash::make('password'),
+            'cargo' => 'agente',
+            'status' => 'active',
+        ]);
+        LineAgent::create(['vendor_id' => $vendor->id, 'line_id' => $visibleLine->id, 'agent_id' => $visibleAgent->id, 'role' => LineRoles::MIEMBRO, 'is_active' => true]);
+        LineAgent::create(['vendor_id' => $otherVendor->id, 'line_id' => $hiddenLine->id, 'agent_id' => $hiddenAgent->id, 'role' => LineRoles::MIEMBRO, 'is_active' => true]);
+
+        $visiblePlatform = Platform::create(['vendor_id' => $vendor->id, 'name' => 'Platform Visible '.uniqid(), 'slug' => 'platform-visible-'.uniqid(), 'is_active' => true]);
+        $hiddenPlatform = Platform::create(['vendor_id' => $otherVendor->id, 'name' => 'Platform Hidden '.uniqid(), 'slug' => 'platform-hidden-'.uniqid(), 'is_active' => true]);
+        $visibleSale = Sale::create(['vendor_id' => $vendor->id, 'line_id' => $visibleLine->id, 'platform_id' => $visiblePlatform->id, 'fecha_inicio' => now(), 'fecha_fin' => now(), 'monto_fichas' => 100]);
+        $hiddenSale = Sale::create(['vendor_id' => $otherVendor->id, 'line_id' => $hiddenLine->id, 'platform_id' => $hiddenPlatform->id, 'fecha_inicio' => now(), 'fecha_fin' => now(), 'monto_fichas' => 200]);
+
+        $this->actingAs($admin)->withSession(['active_vendor_id' => $vendor->id]);
+
+        Livewire::test(Lineas::class)
+            ->assertViewHas('activeLines', fn ($lines) => $lines->pluck('id')->contains($visibleLine->id) && ! $lines->pluck('id')->contains($hiddenLine->id));
+
+        Livewire::test(UsersIndex::class)
+            ->assertViewHas('users', fn ($users) => $users->pluck('id')->contains($visibleClient->id) && ! $users->pluck('id')->contains($hiddenClient->id));
+
+        Livewire::test(Agentes::class)
+            ->assertViewHas('agents', fn ($agents) => $agents->pluck('id')->contains($visibleAgent->id) && ! $agents->pluck('id')->contains($hiddenAgent->id));
+
+        Livewire::test(PlatformsMaster::class)
+            ->assertViewHas('platforms', fn ($platforms) => $platforms->pluck('id')->contains($visiblePlatform->id) && ! $platforms->pluck('id')->contains($hiddenPlatform->id));
+
+        Livewire::test(Ventas::class)
+            ->assertViewHas('sales', fn ($sales) => $sales->pluck('id')->contains($visibleSale->id) && ! $sales->pluck('id')->contains($hiddenSale->id));
     }
 
     public function test_cajero_cannot_switch_to_another_vendor_line(): void

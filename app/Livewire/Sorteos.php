@@ -279,6 +279,7 @@ class Sorteos extends Component
     public function saveSelectedNumbers(): void
     {
         $this->checkLinePermission(Permissions::SORTEO_READ);
+        $this->requireVendorContextForWrite();
         $this->validate([
             'assignUserId' => 'required|integer|exists:users,id',
             'selectedNumbers' => 'required|array|min:1',
@@ -397,6 +398,7 @@ class Sorteos extends Component
     public function unassignSelectedNumbers(): void
     {
         $this->checkLinePermission(Permissions::SORTEO_READ);
+        $this->requireVendorContextForWrite();
         $this->validate([
             'selectedNumbers' => 'required|array|min:1',
             'selectedNumbers.*' => 'integer',
@@ -837,6 +839,15 @@ class Sorteos extends Component
 
         $platform = Platform::withoutGlobalScopes()->find((int) $this->platform_id);
         abort_unless($platform, 403, 'La plataforma seleccionada no existe.');
+
+        $lineVendorIds = Line::withoutGlobalScopes()
+            ->whereIn('id', collect($this->lineIds)->map(fn ($id) => (int) $id)->filter()->unique())
+            ->pluck('vendor_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique();
+
+        abort_unless(! $platform->vendor_id || $lineVendorIds->contains((int) $platform->vendor_id), 403, 'No podes usar plataformas fuera del vendor activo.');
     }
 
     private function assignmentLineId(?Raffle $raffle = null): ?int
@@ -883,7 +894,7 @@ class Sorteos extends Component
     private function assignableUsers(?Raffle $raffle)
     {
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
-        $vendorId = $this->isAdminMode() ? null : ($raffle?->vendor_id ?: session('active_vendor_id'));
+        $vendorId = $raffle?->vendor_id ?: session('active_vendor_id');
 
         return User::query()
             ->when($clientRoleId, fn ($query) => $query->where('role_id', $clientRoleId))
@@ -902,7 +913,7 @@ class Sorteos extends Component
         }
 
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
-        $vendorId = $this->isAdminMode() ? null : ($raffle->vendor_id ?: session('active_vendor_id'));
+        $vendorId = $raffle->vendor_id ?: session('active_vendor_id');
 
         return (! $clientRoleId || (int) $user->role_id === (int) $clientRoleId)
             && $user->status === 'active'
