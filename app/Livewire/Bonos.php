@@ -246,7 +246,7 @@ class Bonos extends Component
 
     public function assignToUser(): void
     {
-        $this->checkLinePermission(Permissions::BONO_READ);
+$this->checkLinePermission(Permissions::BONO_READ);
         $this->requireVendorContextForWrite();
 
         if (empty($this->assignUserIds)) {
@@ -317,9 +317,15 @@ class Bonos extends Component
             $assigned[] = $user->username ?? $user->email;
         }
 
+        if (empty($assigned)) {
+            $this->addError('assignUserIds', 'No se pudo asignar el bono. Los usuarios seleccionados ya alcanzaron el límite o no pertenecen a la línea.');
+
+            return;
+        }
+
         $msg = 'Bono otorgado a '.implode(', ', $assigned).'.';
         if ($skipped) {
-            $msg .= ' Omitidos (límite alcanzado): '.implode(', ', $skipped).'.';
+            $msg .= ' Omitidos: '.implode(', ', $skipped).'.';
         }
 
         session()->flash('message', $msg);
@@ -526,9 +532,10 @@ class Bonos extends Component
     public function getUsersForAssign(): array
     {
         $clientRoleId = Role::where('name', Roles::CLIENTE)->value('id');
-        $lineId = $this->selectedBonusId
-            ? (int) $this->accessibleBonusesQuery()->find($this->selectedBonusId)?->line_id
-            : (int) session('active_line_id');
+        $bonus = $this->selectedBonusId
+            ? $this->accessibleBonusesQuery()->find($this->selectedBonusId)
+            : null;
+        $lineId = $bonus ? (int) $bonus->line_id : (int) session('active_line_id');
         $vendorId = session('active_vendor_id');
 
         $query = User::withoutGlobalScopes()
@@ -544,6 +551,20 @@ class Bonos extends Component
             $query->when($vendorId, fn ($q) => $q->where('vendor_id', $vendorId));
         } elseif ($vendorId) {
             $query->where('vendor_id', $vendorId);
+        }
+
+        // Excluir usuarios que ya alcanzaron el límite para este bono
+        if ($bonus && ! is_null($bonus->per_user_limit)) {
+            $excludedIds = BonusAssignment::withoutGlobalScopes()
+                ->where('bonus_id', $bonus->id)
+                ->whereIn('status', Bonus::CONSUMED_STATUSES)
+                ->groupBy('user_id')
+                ->havingRaw('COUNT(*) >= ?', [$bonus->per_user_limit])
+                ->pluck('user_id');
+
+            if ($excludedIds->isNotEmpty()) {
+                $query->whereNotIn('id', $excludedIds);
+            }
         }
 
         return $query
