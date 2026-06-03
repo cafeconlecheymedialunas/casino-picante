@@ -49,7 +49,7 @@
                         @isset($tabs)
                             @foreach($tabs as $tabItem)
                                 <button type="button" class="lines-tab-btn {{ $tab === $tabItem['key'] ? 'active' : '' }}" wire:click="$set('tab', '{{ $tabItem['key'] }}')">
-                                    <i class="fa-solid fa-layer-group" style="font-size:11px"></i>
+                                    <i class="{{ $tabItem['icon'] ?: 'fa-solid fa-layer-group' }}" style="font-size:11px"></i>
                                     {{ $tabItem['title'] }}
                                     <span class="tab-count">{{ count($tabItem['item_ids'] ?? []) }}</span>
                                 </button>

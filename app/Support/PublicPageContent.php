@@ -69,6 +69,7 @@ class PublicPageContent
                     'key' => $key,
                     'title' => (string) ($tab['title'] ?? 'Tab'),
                     'subtitle' => (string) ($tab['subtitle'] ?? ''),
+                    'icon' => (string) ($tab['icon'] ?? ''),
                     'item_ids' => self::ids($tab['item_ids'] ?? []),
                 ];
             })
