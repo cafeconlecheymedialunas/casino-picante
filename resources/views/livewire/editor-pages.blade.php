@@ -154,23 +154,37 @@
         .ep-toast { position:fixed; right:22px; bottom:22px; z-index:80; padding:12px 15px; border-radius:10px; background:#120807; border:1px solid rgba(37,196,107,.38); color:var(--good); font-size:13px; font-weight:800; box-shadow:0 18px 50px rgba(0,0,0,.38); }
         .ep-toast.error { border-color:rgba(255,71,87,.42); color:#ff4757; }
 @media (max-width:900px) { .ep-head { flex-direction:column; } .ep-grid { grid-template-columns:1fr; } .ep-tabs-strip { padding:0 12px; } .ep-tab-row { min-width:124px; } .ep-tab-toolbar { flex-direction:column; align-items:stretch; } .ep-tab-actions { justify-content:flex-end; } }
+
+    /* ── Light theme ── */
+    [data-dashboard-theme="light"] .ep-head,
+    [data-dashboard-theme="light"] .ep-panel { background:#fffdf8 !important; background-image:none !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-panel-head,
+    [data-dashboard-theme="light"] .ep-actions-bottom { background:rgba(255,250,243,.94) !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-tabs-strip { background:rgba(244,234,220,.5) !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-tab-row { color:var(--muted) !important; }
+    [data-dashboard-theme="light"] .ep-tab-row:hover { background:rgba(255,106,26,.06) !important; }
+    [data-dashboard-theme="light"] .ep-tab-row.active { background:rgba(255,106,26,.08) !important; color:var(--white) !important; }
+    [data-dashboard-theme="light"] .ep-tab-icon { background:rgba(244,234,220,.9) !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-tab-toolbar { background:rgba(244,234,220,.5) !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-field input,
+    [data-dashboard-theme="light"] .ep-field textarea,
+    [data-dashboard-theme="light"] .ep-icon-search { background:#fff !important; color:var(--white) !important; border-color:var(--line-2) !important; }
+    [data-dashboard-theme="light"] .ep-icon-panel { background:rgba(244,234,220,.6) !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-icon-picker-current { background:rgba(244,234,220,.6) !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-icon-toggle,
+    [data-dashboard-theme="light"] .ep-icon-btn,
+    [data-dashboard-theme="light"] .ep-tabs-add { background:rgba(244,234,220,.78) !important; color:var(--muted) !important; border-color:var(--line) !important; }
+    [data-dashboard-theme="light"] .ep-nav a { background:rgba(244,234,220,.78) !important; border-color:var(--line) !important; color:var(--muted) !important; }
+    [data-dashboard-theme="light"] .ep-nav a.active { background:rgba(255,106,26,.1) !important; border-color:rgba(255,106,26,.4) !important; color:var(--orange) !important; }
     </style>
 
+@section('header')
+    <x-livewire.components.page-header
+        title="PÁGINA · {{ strtoupper($pageLabel) }}"
+        subtitle="Editor de contenido, tabs e items visibles en la página pública" />
+@endsection
+
     <div class="ep-page">
-        <div class="ep-head">
-            <div>
-                <h1 class="ep-title">Pagina <span>{{ $pageLabel }}</span></h1>
-                <p class="ep-copy">Edita el contenido superior, crea divisiones de tabs y elegi que items aparecen en cada una.</p>
-            </div>
-            <div class="ep-nav">
-                <a href="{{ route('admin.editor.inicio') }}" wire:navigate><i class="fa-solid fa-house"></i> Home</a>
-                <a href="{{ route('admin.editor.paginas', 'lineas') }}" wire:navigate class="{{ $page === 'lineas' ? 'active' : '' }}"><i class="fa-solid fa-layer-group"></i> Lineas</a>
-                <a href="{{ route('admin.editor.paginas', 'bonos') }}" wire:navigate class="{{ $page === 'bonos' ? 'active' : '' }}"><i class="fa-solid fa-gift"></i> Bonos</a>
-                <a href="{{ route('admin.editor.paginas', 'sorteos') }}" wire:navigate class="{{ $page === 'sorteos' ? 'active' : '' }}"><i class="fa-solid fa-dice"></i> Sorteos</a>
-                <a href="{{ route('admin.editor.paginas', 'cajeros') }}" wire:navigate class="{{ $page === 'cajeros' ? 'active' : '' }}"><i class="fa-solid fa-cash-register"></i> Cajeros</a>
-                <a href="{{ route('admin.editor.paginas', 'novedades') }}" wire:navigate class="{{ $page === 'novedades' ? 'active' : '' }}"><i class="fa-solid fa-newspaper"></i> Novedades</a>
-            </div>
-        </div>
 
         <div class="ep-panel">
             <div class="ep-panel-head">

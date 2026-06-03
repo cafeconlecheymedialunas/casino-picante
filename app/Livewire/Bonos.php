@@ -225,7 +225,7 @@ class Bonos extends Component
 
     public function openAssignModal(int $bonusId): void
     {
-        $this->checkLinePermission(Permissions::BONO_READ);
+        $this->checkLinePermission(Permissions::BONO_UPDATE);
         $this->requireVendorContextForWrite();
         $bonus = Bonus::withoutGlobalScopes()->findOrFail($bonusId);
         $this->authorizeLineChoice((int) $bonus->line_id);
@@ -246,7 +246,7 @@ class Bonos extends Component
 
     public function assignToUser(): void
     {
-$this->checkLinePermission(Permissions::BONO_READ);
+        $this->checkLinePermission(Permissions::BONO_UPDATE);
         $this->requireVendorContextForWrite();
 
         if (empty($this->assignUserIds)) {
@@ -336,7 +336,7 @@ $this->checkLinePermission(Permissions::BONO_READ);
 
     public function markClaimed(int $assignmentId): void
     {
-        $this->checkLinePermission(Permissions::BONO_READ);
+        $this->checkLinePermission(Permissions::BONO_UPDATE);
         $this->requireVendorContextForWrite();
         $assignment = BonusAssignment::withoutGlobalScopes()->with('bonus')->findOrFail($assignmentId);
         $this->authorizeLineChoice((int) $assignment->bonus->line_id);

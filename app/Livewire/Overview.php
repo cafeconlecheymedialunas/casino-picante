@@ -33,6 +33,7 @@ class Overview extends Component
 
     public $editLineId = null;
 
+
     public function getAlerts(): array
     {
         $alerts = [];

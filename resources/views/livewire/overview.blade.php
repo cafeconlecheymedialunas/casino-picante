@@ -3,6 +3,7 @@
     <x-livewire.components.page-header title="DASHBOARD" subtitle="Panel de control · {{ now()->format('d \d\e F Y') }}" />
 @endsection
 
+
     <style>
     .alert-bar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
     .alert-row {
@@ -819,6 +820,7 @@
     initOverviewCharts();
 })();
 </script>
+
 </div>
 
 

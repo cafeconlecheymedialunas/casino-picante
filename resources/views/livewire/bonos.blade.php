@@ -270,7 +270,7 @@
                             </button>
 
                             @if($this->canMutateVendorContext())
-                                @if($bonus->status === 'active')
+                                @if($bonus->status === 'active' && $this->hasLinePermission(\App\Support\Permissions::BONO_UPDATE))
                                 <button class="btn-action" wire:click="openAssignModal({{ $bonus->id }})" title="Otorgar bono a clientes">
                                     <i class="fa-solid fa-user-plus" style="font-size:10px"></i>
                                     Otorgar

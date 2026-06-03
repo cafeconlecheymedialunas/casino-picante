@@ -339,7 +339,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ]))
             ->name('chats');
 
-        Route::get('/plataformas', PlatformsMaster::class)
+        Route::get('/plataformas', fn () => redirect()->route('admin.configuracion'))
             ->middleware('panel.owner')
             ->name('plataformas');
 
@@ -372,15 +372,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('bonos');
 
         Route::match(['get', 'post'], '/editor-inicio', EditorHome::class)
-            ->middleware('line.authorize:'.Permissions::HOME_EDIT)
+            ->middleware(['admin', 'line.authorize:'.Permissions::HOME_EDIT])
             ->name('editor.inicio');
 
         Route::get('/paginas/{page?}', EditorPages::class)
-            ->middleware('line.authorize:'.Permissions::HOME_EDIT)
+            ->middleware(['admin', 'line.authorize:'.Permissions::HOME_EDIT])
             ->name('editor.paginas');
 
         Route::post('/editor-inicio/guardar-seccion', [HomeSectionController::class, 'saveSection'])
-            ->middleware('line.authorize:'.Permissions::HOME_EDIT)
+            ->middleware(['admin', 'line.authorize:'.Permissions::HOME_EDIT])
             ->name('editor.inicio.guardar');
 
         Route::get('/tickets', Tickets::class)

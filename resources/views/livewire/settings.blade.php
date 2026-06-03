@@ -96,12 +96,19 @@
                 <button type="button" wire:click="setTab('notifications')" class="sidebar-tab {{ $activeTab === 'notifications' ? 'active' : '' }}">
                     <span>NO</span> Notificaciones
                 </button>
+                @if(auth()->user()?->hasRole(\App\Support\Roles::ADMIN))
                 <button type="button" wire:click="setTab('brand')" class="sidebar-tab {{ $activeTab === 'brand' ? 'active' : '' }}">
                     <span>MA</span> Marca
                 </button>
+                @endif
                 <button type="button" wire:click="setTab('appearance')" class="sidebar-tab {{ $activeTab === 'appearance' ? 'active' : '' }}">
                     <span>AP</span> Apariencia
                 </button>
+                @if($this->isAdminMode())
+                <button type="button" wire:click="setTab('platforms')" class="sidebar-tab {{ $activeTab === 'platforms' ? 'active' : '' }}">
+                    <span>PL</span> Plataformas
+                </button>
+                @endif
             </nav>
         </aside>
         <main class="settings-content">
@@ -350,6 +357,10 @@
                             <button type="submit" class="btn-primary">Guardar apariencia</button>
                         </div>
                     </form>
+                </section>
+            @elseif($activeTab === 'platforms' && $this->isAdminMode())
+                <section class="settings-panel" style="padding:0">
+                    @livewire('platforms-master')
                 </section>
             @endif
         </main>

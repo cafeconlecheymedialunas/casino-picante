@@ -904,13 +904,8 @@
             </a>
             @endif
 
-            @if($sidebarIsPanelOwner)
-            <a href="{{ route('admin.plataformas') }}" wire:navigate class="sidebar-item {{ request()->routeIs('admin.plataformas*') ? 'active' : '' }}">
-                <span class="sidebar-item-icon"><i class="fa-solid fa-server"></i></span> Plataformas
-            </a>
-            @endif
 
-            @if($sidebarCanEditHome)
+            @if($sidebarIsAdmin && $sidebarCanEditHome)
             @php
                 $paginasActive = request()->routeIs('admin.editor.inicio*') || request()->routeIs('admin.editor.paginas*');
             @endphp

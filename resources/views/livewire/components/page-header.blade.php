@@ -19,8 +19,8 @@
                 </button>
             @endif
 
-            <div class="notification-menu" x-data="{ open: false }" @click.outside="open = false">
-                <button type="button" class="header-icon-btn" @click="open = !open" aria-label="Notificaciones">
+            <div class="notification-menu" x-data="{ isOpen: false }" @click.outside="isOpen = false">
+                <button type="button" class="header-icon-btn" @click="isOpen = !isOpen" aria-label="Notificaciones">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -30,7 +30,7 @@
                     @endif
                 </button>
 
-                <div class="header-dropdown notifications-dropdown" x-show="open" x-cloak x-transition>
+                <div class="header-dropdown notifications-dropdown" x-show="isOpen" x-cloak x-transition>
                     <div class="dropdown-head">
                         <strong>Notificaciones</strong>
                         <div style="display:flex;gap:6px;align-items:center;">
@@ -73,8 +73,8 @@
                 </div>
             </div>
 
-            <div class="profile-menu" x-data="{ open: false }" @click.outside="open = false">
-                <button type="button" class="profile-trigger" @click="open = !open">
+            <div class="profile-menu" x-data="{ isOpen: false }" @click.outside="isOpen = false">
+                <button type="button" class="profile-trigger" @click="isOpen = !isOpen">
                     <img src="{{ $avatarUrl }}" alt="{{ $displayName }}">
                     <span>
                         <strong>{{ $displayName }}</strong>
@@ -85,7 +85,7 @@
                     </svg>
                 </button>
 
-                <div class="header-dropdown profile-dropdown" x-show="open" x-cloak x-transition>
+                <div class="header-dropdown profile-dropdown" x-show="isOpen" x-cloak x-transition>
                     <a href="{{ route('admin.perfil') }}" wire:navigate>Mi perfil</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

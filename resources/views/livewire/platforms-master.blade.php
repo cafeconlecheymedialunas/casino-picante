@@ -1,7 +1,4 @@
 <div class="platforms-page">
-@section('header')
-    <x-livewire.components.page-header title="GESTIÓN GLOBAL DE PLATAFORMAS" subtitle="Catálogo maestro · los cambios se propagan a todas las líneas" />
-@endsection
 
 <div class="module-top-bar">
     @if($canManagePlatforms)
