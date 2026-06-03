@@ -38,17 +38,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        if (User::withoutGlobalScopes()->exists()) {
-            $this->command->info('Base con datos existentes — corriendo solo seeders complementarios.');
-            $this->call([
-                DirectVendorSeeder::class,
-                HomeSectionSeeder::class,
-                RaffleDemoSeeder::class,
-            ]);
+        $this->call(UnifiedDemoSeeder::class);
+    }
 
-            return;
-        }
-
+    public function runLegacy(): void
+    {
         $roles = $this->seedRoles();
 
         $admin = User::create([
