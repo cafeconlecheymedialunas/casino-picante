@@ -104,7 +104,7 @@
                 <button type="button" wire:click="setTab('appearance')" class="sidebar-tab {{ $activeTab === 'appearance' ? 'active' : '' }}">
                     <span>AP</span> Apariencia
                 </button>
-                @if($this->isAdminMode())
+                @if($this->isGlobalAdminMode())
                 <button type="button" wire:click="setTab('platforms')" class="sidebar-tab {{ $activeTab === 'platforms' ? 'active' : '' }}">
                     <span>PL</span> Plataformas
                 </button>
@@ -358,7 +358,7 @@
                         </div>
                     </form>
                 </section>
-            @elseif($activeTab === 'platforms' && $this->isAdminMode())
+            @elseif($activeTab === 'platforms' && $this->isGlobalAdminMode())
                 <section class="settings-panel" style="padding:0">
                     @livewire('platforms-master')
                 </section>

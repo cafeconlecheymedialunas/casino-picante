@@ -188,7 +188,7 @@ class PlatformsMaster extends Component
             })
             ->orderBy('name')
             ->get();
-        $canManagePlatforms = $this->isAdminMode();
+        $canManagePlatforms = $this->isGlobalAdminMode();
 
         return view('livewire.platforms-master', compact('platforms', 'canManagePlatforms'))->layout('layouts.dashboard');
     }
@@ -196,13 +196,13 @@ class PlatformsMaster extends Component
     private function ensureAdmin(): void
     {
         if (! $this->isAdminMode()) {
-            abort(403, 'Solo administradores y cajeros pueden gestionar plataformas.');
+            abort(403, 'Solo administradores pueden ver plataformas.');
         }
     }
 
     private function ensurePlatformAdmin(): void
     {
-        abort_unless($this->isAdminMode(), 403, 'Solo administradores y cajeros pueden gestionar plataformas.');
+        abort_unless($this->isGlobalAdminMode(), 403, 'Solo el administrador puede crear o editar plataformas.');
     }
 
     private function notifyPlatform(string $title, string $message, string $type): void
@@ -220,7 +220,6 @@ class PlatformsMaster extends Component
             return;
         }
 
-        // Solo plataformas universales (vendor_id null) son editables desde este catálogo
-        abort_unless($platform->vendor_id === null, 403, 'Solo se pueden editar plataformas del catálogo universal.');
+        abort_unless($this->isGlobalAdminMode(), 403, 'Solo el administrador puede editar plataformas.');
     }
 }

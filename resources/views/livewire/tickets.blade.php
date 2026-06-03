@@ -134,10 +134,37 @@
                 <button class="modal-close" wire:click="$set('showCreateModal', false)">✕</button>
             </div>
             <div class="modal-body">
+                {{-- Selector de cajero: solo admin global (sin cajero activo) --}}
+                @if($availableVendors->isNotEmpty())
                 <div class="form-group">
-                    <label class="form-label">Usuario</label>
-                    <select class="form-input" wire:model="createUserId">
-                        <option value="">Seleccionar usuario...</option>
+                    <label class="form-label">Cajero *</label>
+                    <select class="form-input @error('createVendorId') is-error @enderror" wire:model.live="createVendorId">
+                        <option value="">Seleccionar cajero...</option>
+                        @foreach($availableVendors as $vendor)
+                            <option value="{{ $vendor->id }}">{{ $vendor->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('createVendorId') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+                @endif
+
+                {{-- Línea --}}
+                <div class="form-group">
+                    <label class="form-label">Línea *</label>
+                    <select class="form-input @error('createLineId') is-error @enderror" wire:model.live="createLineId" @if($availableLines->isEmpty()) disabled @endif>
+                        <option value="">{{ $availableLines->isEmpty() ? 'Seleccioná un cajero primero...' : 'Seleccionar línea...' }}</option>
+                        @foreach($availableLines as $line)
+                            <option value="{{ $line->id }}">{{ $line->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('createLineId') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+
+                {{-- Cliente --}}
+                <div class="form-group">
+                    <label class="form-label">Cliente *</label>
+                    <select class="form-input @error('createUserId') is-error @enderror" wire:model="createUserId" @if($assignableUsers->isEmpty()) disabled @endif>
+                        <option value="">{{ $assignableUsers->isEmpty() ? 'Seleccioná una línea primero...' : 'Seleccionar cliente...' }}</option>
                         @foreach($assignableUsers as $u)
                             <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->username }})</option>
                         @endforeach

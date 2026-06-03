@@ -107,7 +107,7 @@ class BlogEdit extends Component
         session()->flash('message', 'Post actualizado correctamente');
         $this->notify('Post actualizado', "El post {$this->post->title} fue actualizado.", 'posts', '/novedades', 'info');
 
-        $this->redirectRoute('novedades');
+        $this->redirectRoute('admin.novedades');
     }
 
     public function removeImage(): void

@@ -159,7 +159,7 @@ class Agentes extends Component
             'phone' => trim($this->phone) ?: null,
             'avatar' => $this->avatar,
             'status' => $this->status,
-            'cargo' => $this->cargo,
+            'cargo' => 'agente',
         ];
 
         if ($this->password !== '') {
@@ -425,7 +425,7 @@ class Agentes extends Component
             'phone' => 'nullable|max:30',
             'avatar' => ['required', 'string', 'regex:/^avatar_[A-Za-z0-9_-]{1,80}$/'],
             'status' => 'required|in:active,inactive',
-            'cargo' => 'required|in:super_agente,agente',
+            'cargo' => 'nullable|in:super_agente,agente',
             'lineIds' => 'required|array|min:1',
             'lineIds.*' => 'integer|exists:lines,id',
         ];

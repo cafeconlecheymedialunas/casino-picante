@@ -558,6 +558,12 @@
                     @error('selectedLines') <div class="form-error">{{ $message }}</div> @enderror
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input type="email" wire:model="email" class="form-input @error('email') is-error @enderror" placeholder="cliente@email.com">
+                    @error('email') <div class="form-error">{{ $message }}</div> @enderror
+                </div>
+
                 <div class="form-row-2">
                     <div class="form-group">
                         <label class="form-label">Telefono</label>

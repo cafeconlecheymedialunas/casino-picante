@@ -2,11 +2,14 @@
 
 namespace App\Livewire;
 
+use App\Models\Line;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
+use App\Models\Vendor;
 use App\Services\NotificationService;
 use App\Support\Permissions;
+use App\Support\Roles;
 use App\Traits\HasLinePermissions;
 use App\Traits\SendsNotifications;
 use Livewire\Component;
@@ -40,6 +43,23 @@ class Tickets extends Component
 
     public string $createMessage = '';
 
+    public string $createLineId = '';
+
+    public string $createVendorId = '';
+
+    public function updatedCreateVendorId(): void
+    {
+        $this->createLineId = '';
+        $this->createUserId = '';
+        $this->resetValidation();
+    }
+
+    public function updatedCreateLineId(): void
+    {
+        $this->createUserId = '';
+        $this->resetValidation('createUserId');
+    }
+
     public function openCreateModal(): void
     {
         $this->checkLinePermission(Permissions::TICKET_UPDATE);
@@ -48,6 +68,8 @@ class Tickets extends Component
         $this->createUserId = '';
         $this->createPriority = 'medium';
         $this->createMessage = '';
+        $this->createLineId = (string) ($this->lineIdForScopedCreate() ?: '');
+        $this->createVendorId = (string) (session('active_vendor_id') ?: '');
         $this->resetValidation();
         $this->showCreateModal = true;
     }
@@ -57,29 +79,44 @@ class Tickets extends Component
         $this->checkLinePermission(Permissions::TICKET_UPDATE);
 
         $this->validate([
-            'createSubject' => 'required|string|min:3|max:255',
+            'createSubject'  => 'required|string|min:3|max:255',
             'createCategory' => 'required|in:juego,bono,sorteo,atencion,otro',
-            'createUserId' => 'required|integer|exists:users,id',
+            'createUserId'   => 'required|integer|exists:users,id',
             'createPriority' => 'required|in:low,medium,high',
-            'createMessage' => 'required|string|min:1',
+            'createMessage'  => 'required|string|min:1',
+            'createVendorId' => 'required|exists:vendors,id',
+            'createLineId'   => 'required|exists:lines,id',
         ]);
 
-        $lineId = $this->requireLineIdForScopedCreate();
+        $vendorId = (int) $this->createVendorId;
+        $lineId   = (int) $this->createLineId;
+
+        // Cajero / admin con vendor activo no puede salirse de su vendor
+        if ($activeVendor = session('active_vendor_id')) {
+            abort_unless((int) $activeVendor === $vendorId, 403, 'No podés crear tickets fuera de tu cajero.');
+        }
+
+        abort_unless(
+            Line::withoutGlobalScopes()->whereKey($lineId)->where('vendor_id', $vendorId)->exists(),
+            403,
+            'La línea no pertenece al cajero seleccionado.'
+        );
+
         $user = $this->findAssignableUserForTicket((int) $this->createUserId, $lineId);
         if (! $user) {
-            $this->addError('createUserId', 'Selecciona un cliente activo del vendor y la linea actual.');
+            $this->addError('createUserId', 'El cliente seleccionado no pertenece a esta línea.');
 
             return;
         }
 
         $ticket = Ticket::create([
-            'vendor_id' => $user->vendor_id ?: session('active_vendor_id'),
-            'user_id' => $user->id,
-            'line_id' => $lineId,
-            'subject' => trim($this->createSubject),
-            'category' => $this->createCategory,
-            'status' => 'open',
-            'priority' => $this->createPriority,
+            'vendor_id' => $vendorId,
+            'user_id'   => $user->id,
+            'line_id'   => $lineId,
+            'subject'   => trim($this->createSubject),
+            'category'  => $this->createCategory,
+            'status'    => 'open',
+            'priority'  => $this->createPriority,
         ]);
 
         TicketMessage::create([
@@ -285,11 +322,14 @@ class Tickets extends Component
 
         $query = $this->ticketQuery()->with(['user', 'line']);
 
-        $lineIds = $this->visibleLineIds();
-        if ($lineIds !== null) {
-            $query->where(fn ($ticket) => $ticket
-                ->whereIn('line_id', $lineIds)
-                ->orWhereNull('line_id'));
+        // Para agentes (no cajero/admin): filtrar por líneas asignadas
+        if (! $this->isAdminMode()) {
+            $lineIds = $this->visibleLineIds();
+            if ($lineIds !== null) {
+                $query->where(fn ($ticket) => $ticket
+                    ->whereIn('line_id', $lineIds)
+                    ->orWhereNull('line_id'));
+            }
         }
 
         if ($this->filter !== 'all') {
@@ -315,7 +355,7 @@ class Tickets extends Component
         $lineIds = $this->visibleLineIds();
 
         $base = $this->ticketQuery();
-        if ($lineIds !== null) {
+        if (! $this->isAdminMode() && $lineIds !== null) {
             $base->where(fn ($ticket) => $ticket
                 ->whereIn('line_id', $lineIds)
                 ->orWhereNull('line_id'));
@@ -332,17 +372,40 @@ class Tickets extends Component
     {
         $tickets = $this->getTickets();
         $metrics = $this->getMetrics();
-        $lineId = session('active_line_id');
-        $assignableUsers = User::where('status', 'active')
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
-            ->when($lineId, fn ($q) => $q->where(function ($inner) use ($lineId) {
-                $inner->where('line_id', $lineId)
-                    ->orWhereHas('lines', fn ($l) => $l->where('lines.id', $lineId)->where('line_clients.is_active', true));
-            }))
-            ->orderBy('name')
-            ->get(['id', 'name', 'username']);
+        $sessionVendorId = session('active_vendor_id');
 
-        return view('livewire.tickets', compact('tickets', 'metrics', 'assignableUsers'))->layout('layouts.dashboard');
+        // Vendor context for the create modal
+        $modalVendorId = $this->createVendorId ? (int) $this->createVendorId : ($sessionVendorId ? (int) $sessionVendorId : null);
+
+        $availableVendors = $this->isGlobalAdminMode()
+            ? Vendor::where('is_active', true)->orderBy('name')->get(['id', 'name'])
+            : collect();
+
+        $availableLines = $modalVendorId
+            ? Line::withoutGlobalScopes()
+                ->where('vendor_id', $modalVendorId)
+                ->where('status', 'active')
+                ->when(! $this->isAdminMode(), fn ($q) => $q->whereIn('id', $this->visibleLineIds() ?? []))
+                ->orderBy('name')
+                ->get()
+            : collect();
+
+        $filterLineId = $this->createLineId ? (int) $this->createLineId : null;
+
+        $assignableUsers = ($modalVendorId && $filterLineId)
+            ? User::withoutGlobalScopes()
+                ->whereHas('role', fn ($r) => $r->where('name', Roles::CLIENTE))
+                ->where('status', 'active')
+                ->where('vendor_id', $modalVendorId)
+                ->where(function ($q) use ($filterLineId) {
+                    $q->where('line_id', $filterLineId)
+                        ->orWhereHas('lines', fn ($l) => $l->where('lines.id', $filterLineId)->where('line_clients.is_active', true));
+                })
+                ->orderBy('name')
+                ->get(['id', 'name', 'username'])
+            : collect();
+
+        return view('livewire.tickets', compact('tickets', 'metrics', 'assignableUsers', 'availableLines', 'availableVendors'))->layout('layouts.dashboard');
     }
 
     public function categoryLabel(?string $category): string
@@ -359,10 +422,17 @@ class Tickets extends Component
 
     private function ticketIsVisible(Ticket $ticket): bool
     {
-        if (($vendorId = session('active_vendor_id')) && (int) $ticket->vendor_id !== (int) $vendorId) {
-            return false;
+        // Cajero / admin con vendor activo: el ticketQuery ya filtra por vendor, solo verificar que coincida
+        if ($vendorId = session('active_vendor_id')) {
+            return (int) $ticket->vendor_id === (int) $vendorId;
         }
 
+        // Admin global: ve todos
+        if ($this->isAdminMode()) {
+            return true;
+        }
+
+        // Agente: solo tickets de sus líneas asignadas
         $visibleLineIds = $this->visibleLineIds();
 
         return $visibleLineIds === null
@@ -373,7 +443,7 @@ class Tickets extends Component
     private function ticketQuery()
     {
         return Ticket::withoutGlobalScopes()
-            ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId));
+            ->when(session('active_vendor_id'), fn ($q, $vendorId) => $q->where('vendor_id', (int) $vendorId));
     }
 
     private function findAssignableUserForTicket(int $userId, int $lineId): ?User

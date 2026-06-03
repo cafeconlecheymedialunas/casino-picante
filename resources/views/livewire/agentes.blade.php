@@ -366,14 +366,6 @@
                             @error('phone') <div class="form-error">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Cargo</label>
-                            <select wire:model="cargo" class="form-input">
-                                <option value="super_agente">Encargado</option>
-                                <option value="agente">Agente</option>
-                            </select>
-                            @error('cargo') <div class="form-error">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="form-group">
                             <label class="form-label">Estado</label>
                             <select wire:model="status" class="form-input">
                                 <option value="active">Activo</option>

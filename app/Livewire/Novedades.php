@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Agent;
 use App\Models\Category;
+use App\Models\Line;
 use App\Models\LineAgent;
 use App\Models\Post;
 use App\Support\ImageStorage;
@@ -43,6 +44,8 @@ class Novedades extends Component
 
     public $author_agent_id = '';
 
+    public $line_id = '';
+
     public $image = '';
 
     public $imageUpload = null;
@@ -57,6 +60,7 @@ class Novedades extends Component
         'status' => 'required|in:draft,published,hidden',
         'category_id' => 'nullable|exists:categories,id',
         'author_agent_id' => 'nullable|exists:agents,id',
+        'line_id' => 'nullable|exists:lines,id',
     ];
 
     public function updatingSearch(): void
@@ -145,6 +149,7 @@ class Novedades extends Component
         $this->status = 'published';
         $this->category_id = '';
         $this->author_agent_id = session('active_agent_id') ?: '';
+        $this->line_id = (string) ($this->lineIdForScopedCreate() ?: '');
         $this->image = '';
         $this->imageUpload = null;
     }
@@ -165,6 +170,17 @@ class Novedades extends Component
             $imagePath = ImageStorage::store($this->imageUpload, 'contenidos');
         }
 
+        $lineId = $this->line_id
+            ? (int) $this->line_id
+            : $this->lineIdForScopedCreate();
+
+        if (! $lineId) {
+            $this->addError('line_id', 'Selecciona una línea antes de crear el post.');
+            return;
+        }
+
+        $this->authorizeLineIdForPost((int) $lineId);
+
         $post = Post::create([
             'title' => $this->title,
             'slug' => Str::slug($this->title).'-'.uniqid(),
@@ -175,7 +191,7 @@ class Novedades extends Component
             'category_id' => $this->category_id ?: null,
             'author_agent_id' => $this->author_agent_id ?: null,
             'image' => $imagePath,
-            'line_id' => $this->requireLineIdForScopedCreate(),
+            'line_id' => $lineId,
         ]);
 
         session()->flash('message', 'Post creado correctamente');
@@ -256,6 +272,7 @@ class Novedades extends Component
             'categories' => Category::where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', session('active_vendor_id')))->orderBy('name')->get(),
             'authors' => $this->availableAuthors(),
             'canDelete' => $this->canDelete(),
+            'availableLines' => $this->availablePostLines(),
         ])->layout('layouts.dashboard');
     }
 
@@ -296,6 +313,35 @@ class Novedades extends Component
         }
 
         abort_unless(Category::whereKey((int) $categoryId)->where(fn ($q) => $q->whereNull('vendor_id')->orWhere('vendor_id', (int) session('active_vendor_id')))->exists(), 403, 'No podes usar categorias fuera de tu vendor.');
+    }
+
+    private function availablePostLines()
+    {
+        $vendorId = session('active_vendor_id');
+        $lineIds = $this->visibleLineIds();
+
+        $query = Line::withoutGlobalScopes()
+            ->where('status', 'active')
+            ->when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+            ->orderBy('name');
+
+        if ($lineIds !== null) {
+            $query->whereIn('id', $lineIds);
+        }
+
+        return $query->get();
+    }
+
+    private function authorizeLineIdForPost(int $lineId): void
+    {
+        $vendorId = session('active_vendor_id');
+        $exists = Line::withoutGlobalScopes()
+            ->whereKey($lineId)
+            ->where('status', 'active')
+            ->when($vendorId, fn ($q) => $q->where('vendor_id', (int) $vendorId))
+            ->exists();
+
+        abort_unless($exists, 403, 'No podes publicar en esa línea.');
     }
 
     private function authorizeVendorRecord($model): void

@@ -27,6 +27,19 @@
                 <label class="form-label">Resumen breve</label>
                 <input type="text" wire:model="excerpt" class="form-input" placeholder="Breve descripción...">
             </div>
+            @if($availableLines->count() > 1)
+            <div class="form-group">
+                <label class="form-label">Línea *</label>
+                <select wire:model="line_id" class="form-input @error('line_id') is-error @enderror">
+                    <option value="">Seleccionar línea...</option>
+                    @foreach($availableLines as $line)
+                        <option value="{{ $line->id }}">{{ $line->name }}</option>
+                    @endforeach
+                </select>
+                @error('line_id') <div class="form-error">{{ $message }}</div> @enderror
+            </div>
+            @endif
+
             <div class="form-group">
                 <label class="form-label">Categoría</label>
                 <select wire:model="category_id" class="form-input">
