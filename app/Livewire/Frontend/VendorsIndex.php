@@ -14,7 +14,7 @@ class VendorsIndex extends Component
         $tabs        = PublicPageContent::tabs($pageSection);
         $selectedIds = collect($tabs)->flatMap(fn ($t) => $t['item_ids'] ?? [])->unique()->filter()->values()->all();
 
-        $baseQuery = Vendor::query()
+        $baseQuery = Vendor::withoutGlobalScopes()
             ->with(['user'])
             ->withCount(['lines as active_lines_count' => fn ($q) => $q->where('status', 'active')])
             ->leftJoin('lines', 'vendors.id', '=', 'lines.vendor_id')

@@ -249,8 +249,8 @@ class EditorPages extends Component
 
     private function ensureCanEditPages(): void
     {
-        if (! $this->hasLinePermission(Permissions::HOME_EDIT)) {
-            abort(403, 'Sin permiso para editar paginas.');
+        if (! $this->isGlobalAdminMode()) {
+            abort(403, 'Solo el administrador puede editar páginas.');
         }
     }
 }
