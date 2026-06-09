@@ -58,6 +58,19 @@
         'youtube' => 'fa-brands fa-youtube',
     ];
 
+    $channelBrand = [
+        'wsp' => 'whatsapp', 'wsap' => 'whatsapp', 'wa' => 'whatsapp', 'whatsapp' => 'whatsapp',
+        'telegram' => 'telegram', 'tg' => 'telegram',
+        'instagram' => 'instagram', 'ig' => 'instagram',
+        'facebook' => 'facebook', 'fb' => 'facebook',
+        'phone' => 'phone', 'telefono' => 'phone', 'tel' => 'phone',
+        'email' => 'email', 'mail' => 'email',
+        'tiktok' => 'tiktok',
+        'twitter' => 'twitter', 'x' => 'twitter',
+        'youtube' => 'youtube',
+        'web' => 'web',
+    ];
+
     $contactHref = function (array $contact): string {
         $value = trim((string) ($contact['value'] ?? ''));
         $type = strtolower(trim((string) ($contact['type'] ?? 'web')));
@@ -127,23 +140,21 @@
                     @endif
 
                     <div class="vd-contact-widget">
-                        <div class="vd-contact-widget-head">
-                            <span>Canales directos</span>
-                            <strong>{{ $contacts->count() }} disponibles</strong>
+                        <div class="vd-cw-head">
+                            <span class="vd-cw-line"></span>
+                            <span class="vd-cw-title">Atención al cliente</span>
                         </div>
                         <div class="vd-contact-widget-list">
                             @forelse($contacts as $contact)
                                 @php
                                     $type = strtolower(trim((string) ($contact['type'] ?? 'web')));
+                                    $brand = $channelBrand[$type] ?? 'web';
                                     $icon = $channelIcons[$type] ?? 'fa-solid fa-link';
                                     $contactLabel = $contact['name'] ?: ucfirst($type ?: 'Contacto');
                                 @endphp
-                                <a href="{{ $contactHref($contact) }}" target="_blank" rel="noopener" class="vd-contact-row">
-                                    <i class="{{ $icon }}"></i>
-                                    <span>
-                                        <strong>{{ $contactLabel }}</strong>
-                                    </span>
-                                    <b class="fa-solid fa-chevron-right"></b>
+                                <a href="{{ $contactHref($contact) }}" target="_blank" rel="noopener" class="vd-contact-row vd-brand-{{ $brand }}">
+                                    <div class="vd-cr-icon"><i class="{{ $icon }}"></i></div>
+                                    <strong>{{ $contactLabel }}</strong>
                                 </a>
                             @empty
                                 <div class="vd-empty compact">Sin contactos publicados.</div>
@@ -352,18 +363,48 @@
     .vd-benefits strong { color: #fff; font-size: 11px; text-transform: uppercase; }
     .vd-benefits span { color: rgba(255,255,255,.58); font-size: 10px; line-height: 1.3; }
     .vd-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 26px; }
-    .vd-contact-widget { width: min(100%, 430px); margin-top: 26px; border: 1px solid rgba(255,106,26,.26); border-radius: 10px; background: linear-gradient(180deg, rgba(255,255,255,.075), rgba(255,255,255,.035)); box-shadow: 0 18px 48px rgba(0,0,0,.28); backdrop-filter: blur(10px); padding: 14px; }
-    .vd-contact-widget-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-    .vd-contact-widget-head span { color: rgba(255,255,255,.62); font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-    .vd-contact-widget-head strong { color: var(--orange); font-size: 10px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
-    .vd-contact-widget-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
-    .vd-contact-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) 12px; gap: 10px; align-items: center; border: 1px solid rgba(255,255,255,.09); border-radius: 9px; background: rgba(255,255,255,.045); padding: 9px; color: #fff; text-decoration: none; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
-    .vd-contact-row:hover { transform: translateY(-1px); border-color: rgba(255,106,26,.36); background: rgba(255,106,26,.07); }
-    .vd-contact-row > i { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: rgba(255,106,26,.1); color: var(--orange); font-size: 16px; }
-    .vd-contact-row strong, .vd-contact-row em { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .vd-contact-row strong { color: #fff; font-size: 12px; }
-    .vd-contact-row em { color: rgba(255,255,255,.56); font-size: 10px; font-style: normal; margin-top: 2px; }
-    .vd-contact-row b { color: var(--orange); font-size: 10px; }
+    .vd-contact-widget { width: min(100%, 480px); margin-top: 26px; }
+    .vd-cw-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .vd-cw-line { display: block; width: 28px; height: 3px; background: var(--orange); border-radius: 2px; flex-shrink: 0; }
+    .vd-cw-title { color: #fff; font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+    .vd-contact-widget-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .vd-contact-row { display: flex; align-items: center; gap: 16px; border-radius: 14px; padding: 14px 20px; color: #fff; text-decoration: none; transition: filter .18s ease, transform .18s ease; min-height: 64px; }
+    .vd-contact-row:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    .vd-cr-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
+    .vd-contact-row strong { color: #fff; font-size: 15px; font-weight: 900; }
+
+    /* Brand colors per channel */
+
+    .vd-brand-whatsapp  { border-color: #25D366; background: #25D366; }
+    .vd-brand-whatsapp:hover { background: #1ebe58; border-color: #1ebe58; }
+
+    .vd-brand-telegram  { border-color: #229ED9; background: #229ED9; }
+    .vd-brand-telegram:hover { background: #1a8ec4; border-color: #1a8ec4; }
+
+    .vd-brand-instagram { border-color: #dc2743; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+    .vd-brand-instagram:hover { filter: brightness(1.1); }
+
+    .vd-brand-facebook  { border-color: #1877F2; background: #1877F2; }
+    .vd-brand-facebook:hover { background: #1166d6; border-color: #1166d6; }
+
+    .vd-brand-tiktok    { border-color: #333; background: #010101; }
+    .vd-brand-tiktok > i { color: #69c9d0 !important; }
+    .vd-brand-tiktok:hover  { background: #111; border-color: #69c9d0; }
+
+    .vd-brand-twitter   { border-color: #333; background: #000; }
+    .vd-brand-twitter:hover { background: #111; border-color: #555; }
+
+    .vd-brand-youtube   { border-color: #FF0000; background: #FF0000; }
+    .vd-brand-youtube:hover { background: #e00000; border-color: #e00000; }
+
+    .vd-brand-phone     { border-color: #128C7E; background: #128C7E; }
+    .vd-brand-phone:hover   { background: #0e7a6d; border-color: #0e7a6d; }
+
+    .vd-brand-email     { border-color: #EA4335; background: #EA4335; }
+    .vd-brand-email:hover   { background: #d33426; border-color: #d33426; }
+
+    .vd-brand-web       { border-color: #475569; background: #475569; }
+    .vd-brand-web:hover     { background: #374558; border-color: #374558; }
     .vd-btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border-radius: 8px; padding: 0 22px; text-decoration: none; font-size: 12px; font-weight: 900; text-transform: uppercase; border: 1px solid transparent; }
     .vd-btn-primary { background: linear-gradient(180deg, #ff8a3d, var(--orange) 62%, #e6580f); color: #190702; box-shadow: 0 14px 34px rgba(255,106,26,.34); }
     .vd-btn-ghost { border-color: rgba(255,106,26,.44); color: #fff; background: rgba(255,106,26,.05); }

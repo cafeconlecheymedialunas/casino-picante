@@ -161,18 +161,9 @@
             </article>
 
             <div class="line-detail-grid">
-                <div class="line-panel">
-                    <h2 class="line-panel-title">Informacion</h2>
-                    <div class="line-info-row"><span>Estado</span><strong>Activa</strong></div>
-                    <div class="line-info-row"><span>Plataformas disponibles</span><strong>{{ $platforms->count() }}</strong></div>
-                    <div class="line-info-row"><span>Canales publicados</span><strong>{{ $contacts->count() }}</strong></div>
-                    @if($line->type)
-                        <div class="line-info-row"><span>Tipo</span><strong>{{ ucfirst($line->type) }}</strong></div>
-                    @endif
-                </div>
 
                 <div class="line-panel">
-                    <h2 class="line-panel-title">Canales de contacto</h2>
+                    <h2 class="line-panel-title">Canales directos</h2>
                     <div class="detail-channel-list">
                         @include('frontend.components.contact-icons', [
                             'contacts' => $contacts,
