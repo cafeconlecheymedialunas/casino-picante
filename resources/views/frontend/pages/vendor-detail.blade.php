@@ -368,9 +368,9 @@
     .vd-cw-line { display: block; width: 28px; height: 3px; background: var(--orange); border-radius: 2px; flex-shrink: 0; }
     .vd-cw-title { color: #fff; font-size: 13px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
     .vd-contact-widget-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .vd-contact-row { display: flex; align-items: center; gap: 16px; border-radius: 14px; padding: 14px 20px; color: #fff; text-decoration: none; transition: filter .18s ease, transform .18s ease; min-height: 64px; }
+    .vd-contact-row { display: flex; align-items: center; gap: 16px; border-radius: 14px; padding: 14px 20px; color: #fff; text-decoration: none; transition: filter .18s ease, transform .18s ease; }
     .vd-contact-row:hover { transform: translateY(-2px); filter: brightness(1.1); }
-    .vd-cr-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
+    .vd-cr-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
     .vd-contact-row strong { color: #fff; font-size: 15px; font-weight: 900; }
 
     /* Brand colors per channel */
