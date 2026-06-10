@@ -9,8 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sales', function (Blueprint $table) {
-            // Drop old unique constraint before removing columns
+            $table->dropForeign(['line_id']);
+            $table->dropForeign(['platform_id']);
             $table->dropUnique(['line_id', 'platform_id', 'mes', 'anio']);
+            $table->foreign('line_id')->references('id')->on('lines')->onDelete('cascade');
+            $table->foreign('platform_id')->references('id')->on('platforms')->onDelete('cascade');
 
             $table->date('fecha')->nullable()->after('platform_id');
             $table->string('descripcion', 255)->nullable()->after('fecha');
