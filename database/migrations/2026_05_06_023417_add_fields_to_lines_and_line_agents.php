@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('lines', function (Blueprint $table) {
-            $table->string('portada_url')->nullable()->after('best_sales');
-            $table->string('perfil_url')->nullable()->after('portada_url');
+            $table->string('portada_url')->nullable();
+            $table->string('perfil_url')->nullable();
         });
 
         Schema::table('line_agents', function (Blueprint $table) {
