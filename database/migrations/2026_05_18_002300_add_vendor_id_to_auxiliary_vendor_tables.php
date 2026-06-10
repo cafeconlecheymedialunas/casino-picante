@@ -52,23 +52,23 @@ return new class extends Migration
 
     private function backfill(): void
     {
-        $updates = [
-            'agents' => 'select vendor_id from users where users.id = agents.user_id',
-            'bonus_assignments' => 'select vendor_id from bonuses where bonuses.id = bonus_assignments.bonus_id',
-            'raffle_numbers' => 'select vendor_id from raffles where raffles.id = raffle_numbers.raffle_id',
-            'line_ratings' => 'select vendor_id from lines where lines.id = line_ratings.line_id',
-            'notification_preferences' => 'select vendor_id from agents where agents.id = notification_preferences.agent_id',
-            'line_agents' => 'select vendor_id from lines where lines.id = line_agents.line_id',
-            'line_agent_permissions' => 'select vendor_id from lines where lines.id = line_agent_permissions.line_id',
-            'line_clients' => 'select vendor_id from lines where lines.id = line_clients.line_id',
-            'line_platform' => 'select vendor_id from lines where lines.id = line_platform.line_id',
-            'line_raffle' => 'select vendor_id from lines where lines.id = line_raffle.line_id',
-            'user_notifications' => 'select vendor_id from users where users.id = user_notifications.user_id',
+        $joins = [
+            'agents'                  => ['users',   'users.id = agents.user_id'],
+            'bonus_assignments'       => ['bonuses',  'bonuses.id = bonus_assignments.bonus_id'],
+            'raffle_numbers'          => ['raffles',  'raffles.id = raffle_numbers.raffle_id'],
+            'line_ratings'            => ['lines',    'lines.id = line_ratings.line_id'],
+            'notification_preferences'=> ['agents',   'agents.id = notification_preferences.agent_id'],
+            'line_agents'             => ['lines',    'lines.id = line_agents.line_id'],
+            'line_agent_permissions'  => ['lines',    'lines.id = line_agent_permissions.line_id'],
+            'line_clients'            => ['lines',    'lines.id = line_clients.line_id'],
+            'line_platform'           => ['lines',    'lines.id = line_platform.line_id'],
+            'line_raffle'             => ['lines',    'lines.id = line_raffle.line_id'],
+            'user_notifications'      => ['users',    'users.id = user_notifications.user_id'],
         ];
 
-        foreach ($updates as $tableName => $subquery) {
+        foreach ($joins as $tableName => [$joinTable, $joinCondition]) {
             if (Schema::hasTable($tableName) && Schema::hasColumn($tableName, 'vendor_id')) {
-                DB::statement("update {$tableName} set vendor_id = ({$subquery}) where vendor_id is null");
+                DB::statement("UPDATE `{$tableName}` INNER JOIN `{$joinTable}` ON {$joinCondition} SET `{$tableName}`.vendor_id = `{$joinTable}`.vendor_id WHERE `{$tableName}`.vendor_id IS NULL");
             }
         }
     }

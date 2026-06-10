@@ -24,7 +24,11 @@ return new class extends Migration
         });
 
         // Backfill fecha from fecha_inicio for existing rows (if any)
-        DB::statement('UPDATE sales SET fecha = date(\'now\') WHERE fecha IS NULL');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('UPDATE sales SET fecha = CURDATE() WHERE fecha IS NULL');
+        } else {
+            DB::statement("UPDATE sales SET fecha = date('now') WHERE fecha IS NULL");
+        }
 
         Schema::table('sales', function (Blueprint $table) {
             $table->date('fecha')->nullable(false)->change();
