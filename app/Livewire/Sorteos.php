@@ -954,12 +954,24 @@ class Sorteos extends Component
 
     private function backfillRaffleLines(): void
     {
+        $existingLineIds = Line::withoutGlobalScopes()->pluck('id')->map(fn ($id) => (int) $id)->flip();
+
         Raffle::withoutGlobalScopes()
             ->when(session('active_vendor_id'), fn ($query, $vendorId) => $query->where('vendor_id', (int) $vendorId))
             ->whereDoesntHave('lines')
             ->whereNotNull('line_id')
             ->get()
-            ->each(fn (Raffle $raffle) => $this->syncRaffleLines($raffle, [(int) $raffle->line_id], false));
+            ->each(function (Raffle $raffle) use ($existingLineIds) {
+                $lineId = (int) $raffle->line_id;
+
+                if (! $existingLineIds->has($lineId)) {
+                    $raffle->updateQuietly(['line_id' => null]);
+
+                    return;
+                }
+
+                $this->syncRaffleLines($raffle, [$lineId], false);
+            });
     }
 
     private function syncRaffleLines(Raffle $raffle, ?array $lineIds = null, bool $detaching = true): void

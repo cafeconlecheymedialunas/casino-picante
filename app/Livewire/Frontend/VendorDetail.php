@@ -84,7 +84,7 @@ class VendorDetail extends Component
             'lineLimit' => $lineLimit,
             'bonusLimit' => $bonusLimit,
             'raffleLimit' => $raffleLimit,
-            'totalPlatforms' => Platform::whereHas('lines', fn ($q) => $q->withoutGlobalScopes()->whereIn('lines.id', $allLineIds)->wherePivot('is_active', true)
+            'totalPlatforms' => Platform::whereHas('lines', fn ($q) => $q->withoutGlobalScopes()->whereIn('lines.id', $allLineIds)->where('line_platform.is_active', true)
             )->where('is_active', true)->count(),
             'averageRating' => round((float) \App\Models\LineRating::withoutGlobalScopes()
                 ->whereIn('line_id', $allLineIds)->avg('rating') ?? 0, 1),
