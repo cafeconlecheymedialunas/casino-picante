@@ -101,7 +101,7 @@
 @endphp
 
 <div class="vendor-detail-page">
-    <section class="vd-hero"{{ $heroImageUrl ? " style=\"--vendor-hero-image: url('{$heroImageUrl}')\"" : '' }}>
+    <section class="vd-hero"{!! $heroImageUrl ? " style=\"--vendor-hero-image: url('{$heroImageUrl}')\"" : '' !!}>
         <div class="vd-shell">
             @include('frontend.components.breadcrumbs', [
                 'items' => [
