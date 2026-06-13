@@ -517,7 +517,7 @@ class EditorHome extends Component
 
     private function ensureCanEditHome(): void
     {
-        if (! $this->isGlobalAdminMode()) {
+        if (! auth()->user()?->hasRole(\App\Support\Roles::ADMIN)) {
             abort(403, 'Solo el administrador puede editar la home.');
         }
     }
