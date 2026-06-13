@@ -249,7 +249,7 @@ class EditorPages extends Component
 
     private function ensureCanEditPages(): void
     {
-        if (! $this->isGlobalAdminMode()) {
+        if (! auth()->user()?->hasRole(\App\Support\Roles::ADMIN)) {
             abort(403, 'Solo el administrador puede editar páginas.');
         }
     }

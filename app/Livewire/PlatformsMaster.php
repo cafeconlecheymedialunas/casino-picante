@@ -202,7 +202,7 @@ class PlatformsMaster extends Component
 
     private function ensurePlatformAdmin(): void
     {
-        abort_unless($this->isGlobalAdminMode(), 403, 'Solo el administrador puede crear o editar plataformas.');
+        abort_unless(auth()->user()?->hasRole(\App\Support\Roles::ADMIN), 403, 'Solo el administrador puede crear o editar plataformas.');
     }
 
     private function notifyPlatform(string $title, string $message, string $type): void
@@ -220,6 +220,6 @@ class PlatformsMaster extends Component
             return;
         }
 
-        abort_unless($this->isGlobalAdminMode(), 403, 'Solo el administrador puede editar plataformas.');
+        abort_unless(auth()->user()?->hasRole(\App\Support\Roles::ADMIN), 403, 'Solo el administrador puede editar plataformas.');
     }
 }
