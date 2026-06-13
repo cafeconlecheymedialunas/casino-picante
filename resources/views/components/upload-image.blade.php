@@ -10,7 +10,11 @@
 
 @php
     $refName = 'input_' . md5($model);
-    $previewUrl = $value ? asset('storage/' . $value) : '';
+    $previewUrl = $value
+        ? (str_starts_with($value, 'http://') || str_starts_with($value, 'https://') || str_starts_with($value, '/')
+            ? $value
+            : asset('storage/' . $value))
+        : '';
 @endphp
 
 <div class="upload-image-field" x-data="{ preview: '{{ $previewUrl }}' }">
