@@ -162,7 +162,7 @@
 
                             <div class="settings-field full">
                                 <label class="settings-label">Contactos</label>
-                                <livewire:components.contact-repeater wire:model="contacts" />
+                                <livewire:components.contact-repeater wire:model="contacts" wire:key="settings-contacts" />
                                 @error('contacts') <div class="settings-error">{{ $message }}</div> @enderror
                             </div>
 

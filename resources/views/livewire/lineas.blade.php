@@ -1027,7 +1027,7 @@
                     Canales de contacto de esta línea (WhatsApp, Telegram, etc.).
                 </p>
 
-                <livewire:components.contact-repeater wire:model="channels" />
+                <livewire:components.contact-repeater wire:model="channels" wire:key="linea-channels-{{ $editingLineId ?? 'new' }}" />
 
             </form>
         </div>

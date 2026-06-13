@@ -218,7 +218,7 @@
                 {{-- Contactos --}}
                 <div class="form-group">
                     <label class="form-label">Contactos</label>
-                    <livewire:components.contact-repeater wire:model="contacts" />
+                    <livewire:components.contact-repeater wire:model="contacts" wire:key="vendor-contacts-{{ $vendorId ?? 'new' }}" />
                 </div>
 
                 {{-- Características --}}
