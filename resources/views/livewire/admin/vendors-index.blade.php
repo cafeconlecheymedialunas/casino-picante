@@ -199,10 +199,10 @@
                         <x-upload-image label="Logo (cuadrado)" model="logoUpload" :value="$logo" removeAction="removeLogo" aspect="1" hint="PNG/JPG" />
                     </div>
                     <div class="form-group">
-                        <x-upload-image label="Hero / Banner" model="heroImageUpload" :value="$heroImage" removeAction="removeHeroImage" aspect="16/9" hint="Fondo de la página" />
+                        <x-upload-image label="Foto del cajero (cara)" model="heroImageUpload" :value="$heroImage" removeAction="removeHeroImage" aspect="3/4" hint="Foto de perfil / avatar" />
                     </div>
                     <div class="form-group">
-                        <x-upload-image label="Foto de Perfil" model="portraitImageUpload" :value="$portraitImage" removeAction="removePortraitImage" aspect="3/4" hint="Tarjeta del cajero" />
+                        <x-upload-image label="Portada / Banner de fondo" model="portraitImageUpload" :value="$portraitImage" removeAction="removePortraitImage" aspect="16/9" hint="Imagen grande del hero" />
                     </div>
                 </div>
 

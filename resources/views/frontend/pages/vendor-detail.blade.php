@@ -12,8 +12,8 @@
     };
 
     $logoUrl = $assetUrl($vendor->logo);
-    $heroImageUrl = $assetUrl($vendor->hero_image);
-    $portraitImageUrl = $assetUrl($vendor->portrait_image) ?: $logoUrl;
+    $heroImageUrl = $assetUrl($vendor->portrait_image);
+    $portraitImageUrl = $assetUrl($vendor->hero_image) ?: $logoUrl;
     $cajeroDisplayName = trim(($cajero?->name ?? '').' '.($cajero?->apellido ?? ''));
     $displayName = $cajeroDisplayName ?: $vendor->name;
     $phone = $cajero?->phone;
@@ -343,7 +343,7 @@
     }
     .vd-shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
     .vd-hero { position: relative; min-height: 650px; padding: 22px 0 74px; background: linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,.72)); }
-    .vd-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.18) 0%, rgba(0,0,0,.52) 55%, rgba(0,0,0,.92) 100%), var(--vendor-hero-image); background-size: cover; background-position: center left; }
+    .vd-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.42) 45%, rgba(0,0,0,.10) 100%), var(--vendor-hero-image); background-size: cover; background-position: center center; }
     .vd-hero::after { display: none; }
     .vd-hero > .vd-shell { position: relative; z-index: 1; }
     .vd-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 78px; position: relative; z-index: 4; }
@@ -519,10 +519,10 @@
     .vd-hero { min-height: 680px; padding-bottom: 88px; }
     .vd-hero::before {
         background:
-            linear-gradient(90deg, rgba(0,0,0,.12) 0%, rgba(0,0,0,.48) 52%, rgba(0,0,0,.92) 100%),
+            linear-gradient(90deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,.42) 45%, rgba(0,0,0,.10) 100%),
             var(--vendor-hero-image);
         background-size: cover;
-        background-position: center left;
+        background-position: center center;
         opacity: 1;
         transform: scale(1.01);
     }

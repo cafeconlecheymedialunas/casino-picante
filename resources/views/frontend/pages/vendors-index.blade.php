@@ -72,7 +72,7 @@
             <div class="vpi-grid">
                 @foreach($vendors as $vendor)
                     @php
-                        $logo = $assetUrl($vendor->logo);
+                        $logo = $assetUrl($vendor->logo) ?: $assetUrl($vendor->hero_image);
                         $portrait = $assetUrl($vendor->portrait_image);
                         $contacts = collect($vendor->contacts ?? [])->filter(fn ($contact) => filled($contact['value'] ?? null))->values();
                         $primaryContact = $contacts->first();
