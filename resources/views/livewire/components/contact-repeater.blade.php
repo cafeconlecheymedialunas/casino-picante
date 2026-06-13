@@ -3,21 +3,21 @@
     <div class="contact-row" wire:key="cr-{{ $index }}">
         <div class="contact-row-header">Canal de contacto</div>
         <div class="contact-main">
-            <select wire:model="{{ $fieldName }}.{{ $index }}.type" class="contact-type">
+            <select wire:model.live="{{ $fieldName }}.{{ $index }}.type" class="contact-type">
                 @foreach($types as $type => $label)
                 <option value="{{ $type }}">{{ $label }}</option>
                 @endforeach
             </select>
-            <input 
-                type="text" 
-                wire:model="{{ $fieldName }}.{{ $index }}.value" 
-                placeholder="URL, email, telefono o usuario" 
+            <input
+                type="text"
+                wire:model.blur="{{ $fieldName }}.{{ $index }}.value"
+                placeholder="URL, email, telefono o usuario"
                 class="contact-value"
             >
-            <input 
-                type="text" 
-                wire:model="{{ $fieldName }}.{{ $index }}.name" 
-                placeholder="Nombre (ej: línea principal)" 
+            <input
+                type="text"
+                wire:model.blur="{{ $fieldName }}.{{ $index }}.name"
+                placeholder="Nombre (ej: línea principal)"
                 class="contact-name"
             >
             <button type="button" wire:click="removeContact({{ $index }})" class="contact-remove" title="Eliminar"><i class="fa-solid fa-xmark"></i></button>
