@@ -194,23 +194,25 @@
                     @endif
                 </div>
 
-                {{-- Imágenes --}}
-                <div class="form-grid-3">
+                {{-- Imágenes fila 1: Logo + Hero --}}
+                <div class="form-grid-2">
                     <div class="form-group">
                         <x-upload-image label="Logo" model="logoUpload" :value="$logo" removeAction="removeLogo" aspect="1" hint="PNG/JPG cuadrado" />
                     </div>
                     <div class="form-group">
                         <x-upload-image label="Hero (fondo)" model="heroImageUpload" :value="$heroImage" removeAction="removeHeroImage" aspect="16/9" hint="Banner principal" />
                     </div>
+                </div>
+
+                {{-- Imagen perfil + Descripción --}}
+                <div class="form-grid-2">
                     <div class="form-group">
                         <x-upload-image label="Perfil" model="portraitImageUpload" :value="$portraitImage" removeAction="removePortraitImage" aspect="3/4" hint="Tarjeta del cajero" />
                     </div>
-                </div>
-
-                {{-- Descripción --}}
-                <div class="form-group">
-                    <label class="form-label">Descripción</label>
-                    <textarea class="form-input" wire:model="description" rows="3" style="resize:vertical"></textarea>
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-input" wire:model="description" rows="6" style="resize:vertical;height:100%;min-height:140px"></textarea>
+                    </div>
                 </div>
 
                 {{-- Contactos --}}
