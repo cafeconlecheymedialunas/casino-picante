@@ -8,9 +8,12 @@
     'hint'         => null,
 ])
 
-@php $refName = 'input_' . md5($model); @endphp
+@php
+    $refName = 'input_' . md5($model);
+    $previewUrl = $value ? asset('storage/' . $value) : '';
+@endphp
 
-<div class="upload-image-field" x-data="{ preview: '{{ $value }}' }">
+<div class="upload-image-field" x-data="{ preview: '{{ $previewUrl }}' }">
     @once
         <style>
             [data-dashboard-theme="light"] .upload-image-field .upload-image-drop {
