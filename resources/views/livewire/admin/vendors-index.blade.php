@@ -209,9 +209,9 @@
                     <div class="form-group">
                         <x-upload-image label="Perfil" model="portraitImageUpload" :value="$portraitImage" removeAction="removePortraitImage" aspect="3/4" hint="Tarjeta del cajero" />
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="display:flex;flex-direction:column">
                         <label class="form-label">Descripción</label>
-                        <textarea class="form-input" wire:model="description" rows="6" style="resize:vertical;height:100%;min-height:140px"></textarea>
+                        <textarea class="form-input" wire:model="description" rows="6" style="resize:vertical;flex:1;min-height:140px;background:rgba(255,255,255,.06);border:1px solid var(--line-2);color:var(--white)"></textarea>
                     </div>
                 </div>
 
