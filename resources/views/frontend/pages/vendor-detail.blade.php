@@ -343,10 +343,10 @@
     }
     .vd-shell { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
     .vd-hero { position: relative; min-height: 650px; padding: 22px 0 74px; background: linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,.72)); }
-    .vd-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.62) 43%, rgba(0,0,0,.2) 100%), var(--vendor-hero-image); background-size: cover; background-position: center; opacity: .72; }
+    .vd-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.45) 42%, rgba(0,0,0,.08) 100%), var(--vendor-hero-image); background-size: cover; background-position: center right; }
     .vd-hero::after { display: none; }
     .vd-hero > .vd-shell { position: relative; z-index: 1; }
-    .vd-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 78px; }
+    .vd-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 78px; position: relative; z-index: 4; }
     .vd-brand { display: inline-flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 900; letter-spacing: .05em; }
     .vd-brand strong { color: var(--orange); }
     .vd-brand-mark { width: 22px; height: 22px; border-radius: 7px; background: var(--orange); box-shadow: 0 0 24px rgba(255,106,26,.55); }
@@ -519,12 +519,11 @@
     .vd-hero { min-height: 680px; padding-bottom: 88px; }
     .vd-hero::before {
         background:
-            linear-gradient(90deg, rgba(0,0,0,.96) 0%, rgba(0,0,0,.72) 42%, rgba(0,0,0,.28) 100%),
-            linear-gradient(180deg, rgba(0,0,0,.12), #050202 96%),
+            linear-gradient(90deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.45) 42%, rgba(0,0,0,.08) 100%),
             var(--vendor-hero-image);
         background-size: cover;
-        background-position: center;
-        opacity: .82;
+        background-position: center right;
+        opacity: 1;
         transform: scale(1.01);
     }
     .vd-hero::after { display:block; content:""; position:absolute; inset:auto 0 0; height:180px; background:linear-gradient(180deg, transparent, #050202); pointer-events:none; }
